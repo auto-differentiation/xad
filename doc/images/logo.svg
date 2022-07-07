@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="215"
+   height="100"
+   id="svg4520"
+   viewBox="-.239 -.237 113.358 52.778"
+   version="1.1"
+   sodipodi:docname="logo.svg"
+   inkscape:export-filename="D:\jlotze\dev\norma\ox2\QuantLib\xad\doc\images\logo.png"
+   inkscape:export-xdpi="38.400002"
+   inkscape:export-ydpi="38.400002"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15, custom)">
+  <metadata
+     id="metadata12">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2560"
+     inkscape:window-height="1361"
+     id="namedview10"
+     showgrid="false"
+     inkscape:zoom="5.6511628"
+     inkscape:cx="107.5"
+     inkscape:cy="50"
+     inkscape:window-x="1911"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4520"
+     inkscape:document-rotation="0" />
+  <defs
+     id="defs4511">
+    <path
+       id="g0-64"
+       d="M6.513-4.792c-.086-.803-.588-1.764-1.88-1.764-2.022 0-4.088 2.05-4.088 4.332C.545-1.35 1.148.3 3.1.3c3.384 0 4.833-4.934 4.833-6.9 0-2.065-1.162-3.657-2.998-3.657-2.08 0-2.697 1.82-2.697 2.21 0 .128.086.444.488.444.502 0 .717-.46.717-.703 0-.445-.445-.445-.63-.445C3.4-9.82 4.49-9.92 4.877-9.92c1.262 0 2.066 1.004 2.066 2.61 0 .92-.273 1.98-.416 2.51zM3.143-.086c-1.35 0-1.58-1.062-1.58-1.664 0-.63.402-2.11.618-2.64.19-.43 1.01-1.88 2.5-1.88 1.31 0 1.61 1.134 1.61 1.91 0 1.06-.93 4.274-3.14 4.274z" />
+    <path
+       id="g0-97"
+       d="M4.318-1.707c-.072.244-.072.272-.272.545-.316.402-.947 1.02-1.62 1.02-.59 0-.92-.532-.92-1.38 0-.788.445-2.395.718-2.997.487-1 1.162-1.52 1.72-1.52.948 0 1.135 1.18 1.135 1.29 0 .02-.05.21-.06.23zm.918-3.673c-.157-.373-.545-.947-1.29-.947C2.323-6.327.573-4.232.573-2.11.573-.69 1.406.144 2.38.144c.79 0 1.465-.616 1.866-1.09.144.847.818 1.09 1.25 1.09.43 0 .773-.258 1.032-.774.23-.49.43-1.364.43-1.422 0-.07-.057-.13-.144-.13-.13 0-.143.073-.2.288-.216.847-.488 1.75-1.076 1.75-.416 0-.445-.372-.445-.66 0-.33.043-.487.172-1.047.1-.36.172-.68.287-1.09.53-2.16.66-2.67.66-2.76 0-.2-.158-.36-.373-.36-.46 0-.58.5-.61.67z" />
+    <path
+       id="g0-120"
+       d="M6.8-5.853c-.46.086-.63.43-.63.703 0 .344.27.46.472.46.43 0 .732-.374.732-.762 0-.602-.69-.875-1.29-.875-.876 0-1.364.86-1.493 1.134-.33-1.077-1.22-1.134-1.47-1.134-1.46 0-2.24 1.88-2.24 2.195 0 .058.06.13.16.13.12 0 .148-.087.17-.144C1.7-5.738 2.66-6.04 3.07-6.04c.65 0 .78.603.78.947 0 .316-.09.646-.26 1.334L3.1-1.79c-.216.86-.632 1.65-1.393 1.65-.072 0-.43 0-.73-.187.515-.1.63-.53.63-.702 0-.28-.215-.46-.488-.46-.35 0-.72.31-.72.76 0 .61.67.88 1.29.88.69 0 1.18-.55 1.48-1.14.23.85.944 1.137 1.475 1.137 1.463 0 2.238-1.88 2.238-2.195 0-.07-.057-.13-.143-.13-.13 0-.143.07-.186.18C6.17-.74 5.334-.15 4.69-.15c-.5 0-.773-.372-.773-.96 0-.316.057-.546.286-1.493l.503-1.95c.214-.86.704-1.49 1.362-1.49.03 0 .43 0 .732.186z" />
+  </defs>
+  <use
+     id="use4513"
+     width="100%"
+     height="100%"
+     x="56.413"
+     y="65.753"
+     fill="#18bc9c"
+     stroke-width=".133"
+     transform="translate(-280.376 -273.862) scale(4.93645)"
+     xlink:href="#g0-120"
+     style="fill:#fbba17;fill-opacity:1" />
+  <use
+     id="use4515"
+     width="100%"
+     height="100%"
+     x="64.366"
+     y="65.753"
+     fill="#18bc9c"
+     stroke-width=".133"
+     transform="translate(-280.376 -273.862) scale(4.93645)"
+     xlink:href="#g0-97"
+     style="fill:#fbba17;fill-opacity:1" />
+  <use
+     id="use4517"
+     width="100%"
+     height="100%"
+     x="71.712"
+     y="65.753"
+     fill="#18bc9c"
+     stroke-width=".133"
+     transform="translate(-280.376 -273.862) scale(4.93645)"
+     xlink:href="#g0-64"
+     style="fill:#fbba17;fill-opacity:1" />
+</svg>

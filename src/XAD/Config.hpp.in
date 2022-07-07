@@ -1,0 +1,49 @@
+/*******************************************************************************
+
+   Configuration settings for the build
+
+   This file is part of XAD, a fast and comprehensive C++ library for
+   automatic differentiation.
+
+   Copyright (C) 2010-2022 Xcelerit Computing Ltd.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+******************************************************************************/
+
+#pragma once
+
+/* These options can be changed in client code, after XAD has already been compiled */
+
+// Use strong inlining for higher performance - but compiles significantly slower
+#ifndef XAD_USE_STRONG_INLINE
+#cmakedefine XAD_USE_STRONG_INLINE
+#endif
+
+// Allow conversion operator from active type to integers, potentially missing some
+// AAD variable dependency tracking
+#ifndef XAD_ALLOW_INT_CONVERSION
+#cmakedefine XAD_ALLOW_INT_CONVERSION
+#endif
+
+
+/******* The following options should not be touched after compilation of XAD */
+
+// keep track of freed-up slots in the tape and re-use them
+#cmakedefine XAD_TAPE_REUSE_SLOTS
+
+// Disable thread-local tape usage
+#cmakedefine XAD_NO_THREADLOCAL
+
+

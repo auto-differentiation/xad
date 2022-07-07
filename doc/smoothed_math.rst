@@ -1,0 +1,51 @@
+.. This file is part of the XAD user manual.
+   Copyright (C) 2010-2022 Xcelerit Computing Ltd.
+   See the file index.rst for copying conditions.
+   
+.. _smooth-math:
+
+Handling Discontinuities
+========================
+
+.. highlight:: cpp
+
+Many functions have jumps or discontinuities
+at which points no mathematical derivatives exist.
+These are typically written as conditionals in the source code 
+or by using the math functions :cpp:func:`abs`, :cpp:func:`max`, :cpp:func:`min`.
+
+XAD generally defines the derivatives of standard math functions
+as the average of the left and right derivatives at the discontinuity points.
+For example, the derivative of ``abs(x)`` at point ``x = 0`` is set to ``0``,
+as the left derivative is ``-1`` and the right derivative is ``1``.
+
+As this definition is not mathematically accurate, 
+and as this creates problems with higher order derivatives,
+XAD provides a set of smoothed math functions which are differentiable
+at all points and can be used as a replacement for the original function.
+They are implemented to provide accurate derivatives outside 
+a small area around the discontinuity,
+and approximate the original function using a spline within this area.  
+
+As an example, the :cpp:func:`smooth_abs` function is illustrated in the
+figure below (with ``c = 0.001``):
+
+.. image:: images/sabs.*
+   :align: center
+   :alt: smooth_abs function
+
+Note that discontinuities may be hidden in conditional constructs in the
+original code.
+In order to benefit from the smoothed math functions, 
+the conditionals need to be replaced by functions.
+For example::
+
+   // original code
+   double y = 0;
+   if (value > strike)
+     y = value - strike;
+     
+   // equivalent smoothed code
+   double y = smooth_max(0, value - strike);
+
+A reference of all provided smoothed math functions is given in :ref:`ref-smooth-math`.

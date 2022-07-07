@@ -1,0 +1,53 @@
+/*******************************************************************************
+
+   General unit tests for the tape container (whatever it is typedef-ed to).
+
+   This file is part of XAD, a fast and comprehensive C++ library for
+   automatic differentiation.
+
+   Copyright (C) 2010-2022 Xcelerit Computing Ltd.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+******************************************************************************/
+
+#include "XAD/TapeContainer.hpp"
+
+#include <gtest/gtest.h>
+
+TEST(StackContainer, basic)
+{
+    // currently, it's a redefine of std::vector - no need to test that
+    // too thoroughly
+    typedef xad::TapeContainerTraits<int>::type container;
+
+    container sc;
+
+#ifdef TAPE_USE_VECTOR
+    sc.reserve(5);
+    EXPECT_GE(sc.capacity(), 5U);
+#endif
+    EXPECT_EQ(0U, sc.size());
+    EXPECT_TRUE(sc.empty());
+
+    // we only require push_backs to be successful after reserving
+    sc.reserve(2);
+
+    sc.push_back(2);
+    sc.push_back(3);
+    EXPECT_EQ(2U, sc.size());
+    EXPECT_FALSE(sc.empty());
+    EXPECT_EQ(2, sc[0]);
+    EXPECT_EQ(3, sc[1]);
+}
