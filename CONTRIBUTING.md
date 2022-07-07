@@ -15,7 +15,7 @@ by our [code of conduct](CODE_OF_CONDUCT.md).
 3. Create a feature branch, typically based on master, for your change
 
 ```
-    git checkout -b feature/my-change master
+    git checkout -b feature/my-change main
 ```
 
 4. Make your changes, adding tests as you go, and commit. Again, make sure all 
