@@ -7,15 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-
-## 1.0.0 - 2022-07-10
 ### Added
-- Initial open-source release
-- Forward and adjoint modes
-- Higher orders
-- High performance, with expression templates
-- Checkpointing and external function APIs
+
+### Changed 
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+## [1.0.0] - 2022-07-07
+
+Initial open-source release
 
 
 
 [Unreleased]: https://github.com/xcelerit/xad/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/xcelerit/xad/releases/tag/v1.0.0
