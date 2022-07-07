@@ -7,14 +7,14 @@
 Introduction
 ============
 
-XAD is a fast and comprehensive C++ library for automatic differentiation. 
+XAD is a fast and comprehensive open-source C++ library for automatic differentiation. 
 It targets production-quality code at any scale, 
 striving for both ease of use and high performance. 
 
 Key features:
 
 * Forward and adjoint mode for any order, using operator-overloading
-* Checkpointing support (for tape memory managment)
+* Checkpointing support (for tape memory management)
 * External functions interface (to integrate external libraries)
 * Thread-safe tape
 * Formal exception-safety guarantees
