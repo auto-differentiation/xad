@@ -1256,11 +1256,20 @@ TYPED_TEST(ComplexTest, NormOfComplex)
     auto z3 = std::complex<TypeParam>(-1.2, -1.2);
     auto z4 = std::complex<TypeParam>(0.0, 0.0);
 
-    EXPECT_THAT(xad::value(norm(z)), DoubleNear(2.88, 1e-9));
-    EXPECT_THAT(xad::value(norm(z1)), DoubleNear(2.88, 1e-9));
-    EXPECT_THAT(xad::value(norm(z2)), DoubleNear(2.88, 1e-9));
-    EXPECT_THAT(xad::value(norm(z3)), DoubleNear(2.88, 1e-9));
-    EXPECT_THAT(xad::value(norm(z4)), DoubleNear(0.0, 1e-9));
+    using std::norm;
+
+    EXPECT_THAT(xad::value(std::norm(z)), DoubleNear(2.88, 1e-9));
+    EXPECT_THAT(xad::value(std::norm(z1)), DoubleNear(2.88, 1e-9));
+    EXPECT_THAT(xad::value(std::norm(z2)), DoubleNear(2.88, 1e-9));
+    EXPECT_THAT(xad::value(std::norm(z3)), DoubleNear(2.88, 1e-9));
+    EXPECT_THAT(xad::value(std::norm(z4)), DoubleNear(0.0, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, NormWithExplicitTemplateParam)
+{
+    auto z = std::complex<TypeParam>(1.2, 1.2);
+
+    EXPECT_THAT(xad::value(std::norm<TypeParam>(z)), DoubleNear(2.88, 1e-9));
 }
 
 TYPED_TEST(ComplexTest, NormOfDoubleOrInteger)

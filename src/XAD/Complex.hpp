@@ -308,7 +308,7 @@ namespace detail
 {
 
 template <class T>
-XAD_INLINE T abs(const std::complex<T>& x)
+XAD_INLINE T abs_impl(const std::complex<T>& x)
 {
     using std::sqrt;
     if (xad::isinf(x.real()) || xad::isinf(x.imag()))
@@ -318,7 +318,7 @@ XAD_INLINE T abs(const std::complex<T>& x)
 }
 
 template <class T>
-std::complex<T> exp(const std::complex<T>& z)
+std::complex<T> exp_impl(const std::complex<T>& z)
 {
     using std::cos;
     using std::exp;
@@ -358,7 +358,7 @@ std::complex<T> exp(const std::complex<T>& z)
 }
 
 template <class T1, class T2>
-XAD_INLINE std::complex<typename xad::ExprTraits<T1>::value_type> polar(const T1& r,
+XAD_INLINE std::complex<typename xad::ExprTraits<T1>::value_type> polar_impl(const T1& r,
                                                                         const T2& theta)
 {
     using std::cos;
@@ -368,7 +368,7 @@ XAD_INLINE std::complex<typename xad::ExprTraits<T1>::value_type> polar(const T1
 }
 
 template <class T>
-std::complex<T> sqrt(const std::complex<T>& z)
+std::complex<T> sqrt_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     if (xad::isinf(z.real()) && z.real() < 0.0)
@@ -392,11 +392,11 @@ std::complex<T> sqrt(const std::complex<T>& z)
         return std::complex<T>(std::numeric_limits<nested>::infinity(),
                                std::numeric_limits<nested>::infinity());
 
-    return ::xad::detail::polar(sqrt(abs(z)), arg(z) * T(0.5));
+    return ::xad::detail::polar_impl(sqrt(abs(z)), arg(z) * T(0.5));
 }
 
 template <class T>
-std::complex<T> sinh(const std::complex<T>& z)
+std::complex<T> sinh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     auto cls = xad::fpclassify(z.real());
@@ -414,7 +414,7 @@ std::complex<T> sinh(const std::complex<T>& z)
 }
 
 template <class T>
-std::complex<T> cosh(const std::complex<T>& z)
+std::complex<T> cosh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     auto cls = xad::fpclassify(z.real());
@@ -432,7 +432,7 @@ std::complex<T> cosh(const std::complex<T>& z)
 }
 
 template <class T>
-std::complex<T> tanh(const std::complex<T>& z)
+std::complex<T> tanh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     if (z.real() == 0.0)
@@ -464,7 +464,7 @@ std::complex<T> tanh(const std::complex<T>& z)
 }
 
 template <class T>
-std::complex<T> asinh(const std::complex<T>& z)
+std::complex<T> asinh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     if (xad::isinf(z.real()) && z.real() > 0.0)
@@ -493,7 +493,7 @@ std::complex<T> asinh(const std::complex<T>& z)
 }
 
 template <class T>
-std::complex<T> acosh(const std::complex<T>& z)
+std::complex<T> acosh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     if (xad::isinf(z.imag()) && z.imag() > 0.0)
@@ -538,7 +538,7 @@ std::complex<T> acosh(const std::complex<T>& z)
 }
 
 template <class T>
-std::complex<T> atanh(const std::complex<T>& z)
+std::complex<T> atanh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     if (xad::isinf(z.real()) && z.real() > 0.0)
@@ -567,7 +567,7 @@ std::complex<T> atanh(const std::complex<T>& z)
 }
 
 template <class T>
-XAD_INLINE std::complex<T> sin(const std::complex<T>& z)
+XAD_INLINE std::complex<T> sin_impl(const std::complex<T>& z)
 {
     // -i * sinh(i*z)
     std::complex<T> iz(-z.imag(), z.real());
@@ -576,7 +576,7 @@ XAD_INLINE std::complex<T> sin(const std::complex<T>& z)
 }
 
 template <class T>
-XAD_INLINE std::complex<T> cos(const std::complex<T>& z)
+XAD_INLINE std::complex<T> cos_impl(const std::complex<T>& z)
 {
     // cosh(i*z)
     std::complex<T> iz(-z.imag(), z.real());
@@ -584,7 +584,7 @@ XAD_INLINE std::complex<T> cos(const std::complex<T>& z)
 }
 
 template <class T>
-XAD_INLINE std::complex<T> tan(const std::complex<T>& z)
+XAD_INLINE std::complex<T> tan_impl(const std::complex<T>& z)
 {
     // -i * tanh(i*z)
     std::complex<T> iz(-z.imag(), z.real());
@@ -593,7 +593,7 @@ XAD_INLINE std::complex<T> tan(const std::complex<T>& z)
 }
 
 template <class T>
-XAD_INLINE std::complex<T> asin(const std::complex<T>& z)
+XAD_INLINE std::complex<T> asin_impl(const std::complex<T>& z)
 {
     // -i * asinh(i*z);
     std::complex<T> iz(-z.imag(), z.real());
@@ -602,7 +602,7 @@ XAD_INLINE std::complex<T> asin(const std::complex<T>& z)
 }
 
 template <class T>
-std::complex<T> acos(const std::complex<T>& z)
+std::complex<T> acos_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     if (z.real() == 0.0)
@@ -657,7 +657,7 @@ std::complex<T> acos(const std::complex<T>& z)
 }
 
 template <class T>
-XAD_INLINE std::complex<T> atan(const std::complex<T>& z)
+XAD_INLINE std::complex<T> atan_impl(const std::complex<T>& z)
 {
     // -i * atanh(i*z)
     std::complex<T> complex_i(0, 1);
@@ -1368,17 +1368,12 @@ typename xad::FReal<T> arg(const xad::FReal<T>& x)
     return ::xad::detail::arg_impl(x);
 }
 
-template <class T>
-XAD_INLINE xad::AReal<T> norm(const complex<xad::AReal<T>>& x)
+template <class T, class Scalar>
+XAD_INLINE T norm(const complex<xad::ADTypeBase<Scalar, T>>& x)
 {
     return x.real() * x.real() + x.imag() * x.imag();
 }
 
-template <class T>
-XAD_INLINE xad::FReal<T> norm(const complex<xad::FReal<T>>& x)
-{
-    return x.real() * x.real() + x.imag() * x.imag();
-}
 
 // return the expression type from multiplying x*x without actually evaluating it
 template <class Scalar, class Derived>
@@ -1390,13 +1385,13 @@ XAD_INLINE auto norm(const xad::Expression<Scalar, Derived>& x) -> decltype(x * 
 template <class T>
 XAD_INLINE xad::AReal<T> abs(const complex<xad::AReal<T>>& x)
 {
-    return xad::detail::abs(x);
+    return xad::detail::abs_impl(x);
 }
 
 template <class T>
 XAD_INLINE xad::FReal<T> abs(const complex<xad::FReal<T>>& x)
 {
-    return xad::detail::abs(x);
+    return xad::detail::abs_impl(x);
 }
 
 template <class T>
@@ -1519,13 +1514,13 @@ XAD_INLINE auto proj(const xad::FReal<T>& x) -> decltype(::xad::detail::proj_imp
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> polar(const xad::AReal<T>& r, const xad::AReal<T>& theta)
 {
-    return xad::detail::polar(r, theta);
+    return xad::detail::polar_impl(r, theta);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> polar(const xad::FReal<T>& r, const xad::FReal<T>& theta)
 {
-    return xad::detail::polar(r, theta);
+    return xad::detail::polar_impl(r, theta);
 }
 
 template <class Scalar, class Expr>
@@ -1533,7 +1528,7 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr>::value_type> polar(
     const xad::Expression<Scalar, Expr>& r, const xad::Expression<Scalar, Expr>& theta)
 {
     typedef typename xad::ExprTraits<Expr>::value_type type;
-    return xad::detail::polar(type(r), type(theta));
+    return xad::detail::polar_impl(type(r), type(theta));
 }
 
 #if defined(_MSC_VER) && _MSC_VER < 1920
@@ -1544,56 +1539,56 @@ template <class Scalar, class Op, class Expr>
 XAD_INLINE complex<xad::AReal<Scalar>> polar(const xad::UnaryExpr<Scalar, Op, Expr>& r,
                                              const xad::AReal<Scalar>& theta)
 {
-    return xad::detail::polar(xad::AReal<Scalar>(r), theta);
+    return xad::detail::polar_impl(xad::AReal<Scalar>(r), theta);
 }
 
 template <class Scalar, class Op, class Expr>
 XAD_INLINE complex<xad::AReal<Scalar>> polar(const xad::AReal<Scalar>& r,
                                              const xad::UnaryExpr<Scalar, Op, Expr>& theta)
 {
-    return xad::detail::polar(r, xad::AReal<Scalar>(theta));
+    return xad::detail::polar_impl(r, xad::AReal<Scalar>(theta));
 }
 
 template <class Scalar, class Op, class Expr>
 XAD_INLINE complex<xad::FReal<Scalar>> polar(const xad::UnaryExpr<Scalar, Op, Expr>& r,
                                              const xad::FReal<Scalar>& theta)
 {
-    return xad::detail::polar(xad::FReal<Scalar>(r), theta);
+    return xad::detail::polar_impl(xad::FReal<Scalar>(r), theta);
 }
 
 template <class Scalar, class Op, class Expr>
 XAD_INLINE complex<xad::FReal<Scalar>> polar(const xad::FReal<Scalar>& r,
                                              const xad::UnaryExpr<Scalar, Op, Expr>& theta)
 {
-    return xad::detail::polar(r, xad::FReal<Scalar>(theta));
+    return xad::detail::polar_impl(r, xad::FReal<Scalar>(theta));
 }
 
 template <class Scalar, class Op, class Expr1, class Expr2>
 XAD_INLINE complex<xad::AReal<Scalar>> polar(const xad::BinaryExpr<Scalar, Op, Expr1, Expr2>& r,
                                              const xad::AReal<Scalar>& theta)
 {
-    return xad::detail::polar(xad::AReal<Scalar>(r), theta);
+    return xad::detail::polar_impl(xad::AReal<Scalar>(r), theta);
 }
 
 template <class Scalar, class Op, class Expr1, class Expr2>
 XAD_INLINE complex<xad::AReal<Scalar>> polar(const xad::AReal<Scalar>& r,
                                              const xad::BinaryExpr<Scalar, Op, Expr1, Expr2>& theta)
 {
-    return xad::detail::polar(r, xad::AReal<Scalar>(theta));
+    return xad::detail::polar_impl(r, xad::AReal<Scalar>(theta));
 }
 
 template <class Scalar, class Op, class Expr1, class Expr2>
 XAD_INLINE complex<xad::FReal<Scalar>> polar(const xad::BinaryExpr<Scalar, Op, Expr1, Expr2>& r,
                                              const xad::FReal<Scalar>& theta)
 {
-    return xad::detail::polar(xad::FReal<Scalar>(r), theta);
+    return xad::detail::polar_impl(xad::FReal<Scalar>(r), theta);
 }
 
 template <class Scalar, class Op, class Expr1, class Expr2>
 XAD_INLINE complex<xad::FReal<Scalar>> polar(const xad::FReal<Scalar>& r,
                                              const xad::BinaryExpr<Scalar, Op, Expr1, Expr2>& theta)
 {
-    return xad::detail::polar(r, xad::FReal<Scalar>(theta));
+    return xad::detail::polar_impl(r, xad::FReal<Scalar>(theta));
 }
 
 template <class Scalar, class Op1, class Expr1, class Expr2, class Op3, class Expr3>
@@ -1602,7 +1597,7 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr1>::value_type> polar(
     const xad::BinaryExpr<Scalar, Op1, Expr1, Expr2>& theta)
 {
     typedef typename xad::ExprTraits<Expr1>::value_type type;
-    return xad::detail::polar(type(r), type(theta));
+    return xad::detail::polar_impl(type(r), type(theta));
 }
 
 template <class Scalar, class Op1, class Expr1, class Expr2, class Op3, class Expr3>
@@ -1611,7 +1606,7 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr1>::value_type> polar(
     const xad::UnaryExpr<Scalar, Op3, Expr3>& theta)
 {
     typedef typename xad::ExprTraits<Expr1>::value_type type;
-    return xad::detail::polar(type(r), type(theta));
+    return xad::detail::polar_impl(type(r), type(theta));
 }
 
 template <class Scalar, class Op1, class Expr1, class Op2, class Expr2>
@@ -1619,7 +1614,7 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr1>::value_type> polar(
     const xad::UnaryExpr<Scalar, Op1, Expr1>& r, const xad::UnaryExpr<Scalar, Op2, Expr2>& theta)
 {
     typedef typename xad::ExprTraits<Expr1>::value_type type;
-    return xad::detail::polar(type(r), type(theta));
+    return xad::detail::polar_impl(type(r), type(theta));
 }
 
 template <class Scalar, class Op1, class Expr1, class Expr2, class Op3, class Expr3, class Expr4>
@@ -1628,14 +1623,14 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr1>::value_type> polar(
     const xad::BinaryExpr<Scalar, Op1, Expr1, Expr2>& theta)
 {
     typedef typename xad::ExprTraits<Expr1>::value_type type;
-    return xad::detail::polar(type(r), type(theta));
+    return xad::detail::polar_impl(type(r), type(theta));
 }
 
 template <class Scalar, class Op, class Expr1, class Expr2>
 XAD_INLINE complex<typename xad::ExprTraits<Expr1>::value_type> polar(
     double r, const xad::BinaryExpr<Scalar, Op, Expr1, Expr2>& theta)
 {
-    return xad::detail::polar(typename xad::ExprTraits<Expr1>::value_type(r),
+    return xad::detail::polar_impl(typename xad::ExprTraits<Expr1>::value_type(r),
                               typename xad::ExprTraits<Expr1>::value_type(theta));
 }
 
@@ -1643,7 +1638,7 @@ template <class Scalar, class Op, class Expr1, class Expr2>
 XAD_INLINE complex<typename xad::ExprTraits<Expr1>::value_type> polar(
     const xad::BinaryExpr<Scalar, Op, Expr1, Expr2>& r, double theta)
 {
-    return xad::detail::polar(typename xad::ExprTraits<Expr1>::value_type(r),
+    return xad::detail::polar_impl(typename xad::ExprTraits<Expr1>::value_type(r),
                               typename xad::ExprTraits<Expr1>::value_type(theta));
 }
 
@@ -1651,7 +1646,7 @@ template <class Scalar, class Op, class Expr>
 XAD_INLINE complex<typename xad::ExprTraits<Expr>::value_type> polar(
     double r, const xad::UnaryExpr<Scalar, Op, Expr>& theta)
 {
-    return xad::detail::polar(typename xad::ExprTraits<Expr>::value_type(r),
+    return xad::detail::polar_impl(typename xad::ExprTraits<Expr>::value_type(r),
                               typename xad::ExprTraits<Expr>::value_type(theta));
 }
 
@@ -1659,32 +1654,32 @@ template <class Scalar, class Op, class Expr>
 XAD_INLINE complex<typename xad::ExprTraits<Expr>::value_type> polar(
     const xad::UnaryExpr<Scalar, Op, Expr>& r, double theta)
 {
-    return xad::detail::polar(typename xad::ExprTraits<Expr>::value_type(r),
+    return xad::detail::polar_impl(typename xad::ExprTraits<Expr>::value_type(r),
                               typename xad::ExprTraits<Expr>::value_type(theta));
 }
 
 template <class Scalar>
 XAD_INLINE complex<xad::AReal<Scalar>> polar(const xad::AReal<Scalar>& r, double theta)
 {
-    return xad::detail::polar(r, xad::AReal<Scalar>(theta));
+    return xad::detail::polar_impl(r, xad::AReal<Scalar>(theta));
 }
 
 template <class Scalar>
 XAD_INLINE complex<xad::FReal<Scalar>> polar(const xad::FReal<Scalar>& r, double theta)
 {
-    return xad::detail::polar(r, xad::FReal<Scalar>(theta));
+    return xad::detail::polar_impl(r, xad::FReal<Scalar>(theta));
 }
 
 template <class Scalar>
 XAD_INLINE complex<xad::AReal<Scalar>> polar(double r, const xad::AReal<Scalar>& theta)
 {
-    return xad::detail::polar(xad::AReal<Scalar>(r), theta);
+    return xad::detail::polar_impl(xad::AReal<Scalar>(r), theta);
 }
 
 template <class Scalar>
 XAD_INLINE complex<xad::FReal<Scalar>> polar(double r, const xad::FReal<Scalar>& theta)
 {
-    return xad::detail::polar(xad::FReal<Scalar>(r), theta);
+    return xad::detail::polar_impl(xad::FReal<Scalar>(r), theta);
 }
 
 #endif
@@ -1699,7 +1694,7 @@ XAD_INLINE typename std::enable_if<std::is_same<typename xad::ExprTraits<Expr1>:
 polar(const xad::Expression<Scalar, Expr1>& r, const xad::Expression<Scalar, Expr2>& theta)
 {
     typedef typename xad::ExprTraits<Expr1>::value_type type;
-    return xad::detail::polar(type(r), type(theta));
+    return xad::detail::polar_impl(type(r), type(theta));
 }
 
 // T, expr - only enabled if T is scalar
@@ -1707,7 +1702,7 @@ template <class Scalar, class Expr>
 XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> polar(
     Scalar r, const xad::Expression<Scalar, Expr>& theta)
 {
-    return xad::detail::polar(typename xad::ExprTraits<Expr>::value_type(r), theta.derived());
+    return xad::detail::polar_impl(typename xad::ExprTraits<Expr>::value_type(r), theta.derived());
 }
 
 // expr, T - only enabled if T is scalar
@@ -1715,7 +1710,7 @@ template <class Scalar, class Expr>
 XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> polar(
     const xad::Expression<Scalar, Expr>& r, Scalar theta)
 {
-    return xad::detail::polar(r.derived(), typename xad::ExprTraits<Expr>::value_type(theta));
+    return xad::detail::polar_impl(r.derived(), typename xad::ExprTraits<Expr>::value_type(theta));
 }
 
 // just one expr, as second parameter is optional
@@ -1729,13 +1724,13 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr>::value_type> polar(
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> exp(const complex<xad::AReal<T>>& z)
 {
-    return xad::detail::exp(z);
+    return xad::detail::exp_impl(z);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> exp(const complex<xad::FReal<T>>& z)
 {
-    return xad::detail::exp(z);
+    return xad::detail::exp_impl(z);
 }
 
 template <class T>
@@ -2073,157 +2068,157 @@ XAD_INLINE typename std::enable_if<xad::ExprTraits<T2>::isExpr, complex<xad::FRe
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> sqrt(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::sqrt(z);
+    return ::xad::detail::sqrt_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> sqrt(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::sqrt(z);
+    return ::xad::detail::sqrt_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> sin(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::sin(z);
+    return ::xad::detail::sin_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> sin(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::sin(z);
+    return ::xad::detail::sin_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> cos(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::cos(z);
+    return ::xad::detail::cos_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> cos(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::cos(z);
+    return ::xad::detail::cos_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> tan(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::tan(z);
+    return ::xad::detail::tan_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> tan(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::tan(z);
+    return ::xad::detail::tan_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> asin(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::asin(z);
+    return ::xad::detail::asin_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> asin(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::asin(z);
+    return ::xad::detail::asin_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> acos(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::acos(z);
+    return ::xad::detail::acos_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> acos(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::acos(z);
+    return ::xad::detail::acos_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> atan(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::atan(z);
+    return ::xad::detail::atan_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> atan(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::atan(z);
+    return ::xad::detail::atan_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> sinh(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::sinh(z);
+    return ::xad::detail::sinh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> sinh(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::sinh(z);
+    return ::xad::detail::sinh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> cosh(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::cosh(z);
+    return ::xad::detail::cosh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> cosh(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::cosh(z);
+    return ::xad::detail::cosh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> tanh(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::tanh(z);
+    return ::xad::detail::tanh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> tanh(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::tanh(z);
+    return ::xad::detail::tanh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> asinh(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::asinh(z);
+    return ::xad::detail::asinh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> asinh(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::asinh(z);
+    return ::xad::detail::asinh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> acosh(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::acosh(z);
+    return ::xad::detail::acosh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> acosh(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::acosh(z);
+    return ::xad::detail::acosh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> atanh(const std::complex<xad::AReal<T>>& z)
 {
-    return ::xad::detail::atanh(z);
+    return ::xad::detail::atanh_impl(z);
 }
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> atanh(const std::complex<xad::FReal<T>>& z)
 {
-    return ::xad::detail::atanh(z);
+    return ::xad::detail::atanh_impl(z);
 }
 
 }  // namespace std
