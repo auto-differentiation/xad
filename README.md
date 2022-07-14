@@ -1,5 +1,6 @@
 # XAD
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/9d0cbd845d6948e4ac68de5d74a35b16)](https://app.codacy.com/gh/xcelerit/XAD?utm_source=github.com&utm_medium=referral&utm_content=xcelerit/XAD&utm_campaign=Badge_Grade_Settings)
 [![Tests Badge](https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg)](https://github.com/xcelerit/xad/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/xcelerit/XAD/badge.svg?branch=main)](https://coveralls.io/github/xcelerit/XAD?branch=main)
 
