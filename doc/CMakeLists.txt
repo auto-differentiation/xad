@@ -31,11 +31,7 @@ set(SPHINX_CACHE_DIR "${CMAKE_CURRENT_BINARY_DIR}/_doctrees")
 # HTML output directory
 set(SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/html")
 
-# final output dir - after pre-processing the docs (holds both pdf and html)
-set(DOC_DIR ${CMAKE_CURRENT_BINARY_DIR}/out)
-file(MAKE_DIRECTORY ${DOC_DIR})
 
- 
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in"
     "${BINARY_BUILD_DIR}/conf.py"
@@ -49,13 +45,10 @@ add_custom_target(documentation
         -j 4
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${SPHINX_HTML_DIR}"
-    COMMAND ${CMAKE_COMMAND} 
-	   -DDOC_TMP_DIR=${SPHINX_HTML_DIR} 
-	   -DDOC_DEST_DIR=${DOC_DIR}/html
-	   -P ${PROJECT_SOURCE_DIR}/cmake/SphinxPostProcess.cmake
+    COMMAND ${CMAKE_COMMAND} -E touch "${SPHINX_HTML_DIR}/.nojekyll"
     COMMENT "Building HTML documentation with Sphinx")
     
 
 set_target_properties(documentation PROPERTIES FOLDER documentation)
-install(DIRECTORY ${DOC_DIR}/html TYPE DOC)
+install(DIRECTORY ${SPHINX_HTML_DIR} TYPE DOC)
 

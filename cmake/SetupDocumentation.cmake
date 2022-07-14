@@ -41,7 +41,7 @@ find_package (Python3 COMPONENTS Interpreter REQUIRED)
 
 ## install the dependencies
 if(XAD_RECONFIGURE_VENV)
-    execute_process(COMMAND "${Python3_EXECUTABLE}" -m pip install --upgrade pip)
+    execute_process(COMMAND "${Python3_EXECUTABLE}" -m pip install --upgrade pip wheel)
     execute_process(COMMAND "${Python3_EXECUTABLE}" -m pip install -r "${PROJECT_SOURCE_DIR}/requirements.txt")
     set (XAD_RECONFIGURE_VENV FALSE CACHE BOOL "Force reconfigure Sphinx Venv" FORCE)
 endif()
@@ -57,6 +57,19 @@ mark_as_advanced(SPHINX_EXECUTABLE)
 if(NOT SPHINX_EXECUTABLE)
     message(FATAL_ERROR "Could not find sphinx - please delete ${PROJECT_BINARY_DIR}/venv to re-create the environment")
 endif()
+
+## we also need clang-format
+find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format
+    HINTS
+        "${PROJECT_BINARY_DIR}/venv"
+    PATH_SUFFIXES bin Scripts
+    DOC "Clang format executable for docs"
+)
+mark_as_advanced(CLANG_FORMAT_EXECUTABLE)
+if(NOT CLANG_FORMAT_EXECUTABLE)
+    message(FATAL_ERROR "Could not find clang-format - please delete ${PROJECT_BINARY_DIR}/venv to re-create the environment")
+endif()
+
 
 ## we also need Latex for SVG math - looks much better than mathjax
 find_package(LATEX REQUIRED)

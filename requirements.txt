@@ -22,11 +22,10 @@
 #   
 ##############################################################################
 
-sphinx ~= 4.5.0
+sphinx ~= 5.0.2
 pyenchant ~= 3.2.2
 sphinx-autobuild == 2021.3.14
 cloud_sptheme ~= 1.10.1
-doc8 >= 0.9.0
-sphinxprettysearchresults ~= 0.3.5
+doc8 >= 0.11.2
 jinja2 == 3.0.0
 sphinx-immaterial[clang-format] ~= 0.8.0
