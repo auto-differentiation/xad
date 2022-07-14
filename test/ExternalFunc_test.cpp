@@ -41,7 +41,7 @@ template <typename T>
 void g_adjoint(std::vector<T>& xa1, const T& ya1)
 {
     typename std::vector<T>::iterator i;
-    for (i = xa1.begin(); i != xa1.end(); i++) *i += ya1;
+    for (i = xa1.begin(); i != xa1.end(); ++i) *i += ya1;
 }
 
 template <class Tape>

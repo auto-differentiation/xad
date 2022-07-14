@@ -45,7 +45,7 @@ class complex_impl
   public:
     typedef T value_type;
 
-    complex_impl(const T& real = T(), const T& imag = T()) : real_(real), imag_(imag) {}
+    explicit complex_impl(const T& real = T(), const T& imag = T()) : real_(real), imag_(imag) {}
 
     template <class X>
     complex_impl(const std::complex<X>& o) : real_(o.real()), imag_(o.imag())

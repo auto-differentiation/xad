@@ -292,7 +292,7 @@ struct ADVar : public Expression<Scalar, ADVar<Scalar>>
     typedef AReal<Scalar> areal_type;
     typedef typename areal_type::tape_type tape_type;
 
-    XAD_INLINE ADVar(const AReal<Scalar>& a) : ar_(a), shouldRecord_(a.shouldRecord()) {}
+    XAD_INLINE explicit ADVar(const AReal<Scalar>& a) : ar_(a), shouldRecord_(a.shouldRecord()) {}
 
     XAD_INLINE Scalar getValue() const { return ar_.getValue(); }
 

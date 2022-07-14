@@ -33,7 +33,7 @@ namespace xad
 class Exception : public std::runtime_error
 {
   public:
-    Exception(const std::string& msg) : std::runtime_error(msg) {}
+    explicit Exception(const std::string& msg) : std::runtime_error(msg) {}
 };
 
 class TapeAlreadyActive : public Exception
@@ -45,13 +45,13 @@ class TapeAlreadyActive : public Exception
 class OutOfRange : public Exception
 {
   public:
-    OutOfRange(const std::string& msg) : Exception(msg) {}
+    explicit OutOfRange(const std::string& msg) : Exception(msg) {}
 };
 
 class DerivativesNotInitialized : public Exception
 {
   public:
-    DerivativesNotInitialized(
+    explicit DerivativesNotInitialized(
         const std::string& msg = "At least one derivative must be set before computing adjoints")
         : Exception(msg)
     {
@@ -61,7 +61,7 @@ class DerivativesNotInitialized : public Exception
 class NoTapeException : public Exception
 {
   public:
-    NoTapeException(const std::string& msg = "No active tape for the current thread")
+    explicit NoTapeException(const std::string& msg = "No active tape for the current thread")
         : Exception(msg)
     {
     }

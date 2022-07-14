@@ -40,7 +40,7 @@ struct negate_op
 template <class Scalar, class T2>
 struct scalar_add_op
 {
-    explicit XAD_INLINE scalar_add_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_add_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return a + b_; }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1); }
     Scalar b_;
@@ -49,7 +49,7 @@ struct scalar_add_op
 template <class Scalar, class T2>
 struct scalar_prod_op
 {
-    explicit XAD_INLINE scalar_prod_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_prod_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return Scalar(a * b_); }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(b_); }
     Scalar b_;
@@ -58,7 +58,7 @@ struct scalar_prod_op
 template <class Scalar, class T2>
 struct scalar_sub1_op
 {
-    explicit XAD_INLINE scalar_sub1_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_sub1_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return b_ - a; }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(-1); }
     Scalar b_;
@@ -67,7 +67,7 @@ struct scalar_sub1_op
 template <class Scalar, class T2>
 struct scalar_sub2_op
 {
-    explicit XAD_INLINE scalar_sub2_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_sub2_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return a - Scalar(b_); }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1); }
     Scalar b_;
@@ -76,7 +76,7 @@ struct scalar_sub2_op
 template <class Scalar, class T2>
 struct scalar_div1_op
 {
-    explicit XAD_INLINE scalar_div1_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_div1_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return b_ / a; }
     XAD_INLINE Scalar derivative(const Scalar& a) const { return -b_ / (a * a); }
     Scalar b_;
@@ -85,7 +85,7 @@ struct scalar_div1_op
 template <class Scalar, class T2>
 struct scalar_div2_op
 {
-    explicit XAD_INLINE scalar_div2_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_div2_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return a / b_; }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1) / b_; }
     Scalar b_;

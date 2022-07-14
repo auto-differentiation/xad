@@ -253,7 +253,7 @@ struct remainder_op
 template <class Scalar>
 struct remquo_op
 {
-    explicit XAD_INLINE remquo_op(int* quo) : quo_(quo), q_() {}
+    XAD_INLINE explicit remquo_op(int* quo) : quo_(quo), q_() {}
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const
     {
         Scalar v = remquo(a, b, &q_);
@@ -269,7 +269,7 @@ struct remquo_op
 template <class Scalar>
 struct nextafter_op
 {
-    explicit XAD_INLINE nextafter_op() {}
+    XAD_INLINE explicit nextafter_op() {}
     XAD_INLINE Scalar operator()(const Scalar& from, const Scalar& to) const 
     {
         return nextafter(from, to);
