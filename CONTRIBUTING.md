@@ -109,7 +109,6 @@ For convenience, there is a `.clang-format` file in the root of the project whic
     -   Line breaks before curly braces in other contexts are optional
     -   Short loops or functions can be defined in one line
 
-
 [pr]: https://github.com/xcelerit/xad/compare/
 
 [cla]: https://gist.github.com/xcelerit-dev/4a5c0cf1fbfed7be64308d1c2f47bd25
