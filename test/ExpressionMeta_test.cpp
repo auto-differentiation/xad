@@ -229,6 +229,7 @@ TEST(ExpressionMeta, forwardExprTraits)
     auto binx = x * x;
     auto binx2 = binx + 2. * y;
     typedef decltype(binx2) type;
+    XAD_UNUSED_VARIABLE(binx2);
 
     static_assert(xad::ExprTraits<type>::isExpr, "should be an expression");
     static_assert(!xad::ExprTraits<type>::isLiteral, "is not a literal");

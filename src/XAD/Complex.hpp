@@ -48,7 +48,7 @@ class complex_impl
     explicit complex_impl(const T& real = T(), const T& imag = T()) : real_(real), imag_(imag) {}
 
     template <class X>
-    complex_impl(const std::complex<X>& o) : real_(o.real()), imag_(o.imag())
+    explicit complex_impl(const std::complex<X>& o) : real_(o.real()), imag_(o.imag())
     {
     }
 
