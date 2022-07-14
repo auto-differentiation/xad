@@ -1,8 +1,5 @@
 name: Documentation
-on:
-  push:
-    branches:
-      - main
+on: [push, pull_request]
 permissions:
   contents: write
 jobs:
@@ -22,10 +19,19 @@ jobs:
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release -DXAD_BUILD_DOCS=ON -DXAD_DOCS_ONLY=ON
           cmake --build . --target documentation
+          rm -f doc/html/.buildinfo
+
+      - name: Upload as artifact
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: Documentation
+          path: build/doc/html
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: build/doc/out/html
+          folder: build/doc/html
           git-config-name: github-actions[bot]
           git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
+          dry-run: ${{ github.ref != 'ref/heads/main' }}  # dry run if not on main branch
+          

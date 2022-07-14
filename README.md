@@ -44,11 +44,11 @@ Contents:
 
 ### Prerequisites
 
-- [Cmake][cmake], version 3.15 or newer
+- [CMake][cmake], version 3.15 or newer
 - Linux: GCC 4.8 or newer, or Clang 4 or newer
 - Windows:
   - Visual Studio 2015 or newer
-  - Visual Studio with clang toolset, 2019 or newer
+  - Visual Studio with Clang toolset, 2019 or newer
 - Git client
 
 ### Cloning the Repository

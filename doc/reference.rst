@@ -2,6 +2,9 @@
    Copyright (C) 2010-2022 Xcelerit Computing Ltd.
    See the file index.rst for copying conditions.
 
+.. meta::
+   :description: Reference manual of the XAD C++ automatic differentiation library.
+
 Reference
 =========
 

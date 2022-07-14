@@ -1,7 +1,10 @@
 .. This file is part of the XAD user manual.
    Copyright (C) 2010-2022 Xcelerit Computing Ltd.
    See the file index.rst for copying conditions. 
-   
+
+.. meta::
+   :description: Introduction to the XAD C++ automatic differentiation library and its features.
+
 .. _intro:
 
 Introduction

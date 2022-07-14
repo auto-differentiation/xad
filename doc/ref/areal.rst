@@ -2,6 +2,7 @@
    Copyright (C) 2010-2022 Xcelerit Computing Ltd.
    See the file index.rst for copying conditions. 
    
+
 .. _ref-areal:
 
 Adjoint Mode Type ``AReal``

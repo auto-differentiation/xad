@@ -1,6 +1,9 @@
 .. This file is part of the XAD user manual.
    Copyright (C) 2010-2022 Xcelerit Computing Ltd.
    See the file index.rst for copying conditions.
+
+.. meta::
+   :description: How to handle external functions in the XAD C++ automatic differentiation library.
     
 .. _external:
 

@@ -26,34 +26,8 @@
 #   
 ##############################################################################
 
-file(MAKE_DIRECTORY ${DOC_DEST_DIR})
-
-# removing without underscores
-execute_process(
-     COMMAND ${CMAKE_COMMAND} -E copy_directory ${DOC_TMP_DIR}/_static ${DOC_DEST_DIR}/static
-     COMMAND ${CMAKE_COMMAND} -E copy_directory ${DOC_TMP_DIR}/_images ${DOC_DEST_DIR}/images
-)
-
-# convert references to these underscore directories
-# note: we explicitly ignore the .inv file here - no need for intersphinx references
-file(GLOB base_files
-     LIST_DIRECTORIES false
-     RELATIVE ${DOC_TMP_DIR}
-     ${DOC_TMP_DIR}/*.html)
-file(GLOB ref_files
-     LIST_DIRECTORIES false
-     RELATIVE ${DOC_TMP_DIR}
-     ${DOC_TMP_DIR}/ref/*.html)
-
-set(srcfiles ${base_files} ${ref_files})
-foreach(srcfile IN LISTS srcfiles)
-     file(READ ${DOC_TMP_DIR}/${srcfile} contents)
-     string(REPLACE "_static/" "static/" contents "${contents}")
-     string(REPLACE "_images/" "images/" contents "${contents}")
-     file(WRITE ${DOC_DEST_DIR}/${srcfile} "${contents}")
-endforeach() 
-
-# add a .nojekyll file for github
-file(TOUCH  ${DOC_DEST_DIR}/.nojekyll)
+# process the sitemap.xml, removing index.html to root
+file(READ ${SPHINX_HTML_DIR}/sitemap.xml sitemap)
+string(REPLACE "https://xad.xcelerit.com/index.html" "https://xad.xcelerit.com/" sitemap "${sitemap}")
+file(WRITE ${SPHINX_HTML_DIR}/sitemap.xml "${sitemap}")
     
-     

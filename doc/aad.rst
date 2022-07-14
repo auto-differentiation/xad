@@ -2,6 +2,9 @@
    Copyright (C) 2010-2022 Xcelerit Computing Ltd.
    See the file index.rst for copying conditions. 
    
+.. meta::
+   :description: Required mathematical background for the XAD C++ automatic differentiation library.
+
 .. _aad:
 
 Algorithmic Differentiation Background
