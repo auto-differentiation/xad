@@ -9,56 +9,56 @@
 [![Coverage Status](https://coveralls.io/repos/github/xcelerit/XAD/badge.svg?branch=main)](https://coveralls.io/github/xcelerit/XAD?branch=main)
 
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/xcelerit/XAD.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/xcelerit/XAD/context:cpp)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/42f40022f8ef447da51a178f684eb19d)](https://www.codacy.com/gh/xcelerit/XAD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=xcelerit/XAD&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/42f40022f8ef447da51a178f684eb19d)](https://www.codacy.com/gh/xcelerit/XAD/dashboard)
 
 XAD is a fast and comprehensive C++ library for automatic differentiation by Xcelerit.
 It targets production-quality code at any scale, striving for both ease of use and high performance.
 
 Key features:
 
-- Forward and adjoint mode for any order, using operator-overloading
-- Checkpointing support (for tape memory management)
-- External functions interface (to integrate external libraries)
-- Thread-safe tape
-- Formal exception-safety guarantees
-- High performance
-- Battle-tested in large production code bases
+-   Forward and adjoint mode for any order, using operator-overloading
+-   Checkpointing support (for tape memory management)
+-   External functions interface (to integrate external libraries)
+-   Thread-safe tape
+-   Formal exception-safety guarantees
+-   High performance
+-   Battle-tested in large production code bases
 
 The documentation of the latest version is available [here](https://xad.xcelerit.com).
 AAD training, consultancy, and commercial licensing is available from [Xcelerit](https://www.xcelerit.com/adjoint-algorithmic-differentiation/).
 
 Contents:
 
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Cloning the Repository](#cloning-the-repository)
-  - [Building](#building)
-  - [Running the tests](#running-the-tests)
-  - [Installing](#installing)
-- [Tuning Behaviour and Performance](#tuning-behaviour-and-performance)
-- [Building the User Documentation](#building-the-user-documentation)
-- [Integrating into Client Code](#integrating-into-client-code)
-  - [Approach 1: Submodule + CMake](#approach-1-submodule--cmake)
-  - [Approach 2: FetchContent + CMake](#approach-2-fetchcontent--cmake)
-  - [Approach 3: Install XAD and Link](#approach-3-install-xad-and-link)
-- [Getting Help](#getting-help)
-- [Planned Features](#planned-features)
-- [Contributing](#contributing)
-- [Versioning](#versioning)
-- [History](#history)
-- [Authors](#authors)
-- [License](#license)
+-   [Getting Started](#getting-started)
+    -   [Prerequisites](#prerequisites)
+    -   [Cloning the Repository](#cloning-the-repository)
+    -   [Building](#building)
+    -   [Running the tests](#running-the-tests)
+    -   [Installing](#installing)
+-   [Tuning Behaviour and Performance](#tuning-behaviour-and-performance)
+-   [Building the User Documentation](#building-the-user-documentation)
+-   [Integrating into Client Code](#integrating-into-client-code)
+    -   [Approach 1: Submodule + CMake](#approach-1-submodule--cmake)
+    -   [Approach 2: FetchContent + CMake](#approach-2-fetchcontent--cmake)
+    -   [Approach 3: Install XAD and Link](#approach-3-install-xad-and-link)
+-   [Getting Help](#getting-help)
+-   [Planned Features](#planned-features)
+-   [Contributing](#contributing)
+-   [Versioning](#versioning)
+-   [History](#history)
+-   [Authors](#authors)
+-   [License](#license)
 
 ## Getting Started
 
 ### Prerequisites
 
-- [CMake][cmake], version 3.15 or newer
-- Linux: GCC 4.8 or newer, or Clang 4 or newer
-- Windows:
-  - Visual Studio 2015 or newer
-  - Visual Studio with Clang toolset, 2019 or newer
-- Git client
+-   [CMake][cmake], version 3.15 or newer
+-   Linux: GCC 4.8 or newer, or Clang 4 or newer
+-   Windows:
+    -   Visual Studio 2015 or newer
+    -   Visual Studio with Clang toolset, 2019 or newer
+-   Git client
 
 ### Cloning the Repository
 
@@ -68,7 +68,7 @@ Contents:
 
 ### Building
 
-1. Create a directory for the build artefacts
+1.  Create a directory for the build artefacts
 
 ```bash
 cd xad
@@ -76,28 +76,28 @@ mkdir build
 cd build
 ```
 
-2. Run cmake to generate the build files
+2.  Run cmake to generate the build files
 
-```
+```bash
 cmake ..
 ```
 
-3. Build using the native build system or with the generic cmake build command
+3.  Build using the native build system or with the generic cmake build command
 
-```
+```bash
 cmake --build .
 ```
 ### Running the tests
 
 The tests are executed with the `test` target:
 
-```
+```bash
 cmake --build . --target test
 ```
 
 Alternatively, `ctest` can be used to run them:
 
-```
+```bash
 ctest
 ```
 
@@ -109,7 +109,7 @@ can be executed directly.
 Run the `install` build target to place the header files, library files, docs, and samples
 into the `CMAKE_INSTALL_PREFIX`.
 
-```
+```bash
 cmake --install .
 ```
 
@@ -153,19 +153,19 @@ XAD library has already been compiled (in `Config.hpp` or client code compiler d
 
 The user documentation uses [Sphinx][sphinx].
 
-1. Install the pre-requisites
-   * [Python 3](https://www.python.org/) (we recommend Python 3.7 or newer)
-   * A LaTeX installation (required for rendering the math formulas):
-      - for Windows, we recommend the basic [MiKTeX](https://miktex.org) package,
-       and enabling automatic install of missing ones
-      - for Linux, we recommend `texlive-full`
-2. Enable the `BUILD_DOC` cmake variable and re-run cmake.
-   Note that this will create a Python virtual environment within the build directory
-   and install the dependencies in [requirements.txt](requirements.txt) into it.
-   If any dependencies changed, the CMake variable `XAD_RECONFIGURE_VENV` can be
-   set to `TRUE` - this re-runs the dependency installation during the next CMake run.
+1.  Install the pre-requisites
+    -   [Python 3](https://www.python.org/) (we recommend Python 3.7 or newer)
+    -   A LaTeX installation (required for rendering the math formulas):
+        -   for Windows, we recommend the basic [MiKTeX](https://miktex.org) package,
+            and enabling automatic install of missing ones
+        -   for Linux, we recommend `texlive-full`
+2.  Enable the `BUILD_DOC` cmake variable and re-run cmake.
+    Note that this will create a Python virtual environment within the build directory
+    and install the dependencies in [requirements.txt](requirements.txt) into it.
+    If any dependencies changed, the CMake variable `XAD_RECONFIGURE_VENV` can be
+    set to `TRUE` - this re-runs the dependency installation during the next CMake run.
 3. Then build the docs:
-```
+```bash
 cmake --build . --target documentation
 ```
 This generates the html user documentation in `doc/out` within the build tree.
@@ -174,17 +174,15 @@ For working on the documentation, it is more convenient to work within the
 Python environment directly, after the steps above have been performed in CMake once.
 Then you can activate the environment on the command line:
 
-* `<buildfolder>\venv\Scripts\activate.bat` (Windows)
-* `source <buildfolder>/venv/bin/activate` (Linux)
+-   `<buildfolder>\venv\Scripts\activate.bat` (Windows)
+-   `source <buildfolder>/venv/bin/activate` (Linux)
 
-And run sphinx autobuild (which watches for changes in the source files, re-runs itself, and opens a live-view on http://127.0.0.1:8000/index.html):
+And run sphinx autobuild (which watches for changes in the source files, re-runs itself, and opens a live-view on <http://127.0.0.1:8000/index.html>):
 
-```
+```bash
 sphinx-autobuild -d <buildfolder>\doc\_doctrees -c <buildfolder>\doc\_build doc <buildfolder>\doc\html
 ```
 (Replace `<buildfolder>` with the CMake binary directory that you have created above.)
-
-
 
 ## Integrating into Client Code
 
@@ -197,7 +195,7 @@ by adding it as a git submodule.
 
 To add the submodule in a subdirectory `extern/xad` (assuming that you are hosting on GitHub):
 
-```
+```bash
 git submodule add ../../xcelerit/xad.git extern/xad
 ```
 
@@ -266,13 +264,12 @@ cmake /path/to/src -DCMAKE_PREFIX_PATH=/path/to/xad/installprefix
 
 If your project does not use CMake, an installed package can also be linked by adding the following settings:
 
-* Add `/path/to/xad/include` to the compiler's include path
-* Enable at least C++ 11 support (`-std=c++11` in GCC)
-* Enable threading (requires `-pthread` in GCC for compile and link)
-* Add the library path `/path/to/xad/lib` to the linker search paths
-* Link `libxad.a` (Release) or `libxad_d.a` (Debug) - or the alternative names
-  on Windows
-
+-   Add `/path/to/xad/include` to the compiler's include path
+-   Enable at least C++ 11 support (`-std=c++11` in GCC)
+-   Enable threading (requires `-pthread` in GCC for compile and link)
+-   Add the library path `/path/to/xad/lib` to the linker search paths
+-   Link `libxad.a` (Release) or `libxad_d.a` (Debug) - or the alternative names
+    on Windows
 
 ## Getting Help
 
@@ -280,19 +277,17 @@ If you have found an issue, want to report a bug, or have a feature request, ple
 
 For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/xcelerit/XAD/discussion).
 
-
 ## Planned Features
 
 These features are planned for the near future.
 You are very welcome to contribute towards these (or other) features - please contact the project maintainers before.
 
-* *Vector Adjoint Mode* - allow rolling back multiple adjoints at once in the tape,
-  e.g. for functions with multiple outputs.
-* *Vector Forward Mode* - Calculate multiple forward-mode derivatives at once (for multiple derivatives)
-* *Jacobian and Hessian Functions* - higher-level functions to compute full Jacobians or Hessians,
-  possibly in a multi-threaded fashion
-* *Disable Expression Templates* - allow users to disable expression templates, for debugging purposes
-
+-   _Vector Adjoint Mode_ - allow rolling back multiple adjoints at once in the tape,
+    e.g. for functions with multiple outputs.
+-   _Vector Forward Mode_ - Calculate multiple forward-mode derivatives at once (for multiple derivatives)
+-   _Jacobian and Hessian Functions_ - higher-level functions to compute full Jacobians or Hessians,
+    possibly in a multi-threaded fashion
+-   _Disable Expression Templates_ - allow users to disable expression templates, for debugging purposes
 
 ## Contributing
 
@@ -323,13 +318,13 @@ rebranded as XAD 1.0.0.
 
 ## Authors
 
-* Various contributors from Xcelerit
-* See also the list of [contributors](https://github.com/xcelerit/xad/contributors) who participated in this project.
+-   Various contributors from Xcelerit
+-   See also the list of [contributors](https://github.com/xcelerit/xad/contributors) who participated in this project.
 
 ## License
 
 This project is licensed under the GNU Affero General Public License - see the [LICENSE.md](LICENSE.md) file for details.
 
-
 [cmake]: https://cmake.org
+
 [sphinx]: http://www.sphinx-doc.org
