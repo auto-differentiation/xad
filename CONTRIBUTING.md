@@ -14,7 +14,7 @@ git clone https://github.com/yourusername/xad.git
 
 3.  Create a feature branch, typically based on master, for your change
 
-4. Create a feature branch, typically based on master, for your change
+4.  Create a feature branch, typically based on master, for your change
 
 ```bash
 git checkout -b feature/my-change main

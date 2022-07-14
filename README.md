@@ -168,7 +168,7 @@ The user documentation uses [Sphinx][sphinx].
     If any dependencies changed, the CMake variable `XAD_RECONFIGURE_VENV` can be
     set to `TRUE` - this re-runs the dependency installation during the next CMake run.
 
-3. Then build the docs:
+3.  Then build the docs:
 ```bash
 cmake --build . --target documentation
 ```
