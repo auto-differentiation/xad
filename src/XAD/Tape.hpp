@@ -49,7 +49,7 @@ template <class Tape>
 class ScopedNestedRecording
 {
   public:
-    ScopedNestedRecording(Tape* s) : s_(s) { s_->newNestedRecording(); }
+    explicit ScopedNestedRecording(Tape* s) : s_(s) { s_->newNestedRecording(); }
     ~ScopedNestedRecording() { s_->endNestedRecording(); }
     void computeAdjoints() { s_->computeAdjoints(); }
     void incrementAdjoint(typename Tape::slot_type slot, const typename Tape::value_type& value)
@@ -280,7 +280,7 @@ class Tape
 
     struct SubRecording
     {
-        SubRecording(Tape<Real>* parent)
+        explicit SubRecording(Tape<Real>* parent)
             : numDerivatives_(),
               iDerivative_(),
               maxDerivative_(),

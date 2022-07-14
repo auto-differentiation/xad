@@ -63,13 +63,6 @@ TEST(Tape, canInitializeDeactivated)
     EXPECT_NE(nullptr, Tape<float>::getActive());
 }
 
-inline xad::Tape<double> moveTapeOut(xad::Tape<double>*& addr)
-{
-    xad::Tape<double> s(true);
-    addr = &s;
-    return s;
-}
-
 TEST(Tape, isMovable)
 {
     xad::Tape<double> s(false);

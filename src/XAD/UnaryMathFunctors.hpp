@@ -136,7 +136,7 @@ struct fabs_op : abs_op<Scalar>
     template <class Scalar, class T2>                                                              \
     struct scalar_##func##2_op                                                                     \
     {                                                                                              \
-        explicit XAD_INLINE scalar_##func##2_op(const T2& b_t) : b(b_t) {}                         \
+        XAD_INLINE explicit scalar_##func##2_op(const T2& b_t) : b(b_t) {}                         \
         XAD_INLINE Scalar operator()(const Scalar& a) const { return func(a, b); }                 \
         XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const                       \
         {                                                                                          \
@@ -149,7 +149,7 @@ struct fabs_op : abs_op<Scalar>
     template <class Scalar, class T2>                                                              \
     struct scalar_##func##1_op                                                                     \
     {                                                                                              \
-        explicit XAD_INLINE scalar_##func##1_op(const T2& b_t) : b(b_t) {}                         \
+        XAD_INLINE explicit scalar_##func##1_op(const T2& b_t) : b(b_t) {}                         \
         XAD_INLINE Scalar operator()(const Scalar& a) const { return func(b, a); }                 \
         XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const                       \
         {                                                                                          \
@@ -185,7 +185,7 @@ XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
 template <class Scalar>
 struct ldexp_op
 {
-    explicit XAD_INLINE ldexp_op(int exp) : exp_(exp) {}
+    XAD_INLINE explicit ldexp_op(int exp) : exp_(exp) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return ldexp(a, exp_); }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1 << exp_); }
     int exp_;
@@ -194,7 +194,7 @@ struct ldexp_op
 template <class Scalar>
 struct frexp_op
 {
-    explicit XAD_INLINE frexp_op(int* exp) : exp_(exp) {}
+    XAD_INLINE explicit frexp_op(int* exp) : exp_(exp) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return frexp(a, exp_); }
     XAD_INLINE Scalar derivative(const Scalar&) const
     {
@@ -230,7 +230,7 @@ struct modf_helper<Scalar, T, true>
 template <class Scalar, class T>
 struct modf_op
 {
-    explicit XAD_INLINE modf_op(T* iptr) : iptr_(iptr) {}
+    XAD_INLINE explicit modf_op(T* iptr) : iptr_(iptr) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const
     {
         return detail::modf_helper<Scalar, T, ExprTraits<T>::isExpr>::apply(a, iptr_);
@@ -281,7 +281,7 @@ struct scalar_smooth_abs2_op
 template <class Scalar, class T2>
 struct scalar_smooth_abs1_op
 {
-    explicit XAD_INLINE scalar_smooth_abs1_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_smooth_abs1_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const
     {
         if (abs(b_) > a)
@@ -314,7 +314,7 @@ struct scalar_smooth_abs1_op
 template <class Scalar, class T2>
 struct scalar_max_op
 {
-    explicit XAD_INLINE scalar_max_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_max_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return max(a, b_); }
     XAD_INLINE Scalar derivative(const Scalar& a) const
     {
@@ -328,13 +328,13 @@ struct scalar_max_op
 template <class Scalar, class T2>
 struct scalar_fmax_op : scalar_max_op<Scalar, T2>
 {
-    explicit XAD_INLINE scalar_fmax_op(const T2& b) : scalar_max_op<Scalar, T2>(b) {}
+    XAD_INLINE explicit scalar_fmax_op(const T2& b) : scalar_max_op<Scalar, T2>(b) {}
 };
 
 template <class Scalar, class T2>
 struct scalar_min_op
 {
-    explicit XAD_INLINE scalar_min_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_min_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return min(a, b_); }
     XAD_INLINE Scalar derivative(const Scalar& a) const
     {
@@ -348,19 +348,19 @@ struct scalar_min_op
 template <class Scalar, class T2>
 struct scalar_fmin_op : scalar_min_op<Scalar, T2>
 {
-    explicit XAD_INLINE scalar_fmin_op(const T2& b) : scalar_min_op<Scalar, T2>(b) {}
+    XAD_INLINE explicit scalar_fmin_op(const T2& b) : scalar_min_op<Scalar, T2>(b) {}
 };
 
 template <class Scalar, class T2>
 struct scalar_remainder1_op
 {
-    explicit XAD_INLINE scalar_remainder1_op(const T2& b) : b_(b) {}
+    XAD_INLINE explicit scalar_remainder1_op(const T2& b) : b_(b) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return remainder(b_, a); }
     XAD_INLINE Scalar derivative(const Scalar& a) const
     {
         // function is rare enough that there's no need to optimize this better
         int n_;
-        remquo(b_, a, &n_);
+        (void)remquo(b_, a, &n_);
         return Scalar(-n_);
     }
     T2 b_;
@@ -369,7 +369,7 @@ struct scalar_remainder1_op
 template <class Scalar, class T2>
 struct scalar_remainder2_op
 {
-    explicit XAD_INLINE scalar_remainder2_op(const T2& b) : b_(b) {}
+    XAD_INLINE explicit scalar_remainder2_op(const T2& b) : b_(b) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return remainder(a, b_); }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1); }
     T2 b_;

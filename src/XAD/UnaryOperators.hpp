@@ -110,7 +110,7 @@ XAD_INLINE UnaryExpr<Scalar, ldexp_op<Scalar>, Expr> ldexp(const Expression<Scal
 template <class Scalar>
 XAD_INLINE UnaryExpr<Scalar, ldexp_op<Scalar>, ADVar<Scalar>> ldexp(const AReal<Scalar>& x, int y)
 {
-    return UnaryExpr<Scalar, ldexp_op<Scalar>, ADVar<Scalar>>(x, ldexp_op<Scalar>(y));
+    return UnaryExpr<Scalar, ldexp_op<Scalar>, ADVar<Scalar>>(ADVar<Scalar>(x), ldexp_op<Scalar>(y));
 }
 
 // frexp
@@ -125,7 +125,7 @@ template <class Scalar>
 XAD_INLINE UnaryExpr<Scalar, frexp_op<Scalar>, ADVar<Scalar>> frexp(const AReal<Scalar>& x,
                                                                     int* exp)
 {
-    return UnaryExpr<Scalar, frexp_op<Scalar>, ADVar<Scalar>>(x, frexp_op<Scalar>(exp));
+    return UnaryExpr<Scalar, frexp_op<Scalar>, ADVar<Scalar>>(ADVar<Scalar>(x), frexp_op<Scalar>(exp));
 }
 
 // modf - only enabled if iptr is nested type (double) or Scalar
@@ -140,7 +140,7 @@ template <class Scalar, class T>
 XAD_INLINE UnaryExpr<Scalar, modf_op<Scalar, T>, ADVar<Scalar>> modf(const AReal<Scalar>& x,
                                                                      T* iptr)
 {
-    return UnaryExpr<Scalar, modf_op<Scalar, T>, ADVar<Scalar>>(x, modf_op<Scalar, T>(iptr));
+    return UnaryExpr<Scalar, modf_op<Scalar, T>, ADVar<Scalar>>(ADVar<Scalar>(x), modf_op<Scalar, T>(iptr));
 }
 
 // we put max/min here explicitly, as the 2 arguments to them must match
