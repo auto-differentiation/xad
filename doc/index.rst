@@ -9,6 +9,9 @@
    no Back-Cover Texts.  A copy of the license is included in the
    section entitled "GNU Free Documentation License"
 
+.. meta::
+   :description: A fast and comprehensive open-source C++ library for automatic differentiation
+
 XAD - User Manual
 =================
 

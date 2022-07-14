@@ -46,6 +46,7 @@ add_custom_target(documentation
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${SPHINX_HTML_DIR}"
     COMMAND ${CMAKE_COMMAND} -E touch "${SPHINX_HTML_DIR}/.nojekyll"
+    COMMAND ${CMAKE_COMMAND} -DSPHINX_HTML_DIR="${SPHINX_HTML_DIR}" -P "${PROJECT_SOURCE_DIR}/cmake/SphinxPostProcess.cmake" 
     COMMENT "Building HTML documentation with Sphinx")
     
 

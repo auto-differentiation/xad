@@ -2,6 +2,9 @@
    Copyright (C) 2010-2022 Xcelerit Computing Ltd.
    See the file index.rst for copying conditions. 
 
+.. meta::
+   :description: Basic usage of the XAD C++ automatic differentiation library, forward and adjoint modes.
+
 .. _tutorial:
 
 Basic Usage

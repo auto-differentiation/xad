@@ -93,11 +93,11 @@ clang_format_command='@CLANG_FORMAT_EXECUTABLE@'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#html_theme = 'sphinxdoc'
 html_theme = "sphinx_immaterial"
 html_css_files = [
   'style.css'
 ]
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -167,7 +167,7 @@ html_logo = '@CMAKE_CURRENT_SOURCE_DIR@/images/logo.svg'
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+#html_favicon = '@CMAKE_CURRENT_SOURCE_DIR@/favicon/favicon.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -177,7 +177,7 @@ html_static_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_static']
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
 # directly to the root of the documentation.
-#html_extra_path = []
+html_extra_path = ['@CMAKE_CURRENT_SOURCE_DIR@/favicon']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
