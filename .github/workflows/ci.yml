@@ -257,7 +257,7 @@ jobs:
           cd build
           lcov --no-external --capture --directory ${{ github.workspace }} --output-file ./tmp/lcov_run.info
           lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info --output-file ./tmp/lcov_total.info
-          lcov --remove ./tmp/lcov_total.info "$PWD/_deps/*" "$PWD/test/*" "$PWD/samples/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --output-file ./coverage/lcov.info
+          lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --output-file ./coverage/lcov.info
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@master
         with:
