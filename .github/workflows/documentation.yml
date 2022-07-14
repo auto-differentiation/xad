@@ -33,5 +33,5 @@ jobs:
           folder: build/doc/html
           git-config-name: github-actions[bot]
           git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
-          dry-run: ${{ github.ref != 'ref/heads/main' }}  # dry run if not on main branch
+          dry-run: ${{ github.ref != 'refs/heads/main' }}  # dry run if not on main branch
           
