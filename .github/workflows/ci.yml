@@ -59,7 +59,7 @@ jobs:
           ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }})
           path: build_${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}/test_results.xml
@@ -134,7 +134,7 @@ jobs:
           ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }})
           path: build_${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}/test_results.xml
@@ -193,7 +193,7 @@ jobs:
           ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Test Results (macos ${{ matrix.config }})
           path: build_${{ matrix.config }}/test_results.xml
@@ -281,7 +281,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Event File
           path: ${{ github.event_path }}
