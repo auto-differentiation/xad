@@ -248,7 +248,7 @@ struct modf_op
 template <class Scalar, class T2>
 struct scalar_smooth_abs2_op
 {
-    XAD_INLINE scalar_smooth_abs2_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE explicit scalar_smooth_abs2_op(const T2& b) : b_(Scalar(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const
     {
         if (abs(a) > b_)

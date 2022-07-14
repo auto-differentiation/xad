@@ -2,7 +2,6 @@
 
 ![GitHub](https://img.shields.io/github/license/xcelerit/xad)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/xcelerit/xad)
-![Lines of code](https://img.shields.io/tokei/lines/github/xcelerit/xad)
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/xcelerit/xad/CI)
 [![Tests Badge](https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg)](https://github.com/xcelerit/xad/actions?query=workflow%3ACI)

@@ -7,6 +7,6 @@ int main()
 {
     xad::AD value = 1.0;
     xad::AD div = 100.0;
-    bool neg = false;
-    xad::AD res = (neg) ? -(value / div) : (value / div);
+    xad::AD res = value / div < 1.0 ? -(value / div) : (value / div);
+    XAD_UNUSED_VARIABLE(res);
 }

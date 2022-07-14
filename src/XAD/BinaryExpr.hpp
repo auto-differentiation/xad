@@ -39,7 +39,7 @@ struct BinaryExpr : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2> >
 {
     typedef detail::BinaryDerivativeImpl<OperatorTraits<Op>::useResultBasedDerivatives == 1>
         der_impl;
-    XAD_INLINE BinaryExpr(Expr1 a, Expr2 b, Op op = Op())
+    XAD_INLINE BinaryExpr(const Expr1& a, const Expr2& b, Op op = Op())
         : a_(a), b_(b), op_(op), v_(op_(a_.value(), b_.value()))
     {
     }
