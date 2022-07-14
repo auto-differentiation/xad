@@ -155,15 +155,19 @@ The user documentation uses [Sphinx][sphinx].
 
 1.  Install the pre-requisites
     -   [Python 3](https://www.python.org/) (we recommend Python 3.7 or newer)
+    
     -   A LaTeX installation (required for rendering the math formulas):
         -   for Windows, we recommend the basic [MiKTeX](https://miktex.org) package,
             and enabling automatic install of missing ones
+
         -   for Linux, we recommend `texlive-full`
+
 2.  Enable the `BUILD_DOC` cmake variable and re-run cmake.
     Note that this will create a Python virtual environment within the build directory
     and install the dependencies in [requirements.txt](requirements.txt) into it.
     If any dependencies changed, the CMake variable `XAD_RECONFIGURE_VENV` can be
     set to `TRUE` - this re-runs the dependency installation during the next CMake run.
+
 3. Then build the docs:
 ```bash
 cmake --build . --target documentation
@@ -265,9 +269,13 @@ cmake /path/to/src -DCMAKE_PREFIX_PATH=/path/to/xad/installprefix
 If your project does not use CMake, an installed package can also be linked by adding the following settings:
 
 -   Add `/path/to/xad/include` to the compiler's include path
+
 -   Enable at least C++ 11 support (`-std=c++11` in GCC)
+
 -   Enable threading (requires `-pthread` in GCC for compile and link)
+
 -   Add the library path `/path/to/xad/lib` to the linker search paths
+
 -   Link `libxad.a` (Release) or `libxad_d.a` (Debug) - or the alternative names
     on Windows
 
@@ -284,9 +292,12 @@ You are very welcome to contribute towards these (or other) features - please co
 
 -   _Vector Adjoint Mode_ - allow rolling back multiple adjoints at once in the tape,
     e.g. for functions with multiple outputs.
+
 -   _Vector Forward Mode_ - Calculate multiple forward-mode derivatives at once (for multiple derivatives)
+
 -   _Jacobian and Hessian Functions_ - higher-level functions to compute full Jacobians or Hessians,
     possibly in a multi-threaded fashion
+
 -   _Disable Expression Templates_ - allow users to disable expression templates, for debugging purposes
 
 ## Contributing
