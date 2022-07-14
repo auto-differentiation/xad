@@ -1,9 +1,15 @@
 # XAD
 
+![GitHub](https://img.shields.io/github/license/xcelerit/xad)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/xcelerit/xad)
+![Lines of code](https://img.shields.io/tokei/lines/github/xcelerit/xad)
+
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/xcelerit/xad/CI)
 [![Tests Badge](https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg)](https://github.com/xcelerit/xad/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/xcelerit/XAD/badge.svg?branch=main)](https://coveralls.io/github/xcelerit/XAD?branch=main)
 
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/xcelerit/XAD.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/xcelerit/XAD/context:cpp)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/42f40022f8ef447da51a178f684eb19d)](https://www.codacy.com/gh/xcelerit/XAD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=xcelerit/XAD&amp;utm_campaign=Badge_Grade)
 
 XAD is a fast and comprehensive C++ library for automatic differentiation by Xcelerit.
 It targets production-quality code at any scale, striving for both ease of use and high performance.
