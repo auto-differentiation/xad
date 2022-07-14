@@ -22,7 +22,7 @@ jobs:
           rm -f doc/html/.buildinfo
 
       - name: Upload as artifact
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v3
         with:
           name: Documentation
           path: build/doc/html
