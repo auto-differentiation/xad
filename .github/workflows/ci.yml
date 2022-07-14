@@ -82,7 +82,6 @@ jobs:
              -DCMAKE_PREFIX_PATH="%GITHUB_WORKSPACE%/%INSTALL_DIR%"
           cmake --build .
   
-
   build_and_test_linux:
     runs-on: ubuntu-latest
     strategy:
@@ -213,6 +212,70 @@ jobs:
             -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/$INSTALL_DIR"
           cmake --build .
 
+  coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        reuse_slots: [OFF, ON]
+    steps:
+      - name: setup
+        run: |
+          sudo apt update
+          sudo apt install -y ccache ninja-build lcov
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.2
+        with:
+          key: coverage-${{ matrix.reuse_slots }}
+      - uses: actions/checkout@v3
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_FLAGS="-O0 -g -fprofile-arcs -ftest-coverage" \
+            -DCMAKE_EXE_LINKER_FLAGS="-lgcov"
+      - name: build
+        run: |
+          cd build
+          cmake --build .
+      - name: Capture baseline
+        run: |
+          cd build
+          mkdir coverage tmp
+          lcov --no-external --capture --initial --directory ${{ github.workspace }} --output-file ./tmp/lcov_base.info
+      - name: Run tests
+        run: |
+          cd build
+          ctest --no-compress-output --output-on-failure -j3
+      - name: Capture coverage
+        run: |
+          cd build
+          lcov --no-external --capture --directory ${{ github.workspace }} --output-file ./tmp/lcov_run.info
+          lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info --output-file ./tmp/lcov_total.info
+          lcov --remove ./tmp/lcov_total.info "$PWD/_deps/*" "$PWD/test/*" "$PWD/samples/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --output-file ./coverage/lcov.info
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          flag-name: reuseslots-${{ matrix.reuse_slots }}
+          path-to-lcov: build/coverage/lcov.info
+          parallel: true
+  
+  coverage_finish:
+    needs: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
+          
   event_file:
     name: Event File
     runs-on: ubuntu-latest
