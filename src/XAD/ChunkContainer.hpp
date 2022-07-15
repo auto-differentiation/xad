@@ -84,7 +84,7 @@ inline void *aligned_alloc(size_t alignment, size_t size)
 inline void aligned_free(void* p) { ::_aligned_free(p); }
 }}
 #else
-namespace xad { namespace detail {±
+namespace xad { namespace detail {
 inline void *aligned_alloc(size_t alignment, size_t size)
 {
     if (size < alignment)
