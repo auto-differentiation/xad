@@ -107,3 +107,59 @@ TEST(ChunkContainer, move_assign)
     EXPECT_THAT(addr, Eq(&chk2[0]));
     EXPECT_THAT(addr, Ne(addr2));
 }
+
+TEST(ChunkContainer, multichunk)
+{
+    ChunkContainer<int, 2> chk;
+    chk.push_back(1);
+    chk.push_back(2);
+    chk.push_back(3);
+    chk.push_back(4);
+    chk.push_back(5);
+    chk.push_back(6);
+    chk.push_back(7);
+    chk.push_back(8);
+
+    for (int i = 0; i < 8; ++i)
+        EXPECT_THAT(chk[i], Eq(i+1)) << "at " << i;
+}
+
+TEST(ChunkContainer, resize)
+{
+    ChunkContainer<int, 2> chk;
+    chk.push_back(1);
+    chk.push_back(2);
+    chk.push_back(3);
+
+    EXPECT_THAT(chk.size(), Eq(3u));
+
+    chk.resize(7);
+    EXPECT_THAT(chk.size(), Eq(7u));
+    chk[6] = 7;
+
+    EXPECT_THAT(chk[0], Eq(1));
+    EXPECT_THAT(chk[1], Eq(2));
+    EXPECT_THAT(chk[2], Eq(3));
+    EXPECT_THAT(chk[3], Eq(0));
+    EXPECT_THAT(chk[4], Eq(0));
+    EXPECT_THAT(chk[5], Eq(0));
+    EXPECT_THAT(chk[6], Eq(7));
+}
+
+TEST(ChunkContainer, append)
+{
+    ChunkContainer<int, 4> chk;
+    chk.push_back(1);
+    chk.push_back(2);
+    chk.push_back(3);
+
+    std::vector<int> newvals = {4, 5, 6};
+    // note: we can only append sizes less than chunk size (4)
+    chk.append(newvals.begin(), newvals.end());
+
+    EXPECT_THAT(chk.size(), Eq(6u));
+
+    for (int i = 0; i < 6; ++i)
+        EXPECT_THAT(chk[i], Eq(i+1)) << "at " << i;
+}
+

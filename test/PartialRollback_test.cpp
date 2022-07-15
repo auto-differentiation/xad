@@ -149,3 +149,75 @@ TEST(PartialRollback, MultiDerivativesInNestedLoop)
         }
     }
 }
+
+TEST(PartialRollback, ClearDerivativesAfter)
+{
+    xad::AD::tape_type tape;
+    xad::AD x1 = 1.0;
+    tape.registerInput(x1);
+    xad::AD x2 = 1.2 * x1;
+    auto pos = tape.getPosition();
+    xad::AD x3 = 1.4 * x2 * x1;
+    xad::AD x4 = x2 + x3;
+    tape.registerOutput(x4);
+    derivative(x4) = 1.0;
+    derivative(x3) = 1.0;
+    derivative(x2) = 1.0;
+    derivative(x1) = 1.0;
+    tape.clearDerivativesAfter(pos);
+
+    EXPECT_THAT(derivative(x2), DoubleEq(1.));
+    EXPECT_THAT(derivative(x1), DoubleEq(1.));
+    EXPECT_THROW(derivative(x3), xad::OutOfRange);
+    EXPECT_THROW(derivative(x4), xad::OutOfRange);
+}
+
+TEST(PartialRollback, ClearFullTape)
+{
+    xad::AD r = 0.3;
+    xad::AD q = 0.4;
+    xad::AD::tape_type tape;
+    tape.registerInput(r);
+    tape.registerInput(q);
+    tape.newRecording();
+    xad::AD y = exp(r + q);
+    tape.registerOutput(y);
+    derivative(y) = 1.0;
+    tape.computeAdjoints();
+
+    double yv = value(y);
+    double dr = derivative(r);
+    double dq = derivative(q);
+    auto slotr = r.getSlot();
+    auto slotq = q.getSlot();
+    auto sloty = y.getSlot();
+
+    tape.clearAll();
+
+    xad::AD r1 = 0.3;
+    xad::AD q1 = 0.4;
+    tape.registerInput(r1);
+    tape.registerInput(q1);
+    tape.newRecording();
+    xad::AD y1 = exp(r1 + q1);
+    tape.registerOutput(y1);
+    derivative(y1) = 1.0;
+    tape.computeAdjoints();
+
+    double yv1 = value(y1);
+    double dr1 = derivative(r1);
+    double dq1 = derivative(q1);
+    auto slotr1 = r1.getSlot();
+    auto slotq1 = q1.getSlot();
+    auto sloty1 = y1.getSlot();
+
+    // slot and values should be all the same - it restarts
+
+    EXPECT_THAT(yv, DoubleEq(yv1));
+    EXPECT_THAT(dr, DoubleEq(dr1));
+    EXPECT_THAT(dq, DoubleEq(dq1));
+    EXPECT_THAT(slotr, Eq(slotr1));
+    EXPECT_THAT(slotq, Eq(slotq1));
+    EXPECT_THAT(sloty, Eq(sloty1));
+}
+

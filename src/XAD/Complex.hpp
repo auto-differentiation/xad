@@ -208,7 +208,7 @@ class complex<xad::AReal<T>> : public complex<xad::ADTypeBase<T, xad::AReal<T>>>
     }
 
     template <class X>
-    XAD_INLINE complex(
+    XAD_INLINE complex(    // cppcheck-suppress noExplicitConstructor
         const X& real,
         typename std::enable_if<xad::ExprTraits<X>::isExpr &&
                                 xad::ExprTraits<X>::direction == xad::DIR_REVERSE>::type* = nullptr)

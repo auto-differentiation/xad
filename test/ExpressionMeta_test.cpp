@@ -254,9 +254,9 @@ TEST(ExpressionMeta, reverseLiteralTraits)
 
 TEST(ExpressionMeta, reverseExprTraits)
 {
-    xad::AReal<double> x, y;
+    xad::AReal<double> x = 1., y = 1.;
     auto binx = x * x;
-    auto binx2 = binx + 2. * y;
+    auto binx2 = binx + 2. * y;   // cppcheck-suppress unreadVariable
     typedef decltype(binx2) type;
 
     static_assert(xad::ExprTraits<type>::isExpr, "should be an expression");

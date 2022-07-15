@@ -210,7 +210,7 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     }
 
     template <class Expr>
-    XAD_INLINE AReal(const Expression<Scalar, Expr>& expr);
+    XAD_INLINE AReal(const Expression<Scalar, Expr>& expr);  // cppcheck-suppress noExplicitConstructor
 
     template <class Expr>
     XAD_INLINE AReal& operator=(const Expression<Scalar, Expr>& expr);
@@ -422,7 +422,7 @@ struct FReal : public ADTypeBase<Scalar, FReal<Scalar>>
     }
 
     template <class Expr>
-    XAD_INLINE FReal(const Expression<Scalar, Expr>& expr);
+    XAD_INLINE FReal(const Expression<Scalar, Expr>& expr);    // cppcheck-suppress noExplicitConstructor
     template <class Expr>
     XAD_INLINE FReal& operator=(const Expression<Scalar, Expr>& expr);
 

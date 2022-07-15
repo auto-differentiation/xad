@@ -46,7 +46,6 @@ accepted:
 -   Write good commit messages (short one-liner, followed by a blank line, 
     followed by a more detailed explanation)
 
-
 ## Source Code Organisation
 
 -   [cmake](cmake): CMake modules and scripts used for the build
@@ -72,7 +71,7 @@ For convenience, there is a `.clang-format` file in the root of the project whic
     -   Names representing types must be mixed case, starting with upper case `CheckpointCallback`
     -   Variables must be mixed case, starting with lower case `currentRecording`
     -   Named constants must be all upper case, separated by underscores `DEFAULT_LENGTH`
-    -   Method and function names must be mixed case, starting with lower case, and must be verbs `pushStatement`
+    -   Method and function names must be mixed case, starting with lower case, and must be verbs `pushLhs`
     -   Namespace names must be all lower case `xad`
     -   Template paramters should be single character capitals, or named like types `T`, `Scalar`
     -   Private class members should have an underscore suffix `length_`

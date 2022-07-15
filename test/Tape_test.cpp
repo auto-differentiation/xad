@@ -102,6 +102,7 @@ TEST(Tape, canUnregisterInOrder)
     EXPECT_EQ(0U, s.getNumVariables());
 }
 
+
 TEST(Tape, canUnregisterOutOfOrder)
 {
     xad::Tape<double> s;
@@ -190,7 +191,6 @@ TEST(Tape, canDeriveStatements)
     s.newRecording();
     // auto z = x1*x1 + std::sin(x1);
     auto zs = s.registerVariable();
-    s.growOperations(3);
     s.pushRhs(std::cos(x1), x1s);
     s.pushRhs(x2, x1s);
     s.pushRhs(x1, x2s);
@@ -228,7 +228,6 @@ TEST(Tape, canRestartRecording)
 
     s.newRecording();
     auto zs = s.registerVariable();
-    s.growOperations(3);
     s.pushRhs(std::cos(x1), x1s);
     s.pushRhs(x2, x1s);
     s.pushRhs(x1, x2s);
@@ -253,7 +252,6 @@ TEST(Tape, canRestartRecording)
 
     // now putting y = exp(x1) + x1 / x2;
     auto ys = s.registerVariable();
-    s.growOperations(3);
     s.pushRhs(std::exp(x1), x1s);
     s.pushRhs(1.0 / x2, x1s);
     s.pushRhs(-x1 / (x2 * x2), x2s);
