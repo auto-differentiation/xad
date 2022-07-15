@@ -1718,7 +1718,7 @@ class ConstexprTest
     xad::AReal<double> test_func(xad::AReal<double> x)
     {
         xad::AReal<double> z = x;
-        x *= 1.0;
+        z *= 1.0;
         z = a1_ * z;
         z = a1_ * z;
         z = a2_ + z;
