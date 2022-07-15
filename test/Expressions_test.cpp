@@ -1292,6 +1292,7 @@ TEST(Expressions, canScalarCompare)
 {
     xad::Tape<double> s;
     xad::AD x1 = 2.1;
+    x1 *= 1.0;
 
     EXPECT_TRUE(x1 == 2.1);
     EXPECT_TRUE(x1 != 2.0);
@@ -1717,6 +1718,7 @@ class ConstexprTest
     xad::AReal<double> test_func(xad::AReal<double> x)
     {
         xad::AReal<double> z = x;
+        z *= 1.0;
         z = a1_ * z;
         z = a1_ * z;
         z = a2_ + z;

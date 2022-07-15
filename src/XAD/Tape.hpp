@@ -221,16 +221,8 @@ class Tape
     void pushRhs(Real&& multiplier, slot_type slot);
     void pushLhs(slot_type slot);
     void pushAll(slot_type lhs, Real* multipliers, slot_type* slots, unsigned n);
-    void pushStatement(slot_type lhs,
-                       typename TapeContainerTraits<Real>::type::iterator& multipliers,
-                       typename TapeContainerTraits<slot_type>::type::iterator& slots, unsigned n);
-
+    
     // capacity
-    void reserveStatements(size_type capacity);
-    void reserveOperations(size_type capacity);
-    size_type getStatementCapacity() const;
-    size_type getOperationsCapacity() const;
-    void growOperations(size_type n);
     size_type getNumVariables() const;
     size_type getNumOperations() const;
     size_type getNumStatements() const;
@@ -341,20 +333,6 @@ XAD_INLINE void Tape<T>::pushAll(slot_type lhs, T* multipliers, slot_type* slots
 {
     multiplier_.append(multipliers, multipliers + n);
     slot_.append(slots, slots + n);
-    pushLhs(lhs);
-}
-
-template <class T>
-XAD_INLINE void Tape<T>::pushStatement(
-    slot_type lhs, typename TapeContainerTraits<T>::type::iterator& multipliers,
-    typename TapeContainerTraits<slot_type>::type::iterator& slots, unsigned n)
-{
-    auto mstart = multiplier_.size();
-    auto sstart = slot_.size();
-    multiplier_.uninitialized_extend(n);
-    slot_.uninitialized_extend(n);
-    multipliers = multiplier_.iterator_at(mstart);
-    slots = slot_.iterator_at(sstart);
     pushLhs(lhs);
 }
 

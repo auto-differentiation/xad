@@ -391,6 +391,8 @@ size_t driver_rec_adj(int n, int stride, double& xv, double& xa1)
 
     f_rec(0, n, stride, x);
 
+    EXPECT_GT(t.getNumCallbacks(), 0);
+
     t.registerOutput(x);
     derivative(x) = xa1;
     t.computeAdjoints();

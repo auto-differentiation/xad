@@ -29,6 +29,13 @@
 using namespace ::testing;
 using xad::ChunkContainer;
 
+TEST(ChunkContainer, alloc_less_than_alignment)
+{
+    void* p1 = ::xad::detail::aligned_alloc(128, 32);
+    
+    EXPECT_THAT(p1, NotNull());
+}
+
 TEST(ChunkContainer, iterator)
 {
     ChunkContainer<int> chk;
@@ -107,3 +114,52 @@ TEST(ChunkContainer, move_assign)
     EXPECT_THAT(addr, Eq(&chk2[0]));
     EXPECT_THAT(addr, Ne(addr2));
 }
+
+TEST(ChunkContainer, multichunk)
+{
+    ChunkContainer<int, 8> chk;
+    for (int i = 0; i < 20; ++i)
+        chk.push_back(i);
+
+    for (int i = 0; i < 20; ++i)
+        EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+}
+
+TEST(ChunkContainer, resize)
+{
+    ChunkContainer<int, 8> chk;
+    for (int i = 0; i < 10; ++i)
+        chk.push_back(i);
+    
+    EXPECT_THAT(chk.size(), Eq(10u));
+
+    chk.resize(15);
+    EXPECT_THAT(chk.size(), Eq(15u));
+    chk[12] = 12;
+
+    for (int i = 0; i < 10; ++i)
+        EXPECT_THAT(chk[size_t(i)], Eq(i));
+    for (int i = 10; i < 15; ++i) {
+        if (i == 12)
+            EXPECT_THAT(chk[size_t(i)], Eq(12));
+        else
+            EXPECT_THAT(chk[size_t(i)], Eq(0));
+    }
+}
+
+TEST(ChunkContainer, append)
+{
+    ChunkContainer<int, 8> chk;
+    for (int i = 0; i < 14; ++i)
+        chk.push_back(i);
+
+    std::vector<int> newvals = {14, 15, 16, 17};
+    // note: we can only append sizes less than chunk size (8)
+    chk.append(newvals.begin(), newvals.end());
+
+    EXPECT_THAT(chk.size(), Eq(18u));
+
+    for (int i = 0; i < 18; ++i)
+        EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+}
+

@@ -136,7 +136,9 @@ TEST(Expressions, canDivideWithEnums)
 TEST(Expressions, canCompareToEnums)
 {
     xad::AD a = TEST_VAL1;
+    a *= 1.0;
     xad::AD b = TEST_VAL0;
+    b += 0.0;
 
     EXPECT_TRUE(a == TEST_VAL1);
     EXPECT_TRUE(a * 1.0 == TEST_VAL1);

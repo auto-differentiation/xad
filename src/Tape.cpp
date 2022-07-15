@@ -379,54 +379,6 @@ void Tape<T>::newRecording()
 }
 
 template <class T>
-void Tape<T>::reserveStatements(size_type capacity)
-{
-#ifdef TAPE_NEEDS_RESERVE
-    statement_.reserve(capacity);
-#else
-    (void)capacity;
-#endif
-}
-
-template <class T>
-void Tape<T>::reserveOperations(size_type capacity)
-{
-#ifdef TAPE_NEEDS_RESERVE
-    if (slot_.capacity() < capacity)
-    {
-        // double it
-        auto newcap = std::max(size_t(1), slot_.capacity()) * 2;
-        while (newcap < capacity) newcap *= 2;
-        slot_.reserve(newcap);
-        multiplier_.reserve(newcap);
-    }
-#else
-    (void)capacity;
-#endif
-}
-
-template <class T>
-typename Tape<T>::size_type Tape<T>::getStatementCapacity() const
-{
-#ifdef TAPE_NEEDS_RESERVE
-    return size_type(statement_.capacity());
-#else
-    // return size_type(statement_endpoint_.size());
-    return size_type(statement_.size());
-#endif
-}
-
-template <class T>
-typename Tape<T>::size_type Tape<T>::getOperationsCapacity() const
-{
-#ifdef TAPE_NEEDS_RESERVE
-    return size_type(slot_.capacity());
-#else
-    return size_type(slot_.size());
-#endif
-}
-
-template <class T>
 typename Tape<T>::size_type Tape<T>::getNumOperations() const
 {
     return size_type(slot_.size());
@@ -437,12 +389,6 @@ typename Tape<T>::size_type Tape<T>::getNumStatements() const
 {
     // return size_type(statement_endpoint_.size()) - 1;
     return size_type(statement_.size()) - 1;
-}
-
-template <class T>
-void Tape<T>::growOperations(size_type n)
-{
-    reserveOperations(getNumOperations() + n);
 }
 
 template <class T>

@@ -26,18 +26,13 @@
 
 #include <gtest/gtest.h>
 
-TEST(StackContainer, basic)
+TEST(TapeContainer, basic)
 {
-    // currently, it's a redefine of std::vector - no need to test that
-    // too thoroughly
+    // currently, it's a redefine of ChunkContainer, which we have a test for already
     typedef xad::TapeContainerTraits<int>::type container;
 
     container sc;
 
-#ifdef TAPE_USE_VECTOR
-    sc.reserve(5);
-    EXPECT_GE(sc.capacity(), 5U);
-#endif
     EXPECT_EQ(0U, sc.size());
     EXPECT_TRUE(sc.empty());
 

@@ -45,15 +45,17 @@
 namespace xad { namespace detail {
 inline void* aligned_alloc(size_t alignment, size_t size)
 {
-#if defined(__APPLE__) && (defined(MAC_OS_X_VERSION_10_16) || defined(__IPHONE_14_0))
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_16 || __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_14_0
+    if (size < alignment)
+        size = alignment;
+#if defined(__APPLE__) && defined(MAC_OS_X_VERSION_10_16)
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_16 
     // For C++14, usr/include/malloc/_malloc.h declares aligned_alloc()) only
     // with the MacOSX11.0 SDK in Xcode 12 (which is what adds 
     // MAC_OS_X_VERSION_10_16), even though the function is marked
     // availabe for 10.15. That's why the preprocessor checks for 10.16 but
     // the __builtin_available checks for 10.15.
     // People who use C++17 could call aligned_alloc with the 10.15 SDK already.
-    if (__builtin_available(macOS 10.15, iOS 13, *))
+    if (__builtin_available(macOS 10.15, *))
         return ::aligned_alloc(alignment, size);
 #endif
 #endif
@@ -75,6 +77,8 @@ inline void aligned_free(void* p) { free(p); }
 namespace xad { namespace detail {
 inline void *aligned_alloc(size_t alignment, size_t size)
 {
+    if (size < alignment)
+        size = alignment;
     return ::_aligned_malloc(size, alignment);
 }
 inline void aligned_free(void* p) { ::_aligned_free(p); }
@@ -83,6 +87,8 @@ inline void aligned_free(void* p) { ::_aligned_free(p); }
 namespace xad { namespace detail {
 inline void *aligned_alloc(size_t alignment, size_t size)
 {
+    if (size < alignment)
+        size = alignment;
     return ::aligned_alloc(alignment, size);
 }
 inline void aligned_free(void* p) { free(p); }

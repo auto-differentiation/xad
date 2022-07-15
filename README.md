@@ -1,14 +1,16 @@
 # XAD
 
-![GitHub](https://img.shields.io/github/license/xcelerit/xad)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/xcelerit/xad)
+[![Download](https://img.shields.io/github/v/release/xcelerit/xad?label=Download&sort=semver)](https://github.com/xcelerit/xad/releases/latest)
+[![License](https://img.shields.io/github/license/xcelerit/xad?label=License)](https://github.com/xcelerit/xad/blob/main/LICENSE.md)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6838603.svg)](https://doi.org/10.5281/zenodo.6838603)
+[![PRs Welcome](https://img.shields.io/badge/PRs%20-welcome-brightgreen.svg)](https://github.com/xcelerit/xad/blob/main/CONTRIBUTING.md)
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/xcelerit/xad/CI)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/xcelerit/xad/CI?label=Build&logo)
 [![Tests Badge](https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg)](https://github.com/xcelerit/xad/actions?query=workflow%3ACI)
-[![Coverage Status](https://coveralls.io/repos/github/xcelerit/XAD/badge.svg?branch=main)](https://coveralls.io/github/xcelerit/XAD?branch=main)
 
-[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/xcelerit/XAD.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/xcelerit/XAD/context:cpp)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/42f40022f8ef447da51a178f684eb19d)](https://www.codacy.com/gh/xcelerit/XAD/dashboard)
+[![Coveralls](https://img.shields.io/coveralls/github/xcelerit/XAD?label=Coverage&logo=coveralls)](https://coveralls.io/github/xcelerit/XAD?branch=main)
+[![LGTM Grade](https://img.shields.io/lgtm/grade/cpp/github/xcelerit/XAD?logo=lgtm&label=Code%20Quality%20%28LGTM%29)](https://lgtm.com/projects/g/xcelerit/XAD/context:cpp)
+[![Codacy grade](https://img.shields.io/codacy/grade/42f40022f8ef447da51a178f684eb19d?logo=codacy&label=Code%20Quality%20%28Codacy%29)](https://www.codacy.com/gh/xcelerit/XAD/dashboard)
 
 XAD is a fast and comprehensive C++ library for automatic differentiation by Xcelerit.
 It targets production-quality code at any scale, striving for both ease of use and high performance.
