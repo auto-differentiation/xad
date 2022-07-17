@@ -2,32 +2,35 @@ name: CI
 on: [push, pull_request]
 jobs:
   build_and_test_windows:
-    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
-        toolset: [14.1, 14.2, 14.3]
+        toolset: ["14.0", "14.1", "14.2", "14.3"]
         compiler: [msvc, clang]
         config: [Release, Debug]
         include:
           - compiler: clang
             cxx: clang-cl
             cc: clang-cl
-            strong_inline: OFF
+            os: windows-2022
+            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
           - compiler: msvc
             cxx: cl
             cc: cl
-            strong_inline: ON
+            os: windows-2022
+            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+          - toolset: "14.0"
+            compiler: msvc
+            os: windows-2019
+            vsvarsall: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
         exclude:
           - compiler: clang
-            toolset: 14.1
+            toolset: "14.1"
           - compiler: clang
-            toolset: 14.2
-    env:
-      BUILD_DIR: build_${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
-      INSTALL_DIR: install_${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
-      INSTALLTEST_DIR: installtest_${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
-      VS2022INSTALLDIR: C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise
+            toolset: "14.2"
+          - compiler: clang
+            toolset: "14.0"
+    runs-on: ${{ matrix.os }}
     steps:
       - name: setup
         run: |
@@ -36,79 +39,99 @@ jobs:
       - name: configure
         shell: cmd
         run: |
-          mkdir %BUILD_DIR%
-          cd %BUILD_DIR%
-          call "%VS2022INSTALLDIR%\Vc\Auxiliary\Build\vcvarsall.bat" amd64 -vcvars_ver=${{ matrix.toolset }}
+          mkdir build
+          cd build
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
           cmake .. -GNinja ^
-             -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%/%INSTALL_DIR%" ^
+             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" ^
              -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} ^
              -DCMAKE_C_COMPILER=${{ matrix.cc }} ^
-             -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
-             -DXAD_USE_STRONG_INLINE=${{ matrix.strong_inline }}
+             -DCMAKE_BUILD_TYPE=${{ matrix.config }} 
       - name: build
         shell: cmd
         run: |
-          cd %BUILD_DIR%
-          call "%VS2022INSTALLDIR%\Vc\Auxiliary\Build\vcvarsall.bat" amd64 -vcvars_ver=${{ matrix.toolset }}
+          cd build
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
           cmake --build .
       - name: test
         shell: cmd
         run: |
-          cd %BUILD_DIR%
-          call "%VS2022INSTALLDIR%\Vc\Auxiliary\Build\vcvarsall.bat" amd64 -vcvars_ver=${{ matrix.toolset }}
+          cd build
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
           ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
       - name: upload test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }})
-          path: build_${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}/test_results.xml
+          path: build/test_results.xml
       - name: install
         shell: cmd
         run: |
-          cd %BUILD_DIR%
-          call "%VS2022INSTALLDIR%\Vc\Auxiliary\Build\vcvarsall.bat" amd64 -vcvars_ver=${{ matrix.toolset }}
+          cd build
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
           cmake --install .
       - name: install test
         shell: cmd
         run: |
-          mkdir %INSTALLTEST_DIR%
-          cd %INSTALLTEST_DIR%
-          call "%VS2022INSTALLDIR%\Vc\Auxiliary\Build\vcvarsall.bat" amd64 -vcvars_ver=${{ matrix.toolset }}
+          mkdir installtest
+          cd installtest
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
           cmake ..\\samples -GNinja ^
              -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} ^
              -DCMAKE_C_COMPILER=${{ matrix.cc }} ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
-             -DCMAKE_PREFIX_PATH="%GITHUB_WORKSPACE%/%INSTALL_DIR%"
+             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"
           cmake --build .
   
   build_and_test_linux:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        compiler: [gcc, clang]
+        compiler: [gcc-4.8, gcc-7, gcc-11, clang]
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
         include:
           - compiler: clang
             cxx: clang++
             cc: clang
-          - compiler: gcc
+            os: ubuntu-latest
+            install: false
+          - compiler: gcc-4.8
+            cxx: g++-4.8
+            cc: gcc-4.8
+            os: ubuntu-18.04
+            install: true
+          - compiler: gcc-7
             cxx: g++
             cc: gcc
+            os: ubuntu-18.04
+            install: false
+          - compiler: gcc-11
+            cxx: g++
+            cc: gcc
+            os: ubuntu-20.04
+            install: false
         exclude:
           - config: Debug
             reuse_slots: ON
-    env:
-      BUILD_DIR: build_${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
-      INSTALL_DIR: install_${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
-      INSTALLTEST_DIR: installtest_${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: setup
         run: |
-          sudo apt update
-          sudo apt install -y ccache ninja-build
+          sudo apt-get update
+          sudo apt-get install -y ccache ninja-build gpg wget
+      - name: compiler setup
+        if: ${{ matrix.install }}
+        run: |
+          sudo apt-get install -y ${{ matrix.cxx }} ${{ matrix.cc }}
+      - name: cmake setup
+        if: ${{ matrix.os == 'ubuntu-18.04' }}
+        run: |
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y cmake
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.2
         with:
@@ -116,44 +139,43 @@ jobs:
       - uses: actions/checkout@v3
       - name: configure
         run: |
-          mkdir $BUILD_DIR
-          cd $BUILD_DIR
+          mkdir build
+          cd build
           cmake .. -GNinja \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
-            -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/$INSTALL_DIR
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
       - name: build
         run: |
-          cd $BUILD_DIR
+          cd build
           cmake --build .
       - name: test
         run: |
-          cd $BUILD_DIR
+          cd build
           ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
       - name: upload test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }})
-          path: build_${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}/test_results.xml
+          path: build/test_results.xml
       - name: install
         run: |
-          cd $BUILD_DIR
+          cd build
           cmake --install .
       - name: install test
         run: |
-          mkdir $INSTALLTEST_DIR
-          cd $INSTALLTEST_DIR
+          mkdir installtest
+          cd installtest
           cmake ../samples -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/$INSTALL_DIR"  \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"  \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} 
           cmake --build .
-
 
   build_and_test_macos:
     runs-on: macos-latest
@@ -161,10 +183,6 @@ jobs:
       fail-fast: false
       matrix:
         config: [Release, Debug]
-    env:
-      BUILD_DIR: build_${{ matrix.config }}
-      INSTALL_DIR: install_${{ matrix.config }}
-      INSTALLTEST_DIR: installtest_${{ matrix.config }}
     steps:
       - name: setup
         run: |
@@ -177,39 +195,38 @@ jobs:
       - uses: actions/checkout@v3
       - name: configure
         run: |
-          mkdir $BUILD_DIR
-          cd $BUILD_DIR
+          mkdir build
+          cd build
           cmake .. -GNinja \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-            -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/$INSTALL_DIR
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
       - name: build
         run: |
-          cd $BUILD_DIR
+          cd build
           cmake --build .
       - name: test
         run: |
-          cd $BUILD_DIR
+          cd build
           ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
       - name: upload test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: Test Results (macos ${{ matrix.config }})
-          path: build_${{ matrix.config }}/test_results.xml
-
+          path: build/test_results.xml
       - name: install
         run: |
-          cd $BUILD_DIR
+          cd build
           cmake --install .
       - name: install test
         run: |
-          mkdir $INSTALLTEST_DIR
-          cd $INSTALLTEST_DIR
+          mkdir installtest
+          cd installtest
           cmake ../samples -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/$INSTALL_DIR"
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"
           cmake --build .
 
   coverage:

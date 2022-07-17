@@ -22,6 +22,8 @@
 #   
 ##############################################################################
 
+
+
 # mask this in case parent project already has gtest
 if (NOT TARGET GTest::gmock_main)
     include(FetchContent)
@@ -33,10 +35,15 @@ if (NOT TARGET GTest::gmock_main)
     else()
         set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     endif()
+    if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+        set(_gtest_tag release-1.10.0)
+    else()
+        set(_gtest_tag release-1.11.0)
+    endif()
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(googletest
                      GIT_REPOSITORY      https://github.com/google/googletest.git
-                     GIT_TAG             release-1.11.0
+                     GIT_TAG             ${_gtest_tag}
     )
     FetchContent_GetProperties(googletest)
     if(NOT googletest_POPULATED)
@@ -61,8 +68,13 @@ enable_testing()
 # Adds a Google test executable
 # Note that it auto-links with gmock_main, which includes gtest as well
 function(xad_add_test name)
+    if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+        set(_gmock_target gmock_main)
+    else()
+        set(_gmock_target GTest::gmock_main)
+    endif()
     xad_add_executable(${name} ${ARGN})
-    target_link_libraries(${name} PRIVATE xad GTest::gmock_main)
+    target_link_libraries(${name} PRIVATE xad ${_gmock_target})
     set_property(TARGET ${name} PROPERTY FOLDER test)
     gtest_discover_tests(${name} DISCOVERY_TIMEOUT 15)
 endfunction()

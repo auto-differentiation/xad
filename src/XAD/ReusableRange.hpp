@@ -33,7 +33,7 @@ template <class T>
 class ReusableRange
 {
   public:
-    ReusableRange(T first = T(), T second = T()) : first_(first), second_(second) {}
+    ReusableRange(T start = T(), T end = T()) : first_(start), second_(end) {}
     bool isClosed() const { return first_ >= second_; }
     T size() const { return second_ - first_; }
 

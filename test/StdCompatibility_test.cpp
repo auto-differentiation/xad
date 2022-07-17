@@ -259,7 +259,9 @@ TYPED_TEST(StdCompatibilityTempl, Traits)
         xad::ExprTraits<TypeParam>::isForward &&
         (xad::ExprTraits<typename xad::ExprTraits<TypeParam>::scalar_type>::isForward ||
          !xad::ExprTraits<typename xad::ExprTraits<TypeParam>::scalar_type>::isExpr);
+#if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
     static_assert(std::is_trivially_copyable<TypeParam>::value == fwd, "trivially copyable");
+#endif
     static_assert(std::is_trivially_destructible<TypeParam>::value == fwd, "trially destructable for fwd mode");
 }
 
@@ -270,10 +272,13 @@ class StdCompatibilityConstexprTempl : public ::testing::Test
 
 typedef ::testing::Types<xad::FAD, xad::FReal<xad::FReal<double>>> constexpr_test_types;
 
+#if !(_MSC_VER && _MSC_VER <= 1900)   // VS 2015 doesn't implement constexpr objects correctly
+
 TYPED_TEST_SUITE(StdCompatibilityConstexprTempl, constexpr_test_types);
 
 TYPED_TEST(StdCompatibilityConstexprTempl, NumericLimitsConstexpr)
 {
+    constexpr TypeParam t_xx = 1.0;
     constexpr TypeParam t_min = std::numeric_limits<TypeParam>::min();
     constexpr TypeParam t_max = std::numeric_limits<TypeParam>::max();
     constexpr TypeParam t_lowest = std::numeric_limits<TypeParam>::lowest();
@@ -284,6 +289,7 @@ TYPED_TEST(StdCompatibilityConstexprTempl, NumericLimitsConstexpr)
     constexpr TypeParam t_snan = std::numeric_limits<TypeParam>::signaling_NaN();
     constexpr TypeParam t_round = std::numeric_limits<TypeParam>::round_error();
 
+    XAD_UNUSED_VARIABLE(t_xx);
     XAD_UNUSED_VARIABLE(t_min);
     XAD_UNUSED_VARIABLE(t_max);
     XAD_UNUSED_VARIABLE(t_lowest);
@@ -294,6 +300,8 @@ TYPED_TEST(StdCompatibilityConstexprTempl, NumericLimitsConstexpr)
     XAD_UNUSED_VARIABLE(t_snan);
     XAD_UNUSED_VARIABLE(t_round);
 }
+
+#endif 
 
 TEST(StdCompatibility, StdMinWithSizeWorks)
 {

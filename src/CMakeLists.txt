@@ -98,6 +98,12 @@ if(MSVC AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")   # clang-cl does not ge
         )
     endif()
 endif()
+if(MSVC AND MSVC_VERSION EQUAL 1900)
+    # disable forceinline warning in tape.cpp compilation in VS 2015
+    target_compile_options(xad PRIVATE /wd4714)
+    # disable warning about too long expression symbols in VS 2015
+    target_compile_options(xad PUBLIC /wd4503)
+endif()
 
 # install CMake export configuration files
 include(CMakePackageConfigHelpers)

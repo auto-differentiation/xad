@@ -360,6 +360,7 @@ struct scalar_remainder1_op
     {
         // function is rare enough that there's no need to optimize this better
         int n_;
+        using std::remquo;
         (void)remquo(b_, a, &n_);
         return Scalar(-n_);
     }
@@ -381,6 +382,7 @@ struct scalar_remquo1_op
     XAD_INLINE scalar_remquo1_op(const T2& b, int* quo) : b_(b), quo_(quo), q_() {}
     XAD_INLINE Scalar operator()(const Scalar& a) const
     {
+        using std::remquo;
         Scalar v = remquo(b_, a, &q_);
         *quo_ = q_;
         return v;
@@ -395,7 +397,7 @@ template <class Scalar, class T2>
 struct scalar_remquo2_op
 {
     XAD_INLINE scalar_remquo2_op(const T2& b, int* quo) : b_(b), quo_(quo) {}
-    XAD_INLINE Scalar operator()(const Scalar& a) const { return remquo(a, b_, quo_); }
+    XAD_INLINE Scalar operator()(const Scalar& a) const { using std::remquo; return remquo(a, b_, quo_); }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1); }
     T2 b_;
     int* quo_;

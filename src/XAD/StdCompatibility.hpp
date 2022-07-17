@@ -143,25 +143,67 @@ struct hash<xad::FReal<T>>
 };
 
 // type traits
-template <class T> struct is_floating_point<xad::AReal<T>> : std::is_floating_point<T> {};
-template <class T> struct is_floating_point<xad::FReal<T>> : std::is_floating_point<T> {};
-template <class T> struct is_arithmetic<xad::AReal<T>> : std::is_arithmetic<T> {};
-template <class T> struct is_arithmetic<xad::FReal<T>> : std::is_arithmetic<T> {};
-template <class T> struct is_pod<xad::AReal<T>> : std::false_type {};
-template <class T> struct is_pod<xad::FReal<T>> : std::false_type {};
-template <class T> struct is_fundamental<xad::AReal<T>> : std::false_type {};
-template <class T> struct is_fundamental<xad::FReal<T>> : std::false_type {};
-template <class T> struct is_trivially_copyable<xad::FReal<T>> : std::is_trivially_copyable<T> {};
-template <class T> struct is_scalar<xad::AReal<T>> : std::false_type {};
-template <class T> struct is_scalar<xad::FReal<T>> : std::false_type {};
-template <class T> struct is_compound<xad::AReal<T>> : std::true_type {};
-template <class T> struct is_compound<xad::FReal<T>> : std::true_type {};
+template <class T>
+struct is_floating_point<xad::AReal<T>> : std::is_floating_point<T>
+{
+};
+template <class T>
+struct is_floating_point<xad::FReal<T>> : std::is_floating_point<T>
+{
+};
+template <class T>
+struct is_arithmetic<xad::AReal<T>> : std::is_arithmetic<T>
+{
+};
+template <class T>
+struct is_arithmetic<xad::FReal<T>> : std::is_arithmetic<T>
+{
+};
+template <class T>
+struct is_pod<xad::AReal<T>> : std::false_type
+{
+};
+template <class T>
+struct is_pod<xad::FReal<T>> : std::false_type
+{
+};
+template <class T>
+struct is_fundamental<xad::AReal<T>> : std::false_type
+{
+};
+template <class T>
+struct is_fundamental<xad::FReal<T>> : std::false_type
+{
+};
+#if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
+template <class T>
+struct is_trivially_copyable<xad::FReal<T>> : std::is_trivially_copyable<T>
+{
+};
+#endif
+template <class T>
+struct is_scalar<xad::AReal<T>> : std::false_type
+{
+};
+template <class T>
+struct is_scalar<xad::FReal<T>> : std::false_type
+{
+};
+template <class T>
+struct is_compound<xad::AReal<T>> : std::true_type
+{
+};
+template <class T>
+struct is_compound<xad::FReal<T>> : std::true_type
+{
+};
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
+
 // for MSVC, we need this workaround so that the safety checks in their STL
 // for floating point types are also passing for the XAD types
-//
-// in essence, when the STL checks if a type is in the list of built-in floating point types,
+#if (_MSC_VER > 1900)
+// VS 2017+, when the STL checks if a type is in the list of built-in floating point types,
 // this should forward the check to the wrapped type by AReal or FReal.
 //
 // (In GCC, std::is_floating_point is used instead, where traits above work)
@@ -174,6 +216,24 @@ template <class T>
 constexpr bool _Is_any_of_v<xad::FReal<T>, float, double, long double> =
     _Is_any_of_v<T, float, double, long double>;
 
+#else
+}
+#include <random>
+namespace std {
+
+
+// prior versions of MSVC (2015) use a different check
+template <class T>
+struct _Is_RealType<xad::AReal<T>> : public _Is_RealType<T>
+{
+};
+
+template <class T>
+struct _Is_RealType<xad::FReal<T>> : public _Is_RealType<T>
+{
+};
+
+#endif
 
 #endif
 
