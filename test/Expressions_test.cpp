@@ -1569,11 +1569,12 @@ TEST(Expressions, canDeriveLongExpressionFromLambdaReturnForward)
 template <class T>
 struct TestHeston
 {
-    T kappa_ = 0.4;
-    T rho_ = 0.8;
-    T theta_ = 1.2;
-    T sigma_ = 0.8;
-    T v0_ = 12.0;
+    T kappa_;
+    T rho_;
+    T theta_;
+    T sigma_;
+    T v0_;
+    TestHeston() : kappa_(.4), rho_(.8), theta_(1.2), sigma_(.8), v0_(12.) {}
 
     T c4(T t) const
     {

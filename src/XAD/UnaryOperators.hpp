@@ -401,6 +401,41 @@ remquo(const AReal<Scalar>& a, typename ExprTraits<Scalar>::nested_type b, int* 
         scalar_remquo2_op<Scalar, typename ExprTraits<Scalar>::nested_type>(b, quo));
 }
 
+#if defined(_MSC_VER) && (_MSC_VER <= 1900)
+// full specialisations as compilers otherwise pick up standard version
+// NOTE: They are only covering the most common cases
+
+XAD_INLINE UnaryExpr<double, scalar_remquo2_op<double, double>,
+                     ADVar<double>>
+remquo(const AReal<double>& a, double b, int* quo)
+{
+    return UnaryExpr<double, scalar_remquo2_op<double, double>, ADVar<double>>(
+        ADVar<double>(a), scalar_remquo2_op<double, double>(b, quo));
+}
+
+XAD_INLINE UnaryExpr<double, scalar_remquo2_op<double, double>, FReal<double>> remquo(
+    const FReal<double>& a, double b, int* quo)
+{
+    return UnaryExpr<double, scalar_remquo2_op<double, double>, FReal<double>>(
+        a, scalar_remquo2_op<double, double>(b, quo));
+}
+
+XAD_INLINE UnaryExpr<double, scalar_remquo1_op<double, double>,
+                     ADVar<double>>
+remquo(double a, const AReal<double>& b, int* quo)
+{
+    return UnaryExpr<double, scalar_remquo1_op<double, double>, ADVar<double>>(
+        ADVar<double>(b), scalar_remquo1_op<double, double>(a, quo));
+}
+
+XAD_INLINE UnaryExpr<double, scalar_remquo1_op<double, double>, FReal<double>> remquo(
+    double a, const FReal<double>& b, int* quo)
+{
+    return UnaryExpr<double, scalar_remquo1_op<double, double>, FReal<double>>(
+        b, scalar_remquo1_op<double, double>(a, quo));
+}
+#endif
+
 template <class Scalar, class Derived>
 XAD_INLINE int ilogb(const Expression<Scalar, Derived>& x)
 {

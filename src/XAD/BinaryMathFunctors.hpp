@@ -245,6 +245,7 @@ struct remainder_op
     {
         // function is rare enough that there's no need to optimize this better
         int n_;
+        using std::remquo;
         remquo(a, b, &n_);
         return Scalar(-n_);
     }
@@ -256,6 +257,7 @@ struct remquo_op
     XAD_INLINE explicit remquo_op(int* quo) : quo_(quo), q_() {}
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const
     {
+        using std::remquo;
         Scalar v = remquo(a, b, &q_);
         *quo_ = q_;
         return v;

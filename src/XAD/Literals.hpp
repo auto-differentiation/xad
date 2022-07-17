@@ -404,7 +404,7 @@ struct FReal : public ADTypeBase<Scalar, FReal<Scalar>>
 
     // explicit conversion from int (also used by static_cast) to avoid warnings
     template <class U>
-    constexpr explicit FReal(U val, typename std::enable_if<std::is_integral<U>::value>::type* = 0)
+    constexpr XAD_INLINE explicit FReal(U val, typename std::enable_if<std::is_integral<U>::value>::type* = 0)
         : base_type(static_cast<nested_type>(val)), der_()
     {
     }
