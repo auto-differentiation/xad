@@ -462,14 +462,18 @@ TEST(ExpressionsMath, maxMinForIntegersExplicit)
 
 // temporarily disable double->int conversion warning, as we're testing just that below
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4244)
+#  pragma warning(push)
+#  pragma warning(disable : 4244)
 #elif defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#  pragma GCC diagnostic push
+#  if (__GNUC__ <= 5) && !defined(__clang__)
+#    pragma GCC diagnostic ignored "-Wconversion"
+#  else
+#    pragma GCC diagnostic ignored "-Wfloat-conversion"
+#  endif
 #elif defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfloat-conversion"
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wfloat-conversion"
 #endif
 
 TEST(ExpressionsMath, maxMinForIntegersDoubleExplicit)

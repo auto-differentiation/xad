@@ -34,6 +34,10 @@
 #include <limits>
 #include <type_traits>
 
+// Note: The seemingly high number of overloads in this file, containing partially
+// duplicated code, is necessary to make sure all supported compilers pick the overloads
+// from here instead of the the std::complex versions provided by the standard library.
+
 namespace xad
 {
 
@@ -235,21 +239,21 @@ class complex<xad::FReal<T>> : public complex<xad::ADTypeBase<T, xad::FReal<T>>>
 
     // inheriting template constructors doesn't work in all compilers
 
-    XAD_INLINE complex(const xad::FReal<T>& areal = xad::FReal<T>(),
+    XAD_INLINE complex(const xad::FReal<T>& areal = xad::FReal<T>(),  // cppcheck-suppress noExplicitConstructor
                        const xad::FReal<T>& aimag = xad::FReal<T>())
         : base(areal, aimag)
     {
     }
 
     template <class X>
-    XAD_INLINE complex(const X& areal,
+    XAD_INLINE complex(const X& areal,    // cppcheck-suppress noExplicitConstructor
                        typename std::enable_if<!xad::ExprTraits<X>::isExpr>::type* = nullptr)
         : base(xad::FReal<T>(areal), xad::FReal<T>())
     {
     }
 
     template <class X>
-    XAD_INLINE complex(
+    XAD_INLINE complex(   // cppcheck-suppress noExplicitConstructor
         const X& areal,
         typename std::enable_if<xad::ExprTraits<X>::isExpr &&
                                 xad::ExprTraits<X>::direction == xad::DIR_FORWARD>::type* = nullptr)
@@ -258,7 +262,7 @@ class complex<xad::FReal<T>> : public complex<xad::ADTypeBase<T, xad::FReal<T>>>
     }
 
     template <class X>
-    XAD_INLINE complex(const complex<X>& o) : base(xad::FReal<T>(o.real()), xad::FReal<T>(o.imag()))
+    XAD_INLINE complex(const complex<X>& o) : base(xad::FReal<T>(o.real()), xad::FReal<T>(o.imag()))  // cppcheck-suppress noExplicitConstructor
     {
     }
 
@@ -307,364 +311,79 @@ XAD_INLINE std::complex<T> value(const std::complex<T>& z)
 namespace detail
 {
 
-template <class T>
-XAD_INLINE T abs_impl(const std::complex<T>& x)
-{
-    using std::sqrt;
-    if (xad::isinf(x.real()) || xad::isinf(x.imag()))
-        return std::numeric_limits<double>::infinity();
-    // TODO: add hypot to XAD to use that one here
-    return sqrt(norm(x));
-}
+// declare first, implementation at the bottom of this file,
+// to avoid issues with order of declaration (functions called in bodies
+// not defined yet)
 
 template <class T>
-std::complex<T> exp_impl(const std::complex<T>& z)
-{
-    using std::cos;
-    using std::exp;
-    using std::sin;
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (xad::isinf(z.real()))
-    {
-        if (z.real() > 0.0)
-        {
-            if (z.imag() == 0.0)
-                return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
-            if (xad::isinf(z.imag()) && z.imag() > 0.0)
-                return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                       std::numeric_limits<nested>::quiet_NaN());
-            if (xad::isnan(z.imag()))
-                return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                       std::numeric_limits<nested>::quiet_NaN());
-        }
-        else
-        {
-            if (xad::isinf(z.imag()) && z.imag() > 0.0)
-                return std::complex<T>(0.0, 0.0);
-            if (xad::isnan(z.imag()))
-                return std::complex<T>(0.0, 0.0);
-        }
-    }
-    else if (xad::isnan(z.real()))
-    {
-        if (z.imag() == 0.0 && !xad::signbit(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
-        else
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-    }
-    T e = ::xad::exp(z.real());
-    return std::complex<T>(e * cos(z.imag()), e * sin(z.imag()));
-}
+XAD_INLINE T abs_impl(const std::complex<T>& x);
+
+template <class T>
+XAD_INLINE std::complex<T> exp_impl(const std::complex<T>& z);
 
 template <class T1, class T2>
 XAD_INLINE std::complex<typename xad::ExprTraits<T1>::value_type> polar_impl(const T1& r,
-                                                                        const T2& theta)
-{
-    using std::cos;
-    using std::sin;
-    typedef typename xad::ExprTraits<T1>::value_type base_type;
-    return std::complex<base_type>(base_type(r * cos(theta)), base_type(r * sin(theta)));
-}
+                                                                             const T2& theta);
 
 template <class T>
-std::complex<T> sqrt_impl(const std::complex<T>& z)
-{
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (xad::isinf(z.real()) && z.real() < 0.0)
-    {
-        if (xad::isfinite(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(0.0, std::numeric_limits<nested>::infinity());
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::infinity());
-    }
-    if (xad::isinf(z.real()) && z.real() > 0.0)
-    {
-        if (xad::isfinite(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
-
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-    }
-    if (xad::isinf(z.imag()) && z.imag() > 0.0)
-        return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                               std::numeric_limits<nested>::infinity());
-
-    return ::xad::detail::polar_impl(sqrt(abs(z)), arg(z) * T(0.5));
-}
+XAD_INLINE std::complex<T> sqrt_impl(const std::complex<T>& z);
 
 template <class T>
-std::complex<T> sinh_impl(const std::complex<T>& z)
-{
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    auto cls = xad::fpclassify(z.real());
-    if (cls == FP_INFINITE && xad::isinf(z.imag()) && z.real() > 0.0 && z.imag() > 0.0)
-        return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                               std::numeric_limits<nested>::quiet_NaN());
-    if (cls == FP_NAN && z.imag() == 0.0 && !xad::signbit(z.imag()))
-        return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
-    if (cls == FP_ZERO && !xad::signbit(z.real()))
-    {
-        if ((xad::isinf(z.imag()) && z.imag() > 0.0) || xad::isnan(z.imag()))
-            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
-    }
-    return (exp(z) - exp(-z)) / T(2.0);
-}
+XAD_INLINE std::complex<T> sinh_impl(const std::complex<T>& z);
 
 template <class T>
-std::complex<T> cosh_impl(const std::complex<T>& z)
-{
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    auto cls = xad::fpclassify(z.real());
-    if (cls == FP_INFINITE && xad::isinf(z.imag()) && z.real() > 0.0 && z.imag() > 0.0)
-        return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                               std::numeric_limits<nested>::quiet_NaN());
-    if (cls == FP_NAN && z.imag() == 0.0 && !xad::signbit(z.imag()))
-        return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
-    if (cls == FP_ZERO && !xad::signbit(z.real()))
-    {
-        if ((xad::isinf(z.imag()) && z.imag() > 0.0) || xad::isnan(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
-    }
-    return (exp(z) + exp(-z)) / T(2.0);
-}
+XAD_INLINE std::complex<T> cosh_impl(const std::complex<T>& z);
 
 template <class T>
-std::complex<T> tanh_impl(const std::complex<T>& z)
-{
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (z.real() == 0.0)
-    {
-        if (xad::isinf(z.imag()) && z.imag() > 0.0)
-        {
-#if defined(__APPLE__)
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::quiet_NaN());
+XAD_INLINE std::complex<T> tanh_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> asinh_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> acosh_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> atanh_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> sin_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> cos_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> tan_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> asin_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> acos_impl(const std::complex<T>& z);
+
+template <class T>
+XAD_INLINE std::complex<T> atan_impl(const std::complex<T>& z);
+
+// note that this captures the AReal and FReal base types too
+template <class Scalar, class Derived>
+XAD_INLINE typename xad::ExprTraits<Derived>::value_type arg_impl(
+    const xad::Expression<Scalar, Derived>& x);
+
+template <class T>
+XAD_INLINE T arg_impl(const std::complex<T>& z);
+
+#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
+template <class Scalar, class Derived>
+XAD_INLINE typename xad::ExprTraits<Derived>::value_type proj_impl(
+    const xad::Expression<Scalar, Derived>& x);
 #else
-            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
+template <class Scalar, class Derived>
+XAD_INLINE std::complex<typename xad::ExprTraits<Derived>::value_type> proj_impl(
+    const xad::Expression<Scalar, Derived>& x);
 #endif
-        }
-        if (xad::isnan(z.imag()))
-        {
-#if defined(__APPLE__)
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-#else
-            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
-#endif
-        }
-    }
-    if (xad::isinf(z.real()) && z.real() > 0.0 && (z.imag() > 0.0 || xad ::isnan(z.imag())))
-        return std::complex<T>(1.0, 0.0);
-    if (xad::isnan(z.real()) && z.imag() == 0.0)
-        return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
-    return sinh(z) / cosh(z);
-}
 
 template <class T>
-std::complex<T> asinh_impl(const std::complex<T>& z)
-{
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (xad::isinf(z.real()) && z.real() > 0.0)
-    {
-        if (xad::isinf(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   3.141592653589793238462643383279502884197169399 * 0.25);
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-        if (z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
-    }
-    if (xad::isnan(z.real()))
-    {
-        if (xad::isinf(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-        if (z.imag() == 0.0 && !xad::signbit(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
-    }
-    if (xad::isinf(z.imag()) && z.imag() > 0.0 && xad::isfinite(z.real()) && z.real() > 0.0)
-        return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                               3.141592653589793238462643383279502884197169399 * 0.5);
-    return log(z + sqrt(T(1.0) + (z * z)));
-}
-
-template <class T>
-std::complex<T> acosh_impl(const std::complex<T>& z)
-{
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (xad::isinf(z.imag()) && z.imag() > 0.0)
-    {
-        if (xad::isfinite(z.real()))
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   3.141592653589793238462643383279502884197169399 * 0.5);
-        if (xad::isinf(z.real()) && z.real() < 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   3.141592653589793238462643383279502884197169399 * 0.75);
-    }
-    if (xad::isnan(z.imag()))
-    {
-        if (z.real() == 0.0)
-#if defined(__APPLE__)
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-#else
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   3.141592653589793238462643383279502884197169399 * 0.5);
-#endif
-        else if (xad::isinf(z.real()))
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-        else
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-    }
-    if (xad::isinf(z.real()) && xad::isfinite(z.imag()) && z.imag() > 0.0)
-    {
-        if (z.real() < 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   3.141592653589793238462643383279502884197169399);
-        else
-            return std::complex<T>(std::numeric_limits<nested>::infinity(), +0.0);
-    }
-    if (xad::isnan(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
-        return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                               std::numeric_limits<nested>::quiet_NaN());
-
-    return log(z + sqrt(z + T(1.0)) * sqrt(z - T(1.0)));
-}
-
-template <class T>
-std::complex<T> atanh_impl(const std::complex<T>& z)
-{
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (xad::isinf(z.real()) && z.real() > 0.0)
-    {
-        if (xad::isinf(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(0.0, 3.141592653589793238462643383279502884197169399 * 0.5);
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
-        if (xad::isfinite(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(0.0, 3.141592653589793238462643383279502884197169399 * 0.5);
-    }
-    if (xad::isnan(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
-        return std::complex<T>(0.0, 3.141592653589793238462643383279502884197169399 * 0.5);
-    if (z.real() == 1.0 && z.imag() == 0.0)
-        return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
-    if (z.real() > 0.0 && xad::isfinite(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
-        return std::complex<T>(0.0, 3.141592653589793238462643383279502884197169399 * 0.5);
-    if (z.real() == 0.0)
-    {
-        if (z.imag() == 0.0)
-            return std::complex<T>(0.0, 0.0);
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
-    }
-    return (log(T(1.0) + z) - log(T(1.0) - z)) / T(2.0);
-}
-
-template <class T>
-XAD_INLINE std::complex<T> sin_impl(const std::complex<T>& z)
-{
-    // -i * sinh(i*z)
-    std::complex<T> iz(-z.imag(), z.real());
-    std::complex<T> sinhiz = sinh(iz);
-    return std::complex<T>(sinhiz.imag(), -sinhiz.real());
-}
-
-template <class T>
-XAD_INLINE std::complex<T> cos_impl(const std::complex<T>& z)
-{
-    // cosh(i*z)
-    std::complex<T> iz(-z.imag(), z.real());
-    return cosh(iz);
-}
-
-template <class T>
-XAD_INLINE std::complex<T> tan_impl(const std::complex<T>& z)
-{
-    // -i * tanh(i*z)
-    std::complex<T> iz(-z.imag(), z.real());
-    std::complex<T> tanhiz = tanh(iz);
-    return std::complex<T>(tanhiz.imag(), -tanhiz.real());
-}
-
-template <class T>
-XAD_INLINE std::complex<T> asin_impl(const std::complex<T>& z)
-{
-    // -i * asinh(i*z);
-    std::complex<T> iz(-z.imag(), z.real());
-    std::complex<T> asinhiz = asinh(iz);
-    return std::complex<T>(asinhiz.imag(), -asinhiz.real());
-}
-
-template <class T>
-std::complex<T> acos_impl(const std::complex<T>& z)
-{
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (z.real() == 0.0)
-    {
-        if (z.imag() == 0.0 && !xad::signbit(z.imag()))
-            return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5, -0.0);
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5,
-                                   -std::numeric_limits<nested>::quiet_NaN());
-    }
-    if (xad::isfinite(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
-        return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5,
-                               -std::numeric_limits<nested>::infinity());
-    if (xad::isinf(z.real()))
-    {
-        if (z.real() < 0.0)
-        {
-
-            if (xad::isfinite(z.imag()) && z.imag() >= 0.0)
-                return std::complex<T>(3.141592653589793238462643383279502884197169399,
-                                       -std::numeric_limits<nested>::infinity());
-            if (xad::isinf(z.imag()) && z.imag() > 0.0)
-                return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.75,
-                                       -std::numeric_limits<nested>::infinity());
-        }
-        else
-        {
-            if (xad::isfinite(z.imag()) && z.imag() >= 0.0)
-                return std::complex<T>(+0.0, -std::numeric_limits<nested>::infinity());
-            if (xad::isinf(z.imag()) && z.imag() > 0.0)
-                return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.25,
-                                       -std::numeric_limits<nested>::infinity());
-        }
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::infinity());
-    }
-    if (xad::isnan(z.real()))
-    {
-        if (xad::isfinite(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-        else if (xad::isinf(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   -std::numeric_limits<nested>::infinity());
-    }
-
-    std::complex<T> iz(-z.imag(), z.real());
-    std::complex<T> lnizsqrt = log(iz + sqrt(T(1.0) - (z * z)));
-    std::complex<T> ilnizsqrt(-lnizsqrt.imag(), lnizsqrt.real());
-    return T(3.141592653589793238462643383279502884197169399 * 0.5) + ilnizsqrt;
-}
-
-template <class T>
-XAD_INLINE std::complex<T> atan_impl(const std::complex<T>& z)
-{
-    // -i * atanh(i*z)
-    std::complex<T> complex_i(0, 1);
-    std::complex<T> iz(-z.imag(), z.real());
-    std::complex<T> atanhiz = atanh(iz);
-    return std::complex<T>(atanhiz.imag(), -atanhiz.real());
-}
+XAD_INLINE T norm_impl(const std::complex<T>& x);
 
 }  // namespace detail
 
@@ -1303,52 +1022,14 @@ XAD_INLINE std::complex<xad::FReal<T>> operator/(const xad::Expression<T, Expr>&
 template <class T>
 XAD_INLINE xad::AReal<T> arg(const complex<xad::AReal<T>>& x)
 {
-    using std::atan2;
-    return atan2(x.imag(), x.real());
+    return xad::detail::arg_impl(x);
 }
 
 template <class T>
 XAD_INLINE xad::FReal<T> arg(const complex<xad::FReal<T>>& x)
 {
-    using std::atan2;
-    return atan2(x.imag(), x.real());
+    return xad::detail::arg_impl(x);
 }
-
-}  // namespace std
-
-namespace xad
-{
-namespace detail
-{
-// note that this captures the AReal and FReal base types too
-template <class Scalar, class Derived>
-typename xad::ExprTraits<Derived>::value_type arg_impl(const xad::Expression<Scalar, Derived>& x)
-{
-    using std::atan2;
-
-    // as this function returns constants only depending on > or < 0,
-    // where derivatives are 0 anyway, we can return scalars converted to the
-    // underlying expression type
-    typedef typename xad::ExprTraits<Derived>::value_type ret_type;
-#if defined(_MSC_VER) && _MSC_VER < 1920
-    // VS 2017 evaluates this differently
-    (void)x;  // silence unused warning
-    return ret_type();
-#else
-    if (x > 0.0)
-        return ret_type();
-    else if (x < 0.0)
-        return ret_type(3.141592653589793238462643383279502884197169399);  // PI
-    else
-        return atan2(ret_type(), ret_type(x));  // for correct handling of +/- zero
-#endif
-}
-
-}  // namespace detail
-}  // namespace xad
-
-namespace std
-{
 
 template <class Scalar, class Derived>
 typename xad::ExprTraits<Derived>::value_type arg(const xad::Expression<Scalar, Derived>& x)
@@ -1371,9 +1052,20 @@ typename xad::FReal<T> arg(const xad::FReal<T>& x)
 template <class T, class Scalar>
 XAD_INLINE T norm(const complex<xad::ADTypeBase<Scalar, T>>& x)
 {
-    return x.real() * x.real() + x.imag() * x.imag();
+    return ::xad::detail::norm_impl(x);
 }
 
+template <class T>
+XAD_INLINE xad::AReal<T> norm(const complex<xad::AReal<T>>& x)
+{
+    return ::xad::detail::norm_impl(x);
+}
+
+template <class T>
+XAD_INLINE xad::FReal<T> norm(const complex<xad::FReal<T>>& x)
+{
+    return ::xad::detail::norm_impl(x);
+}
 
 // return the expression type from multiplying x*x without actually evaluating it
 template <class Scalar, class Derived>
@@ -1455,38 +1147,6 @@ complex<xad::FReal<T>> proj(const std::complex<xad::FReal<T>>& z)
     else
         return z;
 }
-
-}  // namespace std
-
-namespace xad
-{
-namespace detail
-{
-#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
-template <class Scalar, class Derived>
-XAD_INLINE typename xad::ExprTraits<Derived>::value_type proj_impl(
-    const xad::Expression<Scalar, Derived>& x)
-{
-    return typename xad::ExprTraits<Derived>::value_type(x);
-}
-#else
-template <class Scalar, class Derived>
-XAD_INLINE std::complex<typename xad::ExprTraits<Derived>::value_type> proj_impl(
-    const xad::Expression<Scalar, Derived>& x)
-{
-    if (xad::isinf(x))
-        return std::complex<typename xad::ExprTraits<Derived>::value_type>(
-            std::numeric_limits<typename xad::ExprTraits<Derived>::nested_type>::infinity());
-    else
-        return std::complex<typename xad::ExprTraits<Derived>::value_type>(x);
-}
-#endif
-}  // namespace detail
-
-}  // namespace xad
-
-namespace std
-{
 
 template <class Scalar, class Derived>
 XAD_INLINE auto proj(const xad::Expression<Scalar, Derived>& x)
@@ -1631,7 +1291,7 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr1>::value_type> polar(
     double r, const xad::BinaryExpr<Scalar, Op, Expr1, Expr2>& theta)
 {
     return xad::detail::polar_impl(typename xad::ExprTraits<Expr1>::value_type(r),
-                              typename xad::ExprTraits<Expr1>::value_type(theta));
+                                   typename xad::ExprTraits<Expr1>::value_type(theta));
 }
 
 template <class Scalar, class Op, class Expr1, class Expr2>
@@ -1639,7 +1299,7 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr1>::value_type> polar(
     const xad::BinaryExpr<Scalar, Op, Expr1, Expr2>& r, double theta)
 {
     return xad::detail::polar_impl(typename xad::ExprTraits<Expr1>::value_type(r),
-                              typename xad::ExprTraits<Expr1>::value_type(theta));
+                                   typename xad::ExprTraits<Expr1>::value_type(theta));
 }
 
 template <class Scalar, class Op, class Expr>
@@ -1647,7 +1307,7 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr>::value_type> polar(
     double r, const xad::UnaryExpr<Scalar, Op, Expr>& theta)
 {
     return xad::detail::polar_impl(typename xad::ExprTraits<Expr>::value_type(r),
-                              typename xad::ExprTraits<Expr>::value_type(theta));
+                                   typename xad::ExprTraits<Expr>::value_type(theta));
 }
 
 template <class Scalar, class Op, class Expr>
@@ -1655,7 +1315,7 @@ XAD_INLINE complex<typename xad::ExprTraits<Expr>::value_type> polar(
     const xad::UnaryExpr<Scalar, Op, Expr>& r, double theta)
 {
     return xad::detail::polar_impl(typename xad::ExprTraits<Expr>::value_type(r),
-                              typename xad::ExprTraits<Expr>::value_type(theta));
+                                   typename xad::ExprTraits<Expr>::value_type(theta));
 }
 
 template <class Scalar>
@@ -1736,13 +1396,13 @@ XAD_INLINE complex<xad::FReal<T>> exp(const complex<xad::FReal<T>>& z)
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> log(const complex<xad::AReal<T>>& z)
 {
-    return complex<xad::AReal<T>>(log(abs(z)), arg(z));
+    return complex<xad::AReal<T>>(log(xad::detail::abs_impl(z)), xad::detail::arg_impl(z));
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> log(const complex<xad::FReal<T>>& z)
 {
-    return complex<xad::FReal<T>>(log(abs(z)), arg(z));
+    return complex<xad::FReal<T>>(log(xad::detail::abs_impl(z)), xad::detail::arg_impl(z));
 }
 
 template <class T>
@@ -1763,13 +1423,13 @@ template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x,
                                       const complex<xad::AReal<T>>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, const xad::AReal<T>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
@@ -1787,136 +1447,136 @@ XAD_INLINE complex<xad::AReal<T>> pow(const complex<T>& x, const complex<xad::AR
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, const T& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T, class T2>
 XAD_INLINE typename std::enable_if<xad::ExprTraits<T2>::isExpr, complex<xad::AReal<T>>>::type pow(
     const complex<xad::AReal<T>>& x, const T2& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, int y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, short y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, long y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, long long y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, unsigned y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, unsigned short y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, unsigned long y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const complex<xad::AReal<T>>& x, unsigned long long y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const xad::AReal<T>& x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(const T& x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(int x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(short x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(long x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(long long x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(unsigned x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(unsigned short x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(unsigned long x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::AReal<T>> pow(unsigned long long x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T, class T2>
 XAD_INLINE typename std::enable_if<xad::ExprTraits<T2>::isExpr, complex<xad::AReal<T>>>::type pow(
     const T2& x, const complex<xad::AReal<T>>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x,
                                       const complex<xad::FReal<T>>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
@@ -1934,135 +1594,135 @@ XAD_INLINE complex<xad::FReal<T>> pow(const complex<T>& x, const complex<xad::FR
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, const xad::FReal<T>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, const T& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, int y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, short y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, long y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, long long y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, unsigned y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, unsigned short y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, unsigned long y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const complex<xad::FReal<T>>& x, unsigned long long y)
 {
-    return exp(log(x) * T(y));
+    return xad::detail::exp_impl(log(x) * T(y));
 }
 
 template <class T, class T2>
 XAD_INLINE typename std::enable_if<xad::ExprTraits<T2>::isExpr, complex<xad::FReal<T>>>::type pow(
     const complex<xad::FReal<T>>& x, const T2& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const xad::FReal<T>& x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(const T& x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(int x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(short x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(long x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(long long x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(unsigned long x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(unsigned x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(unsigned long long x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T>
 XAD_INLINE complex<xad::FReal<T>> pow(unsigned short x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(T(x)) * y);
+    return xad::detail::exp_impl(log(T(x)) * y);
 }
 
 template <class T, class T2>
 XAD_INLINE typename std::enable_if<xad::ExprTraits<T2>::isExpr, complex<xad::FReal<T>>>::type pow(
     const T2& x, const complex<xad::FReal<T>>& y)
 {
-    return exp(log(x) * y);
+    return xad::detail::exp_impl(log(x) * y);
 }
 
 template <class T>
@@ -2222,3 +1882,427 @@ XAD_INLINE std::complex<xad::FReal<T>> atanh(const std::complex<xad::FReal<T>>& 
 }
 
 }  // namespace std
+
+namespace xad
+{
+namespace detail
+{
+
+template <class T>
+XAD_INLINE T norm_impl(const std::complex<T>& x)
+{
+    return x.real() * x.real() + x.imag() * x.imag();
+}
+
+template <class T>
+XAD_INLINE T abs_impl(const std::complex<T>& x)
+{
+    using std::sqrt;
+    if (xad::isinf(x.real()) || xad::isinf(x.imag()))
+        return std::numeric_limits<double>::infinity();
+    // TODO: add hypot to XAD to use that one here
+    return sqrt(xad::detail::norm_impl(x));
+}
+
+template <class T>
+XAD_INLINE std::complex<T> exp_impl(const std::complex<T>& z)
+{
+    using std::cos;
+    using std::exp;
+    using std::sin;
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (xad::isinf(z.real()))
+    {
+        if (z.real() > 0.0)
+        {
+            if (z.imag() == 0.0)
+                return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
+            if (xad::isinf(z.imag()) && z.imag() > 0.0)
+                return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                       std::numeric_limits<nested>::quiet_NaN());
+            if (xad::isnan(z.imag()))
+                return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                       std::numeric_limits<nested>::quiet_NaN());
+        }
+        else
+        {
+            if (xad::isinf(z.imag()) && z.imag() > 0.0)
+                return std::complex<T>(0.0, 0.0);
+            if (xad::isnan(z.imag()))
+                return std::complex<T>(0.0, 0.0);
+        }
+    }
+    else if (xad::isnan(z.real()))
+    {
+        if (z.imag() == 0.0 && !xad::signbit(z.imag()))
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
+        else
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+    }
+    T e = ::xad::exp(z.real());
+    return std::complex<T>(e * cos(z.imag()), e * sin(z.imag()));
+}
+
+template <class T1, class T2>
+XAD_INLINE std::complex<typename xad::ExprTraits<T1>::value_type> polar_impl(const T1& r,
+                                                                             const T2& theta)
+{
+    using std::cos;
+    using std::sin;
+    typedef typename xad::ExprTraits<T1>::value_type base_type;
+    return std::complex<base_type>(base_type(r * cos(theta)), base_type(r * sin(theta)));
+}
+
+template <class T>
+XAD_INLINE std::complex<T> sqrt_impl(const std::complex<T>& z)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (xad::isinf(z.real()) && z.real() < 0.0)
+    {
+        if (xad::isfinite(z.imag()) && z.imag() > 0.0)
+            return std::complex<T>(0.0, std::numeric_limits<nested>::infinity());
+        if (xad::isnan(z.imag()))
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   std::numeric_limits<nested>::infinity());
+    }
+    if (xad::isinf(z.real()) && z.real() > 0.0)
+    {
+        if (xad::isfinite(z.imag()) && z.imag() > 0.0)
+            return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
+
+        if (xad::isnan(z.imag()))
+            return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+    }
+    if (xad::isinf(z.imag()) && z.imag() > 0.0)
+        return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                               std::numeric_limits<nested>::infinity());
+
+    return ::xad::detail::polar_impl(sqrt(abs(z)), arg(z) * T(0.5));
+}
+
+template <class T>
+XAD_INLINE std::complex<T> sinh_impl(const std::complex<T>& z)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    auto cls = xad::fpclassify(z.real());
+    if (cls == FP_INFINITE && xad::isinf(z.imag()) && z.real() > 0.0 && z.imag() > 0.0)
+        return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                               std::numeric_limits<nested>::quiet_NaN());
+    if (cls == FP_NAN && z.imag() == 0.0 && !xad::signbit(z.imag()))
+        return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
+    if (cls == FP_ZERO && !xad::signbit(z.real()))
+    {
+        if ((xad::isinf(z.imag()) && z.imag() > 0.0) || xad::isnan(z.imag()))
+            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
+    }
+    return (exp(z) - exp(-z)) / T(2.0);
+}
+
+template <class T>
+XAD_INLINE std::complex<T> cosh_impl(const std::complex<T>& z)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    auto cls = xad::fpclassify(z.real());
+    if (cls == FP_INFINITE && xad::isinf(z.imag()) && z.real() > 0.0 && z.imag() > 0.0)
+        return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                               std::numeric_limits<nested>::quiet_NaN());
+    if (cls == FP_NAN && z.imag() == 0.0 && !xad::signbit(z.imag()))
+        return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
+    if (cls == FP_ZERO && !xad::signbit(z.real()))
+    {
+        if ((xad::isinf(z.imag()) && z.imag() > 0.0) || xad::isnan(z.imag()))
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
+    }
+    return (exp(z) + exp(-z)) / T(2.0);
+}
+
+template <class T>
+XAD_INLINE std::complex<T> tanh_impl(const std::complex<T>& z)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (z.real() == 0.0)
+    {
+        if (xad::isinf(z.imag()) && z.imag() > 0.0)
+        {
+#if defined(__APPLE__)
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+#else
+            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
+#endif
+        }
+        if (xad::isnan(z.imag()))
+        {
+#if defined(__APPLE__)
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+#else
+            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
+#endif
+        }
+    }
+    if (xad::isinf(z.real()) && z.real() > 0.0 && (z.imag() > 0.0 || xad ::isnan(z.imag())))
+        return std::complex<T>(1.0, 0.0);
+    if (xad::isnan(z.real()) && z.imag() == 0.0)
+        return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
+    return sinh(z) / cosh(z);
+}
+
+template <class T>
+XAD_INLINE std::complex<T> asinh_impl(const std::complex<T>& z)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (xad::isinf(z.real()) && z.real() > 0.0)
+    {
+        if (xad::isinf(z.imag()) && z.imag() > 0.0)
+            return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                   3.141592653589793238462643383279502884197169399 * 0.25);
+        if (xad::isnan(z.imag()))
+            return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+        if (z.imag() > 0.0)
+            return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
+    }
+    if (xad::isnan(z.real()))
+    {
+        if (xad::isinf(z.imag()) && z.imag() > 0.0)
+            return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+        if (z.imag() == 0.0 && !xad::signbit(z.imag()))
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
+    }
+    if (xad::isinf(z.imag()) && z.imag() > 0.0 && xad::isfinite(z.real()) && z.real() > 0.0)
+        return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                               3.141592653589793238462643383279502884197169399 * 0.5);
+    return log(z + sqrt(T(1.0) + (z * z)));
+}
+
+template <class T>
+XAD_INLINE std::complex<T> acosh_impl(const std::complex<T>& z)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (xad::isinf(z.imag()) && z.imag() > 0.0)
+    {
+        if (xad::isfinite(z.real()))
+            return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                   3.141592653589793238462643383279502884197169399 * 0.5);
+        if (xad::isinf(z.real()) && z.real() < 0.0)
+            return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                   3.141592653589793238462643383279502884197169399 * 0.75);
+    }
+    if (xad::isnan(z.imag()))
+    {
+        if (z.real() == 0.0)
+#if defined(__APPLE__)
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+#else
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   3.141592653589793238462643383279502884197169399 * 0.5);
+#endif
+        else if (xad::isinf(z.real()))
+            return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+        else
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+    }
+    if (xad::isinf(z.real()) && xad::isfinite(z.imag()) && z.imag() > 0.0)
+    {
+        if (z.real() < 0.0)
+            return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                                   3.141592653589793238462643383279502884197169399);
+        else
+            return std::complex<T>(std::numeric_limits<nested>::infinity(), +0.0);
+    }
+    if (xad::isnan(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
+        return std::complex<T>(std::numeric_limits<nested>::infinity(),
+                               std::numeric_limits<nested>::quiet_NaN());
+
+    return log(z + sqrt(z + T(1.0)) * sqrt(z - T(1.0)));
+}
+
+template <class T>
+XAD_INLINE std::complex<T> atanh_impl(const std::complex<T>& z)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (xad::isinf(z.real()) && z.real() > 0.0)
+    {
+        if (xad::isinf(z.imag()) && z.imag() > 0.0)
+            return std::complex<T>(0.0, 3.141592653589793238462643383279502884197169399 * 0.5);
+        if (xad::isnan(z.imag()))
+            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
+        if (xad::isfinite(z.imag()) && z.imag() > 0.0)
+            return std::complex<T>(0.0, 3.141592653589793238462643383279502884197169399 * 0.5);
+    }
+    if (xad::isnan(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
+        return std::complex<T>(0.0, 3.141592653589793238462643383279502884197169399 * 0.5);
+    if (z.real() == 1.0 && z.imag() == 0.0)
+        return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
+    if (z.real() > 0.0 && xad::isfinite(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
+        return std::complex<T>(0.0, 3.141592653589793238462643383279502884197169399 * 0.5);
+    if (z.real() == 0.0)
+    {
+        if (z.imag() == 0.0)
+            return std::complex<T>(0.0, 0.0);
+        if (xad::isnan(z.imag()))
+            return std::complex<T>(0.0, std::numeric_limits<nested>::quiet_NaN());
+    }
+    return (log(T(1.0) + z) - log(T(1.0) - z)) / T(2.0);
+}
+
+template <class T>
+XAD_INLINE std::complex<T> sin_impl(const std::complex<T>& z)
+{
+    // -i * sinh(i*z)
+    std::complex<T> iz(-z.imag(), z.real());
+    std::complex<T> sinhiz = sinh(iz);
+    return std::complex<T>(sinhiz.imag(), -sinhiz.real());
+}
+
+template <class T>
+XAD_INLINE std::complex<T> cos_impl(const std::complex<T>& z)
+{
+    // cosh(i*z)
+    std::complex<T> iz(-z.imag(), z.real());
+    return cosh(iz);
+}
+
+template <class T>
+XAD_INLINE std::complex<T> tan_impl(const std::complex<T>& z)
+{
+    // -i * tanh(i*z)
+    std::complex<T> iz(-z.imag(), z.real());
+    std::complex<T> tanhiz = tanh(iz);
+    return std::complex<T>(tanhiz.imag(), -tanhiz.real());
+}
+
+template <class T>
+XAD_INLINE std::complex<T> asin_impl(const std::complex<T>& z)
+{
+    // -i * asinh(i*z);
+    std::complex<T> iz(-z.imag(), z.real());
+    std::complex<T> asinhiz = asinh(iz);
+    return std::complex<T>(asinhiz.imag(), -asinhiz.real());
+}
+
+template <class T>
+XAD_INLINE std::complex<T> acos_impl(const std::complex<T>& z)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (z.real() == 0.0)
+    {
+        if (z.imag() == 0.0 && !xad::signbit(z.imag()))
+            return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5, -0.0);
+        if (xad::isnan(z.imag()))
+            return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5,
+                                   -std::numeric_limits<nested>::quiet_NaN());
+    }
+    if (xad::isfinite(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
+        return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5,
+                               -std::numeric_limits<nested>::infinity());
+    if (xad::isinf(z.real()))
+    {
+        if (z.real() < 0.0)
+        {
+
+            if (xad::isfinite(z.imag()) && z.imag() >= 0.0)
+                return std::complex<T>(3.141592653589793238462643383279502884197169399,
+                                       -std::numeric_limits<nested>::infinity());
+            if (xad::isinf(z.imag()) && z.imag() > 0.0)
+                return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.75,
+                                       -std::numeric_limits<nested>::infinity());
+        }
+        else
+        {
+            if (xad::isfinite(z.imag()) && z.imag() >= 0.0)
+                return std::complex<T>(+0.0, -std::numeric_limits<nested>::infinity());
+            if (xad::isinf(z.imag()) && z.imag() > 0.0)
+                return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.25,
+                                       -std::numeric_limits<nested>::infinity());
+        }
+        if (xad::isnan(z.imag()))
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   std::numeric_limits<nested>::infinity());
+    }
+    if (xad::isnan(z.real()))
+    {
+        if (xad::isfinite(z.imag()))
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   std::numeric_limits<nested>::quiet_NaN());
+        else if (xad::isinf(z.imag()) && z.imag() > 0.0)
+            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
+                                   -std::numeric_limits<nested>::infinity());
+    }
+
+    std::complex<T> iz(-z.imag(), z.real());
+    std::complex<T> lnizsqrt = log(iz + sqrt(T(1.0) - (z * z)));
+    std::complex<T> ilnizsqrt(-lnizsqrt.imag(), lnizsqrt.real());
+    return T(3.141592653589793238462643383279502884197169399 * 0.5) + ilnizsqrt;
+}
+
+template <class T>
+XAD_INLINE std::complex<T> atan_impl(const std::complex<T>& z)
+{
+    // -i * atanh(i*z)
+    std::complex<T> complex_i(0, 1);
+    std::complex<T> iz(-z.imag(), z.real());
+    std::complex<T> atanhiz = atanh(iz);
+    return std::complex<T>(atanhiz.imag(), -atanhiz.real());
+}
+
+template <class T>
+XAD_INLINE T arg_impl(const std::complex<T>& z)
+{
+    using std::atan2;
+    return atan2(z.imag(), z.real());
+}
+
+template <class Scalar, class Derived>
+XAD_INLINE typename xad::ExprTraits<Derived>::value_type arg_impl(
+    const xad::Expression<Scalar, Derived>& x)
+{
+    using std::atan2;
+
+    // as this function returns constants only depending on > or < 0,
+    // where derivatives are 0 anyway, we can return scalars converted to the
+    // underlying expression type
+    typedef typename xad::ExprTraits<Derived>::value_type ret_type;
+#if defined(_MSC_VER) && _MSC_VER < 1920
+    // VS 2017 evaluates this differently
+    (void)x;  // silence unused warning
+    return ret_type();
+#else
+    if (x > 0.0)
+        return ret_type();
+    else if (x < 0.0)
+        return ret_type(3.141592653589793238462643383279502884197169399);  // PI
+    else
+        return atan2(ret_type(), ret_type(x));  // for correct handling of +/- zero
+#endif
+}
+
+#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
+template <class Scalar, class Derived>
+XAD_INLINE typename xad::ExprTraits<Derived>::value_type proj_impl(
+    const xad::Expression<Scalar, Derived>& x)
+{
+    return typename xad::ExprTraits<Derived>::value_type(x);
+}
+#else
+template <class Scalar, class Derived>
+XAD_INLINE std::complex<typename xad::ExprTraits<Derived>::value_type> proj_impl(
+    const xad::Expression<Scalar, Derived>& x)
+{
+    if (xad::isinf(x))
+        return std::complex<typename xad::ExprTraits<Derived>::value_type>(
+            std::numeric_limits<typename xad::ExprTraits<Derived>::nested_type>::infinity());
+    else
+        return std::complex<typename xad::ExprTraits<Derived>::value_type>(x);
+}
+#endif
+
+}  // namespace detail
+}  // namespace xad
