@@ -29,13 +29,12 @@ cmake_policy(SET CMP0092 NEW)   # avoid setting warning flags by default in Wind
 project(XAD 
     LANGUAGES CXX
     DESCRIPTION "Fast and comprehensive C++ library for automatic differentiation."
-    HOMEPAGE_URL "https://getxad.com"
+    HOMEPAGE_URL "https://github.com/xcelerit/xad"
 )
 
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(SetupVersion)
-setup_version(XAD 1 0 0)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)  # allow using solution folders
 include(GNUInstallDirs)   # for installation directories
