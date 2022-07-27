@@ -32,7 +32,7 @@ using xad::ChunkContainer;
 TEST(ChunkContainer, alloc_less_than_alignment)
 {
     void* p1 = ::xad::detail::aligned_alloc(128, 32);
-    
+
     EXPECT_THAT(p1, NotNull());
 }
 
@@ -78,7 +78,7 @@ TEST(ChunkContainer, uninitialized_extend)
     auto it = chk.iterator_at(i);
     for (std::size_t j = i + 10; i < j; ++i)
     {
-        ::new (&*it++) int(static_cast<int>(i));
+        ::new(&*it++) int(static_cast<int>(i));
     }
 
     for (std::size_t j = 0; j < ChunkContainer<int>::chunk_size - 4 + 10; ++j)
@@ -125,12 +125,56 @@ TEST(ChunkContainer, multichunk)
         EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
 }
 
+namespace
+{
+struct NonPodTester
+{
+    NonPodTester() { ++constructions; }
+    NonPodTester(const NonPodTester&) { ++copies; }
+    NonPodTester(NonPodTester&&) = delete;
+
+    ~NonPodTester()
+    {
+        ++destructions;
+    }
+
+    static void reset()
+    {
+        constructions = 0;
+        destructions = 0;
+        copies = 0;
+    }
+
+    static int constructions;
+    static int copies;
+    static int destructions;
+};
+
+int NonPodTester::constructions = 0;
+int NonPodTester::destructions = 0;
+int NonPodTester::copies = 0;
+}
+
+TEST(ChunkContainer, non_pod_type)
+{
+    {
+        NonPodTester::reset();
+        ChunkContainer<NonPodTester, 8> chk;
+        EXPECT_THAT(NonPodTester::constructions, Eq(0));
+        for (int i = 0; i < 20; ++i) chk.push_back({});
+        EXPECT_THAT(NonPodTester::constructions, Eq(20));
+        EXPECT_THAT(NonPodTester::copies, Eq(20));
+    }
+    EXPECT_THAT(NonPodTester::copies + NonPodTester::constructions, Eq(NonPodTester::destructions));
+    
+}
+
 TEST(ChunkContainer, resize)
 {
     ChunkContainer<int, 8> chk;
     for (int i = 0; i < 10; ++i)
         chk.push_back(i);
-    
+
     EXPECT_THAT(chk.size(), Eq(10u));
 
     chk.resize(15);
@@ -139,7 +183,8 @@ TEST(ChunkContainer, resize)
 
     for (int i = 0; i < 10; ++i)
         EXPECT_THAT(chk[size_t(i)], Eq(i));
-    for (int i = 10; i < 15; ++i) {
+    for (int i = 10; i < 15; ++i)
+    {
         if (i == 12)
             EXPECT_THAT(chk[size_t(i)], Eq(12));
         else
@@ -162,4 +207,3 @@ TEST(ChunkContainer, append)
     for (int i = 0; i < 18; ++i)
         EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
 }
-

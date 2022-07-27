@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+-   Full MacOS support
 -   Better CI pipeline with more platforms and compilers tested
--   Code coverage and quality measured on pull requests
+-   Code coverage and quality measured on pull requests and reported in [README.md](README.md)
 -   Documentation updates for better website SEO
+-   Status badges in [README.md](README.md)
 
 ### Changed
 
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+
 
 ## [1.0.0] - 2022-07-07
 

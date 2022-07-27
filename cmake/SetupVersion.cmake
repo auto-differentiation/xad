@@ -28,27 +28,70 @@
 #  Setup of Versioning 
 #
 #  defines:
-#  <name>_VERSION_[MAJOR/MINOR/PATCH/PATCHNUM] 
-#  VERSION
-#  <name>_VERSION
+#  <name>_VERSION_[MAJOR/MINOR/PATCH/PATCHNUM]  Note: PATCH includes the suffix while PATCHNUM is numeric
+#  <name>_VERSION_SUFFIX                        For prereleases, usually a string
+#  <name>_VERSION                               Full version string, incl. suffix
+#  VERSION                                      Same as <name> version
+#  <name>_IS_PRERELEASE                         Boolean
+#  <name>_VERSION_NUMERIC                       10000 * major + 100 * minor + patchnum
+# 
 #  CURRENT_YEAR (used in documentation generator)
+#
+#  It also defines the PROJECT_ variables of the version, to be consistent with CMake's project command
 #
 ######################################
 macro(setup_version name major minor patch)
     # keep these numbers as globally accessible variables
     set(${name}_VERSION_MAJOR ${major})
     set(${name}_VERSION_MINOR ${minor})
-    set(${name}_VERSION_PATCH ${patch})
+    if(NOT "${ARGN}" STREQUAL "")
+        set(${name}_VERSION_PATCH "${patch}-${ARGN}")
+        set(${name}_VERSION_SUFFIX "${ARGN}")
+        set(${name}_IS_PRERELEASE TRUE)
+    else()
+        set(${name}_VERSION_PATCH ${patch})
+        set(${name}_VERSION_SUFFIX "")
+        set(${name}_IS_PRELEASE FALSE)
+    endif()
     set(VERSION "${${name}_VERSION_MAJOR}.${${name}_VERSION_MINOR}.${${name}_VERSION_PATCH}")
     set(${name}_VERSION "${VERSION}")
 
     # in case there is an a or RC or b letter
-    string(SUBSTRING "${${name}_VERSION_PATCH}" 0 1 ${name}_VERSION_PATCHNUM)
+    set(${name}_VERSION_PATCHNUM ${patch})
 
     # numeric version - major*10000 + minor * 100 + patchnum
     math(EXPR ${name}_VERSION_NUMERIC "${major} * 10000 + ${minor} * 100 + ${${name}_VERSION_PATCHNUM}")
+
+    # project variables
+    set(PROJECT_VERSION ${${name}_VERSION})
+    set(PROJECT_VERSION_MAJOR ${${name}_VERSION_MAJOR})
+    set(PROJECT_VERSION_MINOR ${${name}_VERSION_MINOR})
+    set(PROJECT_VERSION_PATCH ${${name}_VERSION_PATCH})
 
     string(TIMESTAMP CURRENT_YEAR "%Y")
 
     message(STATUS "Building ${name}, Version ${VERSION}...")
 endmacro()
+
+# parse VERSION file
+file(READ "${CMAKE_CURRENT_LIST_DIR}/../VERSION" _raw_version)
+string(STRIP "${_raw_version}" _raw_version)
+string(REPLACE "." ";" _version_list "${_raw_version}")
+list(LENGTH _version_list _version_list_length)
+if(NOT _version_list_length EQUAL 3)
+    message(FATAL_ERROR "Version string ${_raw_version} does not have the required 3 elements")
+endif()
+list(GET _version_list 0 _version_major)
+list(GET _version_list 1 _version_minor)
+list(GET _version_list 2 _version_patch_raw)
+string(REPLACE "-" ";" _version_patch_list "${_version_patch_raw}")
+list(LENGTH _version_patch_list _version_patch_list_len)
+if(_version_patch_list_len EQUAL 2)
+    list(GET _version_patch_list 0 _version_patch)
+    list(GET _version_patch_list 1 _version_suffix)
+else()
+    set(_version_patch "${version_patch_raw}")
+    set(_version_suffix "")
+endif()
+
+setup_version(${PROJECT_NAME} ${_version_major} ${_version_minor} ${_version_patch} ${_version_suffix})

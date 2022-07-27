@@ -253,6 +253,25 @@ TEST(Expressions, wrapsAReal)
                   "AD type not wrapped");
 }
 
+TEST(Expressions, supportsRegisteringVectorOutputs)
+{
+    xad::Tape<double> s;
+    xad::AD x1 = 2.0;
+    xad::AD x2 = 5.0;
+    s.registerInput(x1);
+    s.registerInput(x2);
+    s.newRecording();
+    std::vector<xad::AD> yv;
+    yv.emplace_back(x1 + x2);
+    s.registerOutputs(yv);
+    derivative(yv[0]) = 1.0;
+    s.computeAdjoints();
+    // s.printStatus();
+    EXPECT_DOUBLE_EQ(x1.getValue() + x2.getValue(), yv[0].getValue());
+    EXPECT_DOUBLE_EQ(1.0, derivative(x1));
+    EXPECT_DOUBLE_EQ(1.0, derivative(x2));
+}
+
 TEST(Expressions, canDeriveSimpleAdditions)
 {
     xad::Tape<double> s;
