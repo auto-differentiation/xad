@@ -165,3 +165,11 @@ TEST(ReusableRange, NotJoinable)
 
     EXPECT_THAT(r.isJoinable(r2), xad::ReusableRange<unsigned>::FAILED);
 }
+
+TEST(ReusableRange, OutputToStream)
+{
+    xad::ReusableRange<unsigned> r(5, 7);
+    std::stringstream sstr;
+    sstr << r;
+    EXPECT_THAT(sstr.str(), Eq("[5, 7)"));
+}
