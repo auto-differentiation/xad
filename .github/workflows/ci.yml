@@ -321,6 +321,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           parallel-finished: true
+      - name: Rerun coverage workaround
+        # from https://github.com/lemurheavy/coveralls-public/issues/1653#issuecomment-1251587119
+        run: |
+          curl --location --request GET 'https://coveralls.io/rerun_build?repo_token=${{ secrets.GITHUB_TOKEN }}&build_num=${{ github.run_id }}'
           
   event_file:
     name: Event File
