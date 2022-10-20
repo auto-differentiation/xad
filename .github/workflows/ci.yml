@@ -152,11 +152,11 @@ jobs:
           echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
           sudo apt-get update
           sudo apt-get install -y cmake
+      - uses: actions/checkout@v3
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.3
         with:
           key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
-      - uses: actions/checkout@v3
       - name: configure
         run: |
           mkdir build
@@ -246,11 +246,11 @@ jobs:
         if: ${{ matrix.coverage }}
         run: |
           brew install lcov
+      - uses: actions/checkout@v3
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.3
         with:
           key: macos-${{ matrix.config }}
-      - uses: actions/checkout@v3
       - name: configure
         run: |
           mkdir build
