@@ -1,0 +1,22 @@
+##### Labeler ##########################################################################################################
+# Enable "labeler" for your PR that would add labels to PRs based on the paths that are modified in the PR.
+labelPRBasedOnFilePath:
+  samples:
+    - samples/**/*
+  doc:
+    - doc/**/*
+  src:
+    - src/**/*
+  test:
+    - test/**/*
+  workflow:
+    - .github/workflows/*
+
+##### Greetings ########################################################################################################
+firstPRWelcomeComment: >
+  Thanks for opening this pull request. Please check out our [contributing guidelines](https://github.com/xcelerit/XAD/CONTRIBUTING.md).
+firstPRMergeComment: >
+  Awesome work, congrats on your first merged pull request!
+firstIssueWelcomeComment: >
+  Thanks for opening your first issue here. We'll look into it and get back in due time.
+
