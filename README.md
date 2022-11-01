@@ -338,7 +338,7 @@ That is, every pull request should also update the Changelog accordingly.
 
 ## History
 
-In 2010, Xcelerit starting working on AAD, 
+In 2010, Xcelerit started working on AAD, 
 building on early works of Professor Mike Giles and Professor Paul Glasserman 
 for efficiently calculating greeks in quantitative finance with AAD.
 Xcelerit's closed-source tool QuantAD was first released in 2014,
