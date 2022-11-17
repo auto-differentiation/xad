@@ -14,18 +14,16 @@ git clone https://github.com/yourusername/xad.git
 
 3.  Create a feature branch, typically based on master, for your change
 
-4.  Create a feature branch, typically based on master, for your change
-
 ```bash
 git checkout -b feature/my-change main
 ```
 
-5.  Make your changes, adding tests as you go, and commit. Again, make sure all 
+4.  Make your changes, adding tests as you go, and commit. Again, make sure all 
     tests pass.
 
-6.  Push your fork 
+5.  Push your fork 
 
-7.  [Submit a pull request][pr]. Not that you will have to sign the [Contributer License Agreement][cla] 
+6.  [Submit a pull request][pr]. Not that you will have to sign the [Contributor License Agreement][cla] 
     before the PR can be merged.
 
 At this point, you are depending on the core team to review your request. 
@@ -73,7 +71,7 @@ For convenience, there is a `.clang-format` file in the root of the project whic
     -   Named constants must be all upper case, separated by underscores `DEFAULT_LENGTH`
     -   Method and function names must be mixed case, starting with lower case, and must be verbs `pushLhs`
     -   Namespace names must be all lower case `xad`
-    -   Template paramters should be single character capitals, or named like types `T`, `Scalar`
+    -   Template parameters should be single character capitals, or named like types `T`, `Scalar`
     -   Private class members should have an underscore suffix `length_`
     -   All names should be written in English
     -   The name of the object should be avoided in the method name `Line::getLength()`, _not_ `Line::getLineLength()`

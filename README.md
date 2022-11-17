@@ -28,7 +28,10 @@ Key features:
 The documentation of the latest version is available [here](https://xad.xcelerit.com).
 AAD training, consultancy, and commercial licensing is available from [Xcelerit](https://www.xcelerit.com/adjoint-algorithmic-differentiation/).
 
-As an example of integration with a large C++ library, [QuantLib](https://github.com/lballabio/QuantLib) - the comprehensive software framework for quantitative finance - is AAD-enabled using XAD. A small adaptor module is required between the two repositories, which contains build instructions, tests, and examples. You can try it out [here](https://www.xcelerit.com/xad/#qlxad). 
+As an example of integration with a large C++ library, [QuantLib](https://github.com/lballabio/QuantLib) -
+the comprehensive software framework for quantitative finance - is AAD-enabled using XAD. 
+A small adaptor module is required between the two repositories, which contains build instructions, 
+tests, and examples. You can try it out [here](https://github.com/xcelerit/qlxad). 
 
 Contents:
 
