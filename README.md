@@ -2,7 +2,7 @@
 
 [![Download](https://img.shields.io/github/v/release/xcelerit/xad?label=Download&sort=semver)](https://github.com/xcelerit/xad/releases/latest)
 [![License](https://img.shields.io/github/license/xcelerit/xad?label=License)](https://github.com/xcelerit/xad/blob/main/LICENSE.md)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6838603.svg)](https://doi.org/10.5281/zenodo.6838603)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7331593.svg)](https://doi.org/10.5281/zenodo.7331593)
 [![PRs Welcome](https://img.shields.io/badge/PRs%20-welcome-brightgreen.svg)](https://github.com/xcelerit/xad/blob/main/CONTRIBUTING.md)
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/xcelerit/xad/CI?label=Build&logo)
