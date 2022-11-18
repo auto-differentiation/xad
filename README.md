@@ -88,6 +88,8 @@ tests, and examples. You can try it out [here](https://github.com/xcelerit/qlxad
 -   MacOS: 10.9 or higher, with Apple Clang
 -   Git client
 
+(See [tested platforms](#tested-platforms) for the list of platforms covered by continuous integration.)
+
 ### Cloning the Repository
 
 ```bash
