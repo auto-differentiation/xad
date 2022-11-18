@@ -1,19 +1,50 @@
-# XAD
+<p align="center" dir="auto">
+    <a href="https://xad.xcelerit.com" rel="nofollow" target="_blank">
+        <img src="https://github.com/xcelerit/XAD/blob/main/doc/images/logo.svg?raw=true" height="80" alt="XAD" style="max-width:100%">
+    </a>
+</p>
 
-[![Download](https://img.shields.io/github/v/release/xcelerit/xad?label=Download&sort=semver)](https://github.com/xcelerit/xad/releases/latest)
-[![License](https://img.shields.io/github/license/xcelerit/xad?label=License)](https://github.com/xcelerit/xad/blob/main/LICENSE.md)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7331593.svg)](https://doi.org/10.5281/zenodo.7331593)
-[![PRs Welcome](https://img.shields.io/badge/PRs%20-welcome-brightgreen.svg)](https://github.com/xcelerit/xad/blob/main/CONTRIBUTING.md)
-
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/xcelerit/xad/CI?label=Build&logo)
-[![Tests Badge](https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg)](https://github.com/xcelerit/xad/actions?query=workflow%3ACI)
-
-[![Coveralls](https://img.shields.io/coveralls/github/xcelerit/XAD?label=Coverage&logo=coveralls)](https://coveralls.io/github/xcelerit/XAD?branch=main)
-[![LGTM Grade](https://img.shields.io/lgtm/grade/cpp/github/xcelerit/XAD?logo=lgtm&label=Code%20Quality%20%28LGTM%29)](https://lgtm.com/projects/g/xcelerit/XAD/context:cpp)
-[![Codacy grade](https://img.shields.io/codacy/grade/42f40022f8ef447da51a178f684eb19d?logo=codacy&label=Code%20Quality%20%28Codacy%29)](https://www.codacy.com/gh/xcelerit/XAD/dashboard)
 
 XAD is a fast and comprehensive C++ library for automatic differentiation by Xcelerit.
 It targets production-quality code at any scale, striving for both ease of use and high performance.
+
+<p align="center" dir="auto">
+    <a href="https://github.com/xcelerit/xad/releases/latest">
+        <img src="https://img.shields.io/github/v/release/xcelerit/xad?label=Download&sort=semver" alt="Download" style="max-width: 100%;">
+    </a>
+    <a href="https://github.com/xcelerit/XAD/blob/main/LICENSE.md">
+        <img src="https://img.shields.io/github/license/xcelerit/xad?label=License" alt="License" style="max-width: 100%;">
+    </a>
+    <a href="https://doi.org/10.5281/zenodo.7331593">
+        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.7331593.svg" alt="DOI" style="max-width: 100%;">
+    </a>
+    <a href="https://github.com/xcelerit/XAD/blob/main/CONTRIBUTING.md">
+        <img src="https://img.shields.io/badge/PRs%20-welcome-brightgreen.svg" alt="PRs Welcome" style="max-width: 100%;">
+    </a>
+    <br>
+    <a href="https://github.com/xcelerit/XAD/actions/workflows/ci.yml">
+        <img src="https://img.shields.io/github/workflow/status/xcelerit/xad/CI?label=Build&logo" alt="GitHub Workflow Status" style="max-width: 100%;">
+    </a>
+    <a href="https://github.com/xcelerit/xad/actions?query=workflow%3ACI">
+        <img src="https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg" alt="Tests Badge" style="max-width: 100%;">
+    </a>
+    <a href="https://coveralls.io/github/xcelerit/XAD?branch=main">
+        <img src="https://img.shields.io/coveralls/github/xcelerit/XAD?label=Coverage&logo=coveralls" alt="PRs Welcome" style="max-width: 100%;">
+    </a>
+    <a href="https://lgtm.com/projects/g/xcelerit/XAD/context:cpp">
+        <img src="https://img.shields.io/lgtm/grade/cpp/github/xcelerit/XAD?logo=lgtm&label=Quality%20%28LGTM%29" alt="GitHub Workflow Status" style="max-width: 100%;">
+    </a>
+    <a href="https://www.codacy.com/gh/xcelerit/XAD/dashboard">
+        <img src="https://img.shields.io/codacy/grade/42f40022f8ef447da51a178f684eb19d?logo=codacy&label=Quality%20%28Codacy%29" alt="Tests Badge" style="max-width: 100%;">
+    </a>
+</p>
+
+<p align="center">
+  <a href="https://xad.xcelerit.com">Documentation</a> | 
+  <a href="https://github.com/xcelerit/qlxad">QuantLib Integration</a> | 
+  <a href="https://www.xcelerit.com/adjoint-algorithmic-differentiation/">Commercial Licensing</a> | 
+  <a href="https://www.xcelerit.com/adjoint-algorithmic-differentiation/">Training & Consultancy</a> 
+</p>
 
 Key features:
 
@@ -25,32 +56,22 @@ Key features:
 -   High performance
 -   Battle-tested in large production code bases
 
-The documentation of the latest version is available [here](https://xad.xcelerit.com).
-AAD training, consultancy, and commercial licensing is available from [Xcelerit](https://www.xcelerit.com/adjoint-algorithmic-differentiation/).
-
 As an example of integration with a large C++ library, [QuantLib](https://github.com/lballabio/QuantLib) -
 the comprehensive software framework for quantitative finance - is AAD-enabled using XAD. 
 A small adaptor module is required between the two repositories, which contains build instructions, 
 tests, and examples. You can try it out [here](https://github.com/xcelerit/qlxad). 
 
-Contents:
+## Contents
 
 -   [Getting Started](#getting-started)
-    -   [Prerequisites](#prerequisites)
-    -   [Cloning the Repository](#cloning-the-repository)
-    -   [Building](#building)
-    -   [Running the tests](#running-the-tests)
-    -   [Installing](#installing)
 -   [Tuning Behaviour and Performance](#tuning-behaviour-and-performance)
 -   [Building the User Documentation](#building-the-user-documentation)
 -   [Integrating into Client Code](#integrating-into-client-code)
-    -   [Approach 1: Submodule + CMake](#approach-1-submodule--cmake)
-    -   [Approach 2: FetchContent + CMake](#approach-2-fetchcontent--cmake)
-    -   [Approach 3: Install XAD and Link](#approach-3-install-xad-and-link)
 -   [Getting Help](#getting-help)
 -   [Planned Features](#planned-features)
 -   [Contributing](#contributing)
 -   [Versioning](#versioning)
+-   [Tested Platforms](#tested-platforms)
 -   [History](#history)
 -   [Authors](#authors)
 -   [License](#license)
@@ -67,23 +88,7 @@ Contents:
 -   MacOS: 10.9 or higher, with Apple Clang
 -   Git client
 
-The following platforms are part of the [continuous integration workflow][ci], i.e. they are tested on each commit. You can use other configurations at your own risk,
-or [submit a PR](CONTRIBUTING.md) to include it in the [CI workflow][ci].
-
-| Operating System     |  Compiler                         | Configurations                                    | Test Coverage Recorded |
-|----------------------|-----------------------------------|---------------------------------------------------|-------------------|
-| Windows Server 2019  | Visual Studio 2015 (Toolset 14.0) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2017 (Toolset 14.1) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2019 (Toolset 14.2) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2022 (Toolset 14.3) | Debug, Release                                    | no       |
-| Windows Server 2022  | Clang 14.0         (Toolset 14.3) | Debug, Release                                    | no       |
-| Ubuntu 18.04         | GCC 4.8.5                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 18.04         | GCC 7.5.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 20.04         | GCC 9.4.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
-| Ubuntu 20.04         | Clang 11.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 22.04         | GCC 11.2.0                        | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
-| Ubuntu 22.04         | Clang 14.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| MacOS 11.6.7         | AppleClang 13.0.0                 | Debug, Release                                    | yes      |
+(See [tested platforms](#tested-platforms) for the list of platforms covered by continuous integration.)
 
 ### Cloning the Repository
 
@@ -329,6 +334,27 @@ You are very welcome to contribute towards these (or other) features - please co
 
 Please read [CONTRIBUTING](CONTRIBUTING.md) for the process of contributing to this project.
 Please also obey our [Code of Conduct](CODE_OF_CONDUCT.md) in all communication.
+
+## Tested Platforms
+
+The following platforms are part of the [continuous integration workflow][ci], i.e. they are tested on each commit. You can use other configurations at your own risk,
+or [submit a PR](CONTRIBUTING.md) to include it in the [CI workflow][ci].
+
+| Operating System     |  Compiler                         | Configurations                                    | Test Coverage Recorded |
+|----------------------|-----------------------------------|---------------------------------------------------|-------------------|
+| Windows Server 2019  | Visual Studio 2015 (Toolset 14.0) | Debug, Release                                    | no       |
+| Windows Server 2022  | Visual Studio 2017 (Toolset 14.1) | Debug, Release                                    | no       |
+| Windows Server 2022  | Visual Studio 2019 (Toolset 14.2) | Debug, Release                                    | no       |
+| Windows Server 2022  | Visual Studio 2022 (Toolset 14.3) | Debug, Release                                    | no       |
+| Windows Server 2022  | Clang 14.0         (Toolset 14.3) | Debug, Release                                    | no       |
+| Ubuntu 18.04         | GCC 4.8.5                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
+| Ubuntu 18.04         | GCC 7.5.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
+| Ubuntu 20.04         | GCC 9.4.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
+| Ubuntu 20.04         | Clang 11.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
+| Ubuntu 22.04         | GCC 11.2.0                        | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
+| Ubuntu 22.04         | Clang 14.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
+| MacOS 11.6.7         | AppleClang 13.0.0                 | Debug, Release                                    | yes      |
+
 
 ## Versioning
 
