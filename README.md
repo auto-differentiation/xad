@@ -1,6 +1,6 @@
 <p align="center" dir="auto">
     <a href="https://xad.xcelerit.com" rel="nofollow" target="_blank">
-        <img src="../blob/main/doc/images/logo.svg?raw=true" height="60" alt="XAD" style="max-width:100%">
+        <img src="https://github.com/xcelerit/XAD/blob/main/doc/images/logo.svg?raw=true" height="80" alt="XAD" style="max-width:100%">
     </a>
 </p>
 
