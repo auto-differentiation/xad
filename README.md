@@ -64,21 +64,14 @@ tests, and examples. You can try it out [here](https://github.com/xcelerit/qlxad
 ## Contents
 
 -   [Getting Started](#getting-started)
-    -   [Prerequisites](#prerequisites)
-    -   [Cloning the Repository](#cloning-the-repository)
-    -   [Building](#building)
-    -   [Running the tests](#running-the-tests)
-    -   [Installing](#installing)
 -   [Tuning Behaviour and Performance](#tuning-behaviour-and-performance)
 -   [Building the User Documentation](#building-the-user-documentation)
 -   [Integrating into Client Code](#integrating-into-client-code)
-    -   [Approach 1: Submodule + CMake](#approach-1-submodule--cmake)
-    -   [Approach 2: FetchContent + CMake](#approach-2-fetchcontent--cmake)
-    -   [Approach 3: Install XAD and Link](#approach-3-install-xad-and-link)
 -   [Getting Help](#getting-help)
 -   [Planned Features](#planned-features)
 -   [Contributing](#contributing)
 -   [Versioning](#versioning)
+-   [Tested Platforms](#tested-platforms)
 -   [History](#history)
 -   [Authors](#authors)
 -   [License](#license)
@@ -94,24 +87,6 @@ tests, and examples. You can try it out [here](https://github.com/xcelerit/qlxad
     -   Visual Studio with Clang toolset, 2019 or newer
 -   MacOS: 10.9 or higher, with Apple Clang
 -   Git client
-
-The following platforms are part of the [continuous integration workflow][ci], i.e. they are tested on each commit. You can use other configurations at your own risk,
-or [submit a PR](CONTRIBUTING.md) to include it in the [CI workflow][ci].
-
-| Operating System     |  Compiler                         | Configurations                                    | Test Coverage Recorded |
-|----------------------|-----------------------------------|---------------------------------------------------|-------------------|
-| Windows Server 2019  | Visual Studio 2015 (Toolset 14.0) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2017 (Toolset 14.1) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2019 (Toolset 14.2) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2022 (Toolset 14.3) | Debug, Release                                    | no       |
-| Windows Server 2022  | Clang 14.0         (Toolset 14.3) | Debug, Release                                    | no       |
-| Ubuntu 18.04         | GCC 4.8.5                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 18.04         | GCC 7.5.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 20.04         | GCC 9.4.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
-| Ubuntu 20.04         | Clang 11.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 22.04         | GCC 11.2.0                        | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
-| Ubuntu 22.04         | Clang 14.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| MacOS 11.6.7         | AppleClang 13.0.0                 | Debug, Release                                    | yes      |
 
 ### Cloning the Repository
 
@@ -357,6 +332,27 @@ You are very welcome to contribute towards these (or other) features - please co
 
 Please read [CONTRIBUTING](CONTRIBUTING.md) for the process of contributing to this project.
 Please also obey our [Code of Conduct](CODE_OF_CONDUCT.md) in all communication.
+
+## Tested Platforms
+
+The following platforms are part of the [continuous integration workflow][ci], i.e. they are tested on each commit. You can use other configurations at your own risk,
+or [submit a PR](CONTRIBUTING.md) to include it in the [CI workflow][ci].
+
+| Operating System     |  Compiler                         | Configurations                                    | Test Coverage Recorded |
+|----------------------|-----------------------------------|---------------------------------------------------|-------------------|
+| Windows Server 2019  | Visual Studio 2015 (Toolset 14.0) | Debug, Release                                    | no       |
+| Windows Server 2022  | Visual Studio 2017 (Toolset 14.1) | Debug, Release                                    | no       |
+| Windows Server 2022  | Visual Studio 2019 (Toolset 14.2) | Debug, Release                                    | no       |
+| Windows Server 2022  | Visual Studio 2022 (Toolset 14.3) | Debug, Release                                    | no       |
+| Windows Server 2022  | Clang 14.0         (Toolset 14.3) | Debug, Release                                    | no       |
+| Ubuntu 18.04         | GCC 4.8.5                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
+| Ubuntu 18.04         | GCC 7.5.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
+| Ubuntu 20.04         | GCC 9.4.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
+| Ubuntu 20.04         | Clang 11.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
+| Ubuntu 22.04         | GCC 11.2.0                        | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
+| Ubuntu 22.04         | Clang 14.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
+| MacOS 11.6.7         | AppleClang 13.0.0                 | Debug, Release                                    | yes      |
+
 
 ## Versioning
 
