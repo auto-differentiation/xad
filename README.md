@@ -29,7 +29,7 @@ It targets production-quality code at any scale, striving for both ease of use a
         <img src="https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg" alt="Tests Badge" style="max-width: 100%;">
     </a>
     <a href="https://coveralls.io/github/xcelerit/XAD?branch=main">
-        <img src="https://img.shields.io/coveralls/github/xcelerit/XAD?label=Coverage&logo=coveralls" alt="PRs Welcome" style="max-width: 100%;">
+        <img src="https://img.shields.io/coveralls/github/xcelerit/XAD?label=Coverage&logo=coveralls" alt="Coverage" style="max-width: 100%;">
     </a>
     <a href="https://lgtm.com/projects/g/xcelerit/XAD/context:cpp">
         <img src="https://img.shields.io/lgtm/grade/cpp/github/xcelerit/XAD?logo=lgtm&label=Quality%20%28LGTM%29" alt="GitHub Workflow Status" style="max-width: 100%;">
