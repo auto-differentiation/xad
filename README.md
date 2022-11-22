@@ -317,18 +317,9 @@ For general questions about XAD, sharing ideas, engaging with community members,
 
 ## Planned Features
 
-These features are planned for the near future.
-You are very welcome to contribute towards these (or other) features - please contact the project maintainers before.
-
--   _Vector Adjoint Mode_ - allow rolling back multiple adjoints at once in the tape,
-    e.g. for functions with multiple outputs.
-
--   _Vector Forward Mode_ - Calculate multiple forward-mode derivatives at once (for multiple derivatives)
-
--   _Jacobian and Hessian Functions_ - higher-level functions to compute full Jacobians or Hessians,
-    possibly in a multi-threaded fashion
-
--   _Disable Expression Templates_ - allow users to disable expression templates, for debugging purposes
+Please see the [issues list](https://github.com/xcelerit/XAD/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement) for planned/open features.
+You are very welcome to contribute towards these (or other) features - please contact the project maintainers before to discuss you proposal.
+If you have new feature requests, please submit a new issue with a detailed description.
 
 ## Contributing
 
