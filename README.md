@@ -31,8 +31,8 @@ It targets production-quality code at any scale, striving for both ease of use a
     <a href="https://coveralls.io/github/xcelerit/XAD?branch=main">
         <img src="https://coveralls.io/repos/github/xcelerit/XAD/badge.svg?branch=main" alt="Coverage" style="max-width: 100%;">
     </a>
-    <a href="https://lgtm.com/projects/g/xcelerit/XAD/context:cpp">
-        <img src="https://img.shields.io/lgtm/grade/cpp/github/xcelerit/XAD?logo=lgtm&label=Quality%20%28LGTM%29" alt="GitHub Workflow Status" style="max-width: 100%;">
+    <a href="https://github.com/xcelerit/XAD/actions?query=workflow%3ACodeQL++">
+        <img src="https://github.com/xcelerit/XAD/actions/workflows/codeql-analysis.yml/badge.svg" alt="GitHub CodeQL Status" style="max-width: 100%;" >
     </a>
     <a href="https://www.codacy.com/gh/xcelerit/XAD/dashboard">
         <img src="https://img.shields.io/codacy/grade/42f40022f8ef447da51a178f684eb19d?logo=codacy&label=Quality%20%28Codacy%29" alt="Tests Badge" style="max-width: 100%;">
