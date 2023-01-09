@@ -23,7 +23,7 @@ It targets production-quality code at any scale, striving for both ease of use a
     </a>
     <br>
     <a href="https://github.com/xcelerit/XAD/actions/workflows/ci.yml">
-        <img src="https://img.shields.io/github/workflow/status/xcelerit/xad/CI?label=Build&logo" alt="GitHub Workflow Status" style="max-width: 100%;">
+        <img src="https://img.shields.io/github/actions/workflow/status/xcelerit/XAD/ci.yml?label=Build&logo" alt="GitHub Workflow Status" style="max-width: 100%;">
     </a>
     <a href="https://github.com/xcelerit/xad/actions?query=workflow%3ACI">
         <img src="https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg" alt="Tests Badge" style="max-width: 100%;">
