@@ -83,13 +83,25 @@ struct ADTypeBase : public Expression<Scalar, Derived>
         a_ += x;
         return derived();
     }
+    template <class I>
+    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& 
+    operator+=(I x) { return *this += Scalar(x); }
     XAD_INLINE Derived& operator-=(Scalar rhs)
     {
         a_ -= rhs;
         return derived();
     }
+    template <class I>
+    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& 
+    operator-=(I x) { return *this -= Scalar(x); }
     XAD_INLINE Derived& operator*=(Scalar x) { return derived() = (derived() * x); }
+    template <class I>
+    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& 
+    operator*=(I x) { return *this *= Scalar(x); }
     XAD_INLINE Derived& operator/=(Scalar x) { return derived() = (derived() / x); }
+    template <class I>
+    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& 
+    operator/=(I x) { return *this /= Scalar(x); }
     XAD_INLINE Derived& operator+=(const value_type& x) { return derived() = derived() + x; }
     XAD_INLINE Derived& operator-=(const value_type& x) { return derived() = derived() - x; }
     XAD_INLINE Derived& operator*=(const value_type& x) { return derived() = derived() * x; }
