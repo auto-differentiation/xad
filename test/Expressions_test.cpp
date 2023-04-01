@@ -1802,3 +1802,18 @@ TEST(Expressions, doesNotCaptureConstexprByRef)
     EXPECT_THAT(result, Gt(0.0));
 }
 
+TEST(Expressions, notWarningAboutSizetToDouble)
+{
+    // recent compilers with high warning levels warn about size_t conversion to double,
+    // if a function does the conversion implicitly. For plain doubles, the expressions
+    // below don't trigger the warning - so for XAD types, they should not do that either.
+    xad::AReal<double> x = 2.0;
+    std::size_t d = 2;
+
+    x /= d;
+    x *= d;
+    x += d;
+    x -= d;
+
+    EXPECT_THAT(value(x), DoubleEq(2.0));
+}
