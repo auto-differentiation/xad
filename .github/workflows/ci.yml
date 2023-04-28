@@ -184,6 +184,7 @@ jobs:
         reuse_slots: [OFF, ON]
         include:
           - config: Debug
+            compiler: gcc11
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
             coverage_ld_flags: "-lgcov"

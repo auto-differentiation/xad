@@ -1451,7 +1451,7 @@ TYPED_TEST(ComplexTest, ProjOfDoubleOrInteger)
     EXPECT_THAT(std::imag(std::proj(z)), DoubleNear(0.0, 1e-9));
     EXPECT_THAT(std::real(std::proj(z1)), IsPositiveInf());
     EXPECT_THAT(std::imag(std::proj(z1)), IsPositiveZero());
-#if ((defined(_MSC_VER) && _MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
+#if ((defined(_MSC_VER) && _MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
     // VS 2017 evaluates this differently
     EXPECT_THAT(std::real(std::proj(z1n)), IsNegativeInf());
 #else
@@ -1473,7 +1473,7 @@ TYPED_TEST(ComplexTest, ProjOfFloat)
     EXPECT_THAT(double(std::imag(std::proj(z))), DoubleNear(0.0, 1e-6));
     EXPECT_THAT(double(std::real(std::proj(z1))), IsPositiveInf());
     EXPECT_THAT(double(std::imag(std::proj(z1))), IsPositiveZero());
-#if ((defined(_MSC_VER) && _MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
+#if ((defined(_MSC_VER) && _MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
     // VS 2017 evaluates this differently
     EXPECT_THAT(double(std::real(std::proj(z1n))), IsNegativeInf());
 #else
@@ -1495,7 +1495,7 @@ TYPED_TEST(ComplexTest, ProjOfScalar)
     EXPECT_THAT(xad::value(std::imag(std::proj(z))), DoubleNear(0.0, 1e-9));
     EXPECT_THAT(xad::value(std::real(std::proj(z1))), IsPositiveInf());
     EXPECT_THAT(xad::value(std::imag(std::proj(z1))), IsPositiveZero());
-#if ((defined(_MSC_VER) && _MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
+#if ((defined(_MSC_VER) && _MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
     // VS 2017 evaluates this differently
     EXPECT_THAT(xad::value(std::real(std::proj(z1n))), IsNegativeInf());
 #else

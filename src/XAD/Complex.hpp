@@ -372,7 +372,7 @@ XAD_INLINE typename xad::ExprTraits<Derived>::value_type arg_impl(
 template <class T>
 XAD_INLINE T arg_impl(const std::complex<T>& z);
 
-#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
+#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
 template <class Scalar, class Derived>
 XAD_INLINE typename xad::ExprTraits<Derived>::value_type proj_impl(
     const xad::Expression<Scalar, Derived>& x);
@@ -1100,7 +1100,7 @@ XAD_INLINE complex<xad::FReal<T>> conj(const complex<xad::FReal<T>>& z)
     return ret;
 }
 
-#if ((defined(_MSC_VER) && (_MSC_VER < 1920)) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
+#if ((defined(_MSC_VER) && (_MSC_VER < 1920)) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
 template <class Scalar, class Derived>
 XAD_INLINE typename xad::ExprTraits<Derived>::value_type conj(
     const xad::Expression<Scalar, Derived>& x)
@@ -2284,7 +2284,7 @@ XAD_INLINE typename xad::ExprTraits<Derived>::value_type arg_impl(
 #endif
 }
 
-#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 5)) && !defined(__clang__)
+#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
 template <class Scalar, class Derived>
 XAD_INLINE typename xad::ExprTraits<Derived>::value_type proj_impl(
     const xad::Expression<Scalar, Derived>& x)
