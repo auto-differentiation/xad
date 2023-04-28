@@ -121,7 +121,7 @@ jobs:
       - name: setup
         run: |
           sudo apt-get update
-          sudo apt-get install -y ccache ninja-build gpg wget lcov ${{ matrix-compiler }}
+          sudo apt-get install -y ccache ninja-build gpg wget lcov ${{ matrix.compiler }}
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.13
       - name: ccache
