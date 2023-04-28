@@ -84,75 +84,123 @@ jobs:
              -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"
           cmake --build .
   
-  build_and_test_linux:
+  build_and_test_clang:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [gcc-4.8, gcc-7, gcc-9, gcc-11, clang-11, clang-14]
+        compiler: 
+          - clang-11
+          - clang-12
+          - clang-13
+          - clang-14
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
         include:
           - compiler: clang-11
-            cxx: clang++
-            cc: clang
+            cxx: clang++-11
+            cc: clang-11
             os: ubuntu-20.04
-            install: false
+          - compiler: clang-12
+            cxx: clang++-12
+            cc: clang-12
+            os: ubuntu-22.04
+          - compiler: clang-13
+            cxx: clang++-13
+            cc: clang-13
+            os: ubuntu-22.04
           - compiler: clang-14
-            cxx: clang++
-            cc: clang
+            cxx: clang++-14
+            cc: clang-14
             os: ubuntu-22.04
-            install: false
-          - compiler: gcc-4.8
-            cxx: g++-4.8
-            cc: gcc-4.8
-            os: ubuntu-18.04
-            install: true
-          - compiler: gcc-7
-            cxx: g++
-            cc: gcc
-            os: ubuntu-18.04
-            install: false
-          - compiler: gcc-9
-            cxx: g++
-            cc: gcc
-            os: ubuntu-20.04
-            install: false
-          - compiler: gcc-11
-            cxx: g++
-            cc: gcc
-            os: ubuntu-22.04
-            install: false
+        exclude:
           - config: Debug
-            compiler: gcc-9
-            coverage: true
-            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
-            coverage_ld_flags: "-lgcov"
+            reuse_slots: ON
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ccache ninja-build gpg wget lcov ${{ matrix-compiler }}
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.13
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.8
+        with:
+          key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DCMAKE_C_COMPILER=${{ matrix.cc }} \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+      - name: build
+        run: |
+          cd build
+          cmake --build .
+      - name: test
+        run: |
+          cd build
+          ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2)) --output-junit test_results.xml
+      - name: upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }})
+          path: build/test_results.xml
+      - name: install
+        run: |
+          cd build
+          cmake --install .
+      - name: install test
+        run: |
+          mkdir installtest
+          cd installtest
+          cmake ../samples -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"  \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DCMAKE_C_COMPILER=${{ matrix.cc }}
+          cmake --build .
+
+  build_and_test_gcc:
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: 
+          - gcc5
+          - gcc6 
+          - gcc7
+          - gcc8
+          - gcc9
+          - gcc10
+          - gcc11
+        config: [Release, Debug]
+        reuse_slots: [OFF, ON]
+        include:
           - config: Debug
-            compiler: gcc-11
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
             coverage_ld_flags: "-lgcov"
         exclude:
           - config: Debug
             reuse_slots: ON
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container: 
+      image: conio/${{ matrix.compiler }}
     steps:
+      - uses: actions/checkout@v3
       - name: setup
         run: |
           sudo apt-get update
           sudo apt-get install -y ccache ninja-build gpg wget lcov
-      - name: compiler setup
-        if: ${{ matrix.install }}
-        run: |
-          sudo apt-get install -y ${{ matrix.cxx }} ${{ matrix.cc }}
-      - name: cmake setup
-        if: ${{ matrix.os == 'ubuntu-18.04' }}
-        run: |
-          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
-          sudo apt-get update
-          sudo apt-get install -y cmake
-      - uses: actions/checkout@v3
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.13
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.8
         with:
@@ -182,7 +230,7 @@ jobs:
       - name: test
         run: |
           cd build
-          ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
+          ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2)) --output-junit test_results.xml
       - name: upload test results
         if: always()
         uses: actions/upload-artifact@v3
@@ -235,8 +283,6 @@ jobs:
             coverage_ld_flags: "-ftest-coverage"
           - config: Release
             coverage: false
-            coverage_cxx_flags: "" 
-            coverage_ld_flags: ""
     steps:
       - name: setup
         run: |
@@ -313,7 +359,7 @@ jobs:
           cmake --build .
 
   coverage_finish:
-    needs: [ build_and_test_linux, build_and_test_macos]
+    needs: [ build_and_test_gcc, build_and_test_macos]
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls Finished
