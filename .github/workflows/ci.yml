@@ -24,6 +24,12 @@ jobs:
             compiler: msvc
             os: windows-2019
             vsvarsall: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+          - config: Debug
+            sccache: false
+            cmake_extra: ""
+          - config: Release
+            sccache: true
+            cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
         exclude:
           - compiler: clang
             toolset: "14.1"
@@ -38,6 +44,7 @@ jobs:
         run: |
           choco install -y ninja sccache
       - name: ccache
+        if: ${{ matrix.sccache }}
         uses: hendrikmuhs/ccache-action@v1.2.9
         with:
           key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
@@ -52,8 +59,8 @@ jobs:
              -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" ^
              -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} ^
              -DCMAKE_C_COMPILER=${{ matrix.cc }} ^
-             -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
-             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+             ${{ matrix.cmake_extra }} ^
+             -DCMAKE_BUILD_TYPE=${{ matrix.config }} 
       - name: build
         shell: cmd
         run: |
@@ -88,6 +95,7 @@ jobs:
              -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} ^
              -DCMAKE_C_COMPILER=${{ matrix.cc }} ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
+             ${{ matrix.cmake_extra }} ^
              -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"
           cmake --build .
 
