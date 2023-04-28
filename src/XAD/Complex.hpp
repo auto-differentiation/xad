@@ -2026,7 +2026,7 @@ XAD_INLINE std::complex<T> tanh_impl(const std::complex<T>& z)
     {
         if (xad::isinf(z.imag()) && z.imag() > 0.0)
         {
-#if defined(__APPLE__)
+#if defined(__APPLE__) || (defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 27)
             return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
                                    std::numeric_limits<nested>::quiet_NaN());
 #else
@@ -2035,7 +2035,7 @@ XAD_INLINE std::complex<T> tanh_impl(const std::complex<T>& z)
         }
         if (xad::isnan(z.imag()))
         {
-#if defined(__APPLE__)
+#if defined(__APPLE__) | (defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 27)
             return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
                                    std::numeric_limits<nested>::quiet_NaN());
 #else
@@ -2095,7 +2095,7 @@ XAD_INLINE std::complex<T> acosh_impl(const std::complex<T>& z)
     if (xad::isnan(z.imag()))
     {
         if (z.real() == 0.0)
-#if defined(__APPLE__)
+#if defined(__APPLE__) | (defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 27)
             return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
                                    std::numeric_limits<nested>::quiet_NaN());
 #else

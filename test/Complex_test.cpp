@@ -2721,7 +2721,7 @@ TYPED_TEST(ComplexComplianceTest, TanhOfFiniteRealInfImag)
     EXPECT_THAT(xad::value(tanh(z2).imag()), IsNan());
 
     auto z3 = std::complex<TypeParam>(0.0, std::numeric_limits<double>::infinity());
-#if defined(__APPLE__)
+#if defined(__APPLE__) | (defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 27)
     // on Mac, this return NaN (it shouldn't though)
     EXPECT_THAT(xad::value(tanh(z3).real()), IsNan());
 #else
@@ -2741,7 +2741,7 @@ TYPED_TEST(ComplexComplianceTest, TanhOfFiniteRealNanImag)
     EXPECT_THAT(xad::value(tanh(z2).imag()), IsNan());
 
     auto z3 = std::complex<TypeParam>(0.0, std::numeric_limits<double>::quiet_NaN());
-#if defined(__APPLE__)
+#if defined(__APPLE__) | (defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 27)
     // Mac return Nan here
     EXPECT_THAT(xad::value(tanh(z3).real()), IsNan());
 #else
@@ -2959,7 +2959,7 @@ TYPED_TEST(ComplexComplianceTest, AcoshOfFiniteRealNanImag)
 
     auto z3 = std::complex<TypeParam>(0.0, std::numeric_limits<double>::quiet_NaN());
     EXPECT_THAT(xad::value(acosh(z3).real()), IsNan());
-#if defined(__APPLE__)
+#if defined(__APPLE__) | (defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 27)
     EXPECT_THAT(xad::value(acosh(z3).imag()), IsNan());
 #else
     EXPECT_THAT(xad::value(acosh(z3).imag()), DoubleNear(M_PI / 2, 1e-9));
