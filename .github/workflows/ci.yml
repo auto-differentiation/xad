@@ -196,10 +196,15 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v3
-      - name: setup
+      - name: Setup tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ccache ninja-build gpg wget lcov
+          sudo apt-get install -y ccache ninja-build lcov
+      - name: GitHub WS Tmp
+        # there is an issue with workspace locations in github inside containers, which this works around
+        # see: https://github.com/actions/runner/issues/2058
+        run: |
+           echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.13
       - name: ccache
@@ -217,7 +222,7 @@ jobs:
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DCMAKE_CXX_FLAGS="${{ matrix.coverage_cxx_flags }}" \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+            -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install
       - name: build
         run: |
           cd build
@@ -227,7 +232,7 @@ jobs:
         run: |
           cd build
           mkdir coverage tmp
-          lcov --no-external --capture --initial --directory ${{ github.workspace }} --output-file ./tmp/lcov_base.info
+          lcov --no-external --capture --initial --directory ${{ env.GITHUB_WORKSPACE }} --output-file ./tmp/lcov_base.info
       - name: test
         run: |
           cd build
@@ -237,21 +242,21 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }})
-          path: build/test_results.xml
+          path: ${{ env.GITHUB_WORKSPACE }}/build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
         run: |
           cd build
-          lcov --no-external --capture --directory ${{ github.workspace }} --output-file ./tmp/lcov_run.info
+          lcov --no-external --capture --directory ${{ env.GITHUB_WORKSPACE }} --output-file ./tmp/lcov_run.info
           lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info --output-file ./tmp/lcov_total.info
-          lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --output-file ./coverage/lcov.info
+          lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ env.GITHUB_WORKSPACE }}/test/*" "${{ env.GITHUB_WORKSPACE }}/samples/*" --output-file ./coverage/lcov.info
       - name: upload coverage results
         if: ${{ matrix.coverage }}
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           flag-name: linux-${{ matrix.compiler }}-${{ matrix.reuse_slots }}
-          path-to-lcov: build/coverage/lcov.info
+          path-to-lcov: ${{env.GITHUB_WORKSPACE }}/build/coverage/lcov.info
           parallel: true
       - name: install
         run: |
@@ -265,7 +270,7 @@ jobs:
           cmake ../samples -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"  \
+            -DCMAKE_PREFIX_PATH="${{ env.GITHUB_WORKSPACE }}/install"  \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}"
