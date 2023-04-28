@@ -199,15 +199,21 @@ jobs:
           - gcc11
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
+        exclude:
+          - config: Debug
+            reuse_slots: ON
         include:
           - config: Debug
             compiler: gcc11
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
             coverage_ld_flags: "-lgcov"
-        exclude:
-          - config: Debug
+          - config: Debug    # also with reusing slots, for coverage
             reuse_slots: ON
+            compiler: gcc11
+            coverage: true
+            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
+            coverage_ld_flags: "-lgcov"
     runs-on: ubuntu-latest
     container: 
       image: conanio/${{ matrix.compiler }}
