@@ -208,9 +208,9 @@ jobs:
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
             coverage_ld_flags: "-lgcov"
-          - config: Debug    # also with reusing slots, for coverage
+          - compiler: gcc11
+            config: Debug    # also with reusing slots, for coverage
             reuse_slots: ON
-            compiler: gcc11
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
             coverage_ld_flags: "-lgcov"
