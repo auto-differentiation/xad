@@ -466,7 +466,7 @@ TEST(ExpressionsMath, maxMinForIntegersExplicit)
 #  pragma warning(disable : 4244)
 #elif defined(__GNUC__)
 #  pragma GCC diagnostic push
-#  if (__GNUC__ <= 5) && !defined(__clang__)
+#  if (__GNUC__ < 5) && !defined(__clang__)
 #    pragma GCC diagnostic ignored "-Wconversion"
 #  else
 #    pragma GCC diagnostic ignored "-Wfloat-conversion"
