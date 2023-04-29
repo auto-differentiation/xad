@@ -81,11 +81,11 @@ tests, and examples. You can try it out [here](https://github.com/xcelerit/qlxad
 ### Prerequisites
 
 -   [CMake][cmake], version 3.15 or newer
--   Linux: GCC 4.8 or newer, or Clang 11 or newer
+-   Linux: GCC 5.4 or newer, or Clang 11 or newer
 -   Windows:
     -   Visual Studio 2015 or newer
     -   Visual Studio with Clang toolset, 2019 or newer
--   MacOS: 10.9 or higher, with Apple Clang
+-   MacOS: 10.9 or higher, with Apple Clang 11 or newer
 -   Git client
 
 (See [tested platforms](#tested-platforms) for the list of platforms covered by continuous integration.)
@@ -331,20 +331,25 @@ Please also obey our [Code of Conduct](CODE_OF_CONDUCT.md) in all communication.
 The following platforms are part of the [continuous integration workflow][ci], i.e. they are tested on each commit. You can use other configurations at your own risk,
 or [submit a PR](CONTRIBUTING.md) to include it in the [CI workflow][ci].
 
-| Operating System     |  Compiler                         | Configurations                                    | Test Coverage Recorded |
-|----------------------|-----------------------------------|---------------------------------------------------|-------------------|
-| Windows Server 2019  | Visual Studio 2015 (Toolset 14.0) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2017 (Toolset 14.1) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2019 (Toolset 14.2) | Debug, Release                                    | no       |
-| Windows Server 2022  | Visual Studio 2022 (Toolset 14.3) | Debug, Release                                    | no       |
-| Windows Server 2022  | Clang 14.0         (Toolset 14.3) | Debug, Release                                    | no       |
-| Ubuntu 18.04         | GCC 4.8.5                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 18.04         | GCC 7.5.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 20.04         | GCC 9.4.0                         | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
-| Ubuntu 20.04         | Clang 11.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| Ubuntu 22.04         | GCC 11.2.0                        | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | yes      |
-| Ubuntu 22.04         | Clang 14.0.0                      | Debug, Release, Release with XAD_TAPE_REUSE_SLOTS | no       |
-| MacOS 11.6.7         | AppleClang 13.0.0                 | Debug, Release                                    | yes      |
+| Operating System     |  Compiler                         | Configurations                                      | Test Coverage Recorded |
+|----------------------|-----------------------------------|-----------------------------------------------------|-------------------|
+| Windows Server 2019  | Visual Studio 2015 (Toolset 14.0) | Debug, Release                                      | no       |
+| Windows Server 2022  | Visual Studio 2017 (Toolset 14.1) | Debug, Release                                      | no       |
+| Windows Server 2022  | Visual Studio 2019 (Toolset 14.2) | Debug, Release                                      | no       |
+| Windows Server 2022  | Visual Studio 2022 (Toolset 14.3) | Debug, Release                                      | no       |
+| Windows Server 2022  | Clang 14.0         (Toolset 14.3) | Debug, Release                                      | no       |
+| Ubuntu 16.04         | GCC 5.4.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 17.10         | GCC 6.4.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 17.10         | GCC 7.2.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 18.04         | GCC 8.4.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 19.10         | GCC 9.2.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 20.04         | GCC 10.3.0                        | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 20.04         | GCC 11.1.0                        | Debug, Release, + both with `XAD_TAPE_REUSE_SLOTS`  | yes      |
+| Ubuntu 20.04         | Clang 11.0.0                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 22.04         | Clang 12.0.1                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 22.04         | Clang 13.0.1                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| Ubuntu 22.04         | Clang 14.0.0                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
+| MacOS 12.6.5         | AppleClang 14.0.0                 | Debug, Release                                      | yes      |
 
 
 ## Versioning

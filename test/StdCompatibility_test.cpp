@@ -262,7 +262,7 @@ TYPED_TEST(StdCompatibilityTempl, Traits)
 #if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
     static_assert(std::is_trivially_copyable<TypeParam>::value == fwd, "trivially copyable");
 #endif
-    static_assert(std::is_trivially_destructible<TypeParam>::value == fwd, "trially destructable for fwd mode");
+    static_assert(std::is_trivially_destructible<TypeParam>::value == fwd, "trivially destructable for fwd mode");
 }
 
 template <class T>
