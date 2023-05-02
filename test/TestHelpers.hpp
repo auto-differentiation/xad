@@ -40,6 +40,13 @@ inline void compareFinite(double xref, double xact, const std::string& msg = "")
 }
 
 template <class F>
+inline void mathTest_dbl(double x, double yref, F func)
+{
+    double y = func(x);
+    EXPECT_DOUBLE_EQ(y, yref) << "dbl, yref";
+}
+
+template <class F>
 inline void mathTest_adj(double x, double yref, double dref, F func)
 {
     xad::Tape<double> s;
@@ -101,7 +108,7 @@ inline void mathTest_adj_adj(double x, double yref, double dref1, double dref2, 
 
     so.registerOutput(y);
     derivative(y) = 1.0;
-    
+
     so.computeAdjoints();
 
     si.registerOutput(derivative(x1));
@@ -158,7 +165,7 @@ inline void mathTest_adj_fwd(double x, double yref, double dref1, double dref2, 
 }
 
 template <class F>
-inline void mathTest_all(double x, double yref, double dref, double dref2, F func)
+inline void mathTest_all_aad(double x, double yref, double dref, double dref2, F func)
 {
     mathTest_adj(x, yref, dref, func);
     mathTest_fwd(x, yref, dref, func);
@@ -166,6 +173,20 @@ inline void mathTest_all(double x, double yref, double dref, double dref2, F fun
     mathTest_fwd_adj(x, yref, dref, dref2, func);
     mathTest_adj_fwd(x, yref, dref, dref2, func);
     mathTest_adj_adj(x, yref, dref, dref2, func);
+}
+
+template <class F>
+inline void mathTest_all(double x, double yref, double dref, double dref2, F func)
+{
+    mathTest_dbl(x, yref, func);
+    mathTest_all_aad(x, yref, dref, dref2, func);
+}
+
+template <class F>
+inline void mathTest2_dbl(double x1, double x2, double yref, F func)
+{
+    double y = func(x1, x2);
+    EXPECT_DOUBLE_EQ(y, yref);
 }
 
 template <class F>
@@ -426,8 +447,8 @@ inline void mathTest2_adj_adj(double x1, double x2, double yref, double d1ref, d
 }
 
 template <class F>
-inline void mathTest2_all(double x1, double x2, double yref, double d1ref, double d2ref,
-                          double d11ref, double d12ref, double d21ref, double d22ref, F func)
+inline void mathTest2_all_aad(double x1, double x2, double yref, double d1ref, double d2ref,
+                              double d11ref, double d12ref, double d21ref, double d22ref, F func)
 {
     mathTest2_adj(x1, x2, yref, d1ref, d2ref, func);
     mathTest2_fwd(x1, x2, yref, d1ref, d2ref, func);
@@ -437,12 +458,21 @@ inline void mathTest2_all(double x1, double x2, double yref, double d1ref, doubl
     mathTest2_adj_adj(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
 }
 
+template <class F>
+inline void mathTest2_all(double x1, double x2, double yref, double d1ref, double d2ref,
+                          double d11ref, double d12ref, double d21ref, double d22ref, F func)
+{
+    mathTest2_dbl(x1, x2, yref, func);
+    mathTest2_all_aad(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
+}
+
 #define LOCAL_TEST_FUNCTOR1(name, val)                                                             \
     struct testFunctor_##name                                                                      \
     {                                                                                              \
         template <class T>                                                                         \
         T operator()(const T& x) const                                                             \
         {                                                                                          \
+            using namespace std;                                                                   \
             return val;                                                                            \
         }                                                                                          \
     } name;
@@ -453,6 +483,7 @@ inline void mathTest2_all(double x1, double x2, double yref, double d1ref, doubl
         template <class T>                                                                         \
         T operator()(const T& x1, const T& x2) const                                               \
         {                                                                                          \
+            using namespace std;                                                                   \
             return val;                                                                            \
         }                                                                                          \
     } name;

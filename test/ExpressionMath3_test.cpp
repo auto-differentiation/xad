@@ -187,72 +187,73 @@ TEST(ExpressionsMath, maxExprScalar)
 LOCAL_TEST_FUNCTOR2(smaxADAD, smooth_max(x1, x2))
 TEST(ExpressionsMath, smaxADAD)
 {
-    mathTest2_all(0.3, 0.7, 0.7, 0, 1.0, 0.0, 0.0, 0.0, 0.0, smaxADAD);
-    mathTest2_all(1.7, -0.7, 1.7, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, smaxADAD);
+    mathTest2_all_aad(0.3, 0.7, 0.7, 0, 1.0, 0.0, 0.0, 0.0, 0.0, smaxADAD);
+    mathTest2_all_aad(1.7, -0.7, 1.7, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, smaxADAD);
     double c = 0.001;
-    mathTest2_all(1.7, 1.7, 1.7, 0.5, 0.5, 4. / 2. / c, -2. / c, -2. / c, 4. / 2. / c, smaxADAD);
+    mathTest2_all_aad(1.7, 1.7, 1.7, 0.5, 0.5, 4. / 2. / c, -2. / c, -2. / c, 4. / 2. / c,
+                      smaxADAD);
 }
 
 LOCAL_TEST_FUNCTOR2(smaxADExpr, smooth_max(x1, 2.0 * x2))
 TEST(ExpressionsMath, smaxADExpr)
 {
-    mathTest2_all(0.3, 0.7, 2.0 * 0.7, 0, 2.0, 0.0, 0.0, 0.0, 0.0, smaxADExpr);
-    mathTest2_all(1.7, -0.7, 1.7, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, smaxADExpr);
+    mathTest2_all_aad(0.3, 0.7, 2.0 * 0.7, 0, 2.0, 0.0, 0.0, 0.0, 0.0, smaxADExpr);
+    mathTest2_all_aad(1.7, -0.7, 1.7, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, smaxADExpr);
     double c = 0.001;
-    mathTest2_all(2.0, 1.0, 2.0, 0.5, 1.0, 4. / 2. / c, 2. * -2. / c, 2. * -2. / c,
-                  2. * 2. * 4. / 2. / c, smaxADExpr);
+    mathTest2_all_aad(2.0, 1.0, 2.0, 0.5, 1.0, 4. / 2. / c, 2. * -2. / c, 2. * -2. / c,
+                      2. * 2. * 4. / 2. / c, smaxADExpr);
 }
 
 LOCAL_TEST_FUNCTOR2(smaxExprAD, smooth_max(2.0 * x1, x2))
 TEST(ExpressionsMath, smaxExprAD)
 {
-    mathTest2_all(0.3, 0.7, 0.7, 0, 1.0, 0.0, 0.0, 0.0, 0.0, smaxExprAD);
-    mathTest2_all(1.7, -0.7, 2.0 * 1.7, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, smaxExprAD);
+    mathTest2_all_aad(0.3, 0.7, 0.7, 0, 1.0, 0.0, 0.0, 0.0, 0.0, smaxExprAD);
+    mathTest2_all_aad(1.7, -0.7, 2.0 * 1.7, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, smaxExprAD);
     double c = 0.001;
-    mathTest2_all(1.0, 2.0, 2.0, 1.0, 0.5, 2. * 2. * 4. / 2. / c, 2. * -2. / c, 2. * -2. / c,
-                  4. / 2. / c, smaxExprAD);
+    mathTest2_all_aad(1.0, 2.0, 2.0, 1.0, 0.5, 2. * 2. * 4. / 2. / c, 2. * -2. / c, 2. * -2. / c,
+                      4. / 2. / c, smaxExprAD);
 }
 
 LOCAL_TEST_FUNCTOR2(smaxExprExpr, smooth_max(2.0 * x1, 2.0 * x2))
 TEST(ExpressionsMath, smaxExprExpr)
 {
-    mathTest2_all(0.3, 0.7, 2.0 * 0.7, 0, 2.0, 0.0, 0.0, 0.0, 0.0, smaxExprExpr);
-    mathTest2_all(1.7, -0.7, 2.0 * 1.7, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, smaxExprExpr);
+    mathTest2_all_aad(0.3, 0.7, 2.0 * 0.7, 0, 2.0, 0.0, 0.0, 0.0, 0.0, smaxExprExpr);
+    mathTest2_all_aad(1.7, -0.7, 2.0 * 1.7, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, smaxExprExpr);
     double c = 0.001;
-    mathTest2_all(1.0, 1.0, 2.0, 1.0, 1.0, 2. * 2. * 4. / 2. / c, 2. * 2. * -2. / c,
-                  2. * 2. * -2. / c, 2. * 2. * 4. / 2. / c, smaxExprExpr);
+    mathTest2_all_aad(1.0, 1.0, 2.0, 1.0, 1.0, 2. * 2. * 4. / 2. / c, 2. * 2. * -2. / c,
+                      2. * 2. * -2. / c, 2. * 2. * 4. / 2. / c, smaxExprExpr);
 }
 
 LOCAL_TEST_FUNCTOR1(smaxScalarAD, smooth_max(0.7, x))
 TEST(ExpressionsMath, smaxScalarAD)
 {
-    mathTest_all(1.1, 1.1, 1.0, 0.0, smaxScalarAD);
-    mathTest_all(0.6, 0.7, 0.0, 0.0, smaxScalarAD);
+    mathTest_all_aad(1.1, 1.1, 1.0, 0.0, smaxScalarAD);
+    mathTest_all_aad(0.6, 0.7, 0.0, 0.0, smaxScalarAD);
 }
 
 LOCAL_TEST_FUNCTOR1(smaxScalarExpr, smooth_max(2.0, 2.0 * x))
 TEST(ExpressionsMath, smaxScalarExpr)
 {
     double c = 0.001;
-    mathTest_all(1.1, 2.2, 2.0, 0.0, smaxScalarExpr);
-    mathTest_all(1.0, 2.0, 1.0, 2. * 2. * 4. / 2. / c, smaxScalarExpr);
-    mathTest_all(0.3, 2.0, 0.0, 0.0, smaxScalarExpr);
+    mathTest_all_aad(1.1, 2.2, 2.0, 0.0, smaxScalarExpr);
+    mathTest_all_aad(1.0, 2.0, 1.0, 2. * 2. * 4. / 2. / c, smaxScalarExpr);
+    mathTest_all_aad(0.3, 2.0, 0.0, 0.0, smaxScalarExpr);
 }
 
 LOCAL_TEST_FUNCTOR1(smaxADScalar, smooth_max(x, 0.7))
 TEST(ExpressionsMath, smaxADScalar)
 {
-    mathTest_all(1.1, 1.1, 1.0, 0.0, smaxADScalar);
-    mathTest_all(0.6, 0.7, 0.0, 0.0, smaxADScalar);
+    mathTest_all_aad(1.1, 1.1, 1.0, 0.0, smaxADScalar);
+    mathTest_all_aad(0.6, 0.7, 0.0, 0.0, smaxADScalar);
 }
 
 LOCAL_TEST_FUNCTOR1(smaxExprScalar, smooth_max(2.0 * x, 2.0))
 TEST(ExpressionsMath, smaxExprScalar)
 {
     double c = 0.001;
-    mathTest_all(1.1, 2.2, 2.0, 0.0, smaxExprScalar);
-    mathTest_all(1.0, 2.0, 1.0, 2. * 2. * 4. / 2. / c, smaxExprScalar);
-    mathTest_all(0.3, 2.0, 0.0, 0.0, smaxExprScalar);
+    mathTest_all_aad(1.1, 2.2, 2.0, 0.0, smaxExprScalar);
+    mathTest_all_aad(1.0, 2.0, 1.0, 2. * 2. * 4. / 2. / c, smaxExprScalar);
+    mathTest_all_aad(0.3, 2.0, 0.0, 0.0, smaxExprScalar);
 }
 
 LOCAL_TEST_FUNCTOR2(minADAD, min(x1, x2))
@@ -329,72 +330,72 @@ TEST(ExpressionsMath, minExprScalar)
 LOCAL_TEST_FUNCTOR2(sminADAD, smooth_min(x1, x2))
 TEST(ExpressionsMath, sminADAD)
 {
-    mathTest2_all(0.3, 0.7, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sminADAD);
-    mathTest2_all(1.7, -0.7, -0.7, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, sminADAD);
+    mathTest2_all_aad(0.3, 0.7, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sminADAD);
+    mathTest2_all_aad(1.7, -0.7, -0.7, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, sminADAD);
     double c = 0.001;
-    mathTest2_all(1.7, 1.7, 1.7, 0.5, 0.5, -2. / c, 2. / c, 2. / c, -2. / c, sminADAD);
+    mathTest2_all_aad(1.7, 1.7, 1.7, 0.5, 0.5, -2. / c, 2. / c, 2. / c, -2. / c, sminADAD);
 }
 
 LOCAL_TEST_FUNCTOR2(sminADExpr, smooth_min(x1, 2.0 * x2))
 TEST(ExpressionsMath, sminADExpr)
 {
-    mathTest2_all(0.3, 0.7, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sminADExpr);
-    mathTest2_all(1.7, -0.7, 2.0 * -0.7, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, sminADExpr);
+    mathTest2_all_aad(0.3, 0.7, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sminADExpr);
+    mathTest2_all_aad(1.7, -0.7, 2.0 * -0.7, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, sminADExpr);
     double c = 0.001;
-    mathTest2_all(2.0, 1.0, 2.0, 0.5, 1.0, -2. / c, 2. * 2. / c, 2. * 2. / c, 2. * 2. * -2. / c,
-                  sminADExpr);
+    mathTest2_all_aad(2.0, 1.0, 2.0, 0.5, 1.0, -2. / c, 2. * 2. / c, 2. * 2. / c, 2. * 2. * -2. / c,
+                      sminADExpr);
 }
 
 LOCAL_TEST_FUNCTOR2(sminExprAD, smooth_min(2.0 * x1, x2))
 TEST(ExpressionsMath, sminExprAD)
 {
-    mathTest2_all(0.3, 0.7, 2.0 * 0.3, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, sminExprAD);
-    mathTest2_all(1.7, -0.7, -0.7, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, sminExprAD);
+    mathTest2_all_aad(0.3, 0.7, 2.0 * 0.3, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, sminExprAD);
+    mathTest2_all_aad(1.7, -0.7, -0.7, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, sminExprAD);
     double c = 0.001;
-    mathTest2_all(1.0, 2.0, 2.0, 1.0, 0.5, 2. * 2. * -2. / c, 2. * 2. / c, 2. * 2. / c, -2. / c,
-                  sminExprAD);
+    mathTest2_all_aad(1.0, 2.0, 2.0, 1.0, 0.5, 2. * 2. * -2. / c, 2. * 2. / c, 2. * 2. / c, -2. / c,
+                      sminExprAD);
 }
 
 LOCAL_TEST_FUNCTOR2(sminExprExpr, smooth_min(2.0 * x1, 2.0 * x2))
 TEST(ExpressionsMath, sminExprExpr)
 {
-    mathTest2_all(0.3, 0.7, 2.0 * 0.3, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, sminExprExpr);
-    mathTest2_all(1.7, -0.7, 2.0 * -0.7, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, sminExprExpr);
+    mathTest2_all_aad(0.3, 0.7, 2.0 * 0.3, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, sminExprExpr);
+    mathTest2_all_aad(1.7, -0.7, 2.0 * -0.7, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, sminExprExpr);
     double c = 0.001;
-    mathTest2_all(1.0, 1.0, 2.0, 1.0, 1.0, 2. * 2. * -2. / c, 2. * -2. * -2. / c,
-                  2. * -2. * -2. / c, 2. * 2. * -2. / c, sminExprExpr);
+    mathTest2_all_aad(1.0, 1.0, 2.0, 1.0, 1.0, 2. * 2. * -2. / c, 2. * -2. * -2. / c,
+                      2. * -2. * -2. / c, 2. * 2. * -2. / c, sminExprExpr);
 }
 
 LOCAL_TEST_FUNCTOR1(sminScalarAD, smooth_min(0.7, x))
 TEST(ExpressionsMath, sminScalarAD)
 {
-    mathTest_all(1.1, 0.7, 0.0, 0.0, sminScalarAD);
-    mathTest_all(0.6, 0.6, 1.0, 0.0, sminScalarAD);
+    mathTest_all_aad(1.1, 0.7, 0.0, 0.0, sminScalarAD);
+    mathTest_all_aad(0.6, 0.6, 1.0, 0.0, sminScalarAD);
 }
 
 LOCAL_TEST_FUNCTOR1(sminScalarExpr, smooth_min(2.0, 2.0 * x))
 TEST(ExpressionsMath, sminScalarExpr)
 {
-    mathTest_all(1.1, 2.0, 0.0, 0.0, sminScalarExpr);
-    mathTest_all(0.9, 1.8, 2.0, 0.0, sminScalarExpr);
+    mathTest_all_aad(1.1, 2.0, 0.0, 0.0, sminScalarExpr);
+    mathTest_all_aad(0.9, 1.8, 2.0, 0.0, sminScalarExpr);
     double c = 0.001;
-    mathTest_all(1.0, 2.0, 1.0, -2. * 2. * 2. / c, sminScalarExpr);
+    mathTest_all_aad(1.0, 2.0, 1.0, -2. * 2. * 2. / c, sminScalarExpr);
 }
 
 LOCAL_TEST_FUNCTOR1(sminADScalar, smooth_min(x, 0.7))
 TEST(ExpressionsMath, sminADScalar)
 {
-    mathTest_all(1.1, 0.7, 0.0, 0.0, sminADScalar);
-    mathTest_all(0.6, 0.6, 1.0, 0.0, sminADScalar);
+    mathTest_all_aad(1.1, 0.7, 0.0, 0.0, sminADScalar);
+    mathTest_all_aad(0.6, 0.6, 1.0, 0.0, sminADScalar);
 }
 
 LOCAL_TEST_FUNCTOR1(sminExprScalar, smooth_min(2.0 * x, 2.0))
 TEST(ExpressionsMath, sminExprScalar)
 {
-    mathTest_all(1.1, 2.0, 0.0, 0.0, sminExprScalar);
-    mathTest_all(0.9, 1.8, 2.0, 0.0, sminExprScalar);
+    mathTest_all_aad(1.1, 2.0, 0.0, 0.0, sminExprScalar);
+    mathTest_all_aad(0.9, 1.8, 2.0, 0.0, sminExprScalar);
     double c = 0.001;
-    mathTest_all(1.0, 2.0, 1.0, -2. * 2. * 2. / c, sminExprScalar);
+    mathTest_all_aad(1.0, 2.0, 1.0, -2. * 2. * 2. / c, sminExprScalar);
 }
 
 // make sure that max/min in std namespace are still working for integer and
@@ -462,18 +463,18 @@ TEST(ExpressionsMath, maxMinForIntegersExplicit)
 
 // temporarily disable double->int conversion warning, as we're testing just that below
 #if defined(_MSC_VER)
-#  pragma warning(push)
-#  pragma warning(disable : 4244)
+#pragma warning(push)
+#pragma warning(disable : 4244)
 #elif defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  if (__GNUC__ < 5) && !defined(__clang__)
-#    pragma GCC diagnostic ignored "-Wconversion"
-#  else
-#    pragma GCC diagnostic ignored "-Wfloat-conversion"
-#  endif
+#pragma GCC diagnostic push
+#if (__GNUC__ < 5) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wconversion"
+#else
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#endif
 #elif defined(__clang__)
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wfloat-conversion"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-conversion"
 #endif
 
 TEST(ExpressionsMath, maxMinForIntegersDoubleExplicit)
@@ -592,3 +593,70 @@ TEST(ExpressionsMath, modfExprScalar)
     mathTest_all(1.2, 0.2, 1.0, 0.0, modfExprScalar);
     EXPECT_NEAR(testFunctor_modfExprScalar::ipart, 1.0, 1e-9);
 }
+
+struct testFunctor_copysignScalar
+{
+    explicit testFunctor_copysignScalar(double op2) : op2_(op2) {}
+    double op2_ = 0.0;
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(x, op2_);
+    }
+};
+
+TEST(ExpressionsMath, copysignADScalar)
+{
+    mathTest_all(1.2, 1.2, 1.0, 0.0, testFunctor_copysignScalar(5.9));
+    mathTest_all(1.2, 1.2, 1.0, 0.0, testFunctor_copysignScalar(0.0));
+    mathTest_all(1.2, -1.2, -1.0, 0.0, testFunctor_copysignScalar(-5.9));
+    mathTest_all(1.2, -1.2, -1.0, 0.0, testFunctor_copysignScalar(-0.0000001));
+}
+
+struct testFunctor_copysignAD
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(x, x);
+    }
+} copysignAD;
+
+TEST(ExpressionsMath, copysignADAD)
+{
+    mathTest_all(1.2, 1.2, 1.0, 0.0, copysignAD);
+    mathTest_all(-1.2, -1.2, 1.0, 0.0, copysignAD);
+}
+
+struct testFunctor_copysignADExpr
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(x, -x);
+    }
+} copysignADExpr;
+
+TEST(ExpressionsMath, copysignADExpr) { mathTest_all(1.2, -1.2, -1.0, 0.0, copysignADExpr); }
+
+struct testFunctor_copysignExprAD
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(-x, x);
+    }
+} copysignExprAD;
+
+TEST(ExpressionsMath, copysignExprAD) { mathTest_all(1.2, 1.2, 1.0, 0.0, copysignExprAD); }
+
+struct testFunctor_copysignExprExpr
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(-x, -x);
+    }
+} copysignExprExpr;
+
+TEST(ExpressionsMath, copysignExprExpr) { mathTest_all(1.2, -1.2, -1.0, 0.0, copysignExprExpr); }
