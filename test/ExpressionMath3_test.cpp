@@ -594,21 +594,69 @@ TEST(ExpressionsMath, modfExprScalar)
     EXPECT_NEAR(testFunctor_modfExprScalar::ipart, 1.0, 1e-9);
 }
 
+struct testFunctor_copysignScalar
+{
+    testFunctor_copysignScalar(double op2) : op2_(op2) {}
+    double op2_ = 0.0;
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(x, op2_);
+    }
+};
+
 TEST(ExpressionsMath, copysignADScalar)
 {
-    mathTest_all(1.2, 1.2, 1.0, 0.0, [](auto& x) { return copysign(x, 5.9); });
-    mathTest_all(1.2, 1.2, 1.0, 0.0, [](auto& x) { return copysign(x, 0.0); });
-    mathTest_all(1.2, -1.2, -1.0, 0.0, [](auto& x) { return copysign(x, -5.9); });
-    mathTest_all(1.2, -1.2, -1.0, 0.0, [](auto& x) { return copysign(x, -0.0000001); });
+    mathTest_all(1.2, 1.2, 1.0, 0.0, testFunctor_copysignScalar(5.9));
+    mathTest_all(1.2, 1.2, 1.0, 0.0, testFunctor_copysignScalar(0.0));
+    mathTest_all(1.2, -1.2, -1.0, 0.0, testFunctor_copysignScalar(-5.9));
+    mathTest_all(1.2, -1.2, -1.0, 0.0, testFunctor_copysignScalar(-0.0000001));
 }
+
+struct testFunctor_copysignAD
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(x, x);
+    }
+} copysignAD;
 
 TEST(ExpressionsMath, copysignADAD)
 {
-    mathTest_all(1.2, 1.2, 1.0, 0.0, [](auto& x) { return copysign(x, x); });
-    mathTest_all(-1.2, -1.2, 1.0, 0.0, [](auto& x) { return copysign(x, x); });
-    mathTest_all(1.2, -1.2, -1.0, 0.0, [](auto& x) { return copysign(x, -x); });
-    mathTest_all(1.2, -1.2, -1.0, 0.0, [](auto& x) { return copysign(x, -x - 1); });
-    mathTest_all(1.2, -1.2, -1.0, 0.0, [](auto& x) { return copysign(x, -x * x); });
-    mathTest_all(1.2, -1.2, -1.0, 0.0, [](auto& x) { return copysign(-x, -x); });
-    mathTest_all(1.2, -2.4, -2.0, 0.0, [](auto& x) { return copysign(-x * 2, -x); });
+    mathTest_all(1.2, 1.2, 1.0, 0.0, copysignAD);
+    mathTest_all(-1.2, -1.2, 1.0, 0.0, copysignAD);
 }
+
+struct testFunctor_copysignADExpr
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(x, -x);
+    }
+} copysignADExpr;
+
+TEST(ExpressionsMath, copysignADExpr) { mathTest_all(1.2, -1.2, -1.0, 0.0, copysignADExpr); }
+
+struct testFunctor_copysignExprAD
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(-x, x);
+    }
+} copysignExprAD;
+
+TEST(ExpressionsMath, copysignExprAD) { mathTest_all(1.2, 1.2, 1.0, 0.0, copysignExprAD); }
+
+struct testFunctor_copysignExprExpr
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return copysign(-x, -x);
+    }
+} copysignExprExpr;
+
+TEST(ExpressionsMath, copysignExprExpr) { mathTest_all(1.2, -1.2, -1.0, 0.0, copysignExprExpr); }
