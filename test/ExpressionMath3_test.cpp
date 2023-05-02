@@ -596,7 +596,7 @@ TEST(ExpressionsMath, modfExprScalar)
 
 struct testFunctor_copysignScalar
 {
-    testFunctor_copysignScalar(double op2) : op2_(op2) {}
+    explicit testFunctor_copysignScalar(double op2) : op2_(op2) {}
     double op2_ = 0.0;
     template <class T>
     T operator()(const T& x) const
