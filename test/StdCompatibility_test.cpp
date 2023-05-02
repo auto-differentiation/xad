@@ -101,6 +101,7 @@ TEST(StdCompatibility, canUseStdMath)
     EXPECT_THAT(std::signbit(x), Eq(std::signbit(xd)));
     EXPECT_THAT(std::fpclassify(x), Eq(std::fpclassify(xd)));
     EXPECT_THAT(std::ilogb(x), Eq(std::ilogb(xd)));
+    EXPECT_THAT(std::copysign(x, -x), Eq(std::copysign(xd, -xd)));
 
     // complex
     EXPECT_THAT(std::real(x).getValue(), DoubleNear(std::real(xd), 1e-9));

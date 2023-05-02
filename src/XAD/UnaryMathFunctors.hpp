@@ -421,11 +421,9 @@ rint
 lrint
 llrint
 nearbyint
-copysign
 nan
 nexttoward
 fdim
-isnormal
 
 isgreater
 isgreaterequal
