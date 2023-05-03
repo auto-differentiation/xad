@@ -594,9 +594,27 @@ TEST(ExpressionsMath, modfExprScalar)
     EXPECT_NEAR(testFunctor_modfExprScalar::ipart, 1.0, 1e-9);
 }
 
-struct testFunctor_copysignScalar
+
+struct testFunctor_copysignScalar1
 {
-    explicit testFunctor_copysignScalar(double op2) : op2_(op2) {}
+    explicit testFunctor_copysignScalar1(double op1) : op1_(op1) {}
+    double op1_ = 0.0;
+    template <class T>
+    double operator()(const T& x) const
+    {
+        return copysign(op1_, x);
+    }
+};
+
+TEST(ExpressionsMath, copysignScalarAD)
+{
+    mathTest_all(1.2, 42.2, 0.0, 0.0, testFunctor_copysignScalar1(42.2));
+    mathTest_all(-1.2, -42.2, 0.0, 0.0, testFunctor_copysignScalar1(42.2));
+}
+
+struct testFunctor_copysignScalar2
+{
+    explicit testFunctor_copysignScalar2(double op2) : op2_(op2) {}
     double op2_ = 0.0;
     template <class T>
     T operator()(const T& x) const
@@ -607,10 +625,10 @@ struct testFunctor_copysignScalar
 
 TEST(ExpressionsMath, copysignADScalar)
 {
-    mathTest_all(1.2, 1.2, 1.0, 0.0, testFunctor_copysignScalar(5.9));
-    mathTest_all(1.2, 1.2, 1.0, 0.0, testFunctor_copysignScalar(0.0));
-    mathTest_all(1.2, -1.2, -1.0, 0.0, testFunctor_copysignScalar(-5.9));
-    mathTest_all(1.2, -1.2, -1.0, 0.0, testFunctor_copysignScalar(-0.0000001));
+    mathTest_all(1.2, 1.2, 1.0, 0.0, testFunctor_copysignScalar2(5.9));
+    mathTest_all(1.2, 1.2, 1.0, 0.0, testFunctor_copysignScalar2(0.0));
+    mathTest_all(1.2, -1.2, -1.0, 0.0, testFunctor_copysignScalar2(-5.9));
+    mathTest_all(1.2, -1.2, -1.0, 0.0, testFunctor_copysignScalar2(-0.0000001));
 }
 
 struct testFunctor_copysignAD
