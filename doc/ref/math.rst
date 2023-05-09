@@ -117,6 +117,12 @@ Absolute Values, Max, Min, and Rounding
    For derivatives, we therefore consider them both the same and calculate
    derivative accordingly.
 
+.. cpp:function:: T copysign(T x, T y)
+
+   Copies the sign of the floating point value ``y`` to the value ``x``, correctly
+   treating positive/negative zero, NaN, and Inf values. It uses :cpp::func:`signbit`
+   internally to determine the sign of ``y``.
+
 
 Trigonometric Functions
 -----------------------

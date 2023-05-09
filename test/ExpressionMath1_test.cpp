@@ -30,29 +30,29 @@
 LOCAL_TEST_FUNCTOR1(degreesAD, degrees(x))
 TEST(ExpressionsMath, degreesAD)
 {
-    mathTest_all(3.141592653589793238462643, 180.0, 57.2957795130823208767981548141051703324054725,
-                 0.0, degreesAD);
+    mathTest_all_aad(3.141592653589793238462643, 180.0,
+                     57.2957795130823208767981548141051703324054725, 0.0, degreesAD);
 }
 
 LOCAL_TEST_FUNCTOR1(degreesExpr, degrees(0.5 * x))
 TEST(ExpressionsMath, degreesExpr)
 {
-    mathTest_all(3.141592653589793238462643, 90.0,
-                 0.5 * 57.2957795130823208767981548141051703324054725, 0.0, degreesExpr);
+    mathTest_all_aad(3.141592653589793238462643, 90.0,
+                     0.5 * 57.2957795130823208767981548141051703324054725, 0.0, degreesExpr);
 }
 
 LOCAL_TEST_FUNCTOR1(radiansAD, radians(x));
 TEST(ExpressionsMath, radiansAD)
 {
-    mathTest_all(180.0, 3.141592653589793238462643, 0.0174532925199432957692369076848861271344287,
-                 0.0, radiansAD);
+    mathTest_all_aad(180.0, 3.141592653589793238462643,
+                     0.0174532925199432957692369076848861271344287, 0.0, radiansAD);
 }
 
 LOCAL_TEST_FUNCTOR1(radiansExpr, radians(2.0 * x))
 TEST(ExpressionsMath, radiansExpr)
 {
-    mathTest_all(180.0, 2.0 * 3.141592653589793238462643,
-                 2.0 * 0.0174532925199432957692369076848861271344287, 0.0, radiansExpr);
+    mathTest_all_aad(180.0, 2.0 * 3.141592653589793238462643,
+                     2.0 * 0.0174532925199432957692369076848861271344287, 0.0, radiansExpr);
 }
 
 LOCAL_TEST_FUNCTOR1(cosAD, cos(x))

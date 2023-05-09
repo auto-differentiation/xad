@@ -27,7 +27,6 @@
 #include <gtest/gtest.h>
 #include "TestHelpers.hpp"
 
-
 LOCAL_TEST_FUNCTOR1(powScalarBaseAD, pow(2.1, x))
 TEST(ExpressionsMath, powScalarBaseAD)
 {
@@ -116,12 +115,12 @@ TEST(ExpressionsMath, powExprExpr)
 }
 
 LOCAL_TEST_FUNCTOR1(pownAD, pown(x, 2))
-TEST(ExpressionsMath, pownAD) { mathTest_all(0.3, std::pow(0.3, 2), 2. * 0.3, 2., pownAD); }
+TEST(ExpressionsMath, pownAD) { mathTest_all_aad(0.3, std::pow(0.3, 2), 2. * 0.3, 2., pownAD); }
 
 LOCAL_TEST_FUNCTOR1(pownExpr, pown(2.3 * x, 2))
 TEST(ExpressionsMath, pownExpr)
 {
-    mathTest_all(0.3, std::pow(2.3 * 0.3, 2), 2.3 * 2 * 2.3 * 0.3, 2.3 * 2. * 2.3, pownExpr);
+    mathTest_all_aad(0.3, std::pow(2.3 * 0.3, 2), 2.3 * 2 * 2.3 * 0.3, 2.3 * 2. * 2.3, pownExpr);
 }
 
 LOCAL_TEST_FUNCTOR1(pown1AD, pow(x, 2))
@@ -187,51 +186,51 @@ LOCAL_TEST_FUNCTOR1(sabsAD, smooth_abs(x))
 TEST(ExpressionsMath, sabsAD)
 {
     double c = 0.001;
-    mathTest_all(0.3, std::abs(0.3), 1.0, 0.0, sabsAD);
-    mathTest_all(-0.3, std::abs(-0.3), -1.0, 0.0, sabsAD);
-    mathTest_all(0.0, std::abs(0.0), 0.0, 4. / c, sabsAD);
+    mathTest_all_aad(0.3, std::abs(0.3), 1.0, 0.0, sabsAD);
+    mathTest_all_aad(-0.3, std::abs(-0.3), -1.0, 0.0, sabsAD);
+    mathTest_all_aad(0.0, std::abs(0.0), 0.0, 4. / c, sabsAD);
 }
 
 LOCAL_TEST_FUNCTOR1(sabsExpr, smooth_abs(2.3 * x))
 TEST(ExpressionsMath, sabsExpr)
 {
-    mathTest_all(0.3, std::abs(2.3 * 0.3), 2.3, 0.0, sabsExpr);
-    mathTest_all(-0.3, std::abs(2.3 * -0.3), -2.3, 0.0, sabsExpr);
+    mathTest_all_aad(0.3, std::abs(2.3 * 0.3), 2.3, 0.0, sabsExpr);
+    mathTest_all_aad(-0.3, std::abs(2.3 * -0.3), -2.3, 0.0, sabsExpr);
     double c = 0.001;
-    mathTest_all(0.0, std::abs(2.3 * 0.0), 0.0, 2.3 * 2.3 * 4. / c, sabsExpr);
+    mathTest_all_aad(0.0, std::abs(2.3 * 0.0), 0.0, 2.3 * 2.3 * 4. / c, sabsExpr);
 }
 
 LOCAL_TEST_FUNCTOR2(sabsADAD, smooth_abs(x1, x2))
 TEST(ExpressionsMath, sabsADAD)
 {
-    mathTest2_all(0.3, 0.001, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sabsADAD);
-    mathTest2_all(-0.3, 0.001, 0.3, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sabsADAD);
-    mathTest2_all(0.0, 0.001, 0.0, 0.0, 0.0, 4. / 0.001, 0.0, 0.0, 0.0, sabsADAD);
+    mathTest2_all_aad(0.3, 0.001, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sabsADAD);
+    mathTest2_all_aad(-0.3, 0.001, 0.3, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sabsADAD);
+    mathTest2_all_aad(0.0, 0.001, 0.0, 0.0, 0.0, 4. / 0.001, 0.0, 0.0, 0.0, sabsADAD);
 }
 
 LOCAL_TEST_FUNCTOR2(sabsADExpr, smooth_abs(x1, 2.3 * x2))
 TEST(ExpressionsMath, sabsADExpr)
 {
-    mathTest2_all(0.3, 0.001, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sabsADExpr);
-    mathTest2_all(-0.3, 0.001, 0.3, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sabsADExpr);
-    mathTest2_all(0.0, 0.001, 0.0, 0.0, 0.0, 4. / 2.3 / 0.001, 0.0, 0.0, 0.0, sabsADExpr);
+    mathTest2_all_aad(0.3, 0.001, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sabsADExpr);
+    mathTest2_all_aad(-0.3, 0.001, 0.3, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, sabsADExpr);
+    mathTest2_all_aad(0.0, 0.001, 0.0, 0.0, 0.0, 4. / 2.3 / 0.001, 0.0, 0.0, 0.0, sabsADExpr);
 }
 
 LOCAL_TEST_FUNCTOR2(sabsExprAD, smooth_abs(2.3 * x1, x2))
 TEST(ExpressionsMath, sabsExprAD)
 {
-    mathTest2_all(0.3, 0.001, 2.3 * 0.3, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, sabsExprAD);
-    mathTest2_all(-0.3, 0.001, 2.3 * 0.3, -2.3, 0.0, 0.0, 0.0, 0.0, 0.0, sabsExprAD);
-    mathTest2_all(0.0, 0.001, 0.0, 0.0, 0.0, 2.3 * 2.3 * 4. / 0.001, 0.0, 0.0, 0.0, sabsExprAD);
+    mathTest2_all_aad(0.3, 0.001, 2.3 * 0.3, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, sabsExprAD);
+    mathTest2_all_aad(-0.3, 0.001, 2.3 * 0.3, -2.3, 0.0, 0.0, 0.0, 0.0, 0.0, sabsExprAD);
+    mathTest2_all_aad(0.0, 0.001, 0.0, 0.0, 0.0, 2.3 * 2.3 * 4. / 0.001, 0.0, 0.0, 0.0, sabsExprAD);
 }
 
 LOCAL_TEST_FUNCTOR2(sabsExprExpr, smooth_abs(2.3 * x1, 2.3 * x2))
 TEST(ExpressionsMath, sabsExprExpr)
 {
-    mathTest2_all(0.3, 0.001, 2.3 * 0.3, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, sabsExprExpr);
-    mathTest2_all(-0.3, 0.001, 2.3 * 0.3, -2.3, 0.0, 0.0, 0.0, 0.0, 0.0, sabsExprExpr);
-    mathTest2_all(0.0, 0.001, 0.0, 0.0, 0.0, 2.3 * 2.3 * 4. / 2.3 / 0.001, 0.0, 0.0, 0.0,
-                  sabsExprExpr);
+    mathTest2_all_aad(0.3, 0.001, 2.3 * 0.3, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, sabsExprExpr);
+    mathTest2_all_aad(-0.3, 0.001, 2.3 * 0.3, -2.3, 0.0, 0.0, 0.0, 0.0, 0.0, sabsExprExpr);
+    mathTest2_all_aad(0.0, 0.001, 0.0, 0.0, 0.0, 2.3 * 2.3 * 4. / 2.3 / 0.001, 0.0, 0.0, 0.0,
+                      sabsExprExpr);
 }
 
 LOCAL_TEST_FUNCTOR1(floorAD, floor(x))
@@ -413,13 +412,13 @@ TEST(ExpressionsMath, remquo_AD)
 {
     int n;
     auto res = std::remquo(1.3, 0.5, &n);
-    mathTest2_all(1.3, 0.5, res, 1.0, -double(n), 0.0, 0.0, 0.0, 0.0, remquoAD);
+    mathTest2_all_aad(1.3, 0.5, res, 1.0, -double(n), 0.0, 0.0, 0.0, 0.0, remquoAD);
     EXPECT_EQ(n, rmqn_);
     rmqn_ = 0;
-    mathTest_all(1.3, res, 1.0, 0.0, remquoADScalar);
+    mathTest_all_aad(1.3, res, 1.0, 0.0, remquoADScalar);
     EXPECT_EQ(n, rmqn_);
     rmqn_ = 0;
-    mathTest_all(0.5, res, -double(n), 0.0, remquoScalarAD);
+    mathTest_all_aad(0.5, res, -double(n), 0.0, remquoScalarAD);
     EXPECT_EQ(n, rmqn_);
     rmqn_ = 0;
 }
@@ -435,19 +434,19 @@ TEST(ExpressionsMath, remquo_Expr)
     auto r1 = std::remquo(2.3 * 1.3, 2.3 * 0.5, &n1);
     auto r2 = std::remquo(1.3, 2.3 * 0.5, &n2);
     auto r3 = std::remquo(2.3 * 1.3, 0.5, &n3);
-    mathTest2_all(1.3, 0.5, r1, 2.3, -2.3 * double(n1), 0.0, 0.0, 0.0, 0.0, remquoExprExpr);
+    mathTest2_all_aad(1.3, 0.5, r1, 2.3, -2.3 * double(n1), 0.0, 0.0, 0.0, 0.0, remquoExprExpr);
     EXPECT_EQ(n1, rmqn_);
     rmqn_ = 0;
-    mathTest2_all(1.3, 0.5, r2, 1.0, -2.3 * double(n2), 0.0, 0.0, 0.0, 0.0, remquoADExpr);
+    mathTest2_all_aad(1.3, 0.5, r2, 1.0, -2.3 * double(n2), 0.0, 0.0, 0.0, 0.0, remquoADExpr);
     EXPECT_EQ(n2, rmqn_);
     rmqn_ = 0;
-    mathTest2_all(1.3, 0.5, r3, 2.3, -double(n3), 0.0, 0.0, 0.0, 0.0, remquoExprAD);
+    mathTest2_all_aad(1.3, 0.5, r3, 2.3, -double(n3), 0.0, 0.0, 0.0, 0.0, remquoExprAD);
     EXPECT_EQ(n3, rmqn_);
     rmqn_ = 0;
-    mathTest_all(1.3, r3, 2.3, 0.0, remquoExprScalar);
+    mathTest_all_aad(1.3, r3, 2.3, 0.0, remquoExprScalar);
     EXPECT_EQ(n3, rmqn_);
     rmqn_ = 0;
-    mathTest_all(0.5, r2, -2.3 * double(n2), 0.0, remquoScalarExpr);
+    mathTest_all_aad(0.5, r2, -2.3 * double(n2), 0.0, remquoScalarExpr);
     EXPECT_EQ(n2, rmqn_);
     rmqn_ = 0;
 }

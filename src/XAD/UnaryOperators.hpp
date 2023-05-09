@@ -110,7 +110,8 @@ XAD_INLINE UnaryExpr<Scalar, ldexp_op<Scalar>, Expr> ldexp(const Expression<Scal
 template <class Scalar>
 XAD_INLINE UnaryExpr<Scalar, ldexp_op<Scalar>, ADVar<Scalar>> ldexp(const AReal<Scalar>& x, int y)
 {
-    return UnaryExpr<Scalar, ldexp_op<Scalar>, ADVar<Scalar>>(ADVar<Scalar>(x), ldexp_op<Scalar>(y));
+    return UnaryExpr<Scalar, ldexp_op<Scalar>, ADVar<Scalar>>(ADVar<Scalar>(x),
+                                                              ldexp_op<Scalar>(y));
 }
 
 // frexp
@@ -125,7 +126,8 @@ template <class Scalar>
 XAD_INLINE UnaryExpr<Scalar, frexp_op<Scalar>, ADVar<Scalar>> frexp(const AReal<Scalar>& x,
                                                                     int* exp)
 {
-    return UnaryExpr<Scalar, frexp_op<Scalar>, ADVar<Scalar>>(ADVar<Scalar>(x), frexp_op<Scalar>(exp));
+    return UnaryExpr<Scalar, frexp_op<Scalar>, ADVar<Scalar>>(ADVar<Scalar>(x),
+                                                              frexp_op<Scalar>(exp));
 }
 
 // modf - only enabled if iptr is nested type (double) or Scalar
@@ -140,7 +142,8 @@ template <class Scalar, class T>
 XAD_INLINE UnaryExpr<Scalar, modf_op<Scalar, T>, ADVar<Scalar>> modf(const AReal<Scalar>& x,
                                                                      T* iptr)
 {
-    return UnaryExpr<Scalar, modf_op<Scalar, T>, ADVar<Scalar>>(ADVar<Scalar>(x), modf_op<Scalar, T>(iptr));
+    return UnaryExpr<Scalar, modf_op<Scalar, T>, ADVar<Scalar>>(ADVar<Scalar>(x),
+                                                                modf_op<Scalar, T>(iptr));
 }
 
 // we put max/min here explicitly, as the 2 arguments to them must match
@@ -405,9 +408,8 @@ remquo(const AReal<Scalar>& a, typename ExprTraits<Scalar>::nested_type b, int* 
 // full specialisations as compilers otherwise pick up standard version
 // NOTE: They are only covering the most common cases
 
-XAD_INLINE UnaryExpr<double, scalar_remquo2_op<double, double>,
-                     ADVar<double>>
-remquo(const AReal<double>& a, double b, int* quo)
+XAD_INLINE UnaryExpr<double, scalar_remquo2_op<double, double>, ADVar<double>> remquo(
+    const AReal<double>& a, double b, int* quo)
 {
     return UnaryExpr<double, scalar_remquo2_op<double, double>, ADVar<double>>(
         ADVar<double>(a), scalar_remquo2_op<double, double>(b, quo));
@@ -420,9 +422,8 @@ XAD_INLINE UnaryExpr<double, scalar_remquo2_op<double, double>, FReal<double>> r
         a, scalar_remquo2_op<double, double>(b, quo));
 }
 
-XAD_INLINE UnaryExpr<double, scalar_remquo1_op<double, double>,
-                     ADVar<double>>
-remquo(double a, const AReal<double>& b, int* quo)
+XAD_INLINE UnaryExpr<double, scalar_remquo1_op<double, double>, ADVar<double>> remquo(
+    double a, const AReal<double>& b, int* quo)
 {
     return UnaryExpr<double, scalar_remquo1_op<double, double>, ADVar<double>>(
         ADVar<double>(b), scalar_remquo1_op<double, double>(a, quo));
@@ -444,12 +445,48 @@ XAD_INLINE int ilogb(const Expression<Scalar, Derived>& x)
 }
 
 template <class Scalar, class Derived>
-XAD_INLINE typename ExprTraits<Derived>::value_type scalbn(
-    const Expression<Scalar, Derived>& x, int exp)
+XAD_INLINE typename ExprTraits<Derived>::value_type scalbn(const Expression<Scalar, Derived>& x,
+                                                           int exp)
 {
     using std::scalbn;
     using T = typename ExprTraits<Derived>::value_type;
     return T(x * scalbn(1.0, exp));
+}
+
+template <class Scalar, class Derived, class T2>
+XAD_INLINE typename ExprTraits<Derived>::value_type copysign(const Expression<Scalar, Derived>& x,
+                                                             const T2& y)
+{
+    using T = typename ExprTraits<Derived>::value_type;
+    bool sign = signbit(y);
+    if (x < 0)
+    {
+        if (sign)
+            return T(x);
+        else
+            return T(-x);
+    }
+    else
+    {
+        if (sign)
+            return T(-x);
+        else
+            return T(x);
+    }
+}
+
+template <class Scalar, class Derived>
+XAD_INLINE double copysign(double x, const Expression<Scalar, Derived>& y) 
+{
+    using std::copysign;
+    return copysign(x, value(y));
+}
+
+template <class Scalar, class Derived>
+XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y) 
+{
+    using std::copysign;
+    return copysign(x, value(y));
 }
 
 #undef XAD_UNARY_BINSCAL
