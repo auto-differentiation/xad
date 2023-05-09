@@ -89,6 +89,7 @@ using xad::trunc;
 using xad::nextafter;
 using xad::ilogb;
 using xad::scalbn;
+using xad::copysign;
 
 template <class Scalar, class Derived>
 inline std::string to_string(const xad::Expression<Scalar, Derived>& _Val)
