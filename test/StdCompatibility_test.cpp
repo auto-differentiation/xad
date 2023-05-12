@@ -1,11 +1,11 @@
-#include <XAD/StdCompatibility.hpp>
 #include <XAD/Complex.hpp>
+#include <XAD/StdCompatibility.hpp>
 #include <XAD/XAD.hpp>
 #include <cmath>
 #include <complex>
 #include <limits>
-#include <type_traits>
 #include <random>
+#include <type_traits>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -55,7 +55,8 @@ TEST(StdCompatibility, canUseStdMath)
 
     EXPECT_THAT(std::fmod(x, x).getValue(), DoubleNear(std::fmod(xd, xd), 1e-9));
     EXPECT_THAT(std::remquo(x, x, &n).getValue(), DoubleNear(std::remquo(xd, xd, &n), 1e-9));
-    EXPECT_THAT(std::nextafter(x, 2.0*x).getValue(), DoubleNear(std::nextafter(xd, 2.0*xd), 1e-9));
+    EXPECT_THAT(std::nextafter(x, 2.0 * x).getValue(),
+                DoubleNear(std::nextafter(xd, 2.0 * xd), 1e-9));
 
     EXPECT_THAT(std::sin(x).getValue(), DoubleNear(std::sin(xd), 1e-9));
     EXPECT_THAT(std::cos(x).getValue(), DoubleNear(std::cos(xd), 1e-9));
@@ -251,7 +252,8 @@ TYPED_TEST(StdCompatibilityTempl, Traits)
                   "not implicitly convertible to char");
     static_assert(std::is_integral<TypeParam>::value == false, "not an integral type");
     static_assert(std::is_fundamental<TypeParam>::value == false, "not fundamental");
-    static_assert(!std::is_scalar<TypeParam>::value, "it's not a scalar type - would cause issues with constexpr etc");
+    static_assert(!std::is_scalar<TypeParam>::value,
+                  "it's not a scalar type - would cause issues with constexpr etc");
     static_assert(std::is_object<TypeParam>::value, "it's an object type");
     static_assert(std::is_compound<TypeParam>::value, "it's compound");
     static_assert(!std::is_trivial<TypeParam>::value, "it's not a trivial type");
@@ -263,7 +265,8 @@ TYPED_TEST(StdCompatibilityTempl, Traits)
 #if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
     static_assert(std::is_trivially_copyable<TypeParam>::value == fwd, "trivially copyable");
 #endif
-    static_assert(std::is_trivially_destructible<TypeParam>::value == fwd, "trivially destructable for fwd mode");
+    static_assert(std::is_trivially_destructible<TypeParam>::value == fwd,
+                  "trivially destructable for fwd mode");
 }
 
 template <class T>
@@ -273,7 +276,7 @@ class StdCompatibilityConstexprTempl : public ::testing::Test
 
 typedef ::testing::Types<xad::FAD, xad::FReal<xad::FReal<double>>> constexpr_test_types;
 
-#if !(_MSC_VER && _MSC_VER <= 1900)   // VS 2015 doesn't implement constexpr objects correctly
+#if !(_MSC_VER && _MSC_VER <= 1900)  // VS 2015 doesn't implement constexpr objects correctly
 
 TYPED_TEST_SUITE(StdCompatibilityConstexprTempl, constexpr_test_types);
 
@@ -302,7 +305,7 @@ TYPED_TEST(StdCompatibilityConstexprTempl, NumericLimitsConstexpr)
     XAD_UNUSED_VARIABLE(t_round);
 }
 
-#endif 
+#endif
 
 TEST(StdCompatibility, StdMinWithSizeWorks)
 {
@@ -319,7 +322,8 @@ TEST(StdCompatibility, StdMinWithSizeWorks)
     EXPECT_THAT(min_width, Ge(8));
 }
 
-TEST(StdCompatibility, UseWithRandomDistribution) {
+TEST(StdCompatibility, UseWithRandomDistribution)
+{
     std::normal_distribution<xad::AReal<double>> dst(1.0, 2.0);
 
     EXPECT_THAT(dst.mean().value(), DoubleEq(1.0));

@@ -28,7 +28,6 @@
 #include <XAD/Macros.hpp>
 #include <XAD/Traits.hpp>
 
-
 namespace xad
 {
 namespace detail
@@ -63,7 +62,9 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr> >
 {
     typedef detail::UnaryDerivativeImpl<OperatorTraits<Op>::useResultBasedDerivatives == 1>
         der_impl;
-    XAD_INLINE explicit UnaryExpr(const Expr& a, Op op = Op()) : a_(a), op_(op), v_(op_(a_.value())) {}
+    XAD_INLINE explicit UnaryExpr(const Expr& a, Op op = Op()) : a_(a), op_(op), v_(op_(a_.value()))
+    {
+    }
     XAD_INLINE Scalar value() const { return v_; }
     template <class Tape>
     XAD_INLINE void calc_derivatives(Tape& s, const Scalar& mul) const

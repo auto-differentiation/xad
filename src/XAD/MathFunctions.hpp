@@ -104,11 +104,9 @@ XAD_INLINE float smooth_min(float x, float y, float c = 0.001f)
     return 0.5f * (x + y - smooth_abs(x - y, c));
 }
 
-
-using ::std::atan2;
-using ::std::fmod;
 using ::std::acosh;
 using ::std::asinh;
+using ::std::atan2;
 using ::std::atanh;
 using ::std::cbrt;
 using ::std::erf;
@@ -117,6 +115,7 @@ using ::std::exp2;
 using ::std::expm1;
 using ::std::fmax;
 using ::std::fmin;
+using ::std::fmod;
 using ::std::fpclassify;
 using ::std::isfinite;
 using ::std::isinf;
@@ -124,10 +123,10 @@ using ::std::isnan;
 using ::std::isnormal;
 using ::std::log1p;
 using ::std::log2;
+using ::std::nextafter;
 using ::std::remainder;
 using ::std::round;
 using ::std::signbit;
 using ::std::trunc;
-using ::std::nextafter;
 
 }  // namespace xad

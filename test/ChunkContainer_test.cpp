@@ -23,8 +23,8 @@
 ******************************************************************************/
 
 #include <XAD/ChunkContainer.hpp>
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using namespace ::testing;
 using xad::ChunkContainer;
@@ -78,7 +78,7 @@ TEST(ChunkContainer, uninitialized_extend)
     auto it = chk.iterator_at(i);
     for (std::size_t j = i + 10; i < j; ++i)
     {
-        ::new(&*it++) int(static_cast<int>(i));
+        ::new (&*it++) int(static_cast<int>(i));
     }
 
     for (std::size_t j = 0; j < ChunkContainer<int>::chunk_size - 4 + 10; ++j)
@@ -118,11 +118,9 @@ TEST(ChunkContainer, move_assign)
 TEST(ChunkContainer, multichunk)
 {
     ChunkContainer<int, 8> chk;
-    for (int i = 0; i < 20; ++i)
-        chk.push_back(i);
+    for (int i = 0; i < 20; ++i) chk.push_back(i);
 
-    for (int i = 0; i < 20; ++i)
-        EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+    for (int i = 0; i < 20; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
 }
 
 namespace
@@ -133,10 +131,7 @@ struct NonPodTester
     NonPodTester(const NonPodTester&) { ++copies; }
     NonPodTester(NonPodTester&&) = delete;
 
-    ~NonPodTester()
-    {
-        ++destructions;
-    }
+    ~NonPodTester() { ++destructions; }
 
     static void reset()
     {
@@ -153,7 +148,7 @@ struct NonPodTester
 int NonPodTester::constructions = 0;
 int NonPodTester::destructions = 0;
 int NonPodTester::copies = 0;
-}
+}  // namespace
 
 TEST(ChunkContainer, non_pod_type)
 {
@@ -166,14 +161,12 @@ TEST(ChunkContainer, non_pod_type)
         EXPECT_THAT(NonPodTester::copies, Eq(20));
     }
     EXPECT_THAT(NonPodTester::copies + NonPodTester::constructions, Eq(NonPodTester::destructions));
-    
 }
 
 TEST(ChunkContainer, resize)
 {
     ChunkContainer<int, 8> chk;
-    for (int i = 0; i < 10; ++i)
-        chk.push_back(i);
+    for (int i = 0; i < 10; ++i) chk.push_back(i);
 
     EXPECT_THAT(chk.size(), Eq(10u));
 
@@ -181,8 +174,7 @@ TEST(ChunkContainer, resize)
     EXPECT_THAT(chk.size(), Eq(15u));
     chk[12] = 12;
 
-    for (int i = 0; i < 10; ++i)
-        EXPECT_THAT(chk[size_t(i)], Eq(i));
+    for (int i = 0; i < 10; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i));
     for (int i = 10; i < 15; ++i)
     {
         if (i == 12)
@@ -195,8 +187,7 @@ TEST(ChunkContainer, resize)
 TEST(ChunkContainer, append)
 {
     ChunkContainer<int, 8> chk;
-    for (int i = 0; i < 14; ++i)
-        chk.push_back(i);
+    for (int i = 0; i < 14; ++i) chk.push_back(i);
 
     std::vector<int> newvals = {14, 15, 16, 17};
     // note: we can only append sizes less than chunk size (8)
@@ -204,6 +195,5 @@ TEST(ChunkContainer, append)
 
     EXPECT_THAT(chk.size(), Eq(18u));
 
-    for (int i = 0; i < 18; ++i)
-        EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+    for (int i = 0; i < 18; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
 }

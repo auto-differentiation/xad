@@ -49,7 +49,9 @@ class complex_impl
   public:
     typedef T value_type;
 
-    explicit complex_impl(const T& areal = T(), const T& aimag = T()) : real_(areal), imag_(aimag) {}
+    explicit complex_impl(const T& areal = T(), const T& aimag = T()) : real_(areal), imag_(aimag)
+    {
+    }
 
     template <class X>
     explicit complex_impl(const std::complex<X>& o) : real_(o.real()), imag_(o.imag())
@@ -212,7 +214,7 @@ class complex<xad::AReal<T>> : public complex<xad::ADTypeBase<T, xad::AReal<T>>>
     }
 
     template <class X>
-    XAD_INLINE complex(    // cppcheck-suppress noExplicitConstructor
+    XAD_INLINE complex(  // cppcheck-suppress noExplicitConstructor
         const X& areal,
         typename std::enable_if<xad::ExprTraits<X>::isExpr &&
                                 xad::ExprTraits<X>::direction == xad::DIR_REVERSE>::type* = nullptr)
@@ -239,21 +241,22 @@ class complex<xad::FReal<T>> : public complex<xad::ADTypeBase<T, xad::FReal<T>>>
 
     // inheriting template constructors doesn't work in all compilers
 
-    XAD_INLINE complex(const xad::FReal<T>& areal = xad::FReal<T>(),  // cppcheck-suppress noExplicitConstructor
-                       const xad::FReal<T>& aimag = xad::FReal<T>())
+    XAD_INLINE complex(
+        const xad::FReal<T>& areal = xad::FReal<T>(),  // cppcheck-suppress noExplicitConstructor
+        const xad::FReal<T>& aimag = xad::FReal<T>())
         : base(areal, aimag)
     {
     }
 
     template <class X>
-    XAD_INLINE complex(const X& areal,    // cppcheck-suppress noExplicitConstructor
+    XAD_INLINE complex(const X& areal,  // cppcheck-suppress noExplicitConstructor
                        typename std::enable_if<!xad::ExprTraits<X>::isExpr>::type* = nullptr)
         : base(xad::FReal<T>(areal), xad::FReal<T>())
     {
     }
 
     template <class X>
-    XAD_INLINE complex(   // cppcheck-suppress noExplicitConstructor
+    XAD_INLINE complex(  // cppcheck-suppress noExplicitConstructor
         const X& areal,
         typename std::enable_if<xad::ExprTraits<X>::isExpr &&
                                 xad::ExprTraits<X>::direction == xad::DIR_FORWARD>::type* = nullptr)
@@ -262,7 +265,9 @@ class complex<xad::FReal<T>> : public complex<xad::ADTypeBase<T, xad::FReal<T>>>
     }
 
     template <class X>
-    XAD_INLINE complex(const complex<X>& o) : base(xad::FReal<T>(o.real()), xad::FReal<T>(o.imag()))  // cppcheck-suppress noExplicitConstructor
+    XAD_INLINE complex(const complex<X>& o)
+        : base(xad::FReal<T>(o.real()),
+               xad::FReal<T>(o.imag()))  // cppcheck-suppress noExplicitConstructor
     {
     }
 
@@ -372,7 +377,8 @@ XAD_INLINE typename xad::ExprTraits<Derived>::value_type arg_impl(
 template <class T>
 XAD_INLINE T arg_impl(const std::complex<T>& z);
 
-#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
+#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) &&             \
+    !defined(__clang__)
 template <class Scalar, class Derived>
 XAD_INLINE typename xad::ExprTraits<Derived>::value_type proj_impl(
     const xad::Expression<Scalar, Derived>& x);
@@ -1100,7 +1106,8 @@ XAD_INLINE complex<xad::FReal<T>> conj(const complex<xad::FReal<T>>& z)
     return ret;
 }
 
-#if ((defined(_MSC_VER) && (_MSC_VER < 1920)) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
+#if ((defined(_MSC_VER) && (_MSC_VER < 1920)) || (defined(__GNUC__) && __GNUC__ < 7)) &&           \
+    !defined(__clang__)
 template <class Scalar, class Derived>
 XAD_INLINE typename xad::ExprTraits<Derived>::value_type conj(
     const xad::Expression<Scalar, Derived>& x)
@@ -2283,7 +2290,8 @@ XAD_INLINE typename xad::ExprTraits<Derived>::value_type arg_impl(
 #endif
 }
 
-#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) && !defined(__clang__)
+#if (defined(_MSC_VER) && (_MSC_VER < 1920) || (defined(__GNUC__) && __GNUC__ < 7)) &&             \
+    !defined(__clang__)
 template <class Scalar, class Derived>
 XAD_INLINE typename xad::ExprTraits<Derived>::value_type proj_impl(
     const xad::Expression<Scalar, Derived>& x)

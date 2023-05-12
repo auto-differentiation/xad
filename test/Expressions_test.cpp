@@ -60,7 +60,7 @@ TEST(Expressions, basic)
     EXPECT_DOUBLE_EQ(10.4, big.getValue());
 
     xad::AD res = big;  // construct from expression - puts it on tape
-    
+
     s.registerOutput(res);
     derivative(res) = 1.0;
     s.computeAdjoints();
@@ -95,7 +95,7 @@ TEST(Expressions, basic_fwd)
 
 TEST(Expressions, basic_fwd_fwd)
 {
-    typedef xad::FReal<xad::FReal<double> > AD;
+    typedef xad::FReal<xad::FReal<double>> AD;
 
     AD x = 1.0;
     derivative(value(x)) = 1.0;
@@ -109,10 +109,10 @@ TEST(Expressions, basic_fwd_fwd)
 
 TEST(Expressions, basic_adj_adj)
 {
-    typedef xad::AReal<xad::AReal<double> > AD;
+    typedef xad::AReal<xad::AReal<double>> AD;
 
     xad::Tape<double> si;
-    xad::Tape<xad::AReal<double> > so;
+    xad::Tape<xad::AReal<double>> so;
 
     AD x = 1.0;
     so.registerInput(x);
@@ -121,7 +121,7 @@ TEST(Expressions, basic_adj_adj)
     si.newRecording();
     AD res = sin(x);
     so.registerOutput(res);
-    
+
     value(derivative(res)) = 1.0;
     /*
     std::cout << "slot of x: " << x.getSlot() << "\n";
@@ -162,9 +162,9 @@ TEST(Expressions, basic_adj_adj)
 
 TEST(Expressions, basic_fwd_adj)
 {
-    typedef xad::AReal<xad::FReal<double> > AD;
+    typedef xad::AReal<xad::FReal<double>> AD;
 
-    xad::Tape<xad::FReal<double> > so;
+    xad::Tape<xad::FReal<double>> so;
 
     AD x = 1.0;
     derivative(value(x)) = 1.0;
@@ -195,7 +195,7 @@ TEST(Expressions, basic_fwd_adj)
 
 TEST(Expressions, basic_adj_fwd)
 {
-    typedef xad::FReal<xad::AReal<double> > AD;
+    typedef xad::FReal<xad::AReal<double>> AD;
 
     xad::Tape<double> si;
 
@@ -236,20 +236,20 @@ TEST(Expressions, wrapsAReal)
 
     static_assert((std::is_same<decltype(x1 + x2),
                                 xad::BinaryExpr<double, xad::add_op<double>, xad::ADVar<double>,
-                                                xad::ADVar<double> > >::value),
+                                                xad::ADVar<double>>>::value),
                   "ad type not wrapped");
     static_assert(
         (std::is_same<
             decltype(x1 + x2 + x1 * x2),
             xad::BinaryExpr<double, xad::add_op<double>,
                             xad::BinaryExpr<double, xad::add_op<double>, xad::ADVar<double>,
-                                            xad::ADVar<double> >,
+                                            xad::ADVar<double>>,
                             xad::BinaryExpr<double, xad::prod_op<double>, xad::ADVar<double>,
-                                            xad::ADVar<double> > > >::value),
+                                            xad::ADVar<double>>>>::value),
         "ad type not wrapped");
     static_assert((std::is_same<decltype(max(x1, x1)),
                                 xad::BinaryExpr<double, xad::max_op<double>, xad::ADVar<double>,
-                                                xad::ADVar<double> > >::value),
+                                                xad::ADVar<double>>>::value),
                   "AD type not wrapped");
 }
 
@@ -1528,7 +1528,8 @@ TEST(Expressions, canDeriveLongExpressionFromLambdaReturnAdjoint)
 {
     std::vector<xad::AD> tmp(3, 1.0);
     tmp[2] = 0.0;
-    auto lbd = [&](xad::AD in) -> xad::AD {
+    auto lbd = [&](xad::AD in) -> xad::AD
+    {
         // we make this function really long with loads of temporaries in the expression
         // to trigger problems with overwriting temp refs
         return tmp[0] * (xad::AD(in * in) * xad::AD(tmp[1]) + exp(in)) +
@@ -1559,7 +1560,8 @@ TEST(Expressions, canDeriveLongExpressionFromLambdaReturnForward)
 {
     std::vector<xad::FAD> tmp(3, 1.0);
     tmp[2] = 0.0;
-    auto lbd = [&](xad::FAD in) -> xad::FAD {
+    auto lbd = [&](xad::FAD in) -> xad::FAD
+    {
         // we make this function really long with loads of temporaries in the
         // expression to trigger problems with overwriting temp refs
         return tmp[0] * (xad::FAD(in * in) * xad::FAD(tmp[1]) + exp(in)) +
@@ -1749,8 +1751,8 @@ class ConstexprTest
         z = z - b3_;
         z = z / b4_;
 
-        using std::min;
         using std::max;
+        using std::min;
 
         z = min(z, a1_);
         z = max(z, a2_);
@@ -1762,7 +1764,8 @@ class ConstexprTest
         z = max<xad::AReal<double>>(z, c3_);
         z = max<xad::AReal<double>>(c4_, z);
 
-        if (z >= c1_ || (z < d3_ && !(z == d4_))) {
+        if (z >= c1_ || (z < d3_ && !(z == d4_)))
+        {
             z = min<xad::AReal<double>>(z, d1_);
             z = min<xad::AReal<double>>(d2_, z);
             z = max<xad::AReal<double>>(z, d3_);

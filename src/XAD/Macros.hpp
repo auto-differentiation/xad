@@ -56,9 +56,8 @@ void ignore_unused_variable(const T&)
 #else
 // we can't use thread_local here, as MacOS has an issue with that
 #ifdef _WIN32
-#  define XAD_THREAD_LOCAL __declspec(thread)
-#else 
-#  define XAD_THREAD_LOCAL __thread
+#define XAD_THREAD_LOCAL __declspec(thread)
+#else
+#define XAD_THREAD_LOCAL __thread
 #endif
 #endif
-

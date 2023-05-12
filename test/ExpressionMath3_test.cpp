@@ -594,7 +594,6 @@ TEST(ExpressionsMath, modfExprScalar)
     EXPECT_NEAR(testFunctor_modfExprScalar::ipart, 1.0, 1e-9);
 }
 
-
 struct testFunctor_copysignScalar1
 {
     explicit testFunctor_copysignScalar1(double op1) : op1_(op1) {}

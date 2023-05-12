@@ -272,7 +272,7 @@ template <class Scalar>
 struct nextafter_op
 {
     XAD_INLINE explicit nextafter_op() {}
-    XAD_INLINE Scalar operator()(const Scalar& from, const Scalar& to) const 
+    XAD_INLINE Scalar operator()(const Scalar& from, const Scalar& to) const
     {
         return nextafter(from, to);
     }

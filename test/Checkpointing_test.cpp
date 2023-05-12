@@ -25,7 +25,6 @@
 #include <XAD/XAD.hpp>
 #include <gtest/gtest.h>
 
-
 template <class T>
 void g(int n, T& x)
 {
@@ -54,7 +53,7 @@ class GCheckpointCallback : public xad::CheckpointCallback<Tape>
         idx_type outputidx = idx_.top();
         idx_.pop();
         idx_type inputidx = idx_.top();
-        idx_.pop();  
+        idx_.pop();
         int n = n_.top();
         n_.pop();
         int c = int(x_.size());
@@ -205,7 +204,7 @@ TEST(Checkpointing, equidistantLoop)
     EXPECT_LT(memchkpt, memstraight);
 }
 
-//#define VERBOSE 1
+// #define VERBOSE 1
 #define STATISTICS 1
 
 size_t max_tape_size = 0;
@@ -358,9 +357,9 @@ void g_rec_insert_checkpoint(int from, int to, int stride, T& x, RUN_MODE m)
         if (to - from > stride)
         {
             g_rec_insert_checkpoint(from, from + (to - from) / 2, stride, x,
-                           CHECKPOINT_ARGUMENTS_AND_RUN_PASSIVELY);
+                                    CHECKPOINT_ARGUMENTS_AND_RUN_PASSIVELY);
             g_rec_insert_checkpoint(from + (to - from) / 2, to, stride, x,
-                           CHECKPOINT_ARGUMENTS_AND_RUN_PASSIVELY);
+                                    CHECKPOINT_ARGUMENTS_AND_RUN_PASSIVELY);
         }
         else
         {

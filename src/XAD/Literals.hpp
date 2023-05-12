@@ -44,7 +44,8 @@ struct ADTypeBase : public Expression<Scalar, Derived>
     typedef typename ExprTraits<Derived>::value_type value_type;
     typedef typename ExprTraits<Derived>::nested_type nested_type;
 
-    static_assert(std::is_floating_point<nested_type>::value, "Active AD types only work with floating point");
+    static_assert(std::is_floating_point<nested_type>::value,
+                  "Active AD types only work with floating point");
 
     constexpr explicit XAD_INLINE ADTypeBase(Scalar val = Scalar()) : a_(val) {}
     constexpr XAD_INLINE ADTypeBase(ADTypeBase&& o) noexcept = default;
@@ -84,24 +85,32 @@ struct ADTypeBase : public Expression<Scalar, Derived>
         return derived();
     }
     template <class I>
-    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& 
-    operator+=(I x) { return *this += Scalar(x); }
+    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator+=(I x)
+    {
+        return *this += Scalar(x);
+    }
     XAD_INLINE Derived& operator-=(Scalar rhs)
     {
         a_ -= rhs;
         return derived();
     }
     template <class I>
-    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& 
-    operator-=(I x) { return *this -= Scalar(x); }
+    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator-=(I x)
+    {
+        return *this -= Scalar(x);
+    }
     XAD_INLINE Derived& operator*=(Scalar x) { return derived() = (derived() * x); }
     template <class I>
-    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& 
-    operator*=(I x) { return *this *= Scalar(x); }
+    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator*=(I x)
+    {
+        return *this *= Scalar(x);
+    }
     XAD_INLINE Derived& operator/=(Scalar x) { return derived() = (derived() / x); }
     template <class I>
-    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& 
-    operator/=(I x) { return *this /= Scalar(x); }
+    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator/=(I x)
+    {
+        return *this /= Scalar(x);
+    }
     XAD_INLINE Derived& operator+=(const value_type& x) { return derived() = derived() + x; }
     XAD_INLINE Derived& operator-=(const value_type& x) { return derived() = derived() - x; }
     XAD_INLINE Derived& operator*=(const value_type& x) { return derived() = derived() * x; }
@@ -163,9 +172,7 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     typedef Scalar value_type;
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
 
-    XAD_INLINE AReal(nested_type val = nested_type()) : base_type(val), slot_(INVALID_SLOT)
-    {
-    }
+    XAD_INLINE AReal(nested_type val = nested_type()) : base_type(val), slot_(INVALID_SLOT) {}
 
     // explicit conversion from int (also used by static_cast) to avoid warnings
     template <class U>
@@ -222,7 +229,8 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     }
 
     template <class Expr>
-    XAD_INLINE AReal(const Expression<Scalar, Expr>& expr);  // cppcheck-suppress noExplicitConstructor
+    XAD_INLINE AReal(
+        const Expression<Scalar, Expr>& expr);  // cppcheck-suppress noExplicitConstructor
 
     template <class Expr>
     XAD_INLINE AReal& operator=(const Expression<Scalar, Expr>& expr);
@@ -416,7 +424,8 @@ struct FReal : public ADTypeBase<Scalar, FReal<Scalar>>
 
     // explicit conversion from int (also used by static_cast) to avoid warnings
     template <class U>
-    constexpr XAD_INLINE explicit FReal(U val, typename std::enable_if<std::is_integral<U>::value>::type* = 0)
+    constexpr XAD_INLINE explicit FReal(
+        U val, typename std::enable_if<std::is_integral<U>::value>::type* = 0)
         : base_type(static_cast<nested_type>(val)), der_()
     {
     }
@@ -434,7 +443,8 @@ struct FReal : public ADTypeBase<Scalar, FReal<Scalar>>
     }
 
     template <class Expr>
-    XAD_INLINE FReal(const Expression<Scalar, Expr>& expr);    // cppcheck-suppress noExplicitConstructor
+    XAD_INLINE FReal(
+        const Expression<Scalar, Expr>& expr);  // cppcheck-suppress noExplicitConstructor
     template <class Expr>
     XAD_INLINE FReal& operator=(const Expression<Scalar, Expr>& expr);
 

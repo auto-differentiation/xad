@@ -30,7 +30,6 @@
 #include <XAD/Traits.hpp>
 #include <type_traits>
 
-
 namespace xad
 {
 

@@ -37,7 +37,6 @@ TEST(Tape, isEmptyByDefault)
 
     EXPECT_EQ(nullptr, Tape<double>::getActive());
 
-
     {
         Tape<double> s;
 
@@ -53,7 +52,7 @@ TEST(Tape, canInitializeDeactivated)
 {
     using xad::Tape;
     Tape<float> s(false);
-    
+
     EXPECT_FALSE(s.isActive());
     EXPECT_EQ(nullptr, Tape<float>::getActive());
 
@@ -102,7 +101,6 @@ TEST(Tape, canUnregisterInOrder)
     EXPECT_EQ(0U, s.getNumVariables());
 }
 
-
 TEST(Tape, canUnregisterOutOfOrder)
 {
     xad::Tape<double> s;
@@ -142,22 +140,26 @@ TEST(Tape, canReuseSlots)
 
     // new variables should now get slot numbers 3-5 or 8
     auto s1 = s.registerVariable();
-    EXPECT_TRUE((s1 >= 3 && s1 < 6) || s1 == 8) << "new variable not in reusable range - it is " << s1;
+    EXPECT_TRUE((s1 >= 3 && s1 < 6) || s1 == 8)
+        << "new variable not in reusable range - it is " << s1;
     EXPECT_EQ(7U, s.getNumVariables());
     EXPECT_EQ(3U, s.getNumReusableSlots());
     auto s2 = s.registerVariable();
-    EXPECT_TRUE((s2 >= 3 && s2 < 6) || s2 == 8) << "new variable not in reusable range - it is " << s1;
+    EXPECT_TRUE((s2 >= 3 && s2 < 6) || s2 == 8)
+        << "new variable not in reusable range - it is " << s1;
     EXPECT_EQ(8U, s.getNumVariables());
     EXPECT_EQ(2U, s.getNumReusableSlots());
     EXPECT_NE(s1, s2);
     auto s3 = s.registerVariable();
-    EXPECT_TRUE((s3 >= 3 && s3 < 6) || s3 == 8) << "new variable not in reusable range - it is " << s1;
+    EXPECT_TRUE((s3 >= 3 && s3 < 6) || s3 == 8)
+        << "new variable not in reusable range - it is " << s1;
     EXPECT_EQ(9U, s.getNumVariables());
     EXPECT_EQ(1U, s.getNumReusableSlots());
     EXPECT_NE(s3, s2);
     EXPECT_NE(s3, s1);
     auto s4 = s.registerVariable();
-    EXPECT_TRUE((s4 >= 3 && s4 < 6) || s4 == 8) << "new variable not in reusable range - it is " << s1;
+    EXPECT_TRUE((s4 >= 3 && s4 < 6) || s4 == 8)
+        << "new variable not in reusable range - it is " << s1;
     EXPECT_EQ(10U, s.getNumVariables());
     EXPECT_EQ(0U, s.getNumReusableSlots());
     EXPECT_NE(s4, s3);
