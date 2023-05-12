@@ -4,7 +4,6 @@
     </a>
 </p>
 
-
 XAD is a fast and comprehensive C++ library for automatic differentiation by Xcelerit.
 It targets production-quality code at any scale, striving for both ease of use and high performance.
 
@@ -350,7 +349,6 @@ or [submit a PR](CONTRIBUTING.md) to include it in the [CI workflow][ci].
 | Ubuntu 22.04         | Clang 13.0.1                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
 | Ubuntu 22.04         | Clang 14.0.0                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no       |
 | MacOS 12.6.5         | AppleClang 14.0.0                 | Debug, Release                                      | yes      |
-
 
 ## Versioning
 

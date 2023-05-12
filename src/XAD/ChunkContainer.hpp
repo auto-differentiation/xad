@@ -316,7 +316,7 @@ class ChunkContainer
         pointer point_;
         pointer next_chunk_;
         int space_left_;
-        iterator(pointer point = nullptr, int space_left = 0, pointer next = NULL)
+        explicit iterator(pointer point = nullptr, int space_left = 0, pointer next = NULL)
             : point_(point), next_chunk_(next), space_left_(space_left)
         {
         }

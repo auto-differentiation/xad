@@ -12,4 +12,3 @@
 
 To report a security vulnerability, please send an email to xad@xcelerit.com,
 describing the issue with as much detail as possible.
-

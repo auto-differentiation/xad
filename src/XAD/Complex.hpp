@@ -2247,7 +2247,6 @@ template <class T>
 XAD_INLINE std::complex<T> atan_impl(const std::complex<T>& z)
 {
     // -i * atanh(i*z)
-    std::complex<T> complex_i(0, 1);
     std::complex<T> iz(-z.imag(), z.real());
     std::complex<T> atanhiz = atanh(iz);
     return std::complex<T>(atanhiz.imag(), -atanhiz.real());

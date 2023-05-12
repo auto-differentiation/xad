@@ -47,7 +47,7 @@ struct ADTypeBase : public Expression<Scalar, Derived>
     static_assert(std::is_floating_point<nested_type>::value,
                   "Active AD types only work with floating point");
 
-    constexpr XAD_INLINE ADTypeBase(Scalar val = Scalar()) : a_(val) {}
+    constexpr explicit XAD_INLINE ADTypeBase(Scalar val = Scalar()) : a_(val) {}
     constexpr XAD_INLINE ADTypeBase(ADTypeBase&& o) noexcept = default;
     constexpr XAD_INLINE ADTypeBase(const ADTypeBase& o) = default;
     XAD_INLINE ADTypeBase& operator=(ADTypeBase&& o) noexcept = default;

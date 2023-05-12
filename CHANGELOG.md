@@ -5,7 +5,6 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## [unreleased]
 
 ### Added
@@ -21,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+
 
 ## [1.1.0] - 2022-11-17
 
@@ -40,12 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Better use of caching in CI/CD pipelines for faster builds
 
 
-
 ## [1.0.0] - 2022-07-07
 
 Initial open-source release
-
-
 
 [unreleased]: https://github.com/xcelerit/xad/compare/v1.1.0...HEAD
 

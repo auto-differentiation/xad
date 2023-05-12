@@ -246,7 +246,7 @@ struct remainder_op
         // function is rare enough that there's no need to optimize this better
         int n_;
         using std::remquo;
-        remquo(a, b, &n_);
+        XAD_UNUSED_VARIABLE(remquo(a, b, &n_));
         return Scalar(-n_);
     }
 };
