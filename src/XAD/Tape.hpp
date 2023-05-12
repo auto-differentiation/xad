@@ -27,12 +27,12 @@
 #include <XAD/Config.hpp>
 #include <XAD/Exceptions.hpp>
 #include <XAD/Macros.hpp>
-#include <XAD/TapeContainer.hpp>
 #include <XAD/ReusableRange.hpp>
-#include <type_traits>
-#include <list>
+#include <XAD/TapeContainer.hpp>
 #include <complex>
+#include <list>
 #include <stack>
+#include <type_traits>
 #include <vector>
 
 namespace xad
@@ -104,10 +104,7 @@ class Tape
             active_tape_ = nullptr;
     }
     XAD_INLINE bool isActive() const { return active_tape_ == this; }
-    XAD_INLINE static Tape* getActive()
-    {
-        return active_tape_;
-    }
+    XAD_INLINE static Tape* getActive() { return active_tape_; }
 
     XAD_INLINE void registerInput(active_type& inp)
     {
@@ -124,9 +121,11 @@ class Tape
         registerInput(reim_ptr[0]);
         registerInput(reim_ptr[1]);
     }
-    
-    XAD_INLINE void registerOutput(active_type& outp) {
-        if (!outp.shouldRecord()) {
+
+    XAD_INLINE void registerOutput(active_type& outp)
+    {
+        if (!outp.shouldRecord())
+        {
             outp.slot_ = registerVariable();
             pushLhs(outp.slot_);
         }
@@ -198,7 +197,7 @@ class Tape
 
     // internal tape recording
     slot_type registerVariable()
-    { 
+    {
         ++currentRec_->numDerivatives_;
 #ifdef XAD_TAPE_REUSE_SLOTS
         return registerVariableReuseSlots();
@@ -221,7 +220,7 @@ class Tape
     void pushRhs(Real&& multiplier, slot_type slot);
     void pushLhs(slot_type slot);
     void pushAll(slot_type lhs, Real* multipliers, slot_type* slots, unsigned n);
-    
+
     // capacity
     size_type getNumVariables() const;
     size_type getNumOperations() const;

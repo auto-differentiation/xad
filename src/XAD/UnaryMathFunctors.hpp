@@ -29,7 +29,6 @@
 #include <XAD/UnaryFunctors.hpp>
 #include <type_traits>
 
-
 namespace xad
 {
 // degrees and radians are mapped to products
@@ -55,7 +54,10 @@ struct radians_op : scalar_prod_op<Scalar, Scalar>
     template <class Scalar>                                                                        \
     struct func##_op                                                                               \
     {                                                                                              \
-        XAD_INLINE Scalar operator()(const Scalar& a) const { return func(a); }                    \
+        XAD_INLINE Scalar operator()(const Scalar& a) const                                        \
+        {                                                                                          \
+            return func(a);                                                                        \
+        }                                                                                          \
         XAD_INLINE Scalar derivative(const Scalar& a) const                                        \
         {                                                                                          \
             XAD_UNUSED_VARIABLE(a);                                                                \
@@ -93,7 +95,10 @@ XAD_MAKE_UNARY_FUNCTOR(round, Scalar())
     template <class Scalar>                                                                        \
     struct func##_op                                                                               \
     {                                                                                              \
-        XAD_INLINE Scalar operator()(const Scalar& a) const { return func(a); }                    \
+        XAD_INLINE Scalar operator()(const Scalar& a) const                                        \
+        {                                                                                          \
+            return func(a);                                                                        \
+        }                                                                                          \
         XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const                       \
         {                                                                                          \
             XAD_UNUSED_VARIABLE(a);                                                                \
@@ -136,8 +141,13 @@ struct fabs_op : abs_op<Scalar>
     template <class Scalar, class T2>                                                              \
     struct scalar_##func##2_op                                                                     \
     {                                                                                              \
-        XAD_INLINE explicit scalar_##func##2_op(const T2& b_t) : b(b_t) {}                         \
-        XAD_INLINE Scalar operator()(const Scalar& a) const { return func(a, b); }                 \
+        XAD_INLINE explicit scalar_##func##2_op(const T2& b_t) : b(b_t)                            \
+        {                                                                                          \
+        }                                                                                          \
+        XAD_INLINE Scalar operator()(const Scalar& a) const                                        \
+        {                                                                                          \
+            return func(a, b);                                                                     \
+        }                                                                                          \
         XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const                       \
         {                                                                                          \
             XAD_UNUSED_VARIABLE(a);                                                                \
@@ -149,8 +159,13 @@ struct fabs_op : abs_op<Scalar>
     template <class Scalar, class T2>                                                              \
     struct scalar_##func##1_op                                                                     \
     {                                                                                              \
-        XAD_INLINE explicit scalar_##func##1_op(const T2& b_t) : b(b_t) {}                         \
-        XAD_INLINE Scalar operator()(const Scalar& a) const { return func(b, a); }                 \
+        XAD_INLINE explicit scalar_##func##1_op(const T2& b_t) : b(b_t)                            \
+        {                                                                                          \
+        }                                                                                          \
+        XAD_INLINE Scalar operator()(const Scalar& a) const                                        \
+        {                                                                                          \
+            return func(b, a);                                                                     \
+        }                                                                                          \
         XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const                       \
         {                                                                                          \
             XAD_UNUSED_VARIABLE(a);                                                                \
@@ -397,7 +412,11 @@ template <class Scalar, class T2>
 struct scalar_remquo2_op
 {
     XAD_INLINE scalar_remquo2_op(const T2& b, int* quo) : b_(b), quo_(quo) {}
-    XAD_INLINE Scalar operator()(const Scalar& a) const { using std::remquo; return remquo(a, b_, quo_); }
+    XAD_INLINE Scalar operator()(const Scalar& a) const
+    {
+        using std::remquo;
+        return remquo(a, b_, quo_);
+    }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1); }
     T2 b_;
     int* quo_;

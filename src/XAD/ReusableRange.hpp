@@ -115,7 +115,8 @@ inline bool operator==(const ReusableRange<T>& a, const ReusableRange<T>& b)
 }
 
 template <class C, class Traits, class T>
-inline std::basic_ostream<C, Traits>& operator<<(std::basic_ostream<C, Traits>& os, const ReusableRange<T>& r)
+inline std::basic_ostream<C, Traits>& operator<<(std::basic_ostream<C, Traits>& os,
+                                                 const ReusableRange<T>& r)
 {
     return os << "[" << r.first() << ", " << r.second() << ")";
 }

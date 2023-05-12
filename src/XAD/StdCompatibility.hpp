@@ -25,14 +25,14 @@ expressions to work, as well as specialising numeric_limits.
 
 #pragma once
 
+#include <XAD/BinaryOperators.hpp>
 #include <XAD/Literals.hpp>
 #include <XAD/MathFunctions.hpp>
 #include <XAD/UnaryOperators.hpp>
-#include <XAD/BinaryOperators.hpp>
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <string>
-#include <functional>
 #include <type_traits>
 
 namespace std
@@ -47,6 +47,7 @@ using xad::atan2;
 using xad::atanh;
 using xad::cbrt;
 using xad::ceil;
+using xad::copysign;
 using xad::cos;
 using xad::cosh;
 using xad::erf;
@@ -61,6 +62,7 @@ using xad::fmin;
 using xad::fmod;
 using xad::fpclassify;
 using xad::frexp;
+using xad::ilogb;
 using xad::isfinite;
 using xad::isinf;
 using xad::isnan;
@@ -75,10 +77,12 @@ using xad::lround;
 using xad::max;
 using xad::min;
 using xad::modf;
+using xad::nextafter;
 using xad::pow;
 using xad::remainder;
 using xad::remquo;
 using xad::round;
+using xad::scalbn;
 using xad::signbit;
 using xad::sin;
 using xad::sinh;
@@ -86,10 +90,6 @@ using xad::sqrt;
 using xad::tan;
 using xad::tanh;
 using xad::trunc;
-using xad::nextafter;
-using xad::ilogb;
-using xad::scalbn;
-using xad::copysign;
 
 template <class Scalar, class Derived>
 inline std::string to_string(const xad::Expression<Scalar, Derived>& _Val)
@@ -99,8 +99,6 @@ inline std::string to_string(const xad::Expression<Scalar, Derived>& _Val)
 
 }  // namespace std
 
-
-
 namespace std
 {
 
@@ -109,8 +107,8 @@ namespace std
 // for the majority of cases
 
 template <class T>
-struct numeric_limits<xad::AReal<T>> : std::numeric_limits<T> 
-{ 
+struct numeric_limits<xad::AReal<T>> : std::numeric_limits<T>
+{
 };
 
 template <class T>
@@ -119,7 +117,6 @@ struct numeric_limits<xad::FReal<T>> : std::numeric_limits<T>
 };
 
 }  // namespace std
-
 
 // hashing for active types
 namespace std
@@ -220,8 +217,8 @@ constexpr bool _Is_any_of_v<xad::FReal<T>, float, double, long double> =
 #else
 }
 #include <random>
-namespace std {
-
+namespace std
+{
 
 // prior versions of MSVC (2015) use a different check
 template <class T>
@@ -239,4 +236,3 @@ struct _Is_RealType<xad::FReal<T>> : public _Is_RealType<T>
 #endif
 
 }  // namespace std
-

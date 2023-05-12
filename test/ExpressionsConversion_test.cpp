@@ -25,8 +25,8 @@
 ******************************************************************************/
 
 #include <XAD/XAD.hpp>
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using namespace ::testing;
 
@@ -332,9 +332,9 @@ typedef ::testing::Types<char, unsigned char, signed char, short, unsigned short
 TYPED_TEST_SUITE(ExpressionsIntConversion, int_test_types);
 
 TYPED_TEST(ExpressionsIntConversion, canConvertARealToIntegers)
-{ 
+{
     xad::AReal<double> x = 42.0;
-    
+
     TypeParam i = static_cast<TypeParam>(x);
     TypeParam j = (TypeParam)x;
     TypeParam k = TypeParam(x);
@@ -358,9 +358,9 @@ TYPED_TEST(ExpressionsIntConversion, canConvertFRealToIntegers)
 }
 
 TYPED_TEST(ExpressionsIntConversion, canConvertARealExprToIntegers)
-{ 
+{
     xad::AReal<double> x = 42.0;
-    
+
     TypeParam i = static_cast<TypeParam>(floor(x));
     TypeParam j = (TypeParam)floor(x);
     TypeParam k = TypeParam(floor(x));
