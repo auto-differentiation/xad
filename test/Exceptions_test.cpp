@@ -56,7 +56,6 @@ TEST(Exceptions, popCallback)
     EXPECT_THROW(t.popCallback(), xad::OutOfRange);
 }
 
-
 TEST(Exceptions, getDerivatives)
 {
     xad::Tape<double> t;
@@ -82,3 +81,12 @@ TEST(Exceptions, checkpoints)
     EXPECT_THROW(t.incrementAdjoint(12312, 1.0), xad::OutOfRange);
 }
 
+TEST(Exceptions, noTape)
+{
+    xad::AD x = 1.0;
+    EXPECT_THROW(x.setDerivative(1.0), xad::NoTapeException);
+    EXPECT_THROW(derivative(x) = 1.0, xad::NoTapeException);
+    xad::Tape<double> t;
+    EXPECT_NO_THROW(x.setDerivative(1.0));
+    EXPECT_NO_THROW(derivative(x) = 1.0);
+}
