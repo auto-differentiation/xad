@@ -64,8 +64,7 @@ T evaluate(U path, const T& val)
     // derivative = 2 * val * path + std:exp(val);
 }
 
-}
-
+}  // namespace
 
 TEST(PartialRollback, MultiDerivativesInComplexLoop)
 {
@@ -108,25 +107,25 @@ TEST(PartialRollback, MultiDerivativesInNestedLoop)
     tape.newRecording();
 
     auto sim_position = tape.getPosition();
-    for (int p = 0; p < 5; ++p)  
+    for (int p = 0; p < 5; ++p)
     {
         tape.resetTo(sim_position);
-        for (int t = 0; t < 5; ++t) 
+        for (int t = 0; t < 5; ++t)
         {
             // value
-            xad::AD rpt = q * p * std::exp(-r * double(t));  
+            xad::AD rpt = q * p * std::exp(-r * double(t));
             // partial derivatives manual
             double drpt_dq = double(p) * std::exp(-value(r) * double(t));
             double drpt_dr = value(q) * double(p) * -t * std::exp(-value(r) * double(t));
-            
+
             auto tpos = tape.getPosition();
-            for (std::size_t tidx = 0; tidx < intval.size(); ++tidx)  
+            for (std::size_t tidx = 0; tidx < intval.size(); ++tidx)
             {
                 // value
                 xad::AD v = evaluate(intval[tidx], rpt);
                 // partial derivative manual
                 double dv_drpt = 2. * value(rpt) * double(intval[tidx]) + std::exp(value(rpt));
-                
+
                 // full derivatives AAD
                 tape.registerOutput(v);
                 derivative(v) = 1.0;
@@ -220,4 +219,3 @@ TEST(PartialRollback, ClearFullTape)
     EXPECT_THAT(slotq, Eq(slotq1));
     EXPECT_THAT(sloty, Eq(sloty1));
 }
-

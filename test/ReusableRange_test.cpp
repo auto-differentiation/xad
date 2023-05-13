@@ -23,16 +23,14 @@
 
 ******************************************************************************/
 
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 #include <XAD/ReusableRange.hpp>
 
 using namespace ::testing;
-
 
 TEST(ReusableRange, DefaultIsClosed)
 {

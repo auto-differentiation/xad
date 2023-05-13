@@ -63,7 +63,7 @@ void driver_fwd_adj(const vector<double>& xv, const vector<double>& xt2, vector<
 
     f(x, y);
 
-    for (std::size_t i = 0; i < m; i++) tape.registerOutput(y[i]);   
+    for (std::size_t i = 0; i < m; i++) tape.registerOutput(y[i]);
     for (std::size_t i = 0; i < n; i++)
     {
         value(derivative(x[i])) = xa1[i];

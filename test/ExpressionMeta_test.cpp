@@ -256,7 +256,7 @@ TEST(ExpressionMeta, reverseExprTraits)
 {
     xad::AReal<double> x = 1., y = 1.;
     auto binx = x * x;
-    auto binx2 = binx + 2. * y;   // cppcheck-suppress unreadVariable
+    auto binx2 = binx + 2. * y;  // cppcheck-suppress unreadVariable
     typedef decltype(binx2) type;
 
     static_assert(xad::ExprTraits<type>::isExpr, "should be an expression");
@@ -268,7 +268,8 @@ TEST(ExpressionMeta, reverseExprTraits)
                   "should be reverse");
 }
 
-TEST(ExpressionMeta, LongExpression) {
+TEST(ExpressionMeta, LongExpression)
+{
     using complex_expr = xad::BinaryExpr<
         double, xad::prod_op<double>,
         xad::UnaryExpr<double, xad::scalar_prod_op<double, double>, xad::ADVar<double>>,
@@ -285,5 +286,4 @@ TEST(ExpressionMeta, LongExpression) {
     static_assert(xad::ExprTraits<complex_expr>::numVariables == 3, "should be 3 variables");
     static_assert(xad::ExprTraits<complex_expr>::direction == xad::Direction::DIR_REVERSE,
                   "should be reverse");
-    
 }

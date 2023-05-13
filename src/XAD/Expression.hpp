@@ -44,16 +44,34 @@ struct Expression
 
 #ifdef XAD_ALLOW_INT_CONVERSION
     XAD_INLINE explicit operator char() const { return static_cast<char>(getValue()); }
-    XAD_INLINE explicit operator unsigned char() const { return static_cast<unsigned char>(getValue()); }
-    XAD_INLINE explicit operator signed char() const { return static_cast<signed char>(getValue()); }
+    XAD_INLINE explicit operator unsigned char() const
+    {
+        return static_cast<unsigned char>(getValue());
+    }
+    XAD_INLINE explicit operator signed char() const
+    {
+        return static_cast<signed char>(getValue());
+    }
     XAD_INLINE explicit operator short() const { return static_cast<short>(getValue()); }
-    XAD_INLINE explicit operator unsigned short() const { return static_cast<unsigned short>(getValue()); }
+    XAD_INLINE explicit operator unsigned short() const
+    {
+        return static_cast<unsigned short>(getValue());
+    }
     XAD_INLINE explicit operator int() const { return static_cast<int>(getValue()); }
-    XAD_INLINE explicit operator unsigned int() const { return static_cast<unsigned int>(getValue()); }
+    XAD_INLINE explicit operator unsigned int() const
+    {
+        return static_cast<unsigned int>(getValue());
+    }
     XAD_INLINE explicit operator long() const { return static_cast<long>(getValue()); }
-    XAD_INLINE explicit operator unsigned long() const { return static_cast<unsigned long>(getValue()); }
+    XAD_INLINE explicit operator unsigned long() const
+    {
+        return static_cast<unsigned long>(getValue());
+    }
     XAD_INLINE explicit operator long long() const { return static_cast<long long>(getValue()); }
-    XAD_INLINE explicit operator unsigned long long() const { return static_cast<unsigned long long>(getValue()); }
+    XAD_INLINE explicit operator unsigned long long() const
+    {
+        return static_cast<unsigned long long>(getValue());
+    }
 #endif
 
     // convert to boolean

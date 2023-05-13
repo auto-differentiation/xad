@@ -31,8 +31,8 @@
 #include <XAD/BinaryOperators.hpp>
 #include <XAD/CheckpointCallback.hpp>
 #include <XAD/ChunkContainer.hpp>
-#include <XAD/Config.hpp>
 #include <XAD/Complex.hpp>
+#include <XAD/Config.hpp>
 #include <XAD/Exceptions.hpp>
 #include <XAD/Expression.hpp>
 #include <XAD/Interface.hpp>
@@ -46,4 +46,3 @@
 #include <XAD/UnaryMathFunctors.hpp>
 #include <XAD/UnaryOperators.hpp>
 #include <XAD/Version.hpp>
-
