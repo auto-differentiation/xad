@@ -86,7 +86,9 @@ TEST(Exceptions, noTape)
     xad::AD x = 1.0;
     EXPECT_THROW(x.setDerivative(1.0), xad::NoTapeException);
     EXPECT_THROW(derivative(x) = 1.0, xad::NoTapeException);
+    EXPECT_THROW(x.derivative(), xad::NoTapeException);
     xad::Tape<double> t;
     EXPECT_NO_THROW(x.setDerivative(1.0));
     EXPECT_NO_THROW(derivative(x) = 1.0);
+    EXPECT_NO_THROW(x.derivative());
 }
