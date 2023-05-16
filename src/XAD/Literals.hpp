@@ -274,18 +274,23 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 
     XAD_INLINE const Scalar& derivative() const
     {
+        auto t = tape_type::getActive();
+        if (!t)
+            throw NoTapeException();
         if (slot_ == INVALID_SLOT)
         {
             // we return a dummy const ref if not registered on tape - always zero
             static const Scalar zero = Scalar();
             return zero;
         }
-        return tape_type::getActive()->derivative(slot_);
+        return t->derivative(slot_);
     }
 
     XAD_INLINE Scalar& derivative()
     {
         auto t = tape_type::getActive();
+        if (!t)
+            throw NoTapeException();
         // register ourselves if not already done
         if (slot_ == INVALID_SLOT)
         {

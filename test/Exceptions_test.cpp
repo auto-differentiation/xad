@@ -80,3 +80,16 @@ TEST(Exceptions, checkpoints)
     EXPECT_NO_THROW(t.incrementAdjoint(x.getSlot(), 1.0));
     EXPECT_THROW(t.incrementAdjoint(12312, 1.0), xad::OutOfRange);
 }
+
+TEST(Exceptions, noTape)
+{
+    xad::AD x = 1.0;
+    EXPECT_THROW(x.setDerivative(1.0), xad::NoTapeException);
+    EXPECT_THROW(derivative(x) = 1.0, xad::NoTapeException);
+    const xad::AD y = 1.0;
+    EXPECT_THROW(y.derivative(), xad::NoTapeException);
+    xad::Tape<double> t;
+    EXPECT_NO_THROW(x.setDerivative(1.0));
+    EXPECT_NO_THROW(derivative(x) = 1.0);
+    EXPECT_NO_THROW(x.derivative());
+}
