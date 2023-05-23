@@ -2,10 +2,10 @@
 #   
 #  Setup of compiler and corresponding warning levels, and linker flags
 #
-#  This file is part of XAD, a fast and comprehensive C++ library for
+#  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2022 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2023 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -61,7 +61,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL 
     elseif(XAD_SIMD_OPTION STREQUAL AVX2)
         set(xad_cxx_extra -mavx2)
     elseif(XAD_SIMD_OPTION STREQUAL AVX512)
-        set(xad_cxx_extra -maxv512f -mavx512vl -mavx512bw -mavx512dq -mavx512cd)
+        set(xad_cxx_extra -march=cascadelake)
     endif()
     set(xad_cxx_asan_flags -fsanitize=address -fno-omit-frame-pointer)
     set(xad_link_asan_flags -fsanitize=address)
@@ -75,7 +75,7 @@ elseif(CMAKE_COMPILER_IS_GNUCXX)
     elseif(XAD_SIMD_OPTION STREQUAL AVX2)
         set(xad_cxx_extra -mavx2)
     elseif(XAD_SIMD_OPTION STREQUAL AVX512)
-        set(xad_cxx_extra -maxv512f -mavx512vl -mavx512bw -mavx512dq -mavx512cd)
+        set(xad_cxx_extra  -march=cascadelake)
     endif()
     set(xad_cxx_asan_flags -fsanitize=address -fno-omit-frame-pointer)
     set(xad_link_asan_flags -fsanitize=address)
