@@ -54,6 +54,5 @@ jobs:
           token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
           git-config-name: github-actions[bot]
           git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
-          dry-run: ${{ github.ref != 'refs/heads/main' && github.event_name != 'release' }}  # dry run if not on main branch
-
-          
+          dry-run: ${{ github.ref != 'refs/heads/main' && github.event_name != 'release' }} 
+                   
