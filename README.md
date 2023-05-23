@@ -9,10 +9,10 @@ It targets production-quality code at any scale, striving for both ease of use a
 
 <p align="center" dir="auto">
     <a href="https://github.com/auto-differentiation/XAD/releases/latest">
-        <img src="https://img.shields.io/github/v/release/xcelerit/XAD?label=Download&sort=semver" alt="Download" style="max-width: 100%;">
+        <img src="https://img.shields.io/github/v/release/auto-differentiation/XAD?label=Download&sort=semver" alt="Download" style="max-width: 100%;">
     </a>
     <a href="https://github.com/auto-differentiation/XAD/blob/main/LICENSE.md">
-        <img src="https://img.shields.io/github/license/xcelerit/XAD?label=License" alt="License" style="max-width: 100%;">
+        <img src="https://img.shields.io/github/license/auto-differentiation/XAD?label=License" alt="License" style="max-width: 100%;">
     </a>
     <a href="https://doi.org/10.5281/zenodo.7331593">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.7331593.svg" alt="DOI" style="max-width: 100%;">
@@ -22,13 +22,13 @@ It targets production-quality code at any scale, striving for both ease of use a
     </a>
     <br>
     <a href="https://github.com/auto-differentiation/XAD/actions/workflows/ci.yml">
-        <img src="https://img.shields.io/github/actions/workflow/status/xcelerit/XAD/ci.yml?label=Build&logo" alt="GitHub Workflow Status" style="max-width: 100%;">
+        <img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/XAD/ci.yml?label=Build&logo" alt="GitHub Workflow Status" style="max-width: 100%;">
     </a>
     <a href="https://github.com/auto-differentiation/XAD/actions?query=workflow%3ACI">
         <img src="https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg" alt="Tests Badge" style="max-width: 100%;">
     </a>
     <a href="https://coveralls.io/github/auto-differentiation/XAD?branch=main">
-        <img src="https://coveralls.io/repos/github/xcelerit/XAD/badge.svg?branch=main" alt="Coverage" style="max-width: 100%;">
+        <img src="https://coveralls.io/repos/github/auto-differentiation/XAD/badge.svg?branch=main" alt="Coverage" style="max-width: 100%;">
     </a>
     <a href="https://github.com/auto-differentiation/XAD/actions?query=workflow%3ACodeQL++">
         <img src="https://github.com/auto-differentiation/XAD/actions/workflows/codeql-analysis.yml/badge.svg" alt="GitHub CodeQL Status" style="max-width: 100%;" >
