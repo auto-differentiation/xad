@@ -27,7 +27,7 @@ jobs:
             mkdocs-material-
       - name: Python packages
         run: |
-          pip install mkdocs-material mkdocs-minify-plugin mkdocs-redirects
+          pip install mkdocs-material mkdocs-minify-plugin mkdocs-redirects "pillow<10" "cairosvg>=2.5"
       - name: Build Docs
         env:
           GOOGLE_ANALYTICS_KEY: ${{ secrets.GOOGLE_ANALYTICS_KEY }}
