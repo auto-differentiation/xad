@@ -1,6 +1,6 @@
 <p align="center" dir="auto">
     <a href="https://auto-differentiation.github.io" rel="nofollow" target="_blank">
-        <img src="https://github.com/auto-differentiation/XAD/blob/main/doc/images/logo.svg?raw=true" height="80" alt="XAD" style="max-width:100%">
+        <img src="https://github.com/auto-differentiation/XAD/blob/main/docs/images/logo.svg?raw=true" height="80" alt="XAD" style="max-width:100%">
     </a>
 </p>
 
@@ -34,7 +34,7 @@ It targets production-quality code at any scale, striving for both ease of use a
         <img src="https://github.com/auto-differentiation/XAD/actions/workflows/codeql-analysis.yml/badge.svg" alt="GitHub CodeQL Status" style="max-width: 100%;" >
     </a>
     <a href="https://www.codacy.com/gh/auto-differentiation/XAD/dashboard">
-        <img src="https://img.shields.io/codacy/grade/42f40022f8ef447da51a178f684eb19d?logo=codacy&label=Quality%20%28Codacy%29" alt="Tests Badge" style="max-width: 100%;">
+        <img src="https://img.shields.io/codacy/grade/1826d0a6c8ce4feb81ef3b482d65c7b4?logo=codacy&label=Quality%20%28Codacy%29" alt="Tests Badge" style="max-width: 100%;">
     </a>
 </p>
 
