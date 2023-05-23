@@ -1,0 +1,7 @@
+.md-header__topic {
+    opacity: 0;
+  }
+
+.md-consent__overlay {
+  display: none;
+}

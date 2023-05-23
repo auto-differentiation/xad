@@ -1,0 +1,154 @@
+{% extends "main.html" %}
+
+{% block extrahead %}
+<link rel="apple-touch-icon" sizes="180x180" href="{{ '/favicon/apple-touch-icon.png' | url }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ '/favicon/favicon-32x32.png' | url }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ '/favicon/favicon-16x16.png' | url }}">
+<link rel="manifest" href="{{ '/favicon/site.webmanifest' | url }}">
+<link rel="mask-icon" href="{{ '/favicon/safari-pinned-tab.svg' | url }}" color="#5bbad5">
+<link rel="shortcut icon" href="{{ '/favicon/favicon.ico' | url }}">
+<meta name="msapplication-TileColor" content="#ffc40d">
+<meta name="msapplication-config" content="{{ '/favicon/browserconfig.xml' | url }}">
+<meta name="theme-color" content="#ffffff">
+<link rel="stylesheet" href="{{ 'home.css' | url }}">
+{% endblock %}
+
+
+{% block content %}
+<div class="md-home">
+<!-- Top Hero section -->
+    <h1>XAD
+    <small style="padding-top:15px;display:block">The Comprehensive Tool for Automatic Differentiation</small>
+</h1>
+<div class="row" >
+    <div class="col col-lg-7">
+        <p class="hero" style="margin-bottom:45px">
+        XAD is a comprehensive open-source C++ library for automatic differentiation. 
+        It targets production-quality code at any scale, 
+        striving for both ease of use and high performance.
+        </p>
+        <div class="d-grid gap-2 d-md-block">
+            <a href="/getting_started/" class="md-button md-button--accent" > 
+                Get Started
+            </a>
+        </div>
+        {% if config.extra.version %}
+        <div style="padding-top:15px;opacity:90%;font-size:80%;clear:both">
+        Latest Release: <a href="https://github.com/auto-differentiation/XAD/releases/latest">{{ config.extra.version }}</a>
+        </div>    
+        {% endif %}
+    </div>
+    <div class="col col-lg-5">
+        <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Adouble</span><span class="w"> </span><span class="n">x0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.3</span><span class="p">,</span><span class="w"> </span><span class="n">x1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">5.2</span><span class="p">;</span><span class="w">  </span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="n">x0</span><span class="p">);</span><span class="w"> </span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="n">x1</span><span class="p">);</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">tape</span><span class="p">.</span><span class="n">newRecording</span><span class="p">();</span><span class="w"> </span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">Adouble</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="w"> </span><span class="n">x1</span><span class="p">);</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">tape</span><span class="p">.</span><span class="n">registerOutput</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">derivative</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="p">;</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">tape</span><span class="p">.</span><span class="n">computeAdjoints</span><span class="p">();</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"dy/dx0="</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">derivative</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">     </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"dy/dx1="</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">derivative</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span></code></pre></div>
+    </div>
+</div>
+
+<div style="clear:both; padding-top:30px"></div>
+
+<!-- AD background --->
+<div class="homepage-section">
+    <h2>Automatic Differentiation</h2>
+    <p>Automatic differentiation (also called algorithmic differentiation) is a set of techniques for calculating partial derivatives
+        of functions specified as computer programs. 
+        Since every program execution is always composed of a sequence of simple operations with known derivatives 
+        (arithmetics and mathematical functions like sin, exp, log, etc.),
+        the chain rule can be applied repeatedly to calculate partial derivatives automatically.
+        XAD implements this using operator-overloading in C++,
+        allowing to compute derivatives with minimal changes to the program.
+        See <a href="/aad/">automatic differentation mathematical background</a> for more details.
+    </p>
+</div>
+
+
+<!-- Features -->
+<div class="homepage-section">
+    <h2>Key Features</h2>
+<div class="row" >
+    <div class="col col-md-4 col-sm-6">
+        <div class="well">
+            <div class="text-center image-container">
+                <svg class="feature-image" width="33" height="60" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-.244 -.228 33.266 57.986"><defs><path id="a" d="M11.253-8.28c-.148-1.387-1.016-3.048-3.247-3.048-3.495 0-7.064 3.545-7.064 7.486C.942-2.33 1.982.52 5.354.52c5.85 0 8.353-8.526 8.353-11.922 0-3.57-2.008-6.32-5.18-6.32-3.594 0-4.66 3.147-4.66 3.816 0 .223.148.77.843.77.867 0 1.24-.794 1.24-1.216 0-.768-.77-.768-1.092-.768 1.017-1.834 2.9-2.008 3.57-2.008 2.18 0 3.57 1.735 3.57 4.51 0 1.588-.472 3.422-.72 4.34zM5.428-.15c-2.33 0-2.726-1.833-2.726-2.874 0-1.09.694-3.644 1.066-4.56.322-.744 1.735-3.248 4.313-3.248 2.26 0 2.78 1.958 2.78 3.297C10.86-5.7 9.25-.15 5.43-.15z"></path><path id="b" d="M11.055-9.964c.496 0 .694 0 .694-.47 0-.25-.2-.25-.65-.25H9.09c.47-2.552.818-4.312 1.016-5.105.15-.59.67-1.16 1.314-1.16.52 0 1.04.23 1.29.45-.968.1-1.265.82-1.265 1.24 0 .5.37.79.842.79.495 0 1.24-.42 1.24-1.36 0-1.04-1.04-1.61-2.133-1.61-1.063 0-2.104.8-2.6 1.76-.45.87-.7 1.76-1.27 5.01H5.87c-.47 0-.72 0-.72.45 0 .27.15.27.646.27h1.586C6.94-7.66 5.922-2.05 5.352.6 4.935 2.75 4.56 4.56 3.32 4.56c-.073 0-.792 0-1.238-.47 1.264-.1 1.264-1.19 1.264-1.215 0-.495-.372-.793-.843-.793-.495 0-1.24.42-1.24 1.363 0 1.066 1.092 1.612 2.058 1.612C5.85 5.057 6.89.52 7.17-.72c.447-1.907 1.66-8.5 1.785-9.244z"></path><path id="c" d="M11.75-10.113c-.794.15-1.092.743-1.092 1.214 0 .6.47.8.818.8.744 0 1.264-.64 1.264-1.31 0-1.04-1.19-1.51-2.23-1.51-1.512 0-2.355 1.49-2.578 1.96-.57-1.86-2.107-1.96-2.553-1.96-2.53 0-3.87 3.25-3.87 3.79 0 .1.1.23.27.23.2 0 .25-.15.29-.245.85-2.76 2.51-3.28 3.23-3.28 1.11 0 1.34 1.04 1.34 1.638 0 .547-.15 1.117-.45 2.307l-.84 3.39C4.98-1.61 4.26-.25 2.95-.25c-.124 0-.744 0-1.264-.322.892-.174 1.09-.917 1.09-1.215 0-.495-.372-.793-.843-.793-.594 0-1.24.52-1.24 1.314C.693-.224 1.86.248 2.926.248c1.19 0 2.032-.942 2.553-1.958C5.87-.248 7.11.248 8.03.248 10.56.248 11.9-3 11.9-3.545c0-.123-.1-.223-.248-.223-.223 0-.248.124-.322.323-.67 2.18-2.107 3.197-3.223 3.197-.867 0-1.338-.644-1.338-1.66 0-.546.1-.943.49-2.578l.86-3.372c.37-1.487 1.21-2.577 2.35-2.577.05 0 .744 0 1.264.322z"></path></defs><use width="100%" height="100%" x="57.609" y="71.011" stroke="#000" stroke-width=".669" xlink:href="#a" transform="matrix(1.13 0 0 1.13 -64.96 -60.07)"></use><use width="100%" height="100%" x="71.721" y="71.011" stroke="#000" stroke-width=".669" xlink:href="#b" transform="matrix(1.13 0 0 1.13 -64.96 -60.07)"></use><path stroke="#000" stroke-width=".756" d="M.134 30.658h32.51v1.12H.134z"></path><use width="100%" height="100%" x="58.018" y="104.783" stroke="#000" stroke-width=".669" xlink:href="#a" transform="matrix(1.13 0 0 1.13 -64.96 -61.61)"></use><use width="100%" height="100%" x="72.13" y="104.783" stroke="#000" stroke-width=".669" xlink:href="#c" transform="matrix(1.13 0 0 1.13 -64.96 -61.61)"></use></svg>
+            </div>
+            <div class="caption text-center">
+                <h4>Any Order, Mode, Precision</h4>
+                Calculate derivatives in forward and adjoint modes, for any order – both in single and double precision.
+          </div>
+        </div>
+    </div>
+    <div class="col col-md-4 col-sm-6">
+        <div class="well">
+            <div class="text-center image-container">
+                <svg class="feature-image" xmlns="http://www.w3.org/2000/svg" height="60" viewBox="0 96 960 960" width="60"><path d="M286.882 339Q266 339 251.5 353.618q-14.5 14.617-14.5 35.5Q237 410 251.618 424.5q14.617 14.5 35.5 14.5Q308 439 322.5 424.382q14.5-14.617 14.5-35.5Q337 368 322.382 353.5q-14.617-14.5-35.5-14.5Zm0 414Q266 753 251.5 767.618q-14.5 14.617-14.5 35.5Q237 824 251.618 838.5q14.617 14.5 35.5 14.5Q308 853 322.5 838.382q14.5-14.617 14.5-35.5Q337 782 322.382 767.5q-14.617-14.5-35.5-14.5ZM154 217h651q16 0 25.5 9.5t9.5 25.813V521q0 17.425-9.5 29.213Q821 562 805 562H154q-15 0-24.5-11.787Q120 538.425 120 521V252.313q0-16.313 9.5-25.813T154 217Zm26 60v225h600V277H180Zm-26 353h647q15 0 27 12.5t12 28.527V935q0 20-12 30.5T801 976H159q-16 0-27.5-10.5T120 935V671.027q0-16.027 9.5-28.527T154 630Zm26 60v226h600V690H180Zm0-413v225-225Zm0 413v226-226Z"/></svg>
+            </div>
+            <div class="caption text-center">
+                <h4>Production-Ready</h4>
+                Battle-tested in large-scale production code-bases, over 98% test coverage,
+                and supporting a wide range of math functions.
+          </div>
+        </div>
+
+    </div>
+    <div class="col col-md-4 col-sm-6">
+        <div class="well">
+            <div class="text-center image-container" style="padding-top:2px">
+                <svg class="feature-image" xmlns="http://www.w3.org/2000/svg" height="55" viewBox="0 96 960 960" width="55"><path d="m187 505 106 45q18-36 38.5-71t43.5-67l-79-16-109 109Zm154 81 133 133q57-26 107-59t81-64q81-81 119-166t41-192q-107 3-192 41T464 398q-31 31-64 81t-59 107Zm229-96q-20-20-20-49.5t20-49.5q20-20 49.5-20t49.5 20q20 20 20 49.5T669 490q-20 20-49.5 20T570 490Zm-15 383 109-109-16-79q-32 23-67 43.5T510 767l45 106Zm326-694q9 136-34 248T705 638l-2 2-2 2 22 110q3 15-1.5 29T706 806L535 978l-85-198-170-170-198-85 172-171q11-11 25-15.5t29-1.5l110 22q1-1 2-1.5t2-1.5q99-99 211-142.5T881 179ZM149 731q35-35 85.5-35.5T320 730q35 35 34.5 85.5T319 901q-26 26-80.5 43T75 976q15-109 31.5-164t42.5-81Zm42 43q-14 15-25 47t-19 82q50-8 82-19t47-25q19-17 19.5-42.5T278 772q-19-18-44.5-17.5T191 774Z"/></svg>
+            </div>
+            <div class="caption text-center">
+                <h4>Blindingly Fast</h4>
+                Optimised for maximum performance, e.g. via expression templates and efficient taping.
+          </div>
+        </div>
+    </div>
+    <div class="col col-md-4 col-sm-6">
+        <div class="well">
+            
+            <div class="text-center image-container">
+                <svg class="feature-image" height="60" xmlns="http://www.w3.org/2000/svg" viewBox="0 96 960 960" width="60"><path d="m419 735 289-289-43-43-246 246-119-119-43 43 162 162ZM180 936q-24 0-42-18t-18-42V276q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm0-60h600V276H180v600Zm0-600v600-600Z"/></svg>
+            </div>
+            <div class="caption text-center">
+                <h4>Checkpointing</h4>
+                Manage tape memory and achieve higher performance via checkpointing.
+          </div>
+
+            
+        </div>
+    </div>
+    <div class="col col-md-4 col-sm-6">
+        <div class="well">
+            
+            <div class="text-center image-container" style="padding-top:5px">
+                <svg class="feature-image" height="50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32h82.7L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3V192c0 17.7 14.3 32 32 32s32-14.3 32-32V32c0-17.7-14.3-32-32-32H320zM80 32C35.8 32 0 67.8 0 112V432c0 44.2 35.8 80 80 80H400c44.2 0 80-35.8 80-80V320c0-17.7-14.3-32-32-32s-32 14.3-32 32V432c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V112c0-8.8 7.2-16 16-16H192c17.7 0 32-14.3 32-32s-14.3-32-32-32H80z"/></svg>
+            </div>
+            <div class="caption text-center">
+                <h4>External Functions</h4>
+                Integrate functions from external libraries into the AD tape or manually optimise parts of the differentiated code.
+          </div>
+          
+        </div>
+
+    </div>
+    <div class="col col-md-4 col-sm-6">
+        <div class="well">
+            <div class="text-center image-container">
+                <svg class="feature-image" width="46" height="60" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 64 84" version="1.1" id="Capa_1"><metadata id="metadata4568"><rdf:rdf><cc:work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"></dc:type><dc:title></dc:title></cc:work></rdf:rdf></metadata><defs id="defs4566"></defs><path id="path4531" d="M 24,12 C 24,5.372 18.626,0 12,0 5.373,0 0,5.372 0,12 0,16.938 2.986,21.178 7.25,23.019 V 60.982 C 2.986,62.821 0,67.061 0,72 0,78.626 5.373,84 12,84 18.626,84 24,78.626 24,72 24,67.061 21.014,62.821 16.75,60.981 V 23.019 C 21.014,21.178 24,16.938 24,12 Z m -5.077,60 c 0,3.823 -3.1,6.923 -6.923,6.923 -3.822,0 -6.923,-3.1 -6.923,-6.923 0,-3.823 3.101,-6.923 6.923,-6.923 3.823,0 6.923,3.1 6.923,6.923 z M 12,18.923 c -3.822,0 -6.923,-3.1 -6.923,-6.923 0,-3.823 3.101,-6.923 6.923,-6.923 3.823,0 6.923,3.1 6.923,6.923 0,3.823 -3.1,6.923 -6.923,6.923 z M 56.75,60.981 V 23.019 C 61.014,21.178 64,16.938 64,12 64,5.372 58.626,0 52,0 45.373,0 40,5.372 40,12 c 0,4.938 2.986,9.178 7.25,11.019 V 60.982 C 42.987,62.821 40,67.061 40,72 c 0,6.626 5.373,12 12,12 6.626,0 12,-5.374 12,-12 0,-4.939 -2.986,-9.179 -7.25,-11.019 z M 45.077,12 c 0,-3.823 3.102,-6.923 6.924,-6.923 3.822,0 6.922,3.1 6.922,6.923 0,3.823 -3.1,6.923 -6.922,6.923 -3.822,0 -6.924,-3.1 -6.924,-6.923 z M 52,78.923 c -3.822,0 -6.924,-3.1 -6.924,-6.923 0,-3.823 3.102,-6.923 6.924,-6.923 3.822,0 6.922,3.1 6.922,6.923 0,3.823 -3.099,6.923 -6.922,6.923 z"></path><g id="g4533"></g><g id="g4535"></g><g id="g4537"></g><g id="g4539"></g><g id="g4541"></g><g id="g4543"></g><g id="g4545"></g><g id="g4547"></g><g id="g4549"></g><g id="g4551"></g><g id="g4553"></g><g id="g4555"></g><g id="g4557"></g><g id="g4559"></g><g id="g4561"></g></svg>
+            </div>
+            <div class="caption text-center">
+                <h4>Thread-safe tape</h4>
+                Safely use multiple tapes from multiple threads in parallel code.
+          </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+{% endblock %}

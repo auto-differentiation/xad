@@ -14,7 +14,7 @@ labelPRBasedOnFilePath:
 
 ##### Greetings ########################################################################################################
 firstPRWelcomeComment: >
-  Thanks for opening this pull request. Please check out our [contributing guidelines](https://github.com/xcelerit/XAD/CONTRIBUTING.md).
+  Thanks for opening this pull request. Please check out our [contributing guidelines](https://github.com/auto-differentiation/XAD/CONTRIBUTING.md).
 firstPRMergeComment: >
   Awesome work, congrats on your first merged pull request!
 firstIssueWelcomeComment: >

@@ -2,10 +2,10 @@
 #   
 #  Setup of CMake options
 #
-#  This file is part of XAD, a fast and comprehensive C++ library for
+#  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2022 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2023 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -25,8 +25,6 @@
 include(CMakeDependentOption)
 
 # Build options
-option(XAD_DOCS_ONLY "Build documentation only" OFF)
-cmake_dependent_option(XAD_BUILD_DOCS "Build documentation" OFF "NOT XAD_DOCS_ONLY" ON)
 # Enable the tests only if this is the main project
 if(CMAKE_PROJECT_NAME STREQUAL "XAD")
     option(XAD_ENABLE_TESTS "Enable the XAD Tests" ON)

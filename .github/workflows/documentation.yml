@@ -6,32 +6,47 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y texlive-latex-base texlive-latex-extra texlive-science dvisvgm preview-latex-style
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Configure and Build
+      - name: Get Latest Release
+        uses: pozetroninc/github-action-get-latest-release@v0.7.0
+        id: release
+        with:
+          repository: ${{ github.repository }}
+      - name: Setup Python runtime
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+      - name: Build cache
+        uses: actions/cache@v3
+        id: cache
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+      - name: Python packages
         run: |
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DXAD_BUILD_DOCS=ON -DXAD_DOCS_ONLY=ON
-          cmake --build . --target documentation
-          rm -f doc/html/.buildinfo
-
+          pip install mkdocs-material mkdocs-minify-plugin mkdocs-redirects
+      - name: Build Docs
+        env:
+          GOOGLE_ANALYTICS_KEY: ${{ secrets.GOOGLE_ANALYTICS_KEY }}
+          LATEST_VERSION: ${{ steps.release.outputs.release }}
+        run: |
+          mkdocs build
       - name: Upload as artifact
         uses: actions/upload-artifact@v3
         with:
           name: Documentation
-          path: build/doc/html
-
+          path: site
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: build/doc/html
+          folder: site
+          repository-name: auto-differentiation/autodifferentiation.github.io
+          token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
           git-config-name: github-actions[bot]
           git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
           dry-run: ${{ github.ref != 'refs/heads/main' }}  # dry run if not on main branch
+
           

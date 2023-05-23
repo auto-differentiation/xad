@@ -20,7 +20,7 @@ Please delete options that are not relevant.
 
 Please ensure that the following items have been completed and delete this section afterwards.
 
--   My code follows the [style guidelines of this project](https://github.com/xcelerit/XAD/blob/main/CONTRIBUTING.md)
+-   My code follows the [style guidelines of this project](https://github.com/auto-differentiation/XAD/blob/main/CONTRIBUTING.md)
 -   I have performed a self-review of my code
 -   I have commented my code, particularly in hard-to-understand areas
 -   I have made corresponding changes to the documentation, if relevant

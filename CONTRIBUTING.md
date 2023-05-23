@@ -6,7 +6,7 @@ by our [code of conduct](CODE_OF_CONDUCT.md).
 1.  Fork, then clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/xad.git
+git clone https://github.com/yourusername/XAD.git
 ```
 
 2.  Follow the [Build Instructions](README.md) to setup the dependencies and 
@@ -46,9 +46,9 @@ accepted:
 
 ## Source Code Organisation
 
--   [cmake](cmake): CMake modules and scripts used for the build
+-   [cmake](https://cmake.org): CMake modules and scripts used for the build
 -   [doc](doc): Sources to generate the user documentation (manual), using [Sphinx](http://www.sphinx-doc.org)
--   [samples](samples): Example usages of xad
+-   [samples](samples): Example usages of XAD
 -   [src](src): The C++ sources, including the public headers in [XAD](src/XAD)
 -   [test](test): Unit tests
 
@@ -106,6 +106,6 @@ For convenience, there is a `.clang-format` file in the root of the project whic
     -   Line breaks before curly braces in other contexts are optional
     -   Short loops or functions can be defined in one line
 
-[pr]: https://github.com/xcelerit/xad/compare/
+[pr]: https://github.com/auto-differentiation/XAD/compare/
 
 [cla]: https://gist.github.com/xcelerit-dev/4a5c0cf1fbfed7be64308d1c2f47bd25

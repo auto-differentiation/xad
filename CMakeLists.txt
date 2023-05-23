@@ -2,10 +2,10 @@
 #   
 #  Main CMake file
 #
-#  This file is part of XAD, a fast and comprehensive C++ library for
+#  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2022 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2023 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -28,8 +28,8 @@ cmake_policy(SET CMP0092 NEW)   # avoid setting warning flags by default in Wind
 
 project(XAD 
     LANGUAGES CXX
-    DESCRIPTION "Fast and comprehensive C++ library for automatic differentiation."
-    HOMEPAGE_URL "https://github.com/xcelerit/xad"
+    DESCRIPTION "Comprehensive C++ library for automatic differentiation."
+    HOMEPAGE_URL "https://auto-differentiation.github.io"
 )
 
 
@@ -51,11 +51,6 @@ if(NOT XAD_DOCS_ONLY)
         add_subdirectory(test)
         add_subdirectory(samples)
     endif()
-endif()
-
-if(XAD_BUILD_DOCS)
-    include(SetupDocumentation)
-    add_subdirectory(doc)
 endif()
 
 install(FILES CHANGELOG.md LICENSE.md TYPE DOC)
