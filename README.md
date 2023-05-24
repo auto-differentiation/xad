@@ -105,7 +105,3 @@ That is, every pull request should also update the Changelog accordingly.
 ## License
 
 This project is licensed under the GNU Affero General Public License - see the [LICENSE.md](LICENSE.md) file for details.
-
-[cmake]: https://cmake.org
-
-[ci]: .github/workflows/ci.yml
