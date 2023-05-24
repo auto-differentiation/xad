@@ -72,7 +72,7 @@ The sources for the site are located in the [docs](docs) directory in this repos
 
 If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/XAD/issues).
 
-For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/XAD/discussion).
+For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/XAD/discussions).
 
 ## Planned Features
 

@@ -395,3 +395,4 @@ Mkfile.old
 dkms.conf
 
 /site
+.venv

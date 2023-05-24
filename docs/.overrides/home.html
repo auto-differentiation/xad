@@ -1,16 +1,20 @@
 {% extends "main.html" %}
 
 {% block extrahead %}
-<link rel="apple-touch-icon" sizes="180x180" href="{{ '/favicon/apple-touch-icon.png' | url }}">
-<link rel="icon" type="image/png" sizes="32x32" href="{{ '/favicon/favicon-32x32.png' | url }}">
-<link rel="icon" type="image/png" sizes="16x16" href="{{ '/favicon/favicon-16x16.png' | url }}">
-<link rel="manifest" href="{{ '/favicon/site.webmanifest' | url }}">
-<link rel="mask-icon" href="{{ '/favicon/safari-pinned-tab.svg' | url }}" color="#5bbad5">
-<link rel="shortcut icon" href="{{ '/favicon/favicon.ico' | url }}">
-<meta name="msapplication-TileColor" content="#ffc40d">
-<meta name="msapplication-config" content="{{ '/favicon/browserconfig.xml' | url }}">
-<meta name="theme-color" content="#ffffff">
+{{ super() }}
 <link rel="stylesheet" href="{{ 'home.css' | url }}">
+<script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "XAD",
+      "operatingSystem": ["Windows", "Linux", "MacOS"],
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      }
+    }
+</script>
 {% endblock %}
 
 

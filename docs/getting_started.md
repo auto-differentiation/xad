@@ -188,28 +188,47 @@ XAD library has already been compiled (in `Config.hpp` or client code compiler d
 | `XAD_USE_STRONG_INLINE` | Force inlining expression templates, rather than letting the compiler decide. (faster, slow compilation, possible compiler crashes) | `OFF` |
 | `XAD_ALLOW_INT_CONVERSION` | Add real -> integer conversion operator, similar to `double`. This may result missing some variable dependency tracking for AAD. | `ON`  |
 
-## Adapting the User Documentation
+## Building the Documentation
 
 The user documentation uses the popular [MkDocs Material tool](https://squidfunk.github.io/mkdocs-material/).
-It is entirely generated from the markdown files located in the `docs` folder
-and can be generated easily using docker by running in the project root:
+It is entirely generated from the markdown files located in the `docs` folder.
 
-```bash
-docker run --rm -it -p 8000:8000 -e GOOGLE_ANALYTICS_KEY=devkey -e LATEST_VERSION=dev -v ${PWD}:/docs squidfunk/mkdocs-material
+### Approach 1: Docker
+
+The docs can be generated easily using docker by running in the project root:
+
+```shell
+docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
 ```
 
-This will serve the documentation on `http://127.0.0.1:8000` and watch for changes in the
+This will serve the documentation on [http://127.0.0.1:8000](http://127.0.0.1:8000) and watch for changes in the
 `docs` folder automatically.
 The files can now be modified and conveniently viewed.
 
-Note that the environment variables `GOOGLE_ANALYTICS_KEY` and `LATEST_VERSION` must be set in the above
-docker command, otherwise mkdocs will show an error that `mkdocs.yaml` does not exist.
+### Approach 2: Local Python
+
+Alternatively, MkDocs can be installed locally into a python environment and executed as follows 
+(we recommend a virtual environment as shown below).
+
+1.   Setup the environment and dependencies:
+     ```shell
+     python -m venv .venv
+     source .venv/bin/activate
+     pip install mkdocs-material mkdocs-minify-plugin mkdocs-redirects "pillow<10" "cairosvg>=2.5"
+     ```
+2.  Run mkdocs (in the activated environment):
+    ```shell
+    mkdocs serve
+    ```
+
+This will also serve the documentation locally on [http://127.0.0.1:8000](http://127.0.0.1:8000) and watch for changes in the
+`docs` folder automatically.
 
 ## Getting Help
 
 If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/XAD/issues).
 
-For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/XAD/discussion).
+For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/XAD/discussions).
 
 ## Tested Platforms
 

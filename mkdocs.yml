@@ -76,9 +76,9 @@ theme:
 extra:
   analytics:
     provider: google
-    property: !!python/object/apply:os.getenv ["GOOGLE_ANALYTICS_KEY"]
+    property: !ENV [GOOGLE_ANALYTICS_KEY, undefined]
   generator: false
-  version: !!python/object/apply:os.getenv ["LATEST_VERSION"]
+  version: !ENV [LATEST_VERSION, development]
   consent:
     title: Cookie consent
     description: >- 
@@ -108,7 +108,7 @@ markdown_extensions:
       emoji_generator: !!python/name:materialx.emoji.to_svg
   - pymdownx.arithmatex:
       generic: true
-  # - pydownx.betterem
+  - pymdownx.betterem
   - pymdownx.caret
   - pymdownx.mark
   - pymdownx.tilde

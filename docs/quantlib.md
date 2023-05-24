@@ -118,4 +118,4 @@ These demonstrate the use of XAD to calculate derivatives using AAD.
 
 If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/qlxad/issues).
 
-For general questions about the QuantLib to XAD integration, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/qlxad/discussion).
+For general questions about the QuantLib to XAD integration, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/qlxad/discussions).

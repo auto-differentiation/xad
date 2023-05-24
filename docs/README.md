@@ -1,10 +1,9 @@
 ---
 template: home.html
-title: "XAD: The comprehensive tool for automatic differentiation"
+title: "XAD Automatic Differentiation Tool"
 description: >-
-    XAD is a comprehensive open-source C++ library for automatic differentiation by Xcelerit. 
-    It targets production-quality code at any scale, 
-    striving for both ease of use and high performance. 
+    XAD is a comprehensive open-source C++ library for automatic differentiation by Xcelerit,
+    targeting production code at any scale.
 hide:
   - footer
   - navigation
