@@ -43,4 +43,4 @@ For general questions about XAD, sharing ideas, engaging with community members,
 Whether you are carrying out early stage R\&D, prototyping or large scale deployment, our flexible licensing options will meet your needs at every stage of the journey.
 XAD allows anyone to get started with its AGPL license while Xcelerit provides commercial source-code licenses to support development and delivery of enterprise applications.
 
-Please [get in touch](https://www.xcelerit.com/xad/#licenseform) for commercial licensing and support options.
+Please [get in touch](https://www.xcelerit.com/xad-commercial) for commercial licensing and support options.
