@@ -5,3 +5,7 @@
 .md-consent__overlay {
   display: none;
 }
+
+.md-header__title {
+  line-height: 2.9rem;
+}

@@ -10,11 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   More CI/CD workflows for all supported compiler versions
--   Improved tests and testing infrastructure
--   Added math function `copysign`
--   Revamped documentation site using mkdocs
+
+-   Added math function `copysign` 
 
 ### Changed
+
+-   Revamped documentation site using mkdocs
+-   Improved tests and testing infrastructure 
+-   Throw exception when no tape is set on `derivative` calls
 
 ### Deprecated
 

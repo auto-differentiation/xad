@@ -72,7 +72,7 @@ The sources for the site are located in the [docs](docs) directory in this repos
 
 If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/XAD/issues).
 
-For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/XAD/discussion).
+For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/XAD/discussions).
 
 ## Planned Features
 
@@ -105,7 +105,3 @@ That is, every pull request should also update the Changelog accordingly.
 ## License
 
 This project is licensed under the GNU Affero General Public License - see the [LICENSE.md](LICENSE.md) file for details.
-
-[cmake]: https://cmake.org
-
-[ci]: .github/workflows/ci.yml
