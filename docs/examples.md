@@ -14,6 +14,10 @@ see the examples below.
 All code snippets require that the function to be differentiated
 is callable with the active data type for algorithmic differentiation.
 
+Note that XAD ships with a [set of examples](https://github.com/auto-differentiation/XAD/tree/main/samples) that can be used as a starting point for development.
+Further, for examples how to use it with a large-scale project,
+please see [QuantLib Integration](quantlib.md).
+
 ## First Order Forward Mode
 
 ```c++

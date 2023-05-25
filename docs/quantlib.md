@@ -114,8 +114,47 @@ Apart from the regular QuantLib examples, there are XAD-specific examples
 in the qlxad repository, in the `Examples` folder.
 These demonstrate the use of XAD to calculate derivatives using AAD.
 
+## Benchmarks
+
+Some of the examples in qlxad are enabled for benchmarking. 
+That is, the performance of the pricing and sensitivity calculation 
+is measured, averaged over several iterations, for accurate performance reporting.
+
+Further, setting the CMake option `QLXAD_DISABLE_AAD` to `ON` builds
+QuantLib and qlxad with the default `double` datatype,
+enabling measurement of the same examples without the overheads involved in using
+a custom active data type.
+The benchmark-enabled examples calculate sensitivities using finite differences 
+in that case, 
+which also allows verifying correctness of the result against XAD.
+
+Bechmark results:
+
+| Example                    | Sensitivites | Valuation run (ms) | AAD run (ms) | AAD vs Valuation |
+|----------------------------|-------------:|-------------------:|-------------:|-----------------:|
+| Equity Option Portfolio    |           98 |              2.832 |        7.004 |            2.47x |
+| Barrier Option Replication |           13 |              1.481 |        4.162 |            2.81x |
+| Swap Portfolio             |           55 |             26.050 |       36.280 |            1.39x |
+| Multicurve Bootstrapping   |           65 |            192.107 |      299.631 |            1.56x |
+
+Benchmark configuration:
+
+-   QuantLib version: 1.30
+-   XAD version: 1.2.0
+-   OS: Windows Server 2022 Datacenter
+-   Compiler: Visual Studio 2022, 17.6.1
+-   RAM: 64GB
+-   CPU: Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz
+
 ## Getting Help
 
 If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/qlxad/issues).
 
 For general questions about the QuantLib to XAD integration, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/qlxad/discussions).
+
+## Continuous Integration
+
+To ensure continued compatibility with QuantLib's master branch,
+[automated CI/CD checks](https://github.com/xcelerit/qlxad/actions/workflows/ci.yaml) are running in the qlxad repository on a daily basis.
+Potential breaks (for example do to changes in QuantLib) are therefore
+detected early and fixed quickly.
