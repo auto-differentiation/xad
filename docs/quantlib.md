@@ -141,6 +141,7 @@ Benchmark configuration:
 
 -   QuantLib version: 1.30
 -   XAD version: 1.2.0
+-   XAD configuration: `XAD_USE_STRONG_INLINE=ON`, `XAD_NO_THREADLOCAL=ON`, `XAD_SIMD_OPTION=AVX512`
 -   OS: Windows Server 2022 Datacenter
 -   Compiler: Visual Studio 2022, 17.6.1
 -   RAM: 64GB
