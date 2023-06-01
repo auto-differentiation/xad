@@ -132,10 +132,10 @@ Bechmark results:
 
 | Example                    | Sensitivites | Valuation run (ms) | AAD run (ms) | AAD vs Valuation |
 |----------------------------|-------------:|-------------------:|-------------:|-----------------:|
-| Equity Option Portfolio    |           98 |              2.832 |        7.004 |            2.47x |
-| Barrier Option Replication |           13 |              1.481 |        4.162 |            2.81x |
-| Swap Portfolio             |           55 |             26.050 |       36.280 |            1.39x |
-| Multicurve Bootstrapping   |           65 |            192.107 |      299.631 |            1.56x |
+| Equity Option Portfolio    |           98 |               2.83 |         7.00 |            2.47x |
+| Barrier Option Replication |           13 |               1.48 |         4.16 |            2.81x |
+| Swap Portfolio             |           55 |              26.05 |        36.28 |            1.39x |
+| Multicurve Bootstrapping   |           65 |             192.11 |       299.63 |            1.56x |
 
 Benchmark configuration:
 
