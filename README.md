@@ -4,7 +4,7 @@
     </a>
 </p>
 
-XAD is a comprehensive C++ library for automatic differentiation by Xcelerit.
+XAD is a comprehensive C++ library for automatic differentiation.
 It targets production-quality code at any scale, striving for both ease of use and high performance.
 
 <p align="center" dir="auto">
