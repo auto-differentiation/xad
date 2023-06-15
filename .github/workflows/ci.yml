@@ -11,17 +11,17 @@ jobs:
         config: [Release, Debug]
         include:
           - config: Debug
-            sccache: false
+            sccache: "false"
             cmake_extra: ""
           - config: Release
-            sccache: true
+            sccache: "true"
             cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache  
           - compiler: clang
             cxx: clang-cl
             cc: clang-cl
             os: windows-2022
             # disable cache in Windows with Clang
-            sscache: false
+            sscache: "false"
             cmake_extra: ""
             vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
           - compiler: msvc
@@ -47,7 +47,7 @@ jobs:
         run: |
           choco install -y ninja sccache
       - name: ccache
-        if: ${{ matrix.sccache }}
+        if: ${{ matrix.sccache == 'true' }}
         uses: hendrikmuhs/ccache-action@v1.2.9
         with:
           key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
