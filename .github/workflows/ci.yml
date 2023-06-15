@@ -143,6 +143,8 @@ jobs:
           sudo apt-get install -y ccache ninja-build ${{ matrix.compiler }}
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.14
+        with:
+          github-api-token: ${{ secrets.CMAKE_TOKEN }}
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.9
         with:
@@ -236,6 +238,8 @@ jobs:
            echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.14
+        with:
+          github-api-token: ${{ secrets.CMAKE_TOKEN }}
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.9
         with:
