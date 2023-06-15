@@ -20,8 +20,8 @@ jobs:
             cxx: clang-cl
             cc: clang-cl
             os: windows-2022
-            # disable cache in Windows with Clang
-            sscache: "false"
+            # disable cache in Windows with Clang, as it fails compilation with latest compilers
+            sccache: "false"
             cmake_extra: ""
             vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
           - compiler: msvc
