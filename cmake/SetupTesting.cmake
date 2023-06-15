@@ -76,6 +76,6 @@ function(xad_add_test name)
     xad_add_executable(${name} ${ARGN})
     target_link_libraries(${name} PRIVATE xad ${_gmock_target})
     set_property(TARGET ${name} PROPERTY FOLDER test)
-    gtest_discover_tests(${name} DISCOVERY_TIMEOUT 15)
+    gtest_discover_tests(${name} DISCOVERY_TIMEOUT 30)
 endfunction()
 
