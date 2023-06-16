@@ -32,6 +32,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <vector>
+#include <memory>
 
 // cross-platform aligned (de-)allocation
 
