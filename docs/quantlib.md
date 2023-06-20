@@ -130,7 +130,7 @@ which also allows verifying correctness of the result against XAD.
 
 Bechmark results:
 
-| Example                    | Sensitivites | Valuation run (ms) | AAD run (ms) | AAD vs Valuation |
+| QuantLib Example           | Sensitivites | Valuation run (ms) | AAD run (ms) | AAD vs Valuation |
 |----------------------------|-------------:|-------------------:|-------------:|-----------------:|
 | Equity Option Portfolio    |           98 |               2.83 |         7.00 |            2.47x |
 | Barrier Option Replication |           13 |               1.48 |         4.16 |            2.81x |
