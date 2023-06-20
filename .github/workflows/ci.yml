@@ -372,8 +372,8 @@ jobs:
         run: |
           cd build
           lcov --no-external --keep-going --capture --directory ${{ github.workspace }} --output-file ./tmp/lcov_run.info
-          lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info  --ignore-errors inconsistent  --ignore-errors inconsistent --output-file ./tmp/lcov_total.info
-          lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --output-file ./coverage/lcov.info
+          lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info  --ignore-errors inconsistent  --output-file ./tmp/lcov_total.info
+          lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --ignore-errors inconsistent --output-file ./coverage/lcov.info
       - name: upload coverage results
         if: ${{ matrix.coverage }}
         uses: coverallsapp/github-action@master
