@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   QuantLib integration by means of the [qlxad](https://github.com/auto-differentiation/qlxad) integration module
+-   QuantLib integration by means of the [quantlib-xad](https://github.com/auto-differentiation/quantlib-xad) integration module
 -   Full MacOS support
 -   Better CI pipeline with more platforms and compilers tested
 -   Code coverage and quality measured on pull requests and reported in [README.md](README.md)
