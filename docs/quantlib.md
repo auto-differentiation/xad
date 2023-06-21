@@ -22,12 +22,12 @@ as well as XAD-specific tests and examples.
 
 Clone these three repositories into separate folders:
 
-*   [https://github.com/auto-differentiation/qlxad.git](https://github.com/auto-differentiation/qlxad)
+*   [https://github.com/auto-differentiation/quantlib-xad.git](https://github.com/auto-differentiation/quantlib-xad)
 *   [https://github.com/auto-differentiation/XAD.git](https://github.com/auto-differentiation/XAD)
 *   [https://github.com/lballabio/QuantLib.git](https://github.com/lballabio/QuantLib)
 
-Note: We recommend either using the lastest master branch for all repositories involved.
-These are tested against each other on a daily basis and errors are corrected quickly.
+It is recommended to either use the lastest master branch for all repositories involved,
+or use matching tags between QuantLib and quantlib-xad.
 
 ### 2. Install Boost
 
@@ -62,13 +62,13 @@ and can alternatively be used directly from the IDE.
 
 ### 4. QuantLib CMake Configuration
 
-The build is driven from the QuantLib directory - XAD and qlxad are
+The build is driven from the QuantLib directory - XAD and quantlib-xad are
 inserted using [QuantLib's extension hook](https://www.quantlib.org/install/cmake.shtml#extensions).
 
 Configure the QuantLib CMake build with setting the following parameters:
 
-*   `QL_EXTERNAL_SUBDIRECTORIES=/path/to/xad;/path/to/qlxad`
-*   `QL_EXTRA_LINK_LIBRARIES=qlxad`
+*   `QL_EXTERNAL_SUBDIRECTORIES=/path/to/xad;/path/to/quantlib-xad`
+*   `QL_EXTRA_LINK_LIBRARIES=quantlib-xad`
 *   `QL_NULL_AS_FUNCTIONS=ON`
 *   `XAD_STATIC_MSVC_RUNTIME=ON`
 
@@ -79,8 +79,8 @@ cd QuantLib
 mkdir build
 cd build
 cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
-  -DQL_EXTERNAL_SUBDIRECTORIES="`pwd`/../../xad;`pwd`/../../qlxad" \
-  -DQL_EXTRA_LINK_LIBRARIES=qlxad \
+  -DQL_EXTERNAL_SUBDIRECTORIES="`pwd`/../../xad;`pwd`/../../quantlib-xad" \
+  -DQL_EXTRA_LINK_LIBRARIES=quantlib-xad \
   -DQL_NULL_AS_FUNCTIONS=ON \
   -DXAD_STATIC_MSVC_RUNTIME=ON
 ```
@@ -99,7 +99,7 @@ Note that we recommend Release mode for Windows builds.
 
 There are two test executables that get built - the regular QuantLib
 test suite with all the standard tests from the mainline repository,
-as well as the QuantLib XAD test suite from the qlxad repository.
+as well as the QuantLib XAD test suite from the quantlib-xad repository.
 Both are using the overloaded XAD type for `double`,
 but only the XAD suite checks for the correctness of the derivatives as well.
 
@@ -111,17 +111,17 @@ Alternatively, CTest can also be used to execute them.
 ### 7. Running the Examples
 
 Apart from the regular QuantLib examples, there are XAD-specific examples
-in the qlxad repository, in the `Examples` folder.
+in the quantlib-xad repository, in the `Examples` folder.
 These demonstrate the use of XAD to calculate derivatives using AAD.
 
 ## Benchmarks
 
-Some of the examples in qlxad are enabled for benchmarking. 
+Some of the examples in quantlib-xad are enabled for benchmarking. 
 That is, the performance of the pricing and sensitivity calculation 
 is measured, averaged over several iterations, for accurate performance reporting.
 
 Further, setting the CMake option `QLXAD_DISABLE_AAD` to `ON` builds
-QuantLib and qlxad with the default `double` datatype,
+QuantLib and quantlib-xad with the default `double` datatype,
 enabling measurement of the same examples without the overheads involved in using
 a custom active data type.
 The benchmark-enabled examples calculate sensitivities using finite differences 
@@ -149,13 +149,13 @@ Benchmark configuration:
 
 ## Getting Help
 
-If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/qlxad/issues).
+If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/quantlib-xad/issues).
 
-For general questions about the QuantLib to XAD integration, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/qlxad/discussions).
+For general questions about the QuantLib to XAD integration, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/quantlib-xad/discussions).
 
 ## Continuous Integration
 
 To ensure continued compatibility with QuantLib's master branch,
-[automated CI/CD checks](https://github.com/xcelerit/qlxad/actions/workflows/ci.yaml) are running in the qlxad repository on a daily basis.
+[automated CI/CD checks](https://github.com/xcelerit/quantlib-xad/actions/workflows/ci.yaml) are running in the quantlib-xad repository on a daily basis.
 Potential breaks (for example do to changes in QuantLib) are therefore
 detected early and fixed quickly.
