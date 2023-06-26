@@ -108,4 +108,4 @@ For convenience, there is a `.clang-format` file in the root of the project whic
 
 [pr]: https://github.com/auto-differentiation/XAD/compare/
 
-[cla]: https://gist.github.com/xcelerit-dev/4a5c0cf1fbfed7be64308d1c2f47bd25
+[cla]: https://gist.github.com/auto-differentation-dev/4a5c0cf1fbfed7be64308d1c2f47bd25
