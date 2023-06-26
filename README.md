@@ -25,7 +25,7 @@ It targets production-quality code at any scale, striving for both ease of use a
         <img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/XAD/ci.yml?label=Build&logo" alt="GitHub Workflow Status" style="max-width: 100%;">
     </a>
     <a href="https://github.com/auto-differentiation/XAD/actions?query=workflow%3ACI">
-        <img src="https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg" alt="Tests Badge" style="max-width: 100%;">
+        <img src="https://gist.githubusercontent.com/auto-differentiation-dev/e0eab86863fac6da5e44d20df215f836/raw/badge.svg" alt="Tests Badge" style="max-width: 100%;">
     </a>
     <a href="https://coveralls.io/github/auto-differentiation/XAD?branch=main">
         <img src="https://coveralls.io/repos/github/auto-differentiation/XAD/badge.svg?branch=main" alt="Coverage" style="max-width: 100%;">
