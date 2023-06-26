@@ -73,5 +73,5 @@ jobs:
         uses: andymckay/append-gist-action@0.2
         with:
           token: ${{ secrets.GIST_TOKEN }}
-          gistURL: https://gist.githubusercontent.com/xcelerit-dev/e0eab86863fac6da5e44d20df215f836
+          gistURL: https://gist.githubusercontent.com/auto-differentiation-dev/e0eab86863fac6da5e44d20df215f836
           file: badge.svg
