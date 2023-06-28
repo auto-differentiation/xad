@@ -62,7 +62,7 @@ XAD is a C++ library built with modern CMake and has no external dependencies.
 For instructions how to build and integrate it into your projects, please refer to the
 [Getting Started Guide](https://auto-differentiation.github.io/getting_started/).
 
-The documentation site also contains [tutorials](https://auto-differentiation.github.io/tutorials/), 
+The documentation site also contains [tutorials](https://auto-differentiation.github.io/tutorials/basic/), 
 [examples](https://auto-differentiation.github.io/examples/), 
 and information about [integrating XAD into QuantLib](https://auto-differentiation.github.io/quantlib/).
 
