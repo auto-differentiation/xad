@@ -148,8 +148,8 @@ nav:
     - Higher-Order Derivatives: tutorials/higher_order.md
     - Handling Discontinuities: tutorials/smoothed_math.md
   - Examples: 
-    - XAD Examples: examples/xad_examples.md
-    - Large Codebase: examples/quantlib.md
+    - Simple Examples: examples/xad_examples.md
+    - Large Codebase Integration: examples/quantlib.md
   - Reference:
     - Headers and Namespaces: ref/headers.md
     - AD Mode Interface: ref/interface.md
