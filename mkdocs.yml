@@ -132,13 +132,17 @@ extra_css:
 
 nav:
   - Home: README.md
-  - Getting Started: getting_started.md
+  - Installation: getting_started.md
   - Tutorials:
+    - AD Background:  aad.md
     - Basic Usage: tutorials/basic.md
     - External Functions: tutorials/external_functions.md
     - Checkpointing: tutorials/checkpointing.md
     - Higher-Order Derivatives: tutorials/higher_order.md
     - Handling Discontinuities: tutorials/smoothed_math.md
+  - Examples: 
+    - Examples: examples.md
+    - QuantLib Integration: quantlib.md
   - Reference:
     - Headers and Namespaces: ref/headers.md
     - AD Mode Interface: ref/interface.md
@@ -153,7 +157,4 @@ nav:
     - CheckpointCallback: ref/chkpt_cb.md
     - Exceptions: ref/exceptions.md
     - Version Information: ref/version.md
-  - Examples: examples.md
-  - AD Background:  aad.md
-  - QuantLib Integration: quantlib.md
   - About: about.md
