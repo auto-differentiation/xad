@@ -4,7 +4,7 @@ description: >
 ---
 
 
-# XAD Examples
+# Simple Examples
 
 To quickly get an idea how using XAD looks like in practice,
 see the examples below.

@@ -38,6 +38,6 @@ Note that you can access the full documentation easier on [auto-differentiation.
     *   [Exceptions](ref/exceptions.md)
     *   [Version Information](ref/version.md)
 *   Examples:
-    *   [XAD Examples](examples/xad_examples.md)
-    *   [QuantLib Integration](examples/quantlib.md)
+    *   [Simple Examples](examples/simple_examples.md)
+    *   [Large Codebase Integration](examples/quantlib.md)
 *   [About](about.md)
