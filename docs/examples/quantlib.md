@@ -1,9 +1,6 @@
 ---
 description: >-
   As a demonstrator for integration with real-world code, as of version 1.28 (October 2022), QuantLib is AAD-enabled with XAD.
-hide:
-  - navigation
-  - footer
 ---
 
 # QuantLib Integration

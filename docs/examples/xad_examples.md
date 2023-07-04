@@ -1,13 +1,10 @@
 ---
 description: >
   Quick examples for calculating forward, adjoint, and higher order derivatives with the XAD automatic differentiation tool.
-hide:
-  - navigation
-  - footer
 ---
 
 
-# Examples
+# XAD Examples
 
 To quickly get an idea how using XAD looks like in practice,
 see the examples below.

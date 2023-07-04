@@ -91,6 +91,13 @@ plugins:
   - social
   - minify:
       minify_html: true
+  - redirects:
+      redirect_maps:
+        'aad.md': 'tutorials/aad.md'
+        'tutorials.md': 'tutorials/aad.md'
+        'examples.md': 'examples/xad_examples.md'
+        'quantlib.md': 'examples/quantlib.md'
+        'ref.md': 'ref/headers.md'
 
 markdown_extensions: 
   - abbr
@@ -134,15 +141,15 @@ nav:
   - Home: README.md
   - Installation: getting_started.md
   - Tutorials:
-    - AD Background:  aad.md
+    - AD Background:  tutorials/aad.md
     - Basic Usage: tutorials/basic.md
     - External Functions: tutorials/external_functions.md
     - Checkpointing: tutorials/checkpointing.md
     - Higher-Order Derivatives: tutorials/higher_order.md
     - Handling Discontinuities: tutorials/smoothed_math.md
   - Examples: 
-    - Examples: examples.md
-    - QuantLib Integration: quantlib.md
+    - XAD Examples: examples/xad_examples.md
+    - Large Codebase: examples/quantlib.md
   - Reference:
     - Headers and Namespaces: ref/headers.md
     - AD Mode Interface: ref/interface.md

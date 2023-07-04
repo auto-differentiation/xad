@@ -15,8 +15,9 @@ hide:
 See below for the contents of the XAD documentation.
 Note that you can access the full documentation easier on [auto-differentiation.github.io](https://auto-differentiation.github.io).
 
-*   [Getting Started](getting_started.md)
+*   [Installation](getting_started.md)
 *   Tutorials
+    *   [AD Background](tutorials/aad.md)
     *   [Basic Usage](tutorials/basic.md)
     *   [External Functions](tutorials/external_functions.md)
     *   [Checkpointing](tutorials/checkpointing.md)
@@ -36,7 +37,7 @@ Note that you can access the full documentation easier on [auto-differentiation.
     *   [CheckpointCallback](ref/chkpt_cb.md)
     *   [Exceptions](ref/exceptions.md)
     *   [Version Information](ref/version.md)
-*   [Examples](examples.md)
-*   [AD Background](aad.md)
-*   [QuantLib Integration](quantlib.md)
+*   Examples:
+    *   [XAD Examples](examples/xad_examples.md)
+    *   [QuantLib Integration](examples/quantlib.md)
 *   [About](about.md)
