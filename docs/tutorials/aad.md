@@ -1,7 +1,4 @@
 ---
-hide:
-  - navigation
-  - footer
 description: Required mathematical background for the XAD C++ automatic differentiation library.
 ---
 
@@ -115,7 +112,7 @@ for the input values $x_1 = \pi$ and $x_2 = 2$.
 The following figure illustrates how the forward mode algorithm differentiation
 is applied to this problem:
 
-![Forward mode example](images/forward_illustration.svg)
+![Forward mode example](../images/forward_illustration.svg)
 
 On the left we see the computational graph representing the equation,
 and the table on the right illustrates the the steps performed.
@@ -213,7 +210,7 @@ in a single execution,
 for the input values $x_1 = \pi$ and $x_2 = 2$.
 This is illustrated in the figure below:
 
-![Adjoint mode example](images/adjoint_illustration.svg)
+![Adjoint mode example](../images/adjoint_illustration.svg)
 
 As the adjoint mode walks from outputs back to inputs,
 we execute the full computation of the value as usual,

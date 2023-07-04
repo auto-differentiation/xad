@@ -64,7 +64,7 @@ This means we can use the same definition with both forward and adjoint modes.
 
 ## Forward Mode
 
-As illustrated in [Algorithmic Differentiation Background: Forward Mode](../aad.md#forward-mode),
+As illustrated in [Algorithmic Differentiation Background: Forward Mode](aad.md#forward-mode),
 when applied to a function with a single output,
 the forward mode of algorithmic differentiation can compute *one* derivative
 at a time.
@@ -95,7 +95,7 @@ AD x3_ad = x3;
 ```
 
 For forward mode, we must now seed the initial derivative for the variable
-we are interested in with the value 1 (as described in [Algorithmic Differentiation Background: Forward Mode](../aad.md#forward-mode)), as:
+we are interested in with the value 1 (as described in [Algorithmic Differentiation Background: Forward Mode](aad.md#forward-mode)), as:
 
 ```c++
 derivative(x0_ad) = 1.0;
@@ -185,7 +185,7 @@ AD y = f(x0_ad, x1_ad, x2_ad, x3_ad);
 At this stage, we have all operations recorded and have the value computed.
 We now need to register the outputs with the tape as well,
 before we can seed the initial adjoint of the output wit 1
-as explained in [Algorithmic Differentiation Background: Adjoint Mode](../aad.md#adjoint-mode):
+as explained in [Algorithmic Differentiation Background: Adjoint Mode](aad.md#adjoint-mode):
 
 ```c++
 tape.registerOutput(y);
