@@ -73,6 +73,7 @@ theme:
     - search.highlight
     - search.share
     - search.suggest
+    - content.code.copy
 extra:
   analytics:
     provider: google
@@ -98,6 +99,7 @@ plugins:
         'examples.md': 'examples/simple_examples.md'
         'quantlib.md': 'examples/quantlib.md'
         'ref.md': 'ref/headers.md'
+        'getting_started.md': 'installation.md'
 
 markdown_extensions: 
   - abbr
@@ -119,6 +121,8 @@ markdown_extensions:
   - pymdownx.caret
   - pymdownx.mark
   - pymdownx.tilde
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
       use_pygments: true
@@ -127,6 +131,7 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.inlinehilite
   - pymdownx.smartsymbols
+  - pymdownx.keys
   - meta
 
 extra_javascript:
@@ -139,7 +144,7 @@ extra_css:
 
 nav:
   - Home: README.md
-  - Installation: getting_started.md
+  - Installation: installation.md
   - Tutorials:
     - AD Background:  tutorials/aad.md
     - Basic Usage: tutorials/basic.md
