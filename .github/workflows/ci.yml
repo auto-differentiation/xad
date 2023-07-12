@@ -112,6 +112,7 @@ jobs:
           - clang-12
           - clang-13
           - clang-14
+          - clang-15
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
         include:
@@ -130,6 +131,10 @@ jobs:
           - compiler: clang-14
             cxx: clang++-14
             cc: clang-14
+            os: ubuntu-22.04
+          - compiler: clang-15
+            cxx: clang++-15
+            cc: clang-15
             os: ubuntu-22.04
         exclude:
           - config: Debug

@@ -15,7 +15,7 @@ hide:
 See below for the contents of the XAD documentation.
 Note that you can access the full documentation easier on [auto-differentiation.github.io](https://auto-differentiation.github.io).
 
-*   [Installation](getting_started.md)
+*   [Installation](installation.md)
 *   Tutorials
     *   [AD Background](tutorials/aad.md)
     *   [Basic Usage](tutorials/basic.md)
