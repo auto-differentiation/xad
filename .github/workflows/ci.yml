@@ -48,7 +48,7 @@ jobs:
           choco install -y ninja sccache
       - name: ccache
         if: ${{ matrix.sccache == 'true' }}
-        uses: hendrikmuhs/ccache-action@v1.2.9
+        uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
           variant: sccache
@@ -151,7 +151,7 @@ jobs:
         with:
           github-api-token: ${{ secrets.CMAKE_TOKEN }}
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.9
+        uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
       - name: configure
@@ -246,7 +246,7 @@ jobs:
         with:
           github-api-token: ${{ secrets.CMAKE_TOKEN }}
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.9
+        uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
       - name: configure
@@ -339,7 +339,7 @@ jobs:
           brew install lcov
       - uses: actions/checkout@v3
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.9
+        uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: macos-${{ matrix.config }}
       - name: configure
