@@ -5,17 +5,19 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [1.3.0] - 2023-08-16
 
 ### Added
 
+-   Improved CI/CD workflows with better caching and latest compilers
+
 ### Changed
 
-### Deprecated
-
-### Removed
+-   Documentation updates
 
 ### Fixed
+
+-   Fixed missing include of `<memory>` in `ChunkContainer.hpp`
 
 ## [1.2.0] - 2023-05-24
 
@@ -55,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/XAD/compare/v1.2.0...HEAD
+[1.3.0]: https://github.com/auto-differentiation/XAD/compare/v1.2.0...v1.3.0
 
 [1.2.0]: https://github.com/auto-differentiation/XAD/compare/v1.1.0...v1.2.0
 
