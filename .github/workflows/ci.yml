@@ -95,8 +95,8 @@ jobs:
           cd installtest
           call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
           cmake ..\\samples -GNinja ^
-             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} ^
-             -DCMAKE_C_COMPILER=${{ matrix.cc }} ^
+             -DCMAKE_CXX_COMPILER="${{ matrix.cxx }}" ^
+             -DCMAKE_C_COMPILER="${{ matrix.cc }}" ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
              ${{ matrix.cmake_extra }} ^
              -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"
