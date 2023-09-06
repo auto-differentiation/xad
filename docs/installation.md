@@ -370,7 +370,7 @@ or [submit a PR](https://github.com/auto-differentiation/XAD/blob/feature/new-si
 | Windows Server 2022 | Visual Studio 2017 (Toolset 14.1) | Debug, Release                                      | no                     |
 | Windows Server 2022 | Visual Studio 2019 (Toolset 14.2) | Debug, Release                                      | no                     |
 | Windows Server 2022 | Visual Studio 2022 (Toolset 14.3) | Debug, Release                                      | no                     |
-| Windows Server 2022 | Clang 15.0 (Toolset 14.3)         | Debug, Release                                      | no                     |
+| Windows Server 2022 | Clang 16.0 (Toolset 14.3)         | Debug, Release                                      | no                     |
 | Ubuntu 16.04        | GCC 5.4.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
 | Ubuntu 17.10        | GCC 6.4.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
 | Ubuntu 17.10        | GCC 7.2.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
