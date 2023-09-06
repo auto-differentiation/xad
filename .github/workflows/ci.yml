@@ -17,8 +17,8 @@ jobs:
             sccache: "true"
             cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache  
           - compiler: clang
-            cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/bin/clang-cl.exe
-            cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/bin/clang-cl.exe
+            cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
+            cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
             os: windows-2022
             # disable cache in Windows with Clang, as it fails compilation with latest compilers
             sccache: "false"
