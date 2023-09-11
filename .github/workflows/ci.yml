@@ -42,7 +42,7 @@ jobs:
             toolset: "14.0"
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: setup
         run: |
           choco install -y ninja sccache
@@ -141,7 +141,7 @@ jobs:
             reuse_slots: ON
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: setup
         run: |
           sudo apt-get update
@@ -229,7 +229,7 @@ jobs:
       image: conanio/${{ matrix.compiler }}
       options: --user root
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup tools
         run: |
           cat /etc/lsb-release
@@ -337,7 +337,7 @@ jobs:
         if: ${{ matrix.coverage }}
         run: |
           brew install lcov
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
