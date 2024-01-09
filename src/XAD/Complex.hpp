@@ -609,10 +609,26 @@ XAD_INLINE std::complex<xad::AReal<T>> operator+(std::complex<xad::AReal<T>> lhs
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> operator+(std::complex<xad::AReal<T>> lhs,
+                                                 const std::complex<T>& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator+(std::complex<xad::AReal<T>> lhs,
                                                  const xad::AReal<T>& rhs)
 {
     lhs += rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator+(std::complex<T> lhs, const xad::AReal<T>& rhs)
+{
+    std::complex<xad::AReal<T>> z = lhs;
+    z += rhs;
+    return z;
 }
 
 template <class T>
@@ -625,6 +641,23 @@ XAD_INLINE std::complex<xad::AReal<T>> operator+(std::complex<xad::AReal<T>> lhs
 template <class T, class Expr>
 XAD_INLINE std::complex<xad::AReal<T>> operator+(std::complex<xad::AReal<T>> lhs,
                                                  const xad::Expression<T, Expr>& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+template <class T, class Expr>
+XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator+(
+    const std::complex<T>& lhs, const xad::Expression<T, Expr>& rhs)
+{
+    std::complex<typename xad::ExprTraits<Expr>::value_type> z = lhs;
+    z += rhs;
+    return z;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator+(const std::complex<T>& rhs,
+                                                 std::complex<xad::AReal<T>> lhs)
 {
     lhs += rhs;
     return lhs;
@@ -653,9 +686,34 @@ XAD_INLINE std::complex<xad::AReal<T>> operator+(const xad::Expression<T, Expr>&
     return lhs;
 }
 
+template <class T, class Expr>
+XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator+(
+    const xad::Expression<T, Expr>& rhs, const std::complex<T>& lhs)
+{
+    std::complex<typename xad::ExprTraits<Expr>::value_type> z = lhs;
+    z += rhs;
+    return z;
+}
+
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> operator+(std::complex<xad::FReal<T>> lhs,
                                                  const std::complex<xad::FReal<T>>& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator+(const std::complex<T>& lhs,
+                                                 std::complex<xad::FReal<T>> rhs)
+{
+    rhs += lhs;
+    return rhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator+(std::complex<xad::FReal<T>> lhs,
+                                                 const std::complex<T>& rhs)
 {
     lhs += rhs;
     return lhs;
@@ -667,6 +725,15 @@ XAD_INLINE std::complex<xad::FReal<T>> operator+(std::complex<xad::FReal<T>> lhs
 {
     lhs += rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator+(const std::complex<T>& lhs,
+                                                 const xad::FReal<T>& rhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z += rhs;
+    return z;
 }
 
 template <class T>
@@ -686,10 +753,19 @@ XAD_INLINE std::complex<xad::FReal<T>> operator+(std::complex<xad::FReal<T>> lhs
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> operator+(const xad::FReal<T>& rhs,
-                                                 std::complex<xad::AReal<T>> lhs)
+                                                 std::complex<xad::FReal<T>> lhs)
 {
     lhs += rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator+(const xad::FReal<T>& rhs,
+                                                 const std::complex<T>& lhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z += rhs;
+    return z;
 }
 
 template <class T>
@@ -719,10 +795,35 @@ XAD_INLINE std::complex<xad::AReal<T>> operator-(std::complex<xad::AReal<T>> lhs
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> operator-(std::complex<xad::AReal<T>> lhs,
+                                                 const std::complex<T>& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator-(const std::complex<T>& lhs,
+                                                 std::complex<xad::AReal<T>> rhs)
+{
+    std::complex<xad::AReal<T>> z = lhs;
+    z -= rhs;
+    return z;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator-(std::complex<xad::AReal<T>> lhs,
                                                  const xad::AReal<T>& rhs)
 {
     lhs -= rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator-(std::complex<T> lhs, const xad::AReal<T>& rhs)
+{
+    std::complex<xad::AReal<T>> z = lhs;
+    z -= rhs;
+    return z;
 }
 
 template <class T>
@@ -738,6 +839,24 @@ XAD_INLINE std::complex<xad::AReal<T>> operator-(std::complex<xad::AReal<T>> lhs
 {
     lhs -= rhs;
     return lhs;
+}
+
+template <class T, class Expr>
+XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator-(
+    const std::complex<T>& lhs, const xad::Expression<T, Expr>& rhs)
+{
+    std::complex<typename xad::ExprTraits<Expr>::value_type> z = lhs;
+    z -= rhs;
+    return z;
+}
+
+template <class T, class Expr>
+XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator-(
+    const xad::Expression<T, Expr>& lhs, const std::complex<T>& rhs)
+{
+    std::complex<typename xad::ExprTraits<Expr>::value_type> z = lhs;
+    z -= rhs;
+    return z;
 }
 
 template <class T>
@@ -769,11 +888,37 @@ XAD_INLINE std::complex<xad::FReal<T>> operator-(std::complex<xad::FReal<T>> lhs
 }
 
 template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator-(const std::complex<T>& lhs,
+                                                 const std::complex<xad::FReal<T>>& rhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z -= rhs;
+    return z;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator-(std::complex<xad::FReal<T>> lhs,
+                                                 const std::complex<T>& rhs)
+{
+    std::complex<xad::FReal<T>> z = rhs;
+    lhs -= z;
+    return lhs;
+}
+
+template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> operator-(std::complex<xad::FReal<T>> lhs,
                                                  const xad::FReal<T>& rhs)
 {
     lhs -= rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator-(std::complex<T> lhs, const xad::FReal<T>& rhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z -= rhs;
+    return z;
 }
 
 template <class T>
@@ -793,7 +938,13 @@ XAD_INLINE std::complex<xad::FReal<T>> operator-(std::complex<xad::FReal<T>> lhs
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> operator-(const xad::FReal<T>& rhs,
-                                                 std::complex<xad::AReal<T>> lhs)
+                                                 std::complex<xad::FReal<T>> lhs)
+{
+    return std::complex<xad::FReal<T>>(rhs - lhs.real(), -lhs.imag());
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator-(const xad::FReal<T>& rhs, std::complex<T> lhs)
 {
     return std::complex<xad::FReal<T>>(rhs - lhs.real(), -lhs.imag());
 }
@@ -822,10 +973,34 @@ XAD_INLINE std::complex<xad::AReal<T>> operator*(std::complex<xad::AReal<T>> lhs
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> operator*(std::complex<xad::AReal<T>> lhs,
+                                                 const std::complex<T>& rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator*(const std::complex<T>& lhs,
+                                                 const std::complex<xad::AReal<T>>& rhs)
+{
+    return rhs * lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator*(std::complex<xad::AReal<T>> lhs,
                                                  const xad::AReal<T>& rhs)
 {
     lhs *= rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator*(const std::complex<T>& lhs,
+                                                 const xad::AReal<T>& rhs)
+{
+    std::complex<xad::AReal<T>> z = lhs;
+    z *= rhs;
+    return z;
 }
 
 template <class T>
@@ -841,6 +1016,24 @@ XAD_INLINE std::complex<xad::AReal<T>> operator*(std::complex<xad::AReal<T>> lhs
 {
     lhs *= rhs;
     return lhs;
+}
+
+template <class T, class Expr>
+XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator*(
+    const std::complex<T>& lhs, const xad::Expression<T, Expr>& rhs)
+{
+    std::complex<typename xad::ExprTraits<Expr>::value_type> z = lhs;
+    z *= rhs;
+    return z;
+}
+
+template <class T, class Expr>
+XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator*(
+    const xad::Expression<T, Expr>& lhs, const std::complex<T>& rhs)
+{
+    std::complex<typename xad::ExprTraits<Expr>::value_type> z = lhs;
+    z *= rhs;
+    return z;
 }
 
 template <class T>
@@ -875,11 +1068,37 @@ XAD_INLINE std::complex<xad::FReal<T>> operator*(std::complex<xad::FReal<T>> lhs
 }
 
 template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator*(const std::complex<T>& lhs,
+                                                 const std::complex<xad::FReal<T>>& rhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z *= rhs;
+    return z;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator*(std::complex<xad::FReal<T>> lhs,
+                                                 const std::complex<T>& rhs)
+{
+    std::complex<xad::FReal<T>> z = rhs;
+    lhs *= z;
+    return lhs;
+}
+
+template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> operator*(std::complex<xad::FReal<T>> lhs,
                                                  const xad::FReal<T>& rhs)
 {
     lhs *= rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator*(std::complex<T> lhs, const xad::FReal<T>& rhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z *= rhs;
+    return z;
 }
 
 template <class T>
@@ -899,10 +1118,18 @@ XAD_INLINE std::complex<xad::FReal<T>> operator*(std::complex<xad::FReal<T>> lhs
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> operator*(const xad::FReal<T>& rhs,
-                                                 std::complex<xad::AReal<T>> lhs)
+                                                 std::complex<xad::FReal<T>> lhs)
 {
     lhs *= rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator*(const xad::FReal<T>& rhs, std::complex<T> lhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z *= rhs;
+    return z;
 }
 
 template <class T>
@@ -920,7 +1147,7 @@ XAD_INLINE std::complex<xad::FReal<T>> operator*(const xad::Expression<T, Expr>&
     return lhs;
 }
 
-// operator-
+// operator/
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> operator/(std::complex<xad::AReal<T>> lhs,
@@ -932,10 +1159,35 @@ XAD_INLINE std::complex<xad::AReal<T>> operator/(std::complex<xad::AReal<T>> lhs
 
 template <class T>
 XAD_INLINE std::complex<xad::AReal<T>> operator/(std::complex<xad::AReal<T>> lhs,
+                                                 const std::complex<T>& rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator/(const std::complex<T>& lhs,
+                                                 std::complex<xad::AReal<T>> rhs)
+{
+    std::complex<xad::AReal<T>> z = lhs;
+    z /= rhs;
+    return z;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator/(std::complex<xad::AReal<T>> lhs,
                                                  const xad::AReal<T>& rhs)
 {
     lhs /= rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::AReal<T>> operator/(std::complex<T> lhs, const xad::AReal<T>& rhs)
+{
+    std::complex<xad::AReal<T>> z = lhs;
+    z /= rhs;
+    return z;
 }
 
 template <class T>
@@ -951,6 +1203,24 @@ XAD_INLINE std::complex<xad::AReal<T>> operator/(std::complex<xad::AReal<T>> lhs
 {
     lhs /= rhs;
     return lhs;
+}
+
+template <class T, class Expr>
+XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator/(
+    const std::complex<T>& lhs, const xad::Expression<T, Expr>& rhs)
+{
+    std::complex<typename xad::ExprTraits<Expr>::value_type> z = lhs;
+    z /= rhs;
+    return z;
+}
+
+template <class T, class Expr>
+XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator/(
+    const xad::Expression<T, Expr>& lhs, const std::complex<T>& rhs)
+{
+    std::complex<typename xad::ExprTraits<Expr>::value_type> z = lhs;
+    z /= rhs;
+    return z;
 }
 
 template <class T>
@@ -982,11 +1252,37 @@ XAD_INLINE std::complex<xad::FReal<T>> operator/(std::complex<xad::FReal<T>> lhs
 }
 
 template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator/(const std::complex<T>& lhs,
+                                                 const std::complex<xad::FReal<T>>& rhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z /= rhs;
+    return z;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator/(std::complex<xad::FReal<T>> lhs,
+                                                 const std::complex<T>& rhs)
+{
+    std::complex<xad::FReal<T>> z = rhs;
+    lhs /= z;
+    return lhs;
+}
+
+template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> operator/(std::complex<xad::FReal<T>> lhs,
                                                  const xad::FReal<T>& rhs)
 {
     lhs /= rhs;
     return lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator/(std::complex<T> lhs, const xad::FReal<T>& rhs)
+{
+    std::complex<xad::FReal<T>> z = lhs;
+    z /= rhs;
+    return z;
 }
 
 template <class T>
@@ -1006,7 +1302,13 @@ XAD_INLINE std::complex<xad::FReal<T>> operator/(std::complex<xad::FReal<T>> lhs
 
 template <class T>
 XAD_INLINE std::complex<xad::FReal<T>> operator/(const xad::FReal<T>& rhs,
-                                                 std::complex<xad::AReal<T>> lhs)
+                                                 std::complex<xad::FReal<T>> lhs)
+{
+    return std::complex<xad::FReal<T>>(rhs) / lhs;
+}
+
+template <class T>
+XAD_INLINE std::complex<xad::FReal<T>> operator/(const xad::FReal<T>& rhs, std::complex<T> lhs)
 {
     return std::complex<xad::FReal<T>>(rhs) / lhs;
 }
