@@ -2209,8 +2209,7 @@ XAD_INLINE T abs_impl(const std::complex<T>& x)
     using std::sqrt;
     if (xad::isinf(x.real()) || xad::isinf(x.imag()))
         return std::numeric_limits<double>::infinity();
-    // TODO: add hypot to XAD to use that one here
-    return sqrt(xad::detail::norm_impl(x));
+    return xad::hypot(x.real(), x.imag());
 }
 
 template <class T>

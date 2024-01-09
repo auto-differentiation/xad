@@ -921,8 +921,6 @@ TYPED_TEST(ComplexTest, AddDouble)
     EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(-1.2, 1e-9));
 }
 
-
-
 // -------------- operator- ---------------
 
 TYPED_TEST(ComplexTest, SubstractComplex)
@@ -3410,4 +3408,11 @@ TYPED_TEST(ComplexTest, canEvaluateTroublesomeComplexAbs)
     }
 
     EXPECT_THAT(ad_res, DoubleEq(double_res));
+}
+
+TYPED_TEST(ComplexTest, canEvaluateAbsOfLargeNumbers)
+{
+    const std::complex<TypeParam> ref = 1.45097873605256e+301;
+
+    EXPECT_THAT(xad::value(std::abs(ref)), DoubleEq(1.45097873605256e+301));
 }

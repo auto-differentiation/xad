@@ -45,6 +45,7 @@ XAD_BINARY_OPERATOR(min, min_op)
 XAD_BINARY_OPERATOR(fmin, fmin_op)
 XAD_BINARY_OPERATOR(fmod, fmod_op)
 XAD_BINARY_OPERATOR(atan2, atan2_op)
+XAD_BINARY_OPERATOR(hypot, hypot_op)
 XAD_BINARY_OPERATOR(smooth_abs, smooth_abs_op)
 XAD_BINARY_OPERATOR(nextafter, nextafter_op)
 
