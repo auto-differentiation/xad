@@ -5,17 +5,16 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [1.4.0] - 2024-01-09
 
 ### Added
 
-### Changed
-
-### Deprecated
-
-### Removed
+- Supporting Clang version 16 and added to CI/CD
+- Adding complex arithmetics between complex XAD types and `std::complex<double>`
 
 ### Fixed
+
+- Documentation updates
 
 ## [1.3.0] - 2023-08-16
 
@@ -69,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/XAD/compare/v1.3.0...HEAD
+[1.4.0]: https://github.com/auto-differentiation/XAD/compare/v1.3.0...v1.4.0
 
 [1.3.0]: https://github.com/auto-differentiation/XAD/compare/v1.2.0...v1.3.0
 
