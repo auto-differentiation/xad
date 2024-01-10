@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+-   support for `hypot` math function
+
 ### Changed
 
 ### Deprecated
@@ -17,16 +19,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+-   avoid overflow with complex `abs` function when real / imaginary parts are large
+
 ## [1.4.0] - 2024-01-09
 
 ### Added
 
-- Supporting Clang version 16 and added to CI/CD
-- Adding complex arithmetics between complex XAD types and `std::complex<double>`
+-   Supporting Clang version 16 and added to CI/CD
+-   Adding complex arithmetics between complex XAD types and `std::complex<double>`
 
 ### Fixed
 
-- Documentation updates
+-   Documentation updates
 
 ## [1.3.0] - 2023-08-16
 

@@ -85,6 +85,8 @@ XAD_UNARY_BINSCAL1(atan2, scalar_atan21_op)
 XAD_UNARY_BINSCAL2(atan2, scalar_atan22_op)
 XAD_UNARY_BINSCAL1(nextafter, scalar_nextafter1_op)
 XAD_UNARY_BINSCAL2(nextafter, scalar_nextafter2_op)
+XAD_UNARY_BINSCAL1(hypot, scalar_hypot1_op)
+XAD_UNARY_BINSCAL2(hypto, scalar_hypot2_op)
 
 // pown (integral exponents)
 template <class Scalar, class Expr>

@@ -497,67 +497,48 @@ TEST(ExpressionsMath, atan2_Expr)
                      (1.3 * 1.3 * .5 * .5 + .3 * .3),
                  atan2ScalarExpr);
 }
-/*
-TEST(ExpressionsMath, frexp_AD)
+
+LOCAL_TEST_FUNCTOR2(hypotAD, xad::hypot(x1, x2))
+LOCAL_TEST_FUNCTOR1(hypotADScalar, xad::hypot(x, 0.5))
+LOCAL_TEST_FUNCTOR1(hypotScalarAD, xad::hypot(0.3, x))
+TEST(ExpressionsMath, hypot_AD)
 {
-  int exp1, exp2;
-  mathTest(0.4, std::frexp(0.4, &exp1), 2.0,
-  [&](adj::AD& x){
-    return frexp(x, &exp2);
-  },
-  [&](adj::FAD& x){
-    return frexp(x, &exp2);
-  });
-  EXPECT_EQ(exp1, exp2);
-  mathTest(0.5, std::frexp(0.5, &exp1), 1.5,
-  [&](adj::AD& x){
-    return frexp(x, &exp2);
-  },
-  [&](adj::FAD& x){
-    return frexp(x, &exp2);
-  });
-  EXPECT_EQ(exp1, exp2);
-  mathTest(0.0, std::frexp(0.0, &exp1),
-std::numeric_limits<double>::quiet_NaN(),
-[&](adj::AD& x){
-    return frexp(x, &exp2);
-  },
-  [&](adj::FAD& x){
-    return frexp(x, &exp2);
-  });
-  EXPECT_EQ(exp1, exp2);
+    mathTest2_all(0.3, 0.5, std::hypot(0.3, 0.5), 0.3 / std::hypot(0.3, 0.5),  // d1
+                  0.5 / std::hypot(0.3, 0.5),                                  // d2
+                  0.5 * 0.5 / std::pow(std::hypot(0.3, 0.5), 3),               // d11
+                  -(0.5 * 0.3) / std::pow(std::hypot(0.3, 0.5), 3),            // d12
+                  -(0.5 * 0.3) / std::pow(std::hypot(0.3, 0.5), 3),            // d21
+                  0.3 * 0.3 / std::pow(std::hypot(0.3, 0.5), 3),               // d22
+                  hypotAD);
+
+    mathTest_all(0.3, std::hypot(0.3, 0.5), 0.3 / std::hypot(0.3, 0.5),
+                 0.5 * 0.5 / std::pow(std::hypot(0.3, 0.5), 3), hypotADScalar);
+
+    mathTest_all(0.5, std::hypot(0.3, 0.5), 0.5 / std::hypot(0.3, 0.5),
+                 0.3 * 0.3 / std::pow(std::hypot(0.3, 0.5), 3), hypotScalarAD);
 }
 
-TEST(ExpressionsMath, frexp_Expr)
+LOCAL_TEST_FUNCTOR2(hypotExprExpr, xad::hypot(1.3 * x1, 1.3 * x2))
+LOCAL_TEST_FUNCTOR1(hypotExprScalar, xad::hypot(1.3 * x, 0.5))
+LOCAL_TEST_FUNCTOR1(hypotScalarExpr, xad::hypot(0.3, 1.3 * x))
+TEST(ExpressionsMath, hypot_Expr)
 {
-  int exp1, exp2;
-  mathTest(0.4, std::frexp(1.3*0.4, &exp1), 1.3*1.0,
-  [&](adj::AD& x){
-    return frexp(1.3*x, &exp2);
-  },
-  [&](adj::FAD& x){
-    return frexp(1.3*x, &exp2);
-  });
-  EXPECT_EQ(exp1, exp2);
-  mathTest(0.5, std::frexp(2.3*0.5, &exp1), 2.3*0.5,
-  [&](adj::AD& x){
-    return frexp(2.3*x, &exp2);
-  },
-  [&](adj::FAD& x){
-    return frexp(2.3*x, &exp2);
-  });
-  EXPECT_EQ(exp1, exp2);
-  mathTest(0.0, std::frexp(0.0, &exp1),
-std::numeric_limits<double>::quiet_NaN(),
-  [&](adj::AD& x){
-    return frexp(3.3*x, &exp2);
-  },
-  [&](adj::FAD& x){
-    return frexp(3.3*x, &exp2);
-  });
-  EXPECT_EQ(exp1, exp2);
+    mathTest2_all(
+        0.3, 0.5, std::hypot(1.3 * 0.3, 1.3 * 0.5),
+        1.3 * 1.3 * 0.3 / std::hypot(1.3 * 0.3, 1.3 * 0.5),                                 // d1
+        1.3 * 1.3 * 0.5 / std::hypot(1.3 * 0.3, 1.3 * 0.5),                                 // d2
+        1.3 * 1.3 * 1.3 * 0.5 * 1.3 * 0.5 / std::pow(std::hypot(1.3 * 0.3, 1.3 * 0.5), 3),  // d11
+        -(1.3 * 1.3 * 1.3 * 0.5 * 1.3 * 0.3) /
+            std::pow(std::hypot(1.3 * 0.3, 1.3 * 0.5), 3),  // d12
+        -(1.3 * 1.3 * 1.3 * 0.5 * 1.3 * 0.3) /
+            std::pow(std::hypot(1.3 * 0.3, 1.3 * 0.5), 3),                                  // d21
+        1.3 * 1.3 * 1.3 * 0.3 * 1.3 * 0.3 / std::pow(std::hypot(1.3 * 0.3, 1.3 * 0.5), 3),  // d22
+        hypotExprExpr);
+    mathTest_all(0.3, std::hypot(1.3 * 0.3, 0.5), 1.3 * 1.3 * 0.3 / std::hypot(1.3 * 0.3, 0.5),
+                 1.3 * 1.3 * 0.5 * 0.5 / std::pow(std::hypot(1.3 * 0.3, 0.5), 3), hypotExprScalar);
+    mathTest_all(0.5, std::hypot(0.3, 1.3 * 0.5), 1.3 * 1.3 * 0.5 / std::hypot(0.3, 1.3 * 0.5),
+                 1.3 * 1.3 * 0.3 * 0.3 / std::pow(std::hypot(0.3, 1.3 * 0.5), 3), hypotScalarExpr);
 }
-*/
 
 LOCAL_TEST_FUNCTOR1(cbrtAD, cbrt(x))
 TEST(ExpressionsMath, cbrtAD)

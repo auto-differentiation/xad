@@ -62,6 +62,7 @@ using xad::fmin;
 using xad::fmod;
 using xad::fpclassify;
 using xad::frexp;
+using xad::hypot;
 using xad::ilogb;
 using xad::isfinite;
 using xad::isinf;

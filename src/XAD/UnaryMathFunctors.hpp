@@ -196,6 +196,7 @@ XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), -floor(Scalar(b) / a))
 XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b * b)),
                           -Scalar(b) / (a * a + Scalar(b * b)))
 XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
+XAD_MAKE_UNARY_BINFUNCTOR(hypot, Scalar(a) / v, Scalar(a) / v)
 
 template <class Scalar>
 struct ldexp_op
@@ -429,7 +430,6 @@ struct scalar_remquo2_op
 
 /*
  * TODO:
-hypot(T x, T y)
 fma
 logb
 tgamma
