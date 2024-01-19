@@ -63,6 +63,9 @@ set(public_headers
 
                 
 set(srcfiles Tape.cpp ${public_headers})
+if (MSVC)
+    list(APPEND srcfiles ${PROJECT_SOURCE_DIR}/XAD.natvis)
+endif()
 
 xad_add_library(xad STATIC ${srcfiles})
 target_include_directories(xad PUBLIC
