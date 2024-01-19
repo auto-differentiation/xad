@@ -36,7 +36,7 @@ if(MSVC)
     set(xad_cxx_flags -nologo -utf-8 -D_UNICODE -DUNICODE -DWIN32_LEAN_AND_MEAN -DWIN32 -D_WIN32)
     # flag warnings as errors
     set(xad_cxx_flags_warnings -W4 -WX)
-    set(xad_link_natvis_flags "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:/NATVIS:XAD.natvis>")
+    set(xad_link_natvis_flags "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:/NATVIS:${PROJECT_SOURCE_DIR}/XAD.natvis>")
     if(XAD_USE_STRONG_INLINE)
         list(APPEND xad_cxx_flags_warnings -wd4714)  # function marked forceinline wasn't inlined
     endif()
