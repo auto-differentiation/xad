@@ -15,6 +15,45 @@ as well as XAD-specific tests and examples.
 
 ## Getting Started
 
+### Prerequisites
+
+=== "Windows"
+
+    *   [CMake](https://cmake.org), version 3.15 or newer
+    *   Compiler/IDE options:
+        *   Visual Studio 2017 or newer (for Microsoft compilers)
+        *   Visual Studio 2019 or newer with Clang toolset (for Clang)
+    *   [Git client](https://git-scm.com/downloads)
+    *   A recent version of boost, for example using [Chocolatey](https://chocolatey.org/):
+        *   For Visual Studio 2022: `choco install boost-msvc-14.3`
+        *   For Visual Studio 2019: `choco install boost-msvc-14.2`
+    *   Or using manual installers: [Boost Binaries on SourceForge](https://sourceforge.net/projects/boost/files/boost-binaries/)
+
+    For Windows, we recommend the latest [Visual Studio 2022 IDE](https://visualstudio.microsoft.com/downloads/) with its integrated CMake support.
+
+=== "Linux"
+
+    *   [CMake](https://cmake.org), version 3.15 or newer
+    *   Compiler Options:
+        *   GCC 5.4 or newer
+        *   Clang 11 or newer
+    *   [Git client](https://git-scm.com/downloads)
+    *   A recent version of boost, for example:
+        *   Ubuntu or Debian: `sudo apt install libboost-all-dev`
+        *   Fedora or RedHat: `sudo yum install boost-devel`
+
+=== "MacOS"
+
+    *   MacOS 10.9.5 or newer
+    *   [CMake](https://cmake.org), version 3.15 or newer
+    *   Apple Clang 11 or newer
+    *   [Git client](https://git-scm.com/downloads)
+    *   A recent version of boost, for example:
+        *   using [Homebrew](https://brew.sh/): `brew install boost`
+        *   using [Mac Ports](https://www.macports.org/): `sudo port install boost`
+
+### Repository Clone
+
 ### 1. Repository Clone/Checkout
 
 Clone these three repositories into separate folders:
@@ -26,90 +65,128 @@ Clone these three repositories into separate folders:
 It is recommended to either use the lastest master branch for all repositories involved,
 or use matching tags between QuantLib and quantlib-xad.
 
-### 2. Install Boost
+For the remainder of this tutorial, we assume the 3 repositories have been checked out into the following folder structure:
 
-A recent version of boost is a requirement for building QuantLib.
-If you do not have it already, you need to install it into a system path.
-You can do that in one of the following ways, depending on your system:
-
-*   Ubuntu or Debian: `sudo apt install libboost-all-dev`
-*   Fedora or RedHat: `sudo yum install boost-devel`
-*   MacOS using [Homebrew](https://brew.sh/): `brew install boost`
-*   MacOS using [Mac Ports](https://www.macports.org/): `sudo port install boost`
-*   Windows using [Chocolatey](https://chocolatey.org/):
-
-    *   For Visual Studio 2022: `choco install boost-msvc-14.3`
-    *   For Visual Studio 2019: `choco install boost-msvc-14.2`
-    *   For Visual Studio 2017: `choco install boost-msvc-14.1`
-
-*   Windows using manual installers: [Boost Binaries on SourceForge](https://sourceforge.net/projects/boost/files/boost-binaries/)
-
-### 3. Install CMake
-
-You will also need a recent version of CMake (minimum version 3.15.0).
-You can also install this with your favourite package manager
-(e.g. apt, yum, homebrew, chocolatey as above), or obtain it from
-the [CMake downloads page](https://cmake.org/download/).
-
-Note that Microsoft ships Visual Studio with a suitable version
-command-line only version of CMake since Visual Studio 2019
-(the Visual Studio 2017 CMake version is outdated).
-It is available in the `PATH` from a Visual Studio command prompt
-and can alternatively be used directly from the IDE.
-
-### 4. QuantLib CMake Configuration
-
-The build is driven from the QuantLib directory - XAD and quantlib-xad are
-inserted using [QuantLib's extension hook](https://www.quantlib.org/install/cmake.shtml#extensions).
-
-Configure the QuantLib CMake build with setting the following parameters:
-
-*   `QL_EXTERNAL_SUBDIRECTORIES=/path/to/xad;/path/to/quantlib-xad`
-*   `QL_EXTRA_LINK_LIBRARIES=quantlib-xad`
-*   `QL_NULL_AS_FUNCTIONS=ON`
-*   `XAD_STATIC_MSVC_RUNTIME=ON`
-
-For Linux, the command-line for this is:
-
-```shell
-cd QuantLib
-mkdir build
-cd build
-cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
-  -DQL_EXTERNAL_SUBDIRECTORIES="`pwd`/../../xad;`pwd`/../../quantlib-xad" \
-  -DQL_EXTRA_LINK_LIBRARIES=quantlib-xad \
-  -DQL_NULL_AS_FUNCTIONS=ON \
-  -DXAD_STATIC_MSVC_RUNTIME=ON
+```
+quantlib-xad-integration/
+├─ QuantLib/
+├─ XAD/
+├─ quantlib-xad/
 ```
 
-In Windows, you can use the CMake GUI to generate the build files,
-setting the same variables as above.
+created from the master/main branches as:
 
-### 5. Building
+```
+mkdir quantlib-xad-integration
+cd quantlib-xad-integration
+git clone https://github.com/lballabio/QuantLib.git
+git clone https://github.com/auto-differentiation/XAD.git
+git clone https://github.com/auto-differentiation/quantlib-xad.git
+```
 
-The generated build files can now be built using the regular native
-build tools. For example, in Linux `make` can be run,
-and in Visual Studio, the solution can be opened and built.
-Note that we recommend Release mode for Windows builds.
 
-### 6. Running the Tests
+### Building
+
+The build is driven from the `QuantLib` directory - XAD and quantlib-xad are
+inserted using [QuantLib's extension hook](https://www.quantlib.org/install/cmake.shtml#extensions).
+
+quantlib-xad ships with a set of [user presets for CMake](https://github.com/auto-differentiation/quantlib-xad/blob/main/presets/CMakeUserPresets.json) that are designed to work together with 
+the [Standard CMake presets](https://github.com/lballabio/QuantLib/blob/master/CMakePresets.json) that come with QuantLib itself. 
+It is easiest to copy these user presets into the QuantLib checkout folder, as they contain the required settings to enable AAD in QuantLib via XAD,
+and adjust paths and settings as needed. 
+
+The project can then be built as follows:
+
+=== "Visual Studio 2019/2022"
+
+    1. Use "Open Folder" to open the QuantLib directory
+    2. Select the desired preset from the top toolbar (e.g. `windows-xad-msvc-release`)
+    3. Select Project > Build (or press ++f7++)
+
+    See the documentation for [Visual Studio's built-in CMake support](https://learn.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio) for more information.
+
+=== "Command Line"
+
+    Note: The compiler toolset should be in the path. In Windows, start a Visual Studio Developer command prompt with the desired toolset first.
+
+    ```
+    cd QuantLib
+    cmake --preset windows-xad-msvc-release
+    cd build/windows-xad-msvc-release
+    cmake --build .
+    ```
+
+=== "CMake GUI"
+
+    1. Open the CMake GUI and select the source folder for QuantLib
+    2. Select a preset which includes XAD, e.g. `windows-xad-msvc-release`
+    3. Click `Generate`, which creates the native build files provided (in Windows, you should choose one of the Visual Studio generators when using the GUI).
+    4. If the Visual Studio generator was chosen, click `Open Project` to start Visual Studio, where the solution can be built
+
+    More information about how to use the CMake GUI is available from the [official CMake documentation](https://cmake.org/cmake/help/latest/guide/user-interaction/index.html#cmake-gui-tool).
+    
+=== "Manual CMake Variables"
+
+    In case you want to adjust the CMake settings for QuantLib manually, here are the CMake variables that should be set
+    in the QuantLib build (adjust the paths according to your checkout location):
+
+    *   `QL_EXTERNAL_SUBDIRECTORIES=/path/to/xad;/path/to/quantlib-xad`
+    *   `QL_EXTRA_LINK_LIBRARIES=quantlib-xad`
+    *   `QL_NULL_AS_FUNCTIONS=ON`
+    *   `XAD_STATIC_MSVC_RUNTIME=ON`  (if using Windows)
+
+
+### Running the Tests
 
 There are two test executables that get built - the regular QuantLib
 test suite with all the standard tests from the mainline repository,
 as well as the QuantLib XAD test suite from the quantlib-xad repository.
-Both are using the overloaded XAD type for `double`,
+Both are using the overloaded XAD type for QuantLib's `Real`,
 but only the XAD suite checks for the correctness of the derivatives as well.
 
-These executables can simply be run to execute all the tests.
-We recommend to use the parameter `--log_level=message` to see the test
-progress.
-Alternatively, CTest can also be used to execute them.
+Both are regitered with CMake's CTest tool, so they can be run as:
 
-### 7. Running the Examples
+=== "Visual Studio 2019/2022"
+
+    Open the Visual Studio Test Explorer from `Test` -> `Test Explorer` 
+    in the menu. It should run and discover all the tests, and they can be
+    run directly from this window.
+
+=== "Command Line (CTest)"
+
+    From within the build folder, e.g. `build/linux-xad-gcc-release`,
+    the tests can be executed using:
+
+    ```
+    ctest .
+    ```
+
+=== "Command Line (Executables)"
+
+    The test exectuable can also be run directly. For example, if the build
+    folder is `build/linux-xad-gcc-release`, they can be run as:
+
+    QuantLib regular:
+    ```
+    cd test-suite
+    ./quantlib-test-suite --log_level=message
+    ```
+    QuantLib-XAD
+    ```
+    cd quantlib-xad/test-suite
+    ./quantlib-xad-test-suite --log_level=message
+    ```
+
+
+### Running the Examples
 
 Apart from the regular QuantLib examples, there are XAD-specific examples
 in the quantlib-xad repository, in the `Examples` folder.
 These demonstrate the use of XAD to calculate derivatives using AAD.
+
+They are built into the selected build folder within the `QuantLib` folder, 
+e.g. `build/linux-xad-gcc-release/quantlib-xad/Examples`,
+and can be executed directly.
 
 ## Benchmarks
 
@@ -120,7 +197,7 @@ is measured, averaged over several iterations, for accurate performance reportin
 Further, setting the CMake option `QLXAD_DISABLE_AAD` to `ON` builds
 QuantLib and quantlib-xad with the default `double` datatype,
 enabling measurement of the same examples without the overheads involved in using
-a custom active data type.
+a custom active data type (this is exposed in the `*-noxad-*` build presets).
 The benchmark-enabled examples calculate sensitivities using finite differences 
 in that case, 
 which also allows verifying correctness of the result against XAD.
@@ -153,6 +230,6 @@ For general questions about the QuantLib to XAD integration, sharing ideas, enga
 ## Continuous Integration
 
 To ensure continued compatibility with QuantLib's master branch,
-[automated CI/CD checks](https://github.com/xcelerit/quantlib-xad/actions/workflows/ci.yaml) are running in the quantlib-xad repository on a daily basis.
+[automated CI/CD checks](https://github.com/auto-differentiation/quantlib-xad/actions/workflows/ci.yaml) are running in the quantlib-xad repository on a daily basis.
 Potential breaks (for example do to changes in QuantLib) are therefore
 detected early and fixed quickly.
