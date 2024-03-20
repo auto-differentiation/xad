@@ -46,6 +46,21 @@ XAD implements this using operator-overloading in C++,
 allowing to compute derivatives with minimal changes to the program.
 See [automatic differentation mathematical background](https://auto-differentiation.github.io/aad/) for more details.
 
+Application areas:
+
+-   Machine Learning and Deep Learning: Training neural networks or other 
+    machine learning models.
+-   Optimization: Solving optimization problems in engineering and finance.
+-   Numerical Analysis: Enhancing numerical solution methods for differential
+    equations.
+-   Scientific Computing: Simulating physical systems and processes.
+-   Risk Management and Quantitative Finance: Assessing and hedging risk in
+    financial models.
+-   Computer Graphics: Optimizing rendering algorithms.
+-   Robotics: Improving control and simulation of robotic systems.
+-   Meteorology: Enhancing weather prediction models.
+-   Biotechnology: Modeling biological processes and systems.
+
 Key features:
 
 -   Forward and adjoint mode for any order, using operator-overloading
