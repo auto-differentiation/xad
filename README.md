@@ -48,11 +48,14 @@ See [automatic differentation mathematical background](https://auto-differentiat
 
 Application areas:
 
--   Machine Learning and Deep Learning: Training neural networks or other machine learning models.
+-   Machine Learning and Deep Learning: Training neural networks or other 
+    machine learning models.
 -   Optimization: Solving optimization problems in engineering and finance.
--   Numerical Analysis: Enhancing numerical solution methods for differential equations.
+-   Numerical Analysis: Enhancing numerical solution methods for differential
+    equations.
 -   Scientific Computing: Simulating physical systems and processes.
--   Risk Management and Quantitative Finance: Assessing and hedging risk in financial models.
+-   Risk Management and Quantitative Finance: Assessing and hedging risk in
+    financial models.
 -   Computer Graphics: Optimizing rendering algorithms.
 -   Robotics: Improving control and simulation of robotic systems.
 -   Meteorology: Enhancing weather prediction models.
