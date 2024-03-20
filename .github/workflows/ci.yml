@@ -235,6 +235,7 @@ jobs:
           cat /etc/lsb-release
           /lib/x86_64-linux-gnu/libc.so.6
           sudo rm -f /etc/apt/sources.list.d/git-core-ubuntu-ppa-artful.list || true
+          sudo rm -f /etc/apt/sources.list.d/git-core-ubuntu-ppa-xenial.list || true
           sudo apt-get update
           sudo apt-get install -y ccache ninja-build lcov
       - name: GitHub WS Tmp
