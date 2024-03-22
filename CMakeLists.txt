@@ -45,11 +45,22 @@ include(SetupOptions)
 
 if(NOT XAD_DOCS_ONLY)
     include(SetupCompiler)
-    add_subdirectory(src)
+    if(XAD_ENABLE_PYTHON)
+        include(SetupPython)
+    endif()
     if(XAD_ENABLE_TESTS)
         include(SetupTesting)
+    endif()
+
+    add_subdirectory(src)
+    
+    if(XAD_ENABLE_TESTS)
         add_subdirectory(test)
         add_subdirectory(samples)
+    endif()
+    
+    if(XAD_ENABLE_PYTHON)
+        add_subdirectory(bindings/python)
     endif()
 endif()
 

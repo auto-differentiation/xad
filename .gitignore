@@ -396,3 +396,4 @@ dkms.conf
 
 /site
 .venv
+CMakeUserPresets.json

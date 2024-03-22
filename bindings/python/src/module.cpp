@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Functions to price a simple IR Swap
+   Main pybind module definition for the extension module.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -22,27 +22,32 @@
 
 ******************************************************************************/
 
-#pragma once
+#include <XAD/XAD.hpp>
+#include <pybind11/pybind11.h>
+#include "exceptions.hpp"
+#include "math.hpp"
+#include "real.hpp"
+#include "tape.hpp"
 
-/// prices a simple swap, given the discount and floating rates at a range
-/// of cashflow dates (maturities)
-template <class T>
-T priceSwap(const T* discRates, bool isFixedPay, int n, const double* mat, const double* floatRates,
-            double fixedRate, double faceValue)
+namespace py = pybind11;
+
+void py_adj_1st(py::module_ &m)
 {
-    using std::pow;
+    py::module_ adj = m.def_submodule("adj_1st");
+    py_real<AReal>(adj);
+    py_tape(adj);
+}
 
-    T Bfix = 0.0;
-    for (int t = 0; t < n; ++t) {
-        Bfix += faceValue * fixedRate / pow(1.0 + discRates[t], mat[t]);
-    }
-    Bfix += faceValue / pow(1.0 + discRates[n - 1], mat[n - 1]);
+void py_fwd_1st(py::module_ &m)
+{
+    py::module_ fwd = m.def_submodule("fwd_1st");
+    py_real<FReal>(fwd);
+}
 
-    T Bflt = 0.0;
-    for (int t = 0; t < n; ++t) {
-        Bflt += faceValue * floatRates[t] / pow(1.0 + discRates[t], mat[t]);
-    }
-    Bflt += faceValue / pow(1.0 + discRates[n - 1], mat[n - 1]);
-
-    return isFixedPay ? Bflt - Bfix : Bfix - Bflt;
+PYBIND11_MODULE(_xad_autodiff, m)
+{
+    py_adj_1st(m);
+    py_fwd_1st(m);
+    py_math(m);
+    py_exceptions(m);
 }

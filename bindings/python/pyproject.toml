@@ -1,0 +1,106 @@
+##############################################################################
+#   
+#  Python bindings for XAD - poetry-based setup file
+#
+#  This file is part of XAD, a comprehensive C++ library for
+#  automatic differentiation.
+#
+#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+#
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   
+##############################################################################
+
+[tool.poetry]
+name = "xad-autodiff"
+version = "0.0.0"
+description = "High-Performance Automatic Differentiation for Python"
+authors = ["Auto Differentiation Dev Team <dev@auto-differentiation.com>"]
+readme = "README.md"
+homepage = "https://auto-differentiation.github.io"
+repository = "https://github.com/auto-differentiation/XAD"
+documentation = "https://auto-differentiation.github.io/python"
+keywords = [
+    "automatic-differentiation",
+    "derivatives",
+    "machine-learning",
+    "optimisation",
+    "numerical-analysis",
+    "scientific-computing",
+    "risk-management",
+    "computer-graphics",
+    "robotics",
+    "biotechnology",
+    "meteorology",
+    "quant-finance"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "License :: Other/Proprietary License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development"
+]
+license = "AGPL-3.0-or-later"
+include = ["xad_autodiff/_xad_autodiff.*", "xad_autodiff/**/*.pyi"]
+
+[tool.poetry.urls]
+download = "https://pypi.org/project/xad-autodiff/#files"
+tracker = "https://github.com/auto-differentiation/XAD/issues"
+"release notes" = "https://github.com/auto-differentiation/XAD/releases"
+
+[tool.poetry.build]
+script = "build.py"
+generate-setup-file = true
+
+[tool.poetry-dynamic-versioning]
+enable = true
+metadata = false
+
+[tool.poetry.dependencies]
+python= ">=3.8.1,<4.0"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "*"
+black = "*"
+flake8 = "*"
+pytest = "*"
+pybind11-stubgen = "^2.5"
+
+[build-system]
+requires = [
+    "poetry-core>=1.0.0", 
+    "poetry-dynamic-versioning>=1.0.0,<2.0.0",
+    "setuptools>=42"
+]
+build-backend = "poetry_dynamic_versioning.backend"
+
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311", "py312"]

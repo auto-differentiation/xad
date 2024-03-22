@@ -3,7 +3,7 @@
 %  Matlab version of the smax function
 %
 %  This file is part of the XAD user manual.
-%  Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+%  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 %  See the file index.rst for copying condition. 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
