@@ -24,9 +24,13 @@
 
 pybind11_add_module(_xad_autodiff MODULE 
     module.cpp math.hpp tape.hpp real.hpp exceptions.hpp 
+    ${PROJECT_SOURCE_DIR}/src/Tape.cpp
 )
 
-target_link_libraries(_xad_autodiff PRIVATE XAD::xad)
+add_dependencies(_xad_autodiff xad)
+target_include_directories(_xad_autodiff PRIVATE ${PROJECT_BINARY_DIR}/src ${PROJECT_SOURCE_DIR}/src)
+target_compile_options(_xad_autodiff PRIVATE ${xad_cxx_flags} ${xad_cxx_extra})
+
 set_target_properties(_xad_autodiff PROPERTIES CXX_STANDARD 17)
 if(MSVC)
     # to allow using M_PI and the like

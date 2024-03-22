@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Python bindings as [xad-autodiff](https://pypi.org/project/xad-autodiff/)
 - Support for enhanced debugger visualisations in Visual Studio (@dholden3)
 
 ### Changed
