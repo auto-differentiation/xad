@@ -25,8 +25,7 @@
 """Python bindings for the XAD comprehensive library for automatic differentiation"""
 
 from typing import Any, Union
-from ._xad_autodiff import adj_1st
-from ._xad_autodiff import fwd_1st
+from ._xad_autodiff import adj_1st, fwd_1st
 
 __all__ = ["value", "derivative"]
 

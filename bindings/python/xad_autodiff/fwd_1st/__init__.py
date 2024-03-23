@@ -28,6 +28,15 @@ from xad_autodiff._xad_autodiff.fwd_1st import Real
 __all__ = ["Real"]
 
 
+setattr(Real, "value", property(Real.getValue, doc="get the underlying float value of the object"))
+setattr(
+    Real,
+    "derivative",
+    property(
+        Real.getDerivative, Real.setDerivative, doc="get/set the derivative of the object"
+    ),
+)
+
 # additional methods inserted on the python side
 def _as_integer_ratio(x: Real) -> Tuple[int, int]:
     """Returns a rational representation of the float with numerator and denominator in a tuple"""

@@ -36,10 +36,15 @@ using FReal = xad::FReal<double>;
 
 inline void add_extra_methods(py::class_<AReal>& c)
 {
-    c.def("setAdjoint", &AReal::setAdjoint, "set adjoint of this variable");
-    c.def("shouldRecord", &AReal::shouldRecord,
-          "Check if the variable is registered on tape and should record");
-    c.def("getSlot", &AReal::getSlot, "Get the slot of this variable on the tape");
+    c.def(
+         "setAdjoint", [](AReal& self, double x) { self.setAdjoint(x); },
+         "set adjoint of this variable")
+        .def(
+            "shouldRecord", [](const AReal& self) { return self.shouldRecord(); },
+            "Check if the variable is registered on tape and should record")
+        .def(
+            "getSlot", [](const AReal& self) { return self.getSlot(); },
+            "Get the slot of this variable on the tape");
 }
 
 inline void add_extra_methods(py::class_<FReal>&) {}
@@ -72,19 +77,20 @@ inline T py_floordiv(const T1& x, const T2& y)
 template <class T>
 void py_real(py::module_& m)
 {
-    auto& c = py::class_<T>(m, "Real", py::dynamic_attr(), "active arithmetic type for first order adjoint mode")
+    auto& c = py::class_<T>(m, "Real", py::dynamic_attr(),
+                            "active arithmetic type for first order adjoint mode")
                   .def(py::init<double>())
-                  .def(py::init<>())
-                  .def(py::self == py::self)
-                  .def(py::self != py::self)
-                  .def(py::self >= py::self)
-                  .def(py::self <= py::self)
-                  .def(py::self > py::self)
-                  .def(py::self < py::self);
+                  .def(py::init<>());
 
     add_extra_methods(c);
 
-    c.def("__int__", [](const T& d) { return int(d.getValue()); })
+    c.def(py::self == py::self)
+        .def(py::self != py::self)
+        .def(py::self >= py::self)
+        .def(py::self <= py::self)
+        .def(py::self > py::self)
+        .def(py::self < py::self)
+        .def("__int__", [](const T& d) { return int(d.getValue()); })
         .def("__bool__", [](const T& d) { return bool(d); })
         .def("__neg__", [](const T& d) { return T(-d); })
         .def("__pos__", [](const T& d) { return d; })
@@ -180,19 +186,11 @@ void py_real(py::module_& m)
             "set the adjoint of this variable")
         .def(
             "getDerivative", [](const T& self) { return self.getDerivative(); },
-            "get the adjoint of this variable");
-    c.def(
-         "conjugate", [](const T& x) { return x; }, "complex conjugate")
+            "get the adjoint of this variable")
+        .def(
+            "conjugate", [](const T& x) { return x; }, "complex conjugate")
         .def(
             "real", [](const T& x) { return x; }, "real part")
         .def(
             "imag", [](const T&) { return T(0.0); }, "imaginary part");
-    // properties
-    c.def_property_readonly(
-        "value", [](const T& self) { return self.getValue(); },
-        "read-only property to get the value");
-    c.def_property(
-        "derivative", [](const T& self) { return self.getDerivative(); },
-        [](T& self, double v) { self.setDerivative(v); },
-        "read-write property to get/set derivatives");
 }
