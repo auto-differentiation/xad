@@ -70,9 +70,9 @@ license = "AGPL-3.0-or-later"
 include = ["xad_autodiff/_xad_autodiff.*", "xad_autodiff/**/*.pyi"]
 
 [tool.poetry.urls]
-download = "https://pypi.org/project/xad-autodiff/#files"
-tracker = "https://github.com/auto-differentiation/XAD/issues"
-"release notes" = "https://github.com/auto-differentiation/XAD/releases"
+Download = "https://pypi.org/project/xad-autodiff/#files"
+Tracker = "https://github.com/auto-differentiation/XAD/issues"
+"Release notes" = "https://github.com/auto-differentiation/XAD/releases"
 
 [tool.poetry.build]
 script = "build.py"
