@@ -38,7 +38,7 @@ using AReal = mode::active_type;
 
 void py_tape(py::module_ &m)
 {
-    py::class_<Tape>(m, "Tape")
+    py::class_<Tape>(m, "Tape", py::dynamic_attr())
         .def(py::init([] { return std::make_unique<Tape>(false); }),
              "constructs a tape without activating it")
         .def(
