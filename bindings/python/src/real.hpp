@@ -77,14 +77,12 @@ inline T py_floordiv(const T1& x, const T2& y)
 template <class T>
 void py_real(py::module_& m)
 {
-    auto& c = py::class_<T>(m, "Real", py::dynamic_attr(),
-                            "active arithmetic type for first order adjoint mode")
-                  .def(py::init<double>())
-                  .def(py::init<>());
+    auto c = py::class_<T>(m, "Real", py::dynamic_attr(),
+                           "active arithmetic type for first order adjoint mode");
 
-    add_extra_methods(c);
-
-    c.def(py::self == py::self)
+    c.def(py::init<double>())
+        .def(py::init<>())
+        .def(py::self == py::self)
         .def(py::self != py::self)
         .def(py::self >= py::self)
         .def(py::self <= py::self)
@@ -193,4 +191,6 @@ void py_real(py::module_& m)
             "real", [](const T& x) { return x; }, "real part")
         .def(
             "imag", [](const T&) { return T(0.0); }, "imaginary part");
+
+    add_extra_methods(c);
 }
