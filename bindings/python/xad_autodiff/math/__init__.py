@@ -29,7 +29,7 @@
 """
 
 from typing import Union, List
-from .._xad_autodiff.math import (
+from xad_autodiff._xad_autodiff.math import (
     sqrt,
     pow,
     log10,

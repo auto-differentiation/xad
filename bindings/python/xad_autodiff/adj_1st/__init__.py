@@ -23,7 +23,7 @@
 ##############################################################################
 
 from typing import Tuple, Type
-from .._xad_autodiff.adj_1st import Real, Tape
+from xad_autodiff._xad_autodiff.adj_1st import Real, Tape
 
 __all__ = ["Real", "Tape"]
 

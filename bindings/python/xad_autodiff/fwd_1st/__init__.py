@@ -23,7 +23,7 @@
 ##############################################################################
 
 from typing import Tuple, Type
-from .._xad_autodiff.fwd_1st import Real
+from xad_autodiff._xad_autodiff.fwd_1st import Real
 
 __all__ = ["Real"]
 

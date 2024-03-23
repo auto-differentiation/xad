@@ -22,7 +22,7 @@
 #
 ##############################################################################
 
-from .._xad_autodiff.exceptions import (
+from xad_autodiff._xad_autodiff.exceptions import (
     XadException,
     TapeAlreadyActive,
     OutOfRange,

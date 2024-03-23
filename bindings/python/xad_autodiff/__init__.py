@@ -25,12 +25,10 @@
 """Python bindings for the XAD comprehensive library for automatic differentiation"""
 
 from typing import Any, Union
-from . import adj_1st
-from . import fwd_1st
-from . import math
-from . import exceptions
+from ._xad_autodiff import adj_1st
+from ._xad_autodiff import fwd_1st
 
-__all__ = ["value", "derivative", "math", "adj_1st", "fwd_1st", "exceptions"]
+__all__ = ["value", "derivative"]
 
 
 def value(x: Union[adj_1st.Real, fwd_1st.Real, Any]) -> float:
