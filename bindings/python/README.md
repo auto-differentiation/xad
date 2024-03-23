@@ -2,14 +2,32 @@
 [![PyPI version](https://badge.fury.io/py/xad-autodiff.svg)](https://pypi.org/project/xad-autodiff/)
 
 
-XAD is a cutting-edge library designed for automatic differentiation, tailored for both novices and experts. This library excels in production environments, offering unparalleled performance with an emphasis on ease of use. [Automatic differentiation](https://auto-differentiation.github.io/aad/), a critical technique for computing derivatives within computer programmes, is made efficient and straightforward with XAD. Whether you're performing simple arithmetic or complex mathematical functions, XAD ensures accurate and automatic derivative calculations.
+XAD is a library designed for [automatic differentiation](https://auto-differentiation.github.io/aad/), aimed at both beginners and advanced users. It is intended for use in production environments, emphasizing performance and ease of use. The library facilitates the computation of derivatives within computer programs, making the process efficient and straightforward for a wide range of mathematical functions, from simple arithmetic to complex calculations, ensuring accurate and automatic derivative computations.
 
-Python developers will find the Python bindings for XAD incredibly useful, featuring:
+The Python bindings for XAD offer the following features:
 
--   Support for both forward and adjoint modes at the first order.
--   Robust exception-safety guarantees.
--   Unmatched performance, proven in extensive production deployments.
--   Discover how XAD can revolutionise your computational tasks. Dive into our comprehensive [documentation](https://auto-differentiation.github.io/python) and start integrating XAD into your projects today.
+- Support for both forward and adjoint modes at the first order.
+- Strong exception-safety guarantees.
+- High performance, as demonstrated in extensive production use.
+
+For more details and to integrate XAD into your projects, consult the comprehensive [documentation](https://auto-differentiation.github.io/python).
+
+## Application Areas
+
+Automatic differentiation has many application areas, for example:
+
+-   **Machine Learning and Deep Learning:** Training neural networks or other 
+    machine learning models.
+-   **Optimization:** Solving optimization problems in engineering and finance.
+-   **Numerical Analysis:** Enhancing numerical solution methods for 
+    differential equations.
+-   **Scientific Computing:** Simulating physical systems and processes.
+-   **Risk Management and Quantitative Finance:** Assessing and hedging risk in
+    financial models.
+-   **Computer Graphics:** Optimizing rendering algorithms.
+-   **Robotics:** Improving control and simulation of robotic systems.
+-   **Meteorology:** Enhancing weather prediction models.
+-   **Biotechnology:** Modeling biological processes and systems.
 
 ## Getting Started
 
