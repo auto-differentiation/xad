@@ -56,7 +56,7 @@ inline T py_fmod(const T1& x, const T2& y)
 }
 
 template <class T, class T1, class T2>
-inline std::pair<T,T> py_divmod(const T1& x, const T2& y) 
+inline std::pair<T, T> py_divmod(const T1& x, const T2& y)
 {
     T mod = py_fmod<T>(x, y);
     T div = (x - mod) / y;
@@ -173,11 +173,14 @@ void py_real(py::module_& m)
         .def("__rfloordiv__", [](const T& y, double x) { return py_floordiv<T>(x, y); })
         .def("__rfloordiv__", [](const T& y, int x) { return py_floordiv<T>(x, y); })
         // to set/get derivatives
-        .def("getValue", py::overload_cast<>(&T::getValue, py::const_), "get the underlying value")
-        .def("setDerivative", py::overload_cast<double>(&T::setDerivative),
-             "set the adjoint of this variable")
-        .def("getDerivative", py::overload_cast<>(&T::getDerivative, py::const_),
-             "get the adjoint of this variable");
+        .def(
+            "getValue", [](const T& self) { return self.getValue(); }, "get the underlying value")
+        .def(
+            "setDerivative", [](T& self, double v) { self.setDerivative(v); },
+            "set the adjoint of this variable")
+        .def(
+            "getDerivative", [](const T& self) { return self.getDerivative(); },
+            "get the adjoint of this variable");
     c.def(
          "conjugate", [](const T& x) { return x; }, "complex conjugate")
         .def(
@@ -185,9 +188,11 @@ void py_real(py::module_& m)
         .def(
             "imag", [](const T&) { return T(0.0); }, "imaginary part");
     // properties
-    c.def_property_readonly("value", py::overload_cast<>(&T::getValue, py::const_),
-                            "read-only property to get the value");
-    c.def_property("derivative", py::overload_cast<>(&T::getDerivative, py::const_),
-                   py::overload_cast<double>(&T::setDerivative),
-                   "read-write property to get/set derivatives");
+    c.def_property_readonly(
+        "value", [](const T& self) { return self.getValue(); },
+        "read-only property to get the value");
+    c.def_property(
+        "derivative", [](const T& self) { return self.getDerivative(); },
+        [](T& self, double v) { self.setDerivative(v); },
+        "read-write property to get/set derivatives");
 }
