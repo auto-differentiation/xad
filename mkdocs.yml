@@ -169,4 +169,5 @@ nav:
     - CheckpointCallback: ref/chkpt_cb.md
     - Exceptions: ref/exceptions.md
     - Version Information: ref/version.md
+  - Python: python.md
   - About: about.md

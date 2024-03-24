@@ -124,6 +124,10 @@ This can be used to assign a value to the adjoint, as `#!c++ x.derivative() = 1.
 which is equivalent to `setDerivative`.
 It can also be used as a replacement for `getDerivative`.
 
+#### `getSlot`
+
+`#!c++ slot_type getSlot() const` returns the slot of the variable on the tape.
+
 #### `shouldRecord`
 
 `#!c++ bool shouldRecord() const` checks if the variable has been registered with a tape and should therefore
