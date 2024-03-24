@@ -134,7 +134,7 @@ def test_set_derivative_value():
         t.registerInput(x)
         t.setDerivative(x, 1.0)
         assert t.derivative(x) == 1.0
-        with pytest.raises(exceptions.OutOfRange) as e:
+        with pytest.raises(exceptions.OutOfRange):
             derivative(t.setDerivative(1231, 0.0))
 
 

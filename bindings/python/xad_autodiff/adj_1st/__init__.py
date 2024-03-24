@@ -29,16 +29,16 @@ __all__ = ["Real", "Tape"]
 
 
 def _register_inputs(self, inputs):
-    for input in inputs:
-        self.registerInput(input)
+    for i in inputs:
+        self.registerInput(i)
 
 
 Tape.registerInputs = _register_inputs
 
 
 def _register_outputs(self, outputs):
-    for output in outputs:
-        self.registerOutput(output)
+    for o in outputs:
+        self.registerOutput(o)
 
 
 Tape.registerOutputs = _register_outputs

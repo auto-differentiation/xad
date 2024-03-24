@@ -61,6 +61,7 @@ def test_exceptions_adjoints_not_initialized(exception):
             t.registerInput(x)
             t.newRecording()
             y = x * x
+            t.registerOutput(y)
             t.computeAdjoints()
         assert "At least one derivative must be set before computing adjoint" in str(e)
 

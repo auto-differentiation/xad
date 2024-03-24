@@ -23,7 +23,7 @@
 ##############################################################################
 
 """XAD math module - mimics the standard math module, but allows using XAD active types
-   as arguments. Note that it's also possible to call the functions contained with 
+   as arguments. Note that it's also possible to call the functions contained with
    float arguments (passive type), to allow seamless integration with active and passive
    data types.
 """
@@ -137,7 +137,6 @@ __all__ = [
     "isfinite",
     "isinf",
     "isnan",
-    
 ]
 
 import xad_autodiff as xad
@@ -151,17 +150,22 @@ def hypot(*inputs: List[Union["xad.adj_1st.Real", "xad.fwd_1st.Real", float, int
 def dist(p: Union["xad.adj_1st.Real", "xad.fwd_1st.Real", float, int], q):
     return sqrt(sum(pow(px - qx, 2) for px, qx in zip(p, q)))
 
+
 def isclose(a, b, *args, **kwargs):
     return _math.isclose(xad.value(a), xad.value(b), *args, **kwargs)
+
 
 def isfinite(x):
     return _math.isfinite(xad.value(x))
 
+
 def isinf(x):
     return _math.isinf(xad.value(x))
 
+
 def isnan(x):
     return _math.isnan(xad.value(x))
+
 
 # constants
 pi = _math.pi

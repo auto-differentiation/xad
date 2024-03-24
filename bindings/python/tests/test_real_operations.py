@@ -327,7 +327,7 @@ def test_truncation_funcs(ad_type, func):
     assert func(ad_type(2.845)) == func(2.845)
     assert func(ad_type(-2.845)) == func(-2.845)
     assert func(ad_type(0.0)) == func(0.0)
-    assert type(func(ad_type(1.1))) == int
+    assert isinstance(func(ad_type(1.1)), int)
 
 
 @pytest.mark.parametrize("ad_type", [AReal, FReal], ids=["adj", "fwd"])

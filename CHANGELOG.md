@@ -9,16 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Python bindings as [xad-autodiff](https://pypi.org/project/xad-autodiff/)
-- Support for enhanced debugger visualisations in Visual Studio (@dholden3)
+-   Python bindings as [xad-autodiff](https://pypi.org/project/xad-autodiff/)
+-   Added `std::is_signed` trait to `StdCompatibility.hpp` header for consistency
+-   Support for enhanced debugger visualisations in Visual Studio (@dholden3)
 
 ### Changed
 
-### Deprecated
-
-### Removed
-
-### Fixed
+-   Improved documentation for quantlib-xad build
+-   Cleaned up output of Swap Pricer example
 
 ## [1.4.1] - 2024-01-10
 
@@ -78,10 +76,13 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 ### Added
 
--   QuantLib integration by means of the [quantlib-xad](https://github.com/auto-differentiation/quantlib-xad) integration module
+-   QuantLib integration by means of the 
+    [quantlib-xad](https://github.com/auto-differentiation/quantlib-xad) 
+    integration module
 -   Full MacOS support
 -   Better CI pipeline with more platforms and compilers tested
--   Code coverage and quality measured on pull requests and reported in [README.md](README.md)
+-   Code coverage and quality measured on pull requests and reported 
+    in [README.md](README.md)
 -   More tests to improve code coverage
 -   Status badges in [README.md](README.md)
 -   Documentation updates
