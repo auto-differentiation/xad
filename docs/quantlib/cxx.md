@@ -3,7 +3,7 @@ description: >-
   As a demonstrator for integration with real-world code, as of version 1.28 (October 2022), QuantLib is AAD-enabled with XAD.
 ---
 
-# QuantLib Integration
+# C++ QuantLib Integration
 
 As a demonstrator of integration with real-world code, the latest release of [QuantLib](https://www.quantlib.org) is AAD-enabled with XAD.
 The performance achieved on sample applications is many-fold superior to what has been reported previously with other tools.
