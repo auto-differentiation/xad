@@ -29,7 +29,8 @@ Summary of performance benchmarks:
 | 69 | 198ms | 370ms | 13,860ms | 1.87x | 37.4x |
 
 Benchmark configuration details include:
-- `QuantLib` and `QuantLib-Risks` version: 1.33
+- `QuantLib` version: 1.33
+- `QuantLib-Risks` version: 1.33.1
 - `xad-autodiff` version: 1.5.0
 - Operating on Ubuntu 22.04 with GCC 11.4.0
 - Hardware specs include 128GB RAM and an Intel(R) Xeon(R) W-2295 CPU @ 3.00GHz.
