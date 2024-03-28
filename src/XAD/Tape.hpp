@@ -91,13 +91,8 @@ class Tape
     Tape& operator=(const Tape&) = delete;
 
     // recording control
-    XAD_INLINE void activate()
-    {
-        if (active_tape_ != nullptr)
-            throw TapeAlreadyActive();
-        else
-            active_tape_ = this;
-    }
+    XAD_INLINE void activate() { setActive(this); }
+
     XAD_INLINE void deactivate()
     {
         if (active_tape_ == this)
@@ -105,6 +100,16 @@ class Tape
     }
     XAD_INLINE bool isActive() const { return active_tape_ == this; }
     XAD_INLINE static Tape* getActive() { return active_tape_; }
+
+    XAD_INLINE static void setActive(Tape* t)
+    {
+        if (active_tape_ != nullptr)
+            throw TapeAlreadyActive();
+        else
+            active_tape_ = t;
+    }
+
+    XAD_INLINE static void deactivateAll() { active_tape_ = nullptr; }
 
     XAD_INLINE void registerInput(active_type& inp)
     {
