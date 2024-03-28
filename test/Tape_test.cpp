@@ -62,6 +62,33 @@ TEST(Tape, canInitializeDeactivated)
     EXPECT_NE(nullptr, Tape<float>::getActive());
 }
 
+TEST(Tape, canActivateStatically)
+{
+    using xad::Tape;
+    Tape<float> s(false);
+
+    EXPECT_FALSE(s.isActive());
+    EXPECT_EQ(nullptr, Tape<float>::getActive());
+
+    xad::Tape<float>::setActive(&s);
+
+    EXPECT_TRUE(s.isActive());
+    EXPECT_NE(nullptr, Tape<float>::getActive());
+}
+
+TEST(Tape, canDeactivateGlobally)
+{
+    using xad::Tape;
+
+    EXPECT_EQ(nullptr, Tape<double>::getActive());
+
+    Tape<double> s;
+
+    EXPECT_TRUE(s.isActive());
+    Tape<double>::deactivateAll();
+    EXPECT_FALSE(s.isActive());
+}
+
 TEST(Tape, isMovable)
 {
     xad::Tape<double> s(false);
