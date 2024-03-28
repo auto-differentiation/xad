@@ -5,17 +5,16 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [1.5.1] - 2024-03-28
+
+This is a patch release to allow interoperability with the QuantLib-Risks 
+Python package.
 
 ### Added
 
-### Changed
+-   added static functions to `Tape` to activate and deactivate a specific 
+    tape instance
 
-### Deprecated
-
-### Removed
-
-### Fixed
 
 ## [1.5.0] - 2024-03-25
 
@@ -108,7 +107,7 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/XAD/compare/v1.5.0...HEAD
+[1.5.1]: https://github.com/auto-differentiation/XAD/compare/v1.5.0...v1.5.1
 
 [1.5.0]: https://github.com/auto-differentiation/XAD/compare/v1.4.1...v1.5.0
 
