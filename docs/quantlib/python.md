@@ -16,7 +16,7 @@ can be calculated [xad-autodiff](../python.md).
 
 ## Performance
 
-To gauge the performance impact of calculating sensitivities, we leverage the [multi-curve bootstrapping example](https://github.com/auto-differentiation/QuantLib-Risks/blob/v1.33/Python/examples/multicurve-bootstrapping.py). This setup incorporates a wide array of quotes to construct a term structure for swap pricing. It prices a forward-starting 5-year swap, set to commence 15 months into the future, with a calculation of 69 sensitivities covering all market quotes used in curve construction and select swap parameters like nominal, fixed rate, and spread.
+To gauge the performance impact of calculating sensitivities, we leverage the [multi-curve bootstrapping example](https://github.com/auto-differentiation/QuantLib-Risks/blob/master/Python/examples/multicurve-bootstrapping.py). This setup incorporates a wide array of quotes to construct a term structure for swap pricing. It prices a forward-starting 5-year swap, set to commence 15 months into the future, with a calculation of 69 sensitivities covering all market quotes used in curve construction and select swap parameters like nominal, fixed rate, and spread.
 
 Performance metrics are drawn from averaging execution times over 20 runs for stability. Initial benchmarks using the standard QuantLib package clock in at 198ms for pricing alone. Switching to `QuantLib-Risks` for simultaneous pricing and sensitivity analysis results in an execution time of 370ms, demonstrating that *all sensitivities can be obtained within approximately 1.87x of the original pricing time*.
 
@@ -30,8 +30,8 @@ Summary of performance benchmarks:
 
 Benchmark configuration details include:
 - `QuantLib` version: 1.33
-- `QuantLib-Risks` version: 1.33.1
-- `xad-autodiff` version: 1.5.0
+- `QuantLib-Risks` version: 1.33.2
+- `xad-autodiff` version: 1.5.1
 - Operating on Ubuntu 22.04 with GCC 11.4.0
 - Hardware specs include 128GB RAM and an Intel(R) Xeon(R) W-2295 CPU @ 3.00GHz.
 
