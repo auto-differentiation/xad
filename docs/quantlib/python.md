@@ -29,6 +29,7 @@ Summary of performance benchmarks:
 | 69 | 198ms | 370ms | 13,860ms | 1.87x | 37.4x |
 
 Benchmark configuration details include:
+
 - `QuantLib` version: 1.33
 - `QuantLib-Risks` version: 1.33.2
 - `xad-autodiff` version: 1.5.1
