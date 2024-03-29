@@ -1,10 +1,11 @@
 ---
 description: >
-  Quick examples for calculating forward, adjoint, and higher order derivatives with the XAD automatic differentiation tool.
+  Examples for calculating forward, adjoint, and higher order derivatives with the XAD automatic differentiation tool.
+hide:
+  - navigation
 ---
 
-
-# Simple Examples
+# Examples
 
 To quickly get an idea how using XAD looks like in practice,
 see the examples below.
@@ -13,7 +14,7 @@ is callable with the active data type for algorithmic differentiation.
 
 Note that XAD ships with a [set of examples](https://github.com/auto-differentiation/XAD/tree/main/samples) that can be used as a starting point for development.
 Further, for examples how to use it with a large-scale project,
-please see [QuantLib Integration](quantlib.md).
+please see [QuantLib Integration](quantlib/cxx.md).
 
 ## First Order Forward Mode
 

@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -51,6 +51,7 @@ using ::std::fabs;
 using ::std::floor;
 using ::std::fmod;
 using ::std::frexp;
+using ::std::hypot;
 using ::std::ldexp;
 using ::std::log;
 using ::std::log10;
@@ -117,6 +118,7 @@ using ::std::fmax;
 using ::std::fmin;
 using ::std::fmod;
 using ::std::fpclassify;
+using ::std::hypot;
 using ::std::isfinite;
 using ::std::isinf;
 using ::std::isnan;

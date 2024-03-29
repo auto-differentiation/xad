@@ -5,7 +5,7 @@
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -63,6 +63,9 @@ set(public_headers
 
                 
 set(srcfiles Tape.cpp ${public_headers})
+if (MSVC)
+    list(APPEND srcfiles ${PROJECT_SOURCE_DIR}/XAD.natvis)
+endif()
 
 xad_add_library(xad STATIC ${srcfiles})
 target_include_directories(xad PUBLIC

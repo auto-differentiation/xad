@@ -5,7 +5,7 @@
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -60,3 +60,5 @@ else()
 endif()
 option(XAD_ALLOW_INT_CONVERSION "Add real->int conversion operator, potentially missing to track dependencies" ON)
 
+# Bindings
+option(XAD_ENABLE_PYTHON "Enable building the XAD Python module" OFF)

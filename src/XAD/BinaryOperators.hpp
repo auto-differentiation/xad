@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -45,6 +45,7 @@ XAD_BINARY_OPERATOR(min, min_op)
 XAD_BINARY_OPERATOR(fmin, fmin_op)
 XAD_BINARY_OPERATOR(fmod, fmod_op)
 XAD_BINARY_OPERATOR(atan2, atan2_op)
+XAD_BINARY_OPERATOR(hypot, hypot_op)
 XAD_BINARY_OPERATOR(smooth_abs, smooth_abs_op)
 XAD_BINARY_OPERATOR(nextafter, nextafter_op)
 

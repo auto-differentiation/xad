@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -220,8 +220,6 @@ struct fmod_op
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const { return -floor(a / b); }
 };
 
-/////////// atan2
-
 template <class Scalar>
 struct atan2_op
 {
@@ -234,6 +232,29 @@ struct atan2_op
     {
         return -a / (a * a + b * b);
     }
+};
+
+template <class Scalar>
+struct hypot_op
+{
+    XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const { return hypot(a, b); }
+    XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar&, const Scalar& v) const
+    {
+        return a / v;
+    }
+    XAD_INLINE Scalar derivative_b(const Scalar&, const Scalar& b, const Scalar& v) const
+    {
+        return b / v;
+    }
+};
+
+template <class Scalar>
+struct OperatorTraits<hypot_op<Scalar> >
+{
+    enum
+    {
+        useResultBasedDerivatives = 1
+    };
 };
 
 template <class Scalar>

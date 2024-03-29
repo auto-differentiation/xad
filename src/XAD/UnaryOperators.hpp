@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -85,6 +85,8 @@ XAD_UNARY_BINSCAL1(atan2, scalar_atan21_op)
 XAD_UNARY_BINSCAL2(atan2, scalar_atan22_op)
 XAD_UNARY_BINSCAL1(nextafter, scalar_nextafter1_op)
 XAD_UNARY_BINSCAL2(nextafter, scalar_nextafter2_op)
+XAD_UNARY_BINSCAL1(hypot, scalar_hypot1_op)
+XAD_UNARY_BINSCAL2(hypto, scalar_hypot2_op)
 
 // pown (integral exponents)
 template <class Scalar, class Expr>

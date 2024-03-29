@@ -14,8 +14,8 @@ It targets production-quality code at any scale, striving for both ease of use a
     <a href="https://github.com/auto-differentiation/XAD/blob/main/LICENSE.md">
         <img src="https://img.shields.io/github/license/auto-differentiation/XAD?label=License" alt="License" style="max-width: 100%;">
     </a>
-    <a href="https://doi.org/10.5281/zenodo.8252863">
-        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.8252863.svg" alt="DOI" style="max-width: 100%;">
+    <a href="https://doi.org/10.5281/zenodo.10867823">
+        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.10867823.svg" alt="DOI" style="max-width: 100%;">
     </a>
     <a href="https://github.com/auto-differentiation/XAD/blob/main/CONTRIBUTING.md">
         <img src="https://img.shields.io/badge/PRs%20-welcome-brightgreen.svg" alt="PRs Welcome" style="max-width: 100%;">
@@ -45,6 +45,21 @@ the chain rule can be applied repeatedly to calculate partial derivatives automa
 XAD implements this using operator-overloading in C++,
 allowing to compute derivatives with minimal changes to the program.
 See [automatic differentation mathematical background](https://auto-differentiation.github.io/aad/) for more details.
+
+Application areas:
+
+-   Machine Learning and Deep Learning: Training neural networks or other 
+    machine learning models.
+-   Optimization: Solving optimization problems in engineering and finance.
+-   Numerical Analysis: Enhancing numerical solution methods for differential
+    equations.
+-   Scientific Computing: Simulating physical systems and processes.
+-   Risk Management and Quantitative Finance: Assessing and hedging risk in
+    financial models.
+-   Computer Graphics: Optimizing rendering algorithms.
+-   Robotics: Improving control and simulation of robotic systems.
+-   Meteorology: Enhancing weather prediction models.
+-   Biotechnology: Modeling biological processes and systems.
 
 Key features:
 

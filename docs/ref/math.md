@@ -201,6 +201,11 @@ For derivatives, we therefore consider them both the same and calculate derivati
 
 `#!c++ T cbrt(T x)` computes the cubic root of `x`.
 
+#### `hypot`
+
+`#!c++ T hypot(T x, T y)` computes `sqrt(x*x + y*y)` without undue overflow or underflow at 
+intermediate stages of the computation.
+
 #### `pow`
 
 `#!c++ T pow(T x, T y)` computes `x` to the power of `y`.

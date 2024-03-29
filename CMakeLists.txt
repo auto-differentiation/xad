@@ -5,7 +5,7 @@
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -45,11 +45,22 @@ include(SetupOptions)
 
 if(NOT XAD_DOCS_ONLY)
     include(SetupCompiler)
-    add_subdirectory(src)
+    if(XAD_ENABLE_PYTHON)
+        include(SetupPython)
+    endif()
     if(XAD_ENABLE_TESTS)
         include(SetupTesting)
+    endif()
+
+    add_subdirectory(src)
+    
+    if(XAD_ENABLE_TESTS)
         add_subdirectory(test)
         add_subdirectory(samples)
+    endif()
+    
+    if(XAD_ENABLE_PYTHON)
+        add_subdirectory(bindings/python)
     endif()
 endif()
 

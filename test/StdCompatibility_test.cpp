@@ -71,6 +71,7 @@ TEST(StdCompatibility, canUseStdMath)
     EXPECT_THAT(std::asinh(x).getValue(), DoubleNear(std::asinh(xd), 1e-9));
     EXPECT_THAT(std::atanh(x).getValue(), DoubleNear(std::atanh(xd), 1e-9));
     EXPECT_THAT(std::atan2(x, x).getValue(), DoubleNear(std::atan2(xd, xd), 1e-9));
+    EXPECT_THAT(std::hypot(x, x).getValue(), DoubleNear(std::hypot(xd, xd), 1e-9));
 
     EXPECT_THAT(std::exp(x).getValue(), DoubleNear(std::exp(xd), 1e-9));
     EXPECT_THAT(std::log(x).getValue(), DoubleNear(std::log(xd), 1e-9));

@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -844,9 +844,39 @@ TYPED_TEST(ComplexTest, AddComplex)
     EXPECT_THAT(xad::value(ret.imag()), DoubleNear(40.8, 1e-9));
 }
 
+TYPED_TEST(ComplexTest, AddComplexDouble)
+{
+    auto z1 = std::complex<TypeParam>(1.2, -1.2);
+    auto z2 = std::complex<double>(1.2, 42.0);
+    auto ret = z1 + z2;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(40.8, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, AddDoubleComplex)
+{
+    auto z1 = std::complex<double>(1.2, -1.2);
+    auto z2 = std::complex<TypeParam>(1.2, 42.0);
+    auto ret = z1 + z2;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(40.8, 1e-9));
+}
+
 TYPED_TEST(ComplexTest, AddScalar)
 {
     auto z = std::complex<TypeParam>(1.2, -1.2);
+    TypeParam s = 1.2;
+    auto ret1 = z + s;
+    auto ret2 = s + z;
+    EXPECT_THAT(xad::value(ret1.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret1.imag()), DoubleNear(-1.2, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(-1.2, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, AddScalarDoubleCplx)
+{
+    auto z = std::complex<double>(1.2, -1.2);
     TypeParam s = 1.2;
     auto ret1 = z + s;
     auto ret2 = s + z;
@@ -860,17 +890,35 @@ TYPED_TEST(ComplexTest, AddScalarExpression)
 {
     auto z = std::complex<TypeParam>(1.2, -1.2);
     TypeParam s = 1.2;
-    std::complex<TypeParam> ret = z + (s * 1.0);
-    EXPECT_THAT(xad::value(ret.real()), DoubleNear(2.4, 1e-9));
-    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-1.2, 1e-9));
+    std::complex<TypeParam> ret1 = z + (s * 1.0);
+    std::complex<TypeParam> ret2 = (s * 1.0) + z;
+    EXPECT_THAT(xad::value(ret1.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret1.imag()), DoubleNear(-1.2, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(-1.2, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, AddScalarExpressionDoubleCplx)
+{
+    auto z = std::complex<double>(1.2, -1.2);
+    TypeParam s = 1.2;
+    std::complex<TypeParam> ret1 = z + (s * 1.0);
+    std::complex<TypeParam> ret2 = (s * 1.0) + z;
+    EXPECT_THAT(xad::value(ret1.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret1.imag()), DoubleNear(-1.2, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(-1.2, 1e-9));
 }
 
 TYPED_TEST(ComplexTest, AddDouble)
 {
     auto z = std::complex<TypeParam>(1.2, -1.2);
-    std::complex<TypeParam> ret = z + 1.2;
-    EXPECT_THAT(xad::value(ret.real()), DoubleNear(2.4, 1e-9));
-    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-1.2, 1e-9));
+    std::complex<TypeParam> ret1 = z + 1.2;
+    std::complex<TypeParam> ret2 = 1.2 + z;
+    EXPECT_THAT(xad::value(ret1.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret1.imag()), DoubleNear(-1.2, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(2.4, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(-1.2, 1e-9));
 }
 
 // -------------- operator- ---------------
@@ -878,6 +926,24 @@ TYPED_TEST(ComplexTest, AddDouble)
 TYPED_TEST(ComplexTest, SubstractComplex)
 {
     auto z1 = std::complex<TypeParam>(1.2, -1.2);
+    auto z2 = std::complex<TypeParam>(1.2, 42.0);
+    auto ret = z1 - z2;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(0.0, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-43.2, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, SubstractComplexDouble)
+{
+    auto z1 = std::complex<TypeParam>(1.2, -1.2);
+    auto z2 = std::complex<double>(1.2, 42.0);
+    auto ret = z1 - z2;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(0.0, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-43.2, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, SubstractDoubleComplex)
+{
+    auto z1 = std::complex<double>(1.2, -1.2);
     auto z2 = std::complex<TypeParam>(1.2, 42.0);
     auto ret = z1 - z2;
     EXPECT_THAT(xad::value(ret.real()), DoubleNear(0.0, 1e-9));
@@ -896,9 +962,33 @@ TYPED_TEST(ComplexTest, SubstractScalar)
     EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(1.2, 1e-9));
 }
 
+TYPED_TEST(ComplexTest, SubstractScalarDoubleCplx)
+{
+    auto z = std::complex<double>(1.2, -1.2);
+    TypeParam s = 1.2;
+    auto ret1 = z - s;
+    auto ret2 = s - z;
+    EXPECT_THAT(xad::value(ret1.real()), DoubleNear(0.0, 1e-9));
+    EXPECT_THAT(xad::value(ret1.imag()), DoubleNear(-1.2, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(0.0, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(1.2, 1e-9));
+}
+
 TYPED_TEST(ComplexTest, SubstractScalarExpression)
 {
     auto z = std::complex<TypeParam>(1.2, -1.2);
+    TypeParam s = 1.2;
+    auto ret2 = (s * 1.0) - z;
+    auto ret = z - (s * 1.0);
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(0.0, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-1.2, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(0.0, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(1.2, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, SubstractScalarExpressionDoubleCplx)
+{
+    auto z = std::complex<double>(1.2, -1.2);
     TypeParam s = 1.2;
     auto ret2 = (s * 1.0) - z;
     auto ret = z - (s * 1.0);
@@ -931,6 +1021,24 @@ TYPED_TEST(ComplexTest, MultiplyComplex)
     EXPECT_THAT(xad::value(ret.imag()), DoubleNear(48.96, 1e-9));
 }
 
+TYPED_TEST(ComplexTest, MultiplyComplexDouble)
+{
+    auto z1 = std::complex<TypeParam>(1.2, -1.2);
+    auto z2 = std::complex<double>(1.2, 42.0);
+    auto ret = z1 * z2;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(51.84, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(48.96, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, MultiplyDoubleComplex)
+{
+    auto z1 = std::complex<double>(1.2, -1.2);
+    auto z2 = std::complex<TypeParam>(1.2, 42.0);
+    auto ret = z1 * z2;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(51.84, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(48.96, 1e-9));
+}
+
 TYPED_TEST(ComplexTest, MultiplyScalar)
 {
     auto z = std::complex<TypeParam>(1.2, -1.2);
@@ -943,9 +1051,33 @@ TYPED_TEST(ComplexTest, MultiplyScalar)
     EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(-1.44, 1e-9));
 }
 
+TYPED_TEST(ComplexTest, MultiplyScalarDoubleCplx)
+{
+    auto z = std::complex<double>(1.2, -1.2);
+    TypeParam s = 1.2;
+    auto ret1 = z * s;
+    auto ret2 = s * z;
+    EXPECT_THAT(xad::value(ret1.real()), DoubleNear(1.44, 1e-9));
+    EXPECT_THAT(xad::value(ret1.imag()), DoubleNear(-1.44, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(1.44, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(-1.44, 1e-9));
+}
+
 TYPED_TEST(ComplexTest, MultiplyScalarExpression)
 {
     auto z = std::complex<TypeParam>(1.2, -1.2);
+    TypeParam s = 1.2;
+    auto ret = z * (s * 1.0);
+    auto ret2 = (s * 1.0) * z;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(1.44, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-1.44, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(1.44, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(-1.44, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, MultiplyScalarExpressionDoubleCplx)
+{
+    auto z = std::complex<double>(1.2, -1.2);
     TypeParam s = 1.2;
     auto ret = z * (s * 1.0);
     auto ret2 = (s * 1.0) * z;
@@ -978,6 +1110,24 @@ TYPED_TEST(ComplexTest, DivideComplex)
     EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-0.029363784665579117, 1e-9));
 }
 
+TYPED_TEST(ComplexTest, DivideComplexDouble)
+{
+    auto z1 = std::complex<TypeParam>(1.2, -1.2);
+    auto z2 = std::complex<double>(1.2, 42.0);
+    auto ret = z1 / z2;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(-0.027732463295269166, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-0.029363784665579117, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, DivideDoubleComplex)
+{
+    auto z1 = std::complex<double>(1.2, -1.2);
+    auto z2 = std::complex<TypeParam>(1.2, 42.0);
+    auto ret = z1 / z2;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(-0.027732463295269166, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-0.029363784665579117, 1e-9));
+}
+
 TYPED_TEST(ComplexTest, DivideScalar)
 {
     auto z = std::complex<TypeParam>(1.2, -1.2);
@@ -990,9 +1140,33 @@ TYPED_TEST(ComplexTest, DivideScalar)
     EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(0.5, 1e-9));
 }
 
+TYPED_TEST(ComplexTest, DivideScalarDoubleCplx)
+{
+    auto z = std::complex<double>(1.2, -1.2);
+    TypeParam s = 1.2;
+    auto ret1 = z / s;
+    auto ret2 = s / z;
+    EXPECT_THAT(xad::value(ret1.real()), DoubleNear(1.0, 1e-9));
+    EXPECT_THAT(xad::value(ret1.imag()), DoubleNear(-1.0, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(0.5, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(0.5, 1e-9));
+}
+
 TYPED_TEST(ComplexTest, DivideScalarExpression)
 {
     auto z = std::complex<TypeParam>(1.2, -1.2);
+    TypeParam s = 1.2;
+    auto ret = z / (s * 1.0);
+    auto ret2 = (s * 1.0) / z;
+    EXPECT_THAT(xad::value(ret.real()), DoubleNear(1.0, 1e-9));
+    EXPECT_THAT(xad::value(ret.imag()), DoubleNear(-1.0, 1e-9));
+    EXPECT_THAT(xad::value(ret2.real()), DoubleNear(0.5, 1e-9));
+    EXPECT_THAT(xad::value(ret2.imag()), DoubleNear(0.5, 1e-9));
+}
+
+TYPED_TEST(ComplexTest, DivideScalarExpressionDoubleCplx)
+{
+    auto z = std::complex<double>(1.2, -1.2);
     TypeParam s = 1.2;
     auto ret = z / (s * 1.0);
     auto ret2 = (s * 1.0) / z;
@@ -3234,4 +3408,11 @@ TYPED_TEST(ComplexTest, canEvaluateTroublesomeComplexAbs)
     }
 
     EXPECT_THAT(ad_res, DoubleEq(double_res));
+}
+
+TYPED_TEST(ComplexTest, canEvaluateAbsOfLargeNumbers)
+{
+    const std::complex<TypeParam> ref = 1.45097873605256e+301;
+
+    EXPECT_THAT(xad::value(std::abs(ref)), DoubleEq(1.45097873605256e+301));
 }

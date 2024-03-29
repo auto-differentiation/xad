@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -60,6 +60,33 @@ TEST(Tape, canInitializeDeactivated)
 
     EXPECT_TRUE(s.isActive());
     EXPECT_NE(nullptr, Tape<float>::getActive());
+}
+
+TEST(Tape, canActivateStatically)
+{
+    using xad::Tape;
+    Tape<float> s(false);
+
+    EXPECT_FALSE(s.isActive());
+    EXPECT_EQ(nullptr, Tape<float>::getActive());
+
+    xad::Tape<float>::setActive(&s);
+
+    EXPECT_TRUE(s.isActive());
+    EXPECT_NE(nullptr, Tape<float>::getActive());
+}
+
+TEST(Tape, canDeactivateGlobally)
+{
+    using xad::Tape;
+
+    EXPECT_EQ(nullptr, Tape<double>::getActive());
+
+    Tape<double> s;
+
+    EXPECT_TRUE(s.isActive());
+    Tape<double>::deactivateAll();
+    EXPECT_FALSE(s.isActive());
 }
 
 TEST(Tape, isMovable)

@@ -5,7 +5,7 @@
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -36,10 +36,9 @@ site_description: >-
 repo_url: "https://github.com/auto-differentiation/XAD/"
 repo_name: XAD
 
-# Copyright + cookie settings in footer
+# Copyright in footer
 copyright: >
-  Copyright &copy; 2010-2023, Xcelerit Computing Ltd |
-  <a href="#__consent">Cookie settings</a>
+  Copyright &copy; 2010-2024, Xcelerit Computing Limited
 
 # Configuration
 theme:
@@ -75,18 +74,8 @@ theme:
     - search.suggest
     - content.code.copy
 extra:
-  analytics:
-    provider: google
-    property: !ENV [GOOGLE_ANALYTICS_KEY, undefined]
   generator: false
   version: !ENV [LATEST_VERSION, development]
-  consent:
-    title: Cookie consent
-    description: >- 
-      We use cookies to recognize your repeated visits and preferences, as well
-      as to measure the effectiveness of our documentation and whether users
-      find what they're searching for. With your consent, you're helping us to
-      make our documentation better.
 plugins: 
   - search
   - social
@@ -96,8 +85,9 @@ plugins:
       redirect_maps:
         'aad.md': 'tutorials/aad.md'
         'tutorials.md': 'tutorials/aad.md'
-        'examples.md': 'examples/simple_examples.md'
-        'quantlib.md': 'examples/quantlib.md'
+        'examples/simple_examples.md': 'examples.md'
+        'examples/quantlib.md': 'quantlib/cxx.md'
+        'quantlib.md': 'quantlib/cxx.md'
         'ref.md': 'ref/headers.md'
         'getting_started.md': 'installation.md'
 
@@ -152,9 +142,10 @@ nav:
     - Checkpointing: tutorials/checkpointing.md
     - Higher-Order Derivatives: tutorials/higher_order.md
     - Handling Discontinuities: tutorials/smoothed_math.md
-  - Examples: 
-    - Simple Examples: examples/simple_examples.md
-    - Large Codebase Integration: examples/quantlib.md
+  - Examples: examples.md
+  - QuantLib Integration:
+    - Python: quantlib/python.md
+    - C++: quantlib/cxx.md
   - Reference:
     - Headers and Namespaces: ref/headers.md
     - AD Mode Interface: ref/interface.md
@@ -169,4 +160,5 @@ nav:
     - CheckpointCallback: ref/chkpt_cb.md
     - Exceptions: ref/exceptions.md
     - Version Information: ref/version.md
+  - Python: python.md
   - About: about.md

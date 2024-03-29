@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2023 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -196,6 +196,7 @@ XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), -floor(Scalar(b) / a))
 XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b * b)),
                           -Scalar(b) / (a * a + Scalar(b * b)))
 XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
+XAD_MAKE_UNARY_BINFUNCTOR(hypot, Scalar(a) / v, Scalar(a) / v)
 
 template <class Scalar>
 struct ldexp_op
@@ -429,7 +430,6 @@ struct scalar_remquo2_op
 
 /*
  * TODO:
-hypot(T x, T y)
 fma
 logb
 tgamma

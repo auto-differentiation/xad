@@ -163,6 +163,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
+            -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
       - name: build
         run: |
@@ -234,6 +235,8 @@ jobs:
         run: |
           cat /etc/lsb-release
           /lib/x86_64-linux-gnu/libc.so.6
+          sudo rm -f /etc/apt/sources.list.d/git-core-ubuntu-ppa-artful.list || true
+          sudo rm -f /etc/apt/sources.list.d/git-core-ubuntu-ppa-xenial.list || true
           sudo apt-get update
           sudo apt-get install -y ccache ninja-build lcov
       - name: GitHub WS Tmp
@@ -260,6 +263,7 @@ jobs:
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DCMAKE_CXX_FLAGS="${{ matrix.coverage_cxx_flags }}" \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
+            -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install
       - name: build
         run: |
