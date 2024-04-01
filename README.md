@@ -4,7 +4,7 @@
     </a>
 </p>
 
-XAD is a comprehensive C++ library for automatic differentiation.
+XAD is a comprehensive library for automatic differentiation, available for both Python and  C++.
 It targets production-quality code at any scale, striving for both ease of use and high performance.
 
 <p align="center" dir="auto">
@@ -42,7 +42,7 @@ Automatic differentiation (also called algorithmic differentiation) is a set of 
 of functions specified as computer programs. 
 Since every program execution is always composed of a sequence of simple operations with known derivatives (arithmetics and mathematical functions like sin, exp, log, etc.),
 the chain rule can be applied repeatedly to calculate partial derivatives automatically.
-XAD implements this using operator-overloading in C++,
+XAD implements this using operator-overloading in C++ and exposes bindings for Python,
 allowing to compute derivatives with minimal changes to the program.
 See [automatic differentation mathematical background](https://auto-differentiation.github.io/aad/) for more details.
 
@@ -72,14 +72,26 @@ Key features:
 -   Battle-tested in large production code bases
 
 ## Getting Started
+### Python
+XAD in Pyhon comes as a PyPi package for all major platforms and operating systems. 
 
-XAD is a C++ library built with modern CMake and has no external dependencies. 
+The XAD Python bindings can be installed as usual using pip or any other package manager:
+```
+pip install xad-autodiff
+```
+Documentation on usage can be found [here](https://auto-differentiation.github.io/python/#usage).
+
+An example integration with QuantLib, the open source library for quantitative finance, can be found [here](https://auto-differentiation.github.io/quantlib/python/).
+
+
+### C++
+XAD in C++ builds with modern CMake and has no external dependencies. 
 For instructions how to build and integrate it into your projects, please refer to the
 [Installation Guide](https://auto-differentiation.github.io/installation/).
 
 The documentation site also contains [tutorials](https://auto-differentiation.github.io/tutorials/), 
 [examples](https://auto-differentiation.github.io/examples/), 
-and information about [integrating XAD into QuantLib](https://auto-differentiation.github.io/quantlib/).
+and information about [integrating XAD into QuantLib](https://auto-differentiation.github.io/quantlib/cxx/).
 
 The sources for the site are located in the [docs](docs) directory in this repository.
 
