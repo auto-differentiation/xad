@@ -245,9 +245,11 @@ jobs:
         run: |
            echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v2.0
-        with:
-          github-api-token: ${{ secrets.CMAKE_TOKEN }}
+        run: |
+          wget https://github.com/Kitware/CMake/releases/download/v3.29.0/cmake-3.29.0-linux-x86_64.tar.gz
+          tar -xzf cmake-3.29.0-linux-x86_64.tar.gz 
+          sudo rm /usr/bin/cmake /usr/share/cmake-* -rf
+          echo $(pwd)/cmake-3.29.0-linux-x86_64/bin >> $GITHUB_PATH
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
