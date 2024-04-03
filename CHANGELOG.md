@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Moved Python bindings into its [own repository](https://github.com/auto-differentiation/xad-py)
+  (new Python package name is [xad](https://pypi.org/project/xad))
+- Reorganised website
+
 ### Deprecated
 
 ### Removed
@@ -38,7 +42,7 @@ Python package.
 
 ### Changed
 
--   Improved documentation for quantlib-xad build
+-   Improved documentation for QuantLib-Risks build
 -   Cleaned up output of Swap Pricer example
 
 ## [1.4.1] - 2024-01-10
@@ -100,7 +104,7 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 ### Added
 
 -   QuantLib integration by means of the 
-    [quantlib-xad](https://github.com/auto-differentiation/quantlib-xad) 
+    [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp) 
     integration module
 -   Full MacOS support
 -   Better CI pipeline with more platforms and compilers tested
@@ -119,20 +123,20 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/XAD/compare/v1.5.1...HEAD
+[unreleased]: https://github.com/auto-differentiation/xad/compare/v1.5.1...HEAD
 
-[1.5.1]: https://github.com/auto-differentiation/XAD/compare/v1.5.0...v1.5.1
+[1.5.1]: https://github.com/auto-differentiation/xad/compare/v1.5.0...v1.5.1
 
-[1.5.0]: https://github.com/auto-differentiation/XAD/compare/v1.4.1...v1.5.0
+[1.5.0]: https://github.com/auto-differentiation/xad/compare/v1.4.1...v1.5.0
 
-[1.4.1]: https://github.com/auto-differentiation/XAD/compare/v1.4.0...v1.4.1
+[1.4.1]: https://github.com/auto-differentiation/xad/compare/v1.4.0...v1.4.1
 
-[1.4.0]: https://github.com/auto-differentiation/XAD/compare/v1.3.0...v1.4.0
+[1.4.0]: https://github.com/auto-differentiation/xad/compare/v1.3.0...v1.4.0
 
-[1.3.0]: https://github.com/auto-differentiation/XAD/compare/v1.2.0...v1.3.0
+[1.3.0]: https://github.com/auto-differentiation/xad/compare/v1.2.0...v1.3.0
 
-[1.2.0]: https://github.com/auto-differentiation/XAD/compare/v1.1.0...v1.2.0
+[1.2.0]: https://github.com/auto-differentiation/xad/compare/v1.1.0...v1.2.0
 
-[1.1.0]: https://github.com/auto-differentiation/XAD/compare/v1.0.0...v1.1.0
+[1.1.0]: https://github.com/auto-differentiation/xad/compare/v1.0.0...v1.1.0
 
-[1.0.0]: https://github.com/auto-differentiation/XAD/releases/tag/v1.0.0
+[1.0.0]: https://github.com/auto-differentiation/xad/releases/tag/v1.0.0

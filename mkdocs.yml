@@ -23,18 +23,16 @@
 ##############################################################################
 
 # Project information
-site_name: XAD
+site_name:  "XAD Automatic Differentiation"
 site_url: https://auto-differentiation.github.io
 site_author: Xcelerit
 site_description: >-
-  XAD is a comprehensive open-source C++ library for automatic differentiation by Xcelerit. 
-  It targets production-quality code at any scale, striving for both ease of use and 
-  high performance.
+  Maximise your code efficiency with XAD, the leading library for automatic differentiation in various applications.
 
 
 # Repository
-repo_url: "https://github.com/auto-differentiation/XAD/"
-repo_name: XAD
+repo_url: "https://github.com/auto-differentiation/xad/"
+repo_name: xad
 
 # Copyright in footer
 copyright: >
@@ -86,10 +84,17 @@ plugins:
         'aad.md': 'tutorials/aad.md'
         'tutorials.md': 'tutorials/aad.md'
         'examples/simple_examples.md': 'examples.md'
-        'examples/quantlib.md': 'quantlib/cxx.md'
-        'quantlib.md': 'quantlib/cxx.md'
-        'ref.md': 'ref/headers.md'
-        'getting_started.md': 'installation.md'
+        'examples/quantlib.md': 'quantlib-risks/cxx.md'
+        'quantlib.md': 'quantlib-risks/cxx.md'
+        'ref.md': 'ref/python.md'
+        'getting_started.md': 'installation/python.md'
+        'installation.md': 'installation/python.md'
+        'tutorials/basic.md': 'tutorials/cxx.md#basic-usage'
+        'tutorials/external_functions.md': 'tutorials/cxx.md#external-functions'
+        'tutorials/checkpointing.md': 'tutorials/cxx.md#checkpointing'
+        'tutorials/higher_order.md': 'tutorials/cxx.md#higher-order-derivatives'
+        'python.md': 'installation/python.md'
+        
 
 markdown_extensions: 
   - abbr
@@ -103,8 +108,8 @@ markdown_extensions:
   - attr_list
   - md_in_html
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.betterem
@@ -134,19 +139,22 @@ extra_css:
 
 nav:
   - Home: README.md
-  - Installation: installation.md
+  - Installation: 
+    - Python: installation/python.md
+    - C++: installation/cxx.md
+    - Tested Platfoms: installation/platforms.md
   - Tutorials:
     - AD Background:  tutorials/aad.md
-    - Basic Usage: tutorials/basic.md
-    - External Functions: tutorials/external_functions.md
-    - Checkpointing: tutorials/checkpointing.md
-    - Higher-Order Derivatives: tutorials/higher_order.md
+    - Python: tutorials/python.md
+    - C++: tutorials/cxx.md  
     - Handling Discontinuities: tutorials/smoothed_math.md
   - Examples: examples.md
-  - QuantLib Integration:
-    - Python: quantlib/python.md
-    - C++: quantlib/cxx.md
+  - QuantLib-Risks:
+    - Python: quantlib-risks/python.md 
+    - C++: quantlib-risks/cxx.md
+    - Practical Guide: quantlib-risks/practical-guide.md
   - Reference:
+    - Python: ref/python.md
     - Headers and Namespaces: ref/headers.md
     - AD Mode Interface: ref/interface.md
     - Forward Mode Type FReal: ref/freal.md
@@ -160,5 +168,4 @@ nav:
     - CheckpointCallback: ref/chkpt_cb.md
     - Exceptions: ref/exceptions.md
     - Version Information: ref/version.md
-  - Python: python.md
   - About: about.md

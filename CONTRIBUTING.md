@@ -6,7 +6,7 @@ by our [code of conduct](CODE_OF_CONDUCT.md).
 1.  Fork, then clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/XAD.git
+git clone https://github.com/yourusername/xad.git
 ```
 
 2.  Follow the [Build Instructions](README.md) to setup the dependencies and 
@@ -15,7 +15,7 @@ git clone https://github.com/yourusername/XAD.git
 3.  Create a feature branch, typically based on master, for your change
 
 ```bash
-git checkout -b feature/my-change main
+git checkout -b feature/my-changed-main
 ```
 
 4.  Make your changes, adding tests as you go, and commit. Again, make sure all 
@@ -106,6 +106,6 @@ For convenience, there is a `.clang-format` file in the root of the project whic
     -   Line breaks before curly braces in other contexts are optional
     -   Short loops or functions can be defined in one line
 
-[pr]: https://github.com/auto-differentiation/XAD/compare/
+[pr]: https://github.com/auto-differentiation/xad/compare/
 
 [cla]: https://gist.github.com/auto-differentation-dev/4a5c0cf1fbfed7be64308d1c2f47bd25

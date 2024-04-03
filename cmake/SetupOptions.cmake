@@ -59,6 +59,3 @@ else()
     set(XAD_USE_STRONG_INLINE ON CACHE BOOL "Use forced inlining for higher preformance, at a higher compile time cost" FORCE)
 endif()
 option(XAD_ALLOW_INT_CONVERSION "Add real->int conversion operator, potentially missing to track dependencies" ON)
-
-# Bindings
-option(XAD_ENABLE_PYTHON "Enable building the XAD Python module" OFF)

@@ -1,15 +1,10 @@
 ---
-description: >
-  Installation, building, configuration, and testing instructions for the XAD automatic differentiation tool.
-hide:
-  - navigation
+title: "C++ Setup Guide"
+description: "Step-by-step guide to seamlessly integrate XAD for C++ across platforms with prerequisites, building, and testing instructions"
 ---
+# C++ 
 
-# Installation
-
-## Building XAD
-
-### Prerequisites
+## Prerequisites
 
 === "Windows"
 
@@ -38,13 +33,13 @@ hide:
 
 For the full list of platforms and compilers covered by continuous integration, see [tested platforms](#tested-platforms).
 
-### Cloning the Repository
+## Cloning the Repository
 
 ```
-git clone https://github.com/auto-differentiation/XAD.git
+git clone https://github.com/auto-differentiation/xad.git
 ```
 
-### Building
+## Building
 
 === "Visual Studio 2019/2022"
 
@@ -60,7 +55,7 @@ git clone https://github.com/auto-differentiation/XAD.git
 
     1.  Create a directory for the build artefacts
         ```
-        cd XAD
+        cd xad
         mkdir build
         cd build
         ```
@@ -82,7 +77,7 @@ git clone https://github.com/auto-differentiation/XAD.git
 
     More information about how to use the CMake GUI is available from the [official CMake documentation](https://cmake.org/cmake/help/latest/guide/user-interaction/index.html#cmake-gui-tool).
 
-### Running the Tests
+## Running the Tests
 
 The tests are managed by CMake's CTest tool. The can be executed as:
 
@@ -119,7 +114,7 @@ The tests are managed by CMake's CTest tool. The can be executed as:
     It also provides parameters, e.g. for selecting specific tests, control outputs, which
     can be seen when running `./xad_test --help`
 
-### Installing
+## Installing
 
 Run the `install` build target to place the header files, library files, docs, and samples
 into the `CMAKE_INSTALL_PREFIX` (configurable with CMake).
@@ -145,10 +140,10 @@ In order to use XAD as part of other code, we recommend one of the following app
 If your codebase is using CMake, XAD can be integrated easily into your project
 by adding it as a git submodule.
 
-To add the submodule in a subdirectory `extern/XAD`:
+To add the submodule in a subdirectory `extern/xad`:
 
 ```bash
-git submodule add https://github.com/auto-differentiation/XAD.git extern/XAD
+git submodule add https://github.com/auto-differentiation/xad.git extern/xad
 ```
 
 Users then need to clone recursively (`git clone --recursive ...`) or initialise and update
@@ -159,7 +154,7 @@ To add XAD to the project, all that is needed in one of the `CMakeLists.txt` fil
 to add the xad directory, and then link the relevant libraries or executables to `XAD::xad`:
 
 ```cmake
-add_subdirectory(extern/XAD)
+add_subdirectory(extern/xad)
 
 add_executable(some_executable ...)
 target_link_libraries(some_executable PRIVATE XAD::xad)
@@ -174,7 +169,7 @@ build folder and add it to your project after:
 include(FetchContent)
 
 FetchContent_Declare(XAD
-    GIT_REPOSITORY https://github.com/auto-differentiation/XAD.git
+    GIT_REPOSITORY https://github.com/auto-differentiation/xad.git
     GIT_TAG 1.2.0    # pick a tag, hash, or branch here
 )
 FetchContent_MakeAvailable(XAD)
@@ -214,14 +209,14 @@ Otherwise, the `CMAKE_PREFIX_PATH` variable can be set at configure-time to
 add a different directory to its search path:
 
 ```bash
-cmake /path/to/src -DCMAKE_PREFIX_PATH=/path/to/XAD/installprefix
+cmake /path/to/src -DCMAKE_PREFIX_PATH=/path/to/xad/installprefix
 ```
 
 **Other Build Tools**
 
 If your project does not use CMake, an installed package can also be linked by adding the following settings:
 
-- Add `/path/to/XAD/include` to the compiler's include search path
+- Add `/path/to/xad/include` to the compiler's include search path
 - Enable at least C++ 11 support (`-std=c++11` in GCC)
 - Enable threading in Linux (requires `-pthread` in GCC for compile and link)
 - Add the library path `/path/to/XAD/lib` to the linker search paths
@@ -286,104 +281,3 @@ XAD library has already been compiled and installed (in `Config.hpp` or client c
 | `XAD_USE_STRONG_INLINE`    | Force inlining expression templates, rather than letting the compiler decide. (faster, slow compilation, possible compiler crashes) | `OFF`   |
 | `XAD_ALLOW_INT_CONVERSION` | Add real -> integer conversion operator, similar to `double`. This may result missing some variable dependency tracking for AAD.    | `ON`    |
 
-## Building the Documentation
-
-The user documentation uses the popular [MkDocs Material tool](https://squidfunk.github.io/mkdocs-material/).
-It is entirely generated from the markdown files located in the `docs` folder.
-It can be edited with one of the following approaches.
-
-### 1: Docker
-
-The docs can be generated easily [using docker](https://docs.docker.com/get-docker/) by running in the project root:
-
-=== "Windows"
-
-    ```
-    docker run --rm -it -p 8000:8000 -v "%cd%":/docs squidfunk/mkdocs-material
-    ```
-
-=== "Powershell, Linux, Mac"
-
-    ```
-    docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
-    ```
-
-This will serve the documentation on [http://localhost:8000](http://localhost:8000) and watch for changes in the
-`docs` folder automatically.
-The files can now be modified and conveniently viewed in the browser.
-
-### 2: Local Python
-
-Alternatively, MkDocs can be installed locally into a Python environment and executed as follows
-(we recommend a virtual environment as shown below).
-
-Setup the environment and dependencies (first time):
-
-=== "Windows"
-
-    ```
-    python -m venv .venv
-    .venv\Scripts\activate.bat
-    pip install mkdocs-material mkdocs-minify-plugin mkdocs-redirects "pillow<10" "cairosvg>=2.5"
-    ```
-
-=== "Powershell"
-
-    ```
-    python -m venv .venv
-    .venv\Scripts\activate.ps1
-    pip install mkdocs-material mkdocs-minify-plugin mkdocs-redirects "pillow<10" "cairosvg>=2.5"
-    ```
-
-=== "Linux, Mac"
-
-    ```
-    python -m venv .venv
-    source .venv/bin/activate
-    pip install mkdocs-material mkdocs-minify-plugin mkdocs-redirects "pillow<10" "cairosvg>=2.5"
-    ```
-
-Run mkdocs (in the activated environment):
-
-```
-mkdocs serve
-```
-
-This will serve the documentation on [http://localhost:8000](http://localhost:8000) and watch for changes in the
-`docs` folder automatically.
-The files can now be modified and conveniently viewed in the browser.
-
-## Getting Help
-
-If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/XAD/issues).
-
-For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/XAD/discussions).
-
-## Tested Platforms
-
-The following platforms are part of the [continuous integration workflow][ci], i.e. they are tested on each commit. You can use other configurations at your own risk,
-or [submit a PR](https://github.com/auto-differentiation/XAD/blob/feature/new-site/CONTRIBUTING.md) to include it in the [CI workflow][ci].
-
-| Operating System    | Compiler                          | Configurations                                      | Test Coverage Recorded |
-| ------------------- | --------------------------------- | --------------------------------------------------- | ---------------------- |
-| Windows Server 2019 | Visual Studio 2015 (Toolset 14.0) | Debug, Release                                      | no                     |
-| Windows Server 2022 | Visual Studio 2017 (Toolset 14.1) | Debug, Release                                      | no                     |
-| Windows Server 2022 | Visual Studio 2019 (Toolset 14.2) | Debug, Release                                      | no                     |
-| Windows Server 2022 | Visual Studio 2022 (Toolset 14.3) | Debug, Release                                      | no                     |
-| Windows Server 2022 | Clang 16.0 (Toolset 14.3)         | Debug, Release                                      | no                     |
-| Ubuntu 16.04        | GCC 5.4.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 17.10        | GCC 6.4.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 17.10        | GCC 7.2.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 18.04        | GCC 8.4.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 19.10        | GCC 9.2.0                         | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 20.04        | GCC 10.3.0                        | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 20.04        | GCC 11.1.0                        | Debug, Release, + both with `XAD_TAPE_REUSE_SLOTS`  | yes                    |
-| Ubuntu 20.04        | Clang 11.0.0                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 22.04        | Clang 12.0.1                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 22.04        | Clang 13.0.1                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 22.04        | Clang 14.0.0                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| Ubuntu 22.04        | Clang 15.0.7                      | Debug, Release, Release with `XAD_TAPE_REUSE_SLOTS` | no                     |
-| MacOS 12.6.5        | AppleClang 14.0.0                 | Debug, Release                                      | yes                    |
-
-[cmake]: https://cmake.org
-[ci]: https://github.com/auto-differentiation/XAD/blob/main/.github/workflows/ci.yml

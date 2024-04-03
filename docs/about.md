@@ -1,6 +1,6 @@
 ---
-description: >
-  Information about the XAD automatic differentiation tool, such as history, authors and lincense information
+title: "The Evolution of XAD Automatic Differentiation"
+description: "Discover XAD's journey from finance-focused tool to open-source innovation, fostering wide industry applications. Engage with our vibrant community."
 hide:
   - navigation
   - footer
@@ -10,10 +10,10 @@ hide:
 
 ## History
 
-In 2010, [Xcelerit](https://www.xcelerit.com) started working on AAD,
+In 2010, [Xcelerit](https://www.xcelerit.com) started working on automatic differentiation,
 building on early works of Professor Mike Giles and Professor Paul Glasserman
-for efficiently calculating greeks in quantitative finance with AAD.
-Xcelerit's closed-source tool QuantAD was first released in 2014,
+for efficiently calculating greeks in quantitative finance with automatic differentiation.
+Xcelerit's closed-source tool was first released in 2014,
 targeting the quantitative finance industry.
 The tool evolved over the years with more features and better performance.
 In July 2022, Xcelerit generalised it so it can be used in other industries and published it as an open-source tool,
@@ -30,13 +30,13 @@ The name XAD is spelled with all capitals.
 ## Authors
 
 *   Various contributors from Xcelerit
-*   See also the list of [contributors](https://github.com/auto-differentiation/XAD/contributors) who participated in the project.
+*   See also the list of [contributors](https://github.com/auto-differentiation/xad/contributors) who participated in the project.
 
 ## Getting In Touch
 
-If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/XAD/issues).
+If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/xad/issues).
 
-For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/XAD/discussions).
+For general questions about XAD, sharing ideas, engaging with community members, etc, please use [GitHub Discussions](https://github.com/auto-differentiation/xad/discussions).
 
 ## License Information
 
