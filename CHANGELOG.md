@@ -5,21 +5,17 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [1.5.2] - 2024-04-04
 
-### Added
+This patch release is for matching versions with 
+[xad-py](https://github.com/auto-differentiation/xad-py).
 
 ### Changed
 
 - Moved Python bindings into its [own repository](https://github.com/auto-differentiation/xad-py)
   (new Python package name is [xad](https://pypi.org/project/xad))
 - Reorganised website
-
-### Deprecated
-
-### Removed
-
-### Fixed
+- Upgraded CI/CD actions
 
 ## [1.5.1] - 2024-03-28
 
@@ -123,7 +119,7 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/xad/compare/v1.5.1...HEAD
+[1.5.2]: https://github.com/auto-differentiation/xad/compare/v1.5.1...v1.5.2
 
 [1.5.1]: https://github.com/auto-differentiation/xad/compare/v1.5.0...v1.5.1
 
