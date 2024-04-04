@@ -26,7 +26,7 @@ include(CMakeDependentOption)
 
 # Build options
 # Enable the tests only if this is the main project
-if(CMAKE_PROJECT_NAME STREQUAL "XAD")
+if(CMAKE_PROJECT_NAME STREQUAL "xad")
     option(XAD_ENABLE_TESTS "Enable the XAD Tests" ON)
 else()
     option(XAD_ENABLE_TESTS "Enable the XAD tests" OFF)
