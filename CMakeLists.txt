@@ -26,7 +26,7 @@
 cmake_minimum_required(VERSION 3.15.2)
 cmake_policy(SET CMP0092 NEW)   # avoid setting warning flags by default in Windows
 
-project(XAD 
+project(xad 
     LANGUAGES CXX
     DESCRIPTION "Comprehensive C++ library for automatic differentiation."
     HOMEPAGE_URL "https://auto-differentiation.github.io"
@@ -45,9 +45,6 @@ include(SetupOptions)
 
 if(NOT XAD_DOCS_ONLY)
     include(SetupCompiler)
-    if(XAD_ENABLE_PYTHON)
-        include(SetupPython)
-    endif()
     if(XAD_ENABLE_TESTS)
         include(SetupTesting)
     endif()
@@ -57,10 +54,6 @@ if(NOT XAD_DOCS_ONLY)
     if(XAD_ENABLE_TESTS)
         add_subdirectory(test)
         add_subdirectory(samples)
-    endif()
-    
-    if(XAD_ENABLE_PYTHON)
-        add_subdirectory(bindings/python)
     endif()
 endif()
 

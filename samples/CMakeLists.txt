@@ -26,7 +26,7 @@
 # version of XAD as well
 cmake_minimum_required(VERSION 3.15.2)
 cmake_policy(SET CMP0092 NEW)   # avoid setting warning flags by default in Windows
-project(XAD_Samples
+project(xad_samples
     LANGUAGES CXX
 )
 
@@ -37,7 +37,7 @@ if(NOT TARGET XAD::xad)
 endif()
 
 # These commands only run if this is the main project
-if(CMAKE_PROJECT_NAME STREQUAL "XAD_Samples")
+if(CMAKE_PROJECT_NAME STREQUAL "xad_samples")
     message(STATUS "XAD Samples as main project")
     set(XAD_SAMPLES_MAIN TRUE)
 else()

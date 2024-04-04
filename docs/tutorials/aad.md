@@ -1,5 +1,6 @@
 ---
-description: Required mathematical background for the XAD C++ automatic differentiation library.
+title: "Algorithmic Differentiation Explained"
+description: "Explore the core concepts of algorithmic differentiation, including forward and adjoint modes, for efficient computational derivatives."
 ---
 
 # Algorithmic Differentiation Background

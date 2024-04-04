@@ -1,7 +1,8 @@
 ---
-description: >
-  Tutorial on how to handle dicontinuous or non-differentiable functions with the XAD
-  automatic differentiation framework.
+title: "Smooth Handling of Discontinuities"
+description: "Learn how XAD tackles discontinuities in functions using smoothed math for accurate derivatives."
+hide:
+  - toc
 ---
 
 # Handling Discontinuities
@@ -37,14 +38,29 @@ In order to benefit from the smoothed math functions,
 the conditionals need to be replaced by functions.
 For example:
 
-```c++
-// original code
-double y = 0;
-if (value > strike)
-    y = value - strike;
+=== "Python"
+
+    ```python
+    # original code
+    y = 0.0
+    if value > strike:
+        y = value - strike
     
-// equivalent smoothed code
-double y = smooth_max(0, value - strike);
-```
+    # equivalent smoothed code
+    y = math.smooth_max(0.0, value - strike)
+    ```
+
+
+=== "C++"
+
+    ```c++
+    // original code
+    double y = 0;
+    if (value > strike)
+        y = value - strike;
+        
+    // equivalent smoothed code
+    double y = smooth_max(0, value - strike);
+    ```
 
 A reference of all provided smoothed math functions is given in [Smoothed Math Functions](../ref/smooth-math.md).

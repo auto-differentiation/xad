@@ -1,9 +1,5 @@
 ---
 template: home.html
-title: "XAD Automatic Differentiation Tool"
-description: >-
-    XAD is a comprehensive open-source C++ library for automatic differentiation by Xcelerit,
-    targeting production code at any scale.
 hide:
   - footer
   - navigation
@@ -15,15 +11,22 @@ hide:
 See below for the contents of the XAD documentation.
 Note that you can access the full documentation easier on [auto-differentiation.github.io](https://auto-differentiation.github.io).
 
-*   [Installation](installation.md)
-*   Tutorials
+*   Installation:
+    *   [Python](installation/python.md)
+    *   [C++](installation/cxx.md)
+    *   [Tested Platforms](installation/platforms.md)
+*   Tutorials:
     *   [AD Background](tutorials/aad.md)
-    *   [Basic Usage](tutorials/basic.md)
-    *   [External Functions](tutorials/external_functions.md)
-    *   [Checkpointing](tutorials/checkpointing.md)
-    *   [Higher-Order Derivatives](tutorials/higher_order.md)
+    *   [Python](tutorials/python.md)
+    *   [C++](tutorials/cxx.md)
     *   [Handling Discontinuities](tutorials/smoothed_math.md)
+*   [Examples](examples.md)
+*   QuantLib Integration:
+    *   [Python](quantlib-risks/python.md)
+    *   [C++](quantlib-risks/cxx.md)
+    *   [Practical Guide](quantlib-risks/practical-guide.md)
 *   Reference:
+    *   [Python](ref/python.md)
     *   [Headers and Namespaces](ref/headers.md)
     *   [AD Mode Interface](ref/interface.md)
     *   [Forward Mode Type FReal](ref/freal.md)
@@ -37,7 +40,4 @@ Note that you can access the full documentation easier on [auto-differentiation.
     *   [CheckpointCallback](ref/chkpt_cb.md)
     *   [Exceptions](ref/exceptions.md)
     *   [Version Information](ref/version.md)
-*   Examples:
-    *   [Simple Examples](examples/simple_examples.md)
-    *   [Large Codebase Integration](examples/quantlib.md)
 *   [About](about.md)
