@@ -14,8 +14,8 @@ It targets production-quality code at any scale, striving for both ease of use a
     <a href="https://github.com/auto-differentiation/xad/blob/main/LICENSE.md">
         <img src="https://img.shields.io/github/license/auto-differentiation/xad?label=License" alt="License" style="max-width: 100%;">
     </a>
-    <a href="https://doi.org/10.5281/zenodo.10891487">
-        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.10891487.svg" alt="DOI" style="max-width: 100%;">
+    <a href="https://doi.org/10.5281/zenodo.10926971">
+        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.10926971.svg" alt="DOI" style="max-width: 100%;">
     </a>
     <a href="https://github.com/auto-differentiation/xad/blob/main/CONTRIBUTING.md">
         <img src="https://img.shields.io/badge/PRs%20-welcome-brightgreen.svg" alt="PRs Welcome" style="max-width: 100%;">
