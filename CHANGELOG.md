@@ -23,12 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.5.1] - 2024-03-28
 
-This is a patch release to allow interoperability with the QuantLib-Risks 
+This is a patch release to allow interoperability with the QuantLib-Risks
 Python package.
 
 ### Added
 
--   added static functions to `Tape` to activate and deactivate a specific 
+-   added static functions to `Tape` to activate and deactivate a specific
     tape instance
 
 
@@ -87,12 +87,12 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 ### Added
 
 -   More CI/CD workflows for all supported compiler versions
--   Added math function `copysign` 
+-   Added math function `copysign`
 
 ### Changed
 
 -   Revamped documentation site using mkdocs
--   Improved tests and testing infrastructure 
+-   Improved tests and testing infrastructure
 
 ### Fixed
 
@@ -103,12 +103,12 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 ### Added
 
--   QuantLib integration by means of the 
-    [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp) 
+-   QuantLib integration by means of the
+    [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp)
     integration module
 -   Full MacOS support
 -   Better CI pipeline with more platforms and compilers tested
--   Code coverage and quality measured on pull requests and reported 
+-   Code coverage and quality measured on pull requests and reported
     in [README.md](README.md)
 -   More tests to improve code coverage
 -   Status badges in [README.md](README.md)
