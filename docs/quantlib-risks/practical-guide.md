@@ -270,7 +270,7 @@ Benchmark configuration:
 
 - `QuantLib` version: 1.33
 - `QuantLib-Risks` version: 1.33.3
-- `xad` version: 1.5.1
+- `xad` version: 1.5.2
 - Operating on Ubuntu 22.04
 - Hardware specs include 128GB RAM and an Intel(R) Xeon(R) W-2295 CPU @ 3.00GHz.
 
