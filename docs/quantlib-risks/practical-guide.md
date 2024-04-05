@@ -1,4 +1,7 @@
- 
+---
+title: QuantLib Sensitivity Analysis Guide
+description: Swap Pricing and Curve Construction: A Practical Guide to Sensitivity Analysis Using Python and QuantLib using XAD automatic differentiation
+---
 
 # Swap Pricing and Curve Construction: A Practical Guide to Sensitivity Analysis Using Python and QuantLib
 
