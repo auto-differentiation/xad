@@ -1,6 +1,6 @@
 ---
-title: "QuantLib-Risks Sensitivity Analysis"
-description: "Swap Pricing and Curve Construction: A Practical Guide to Sensitivity Analysis Using Python and QuantLib using XAD automatic differentiation"
+title: "QuantLib-Risks: Enhance Derivative Analysis"
+description: "Optimise financial modeling and derivative pricing with QuantLib-Risks. Achieve accurate, fast sensitivity analysis."
 ---
 
 # Swap Pricing and Curve Construction: A Practical Guide to Sensitivity Analysis Using Python and QuantLib
