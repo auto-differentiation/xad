@@ -5,6 +5,40 @@ description: "Optimise financial modeling and derivative pricing with QuantLib-R
 
 # Swap Pricing and Curve Construction: A Practical Guide to Sensitivity Analysis Using Python and QuantLib
 
+## Preliminary Notes
+
+Before we dive deeper into our discussion on automatic differentiation (AD) within QuantLib, 
+let's set the foundation with several essential insights. 
+This note aims to bridge the gap for readers who may be newer to the concept of AD 
+in financial modelling and QuantLib, 
+or those seeking a nuanced understanding of its application:
+
+- *Demystifying QuantLib-Risks:* Our exploration starts with an illustrative example 
+  intended to make the principles of AD within QuantLib more accessible. 
+  This example, while simplified for educational purposes, 
+  lays the groundwork for appreciating the broader, more complex applications of AD.
+- *Implicit Function Theorem in Practice:* Although our example does not employ the implicit
+  function theorem, it's important to acknowledge this theorem's significance 
+  in practical applications for model calibration. 
+  In real-world scenarios, understanding and applying the implicit function theorem 
+  is crucial for effective calibration processes in QuantLib with AD.
+- *Approaching Discontinuities with Caution:* For the sake of simplicity, 
+  our discussion will overlook discontinuities. 
+  However, it's essential to recognise that discontinuities pose significant challenges 
+  in AD applications. 
+  A thorough understanding and careful handling of these are necessary in practical, 
+  more complex scenarios. 
+  See [Handling Discontinuities](../tutorials/smoothed_math.md) for more details.
+- *Tailored Approaches for Effective Implementation:*
+  While our example applies XAD in a broad sense, 
+  it's critical to understand that in practice, 
+  a one-size-fits-all approach is not feasible.
+  Each algorithm requires careful evaluation and a customised methodology
+  for successful application.
+  
+
+## Overview
+
 In this tutorial, we'll explore how to leverage the capabilities of [QuantLib-Risks](https://pypi.org/project/QuantLib-Risks), the QuantLib Python bindings enhanced with automatic differentiation via [XAD](https://pypi.org/project/xad), for efficient risk assessment in financial analysis. This powerful combination allows for rapid determination of how derivative pricing is influenced by various market inputs, crucial for effective risk management.
 
 ## Getting Started with QuantLib-Risks for Swap Pricing
