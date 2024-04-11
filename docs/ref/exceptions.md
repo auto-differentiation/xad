@@ -1,8 +1,3 @@
----
-description: >
-  Exceptions used by XAD to indicate errors.
----
-
 # Exceptions
 
 Generally, functions that throw XAD exceptions give mostly the *strong guarantee*,

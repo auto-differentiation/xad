@@ -1,9 +1,3 @@
----
-description: >
-  The class FReal defines an active data type for forward mode automatic differentiation
-  in XAD.
----
-
 # Forward Mode Type `FReal`
 
 ## Overview
