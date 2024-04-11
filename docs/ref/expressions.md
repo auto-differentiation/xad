@@ -1,9 +1,3 @@
----
-description: >
-  Overview of the expression template mechanism used by XAD along with associated
-  traits classes.
----
-
 # Expressions
 
 ## Expression Template

@@ -1,8 +1,3 @@
----
-description: >
-  High level interface to pick the XAD data and tape types for specific automatic differentiation modes.
----
-
 # AD Mode Interface
 
 XAD provides a set of interface structures that conveniently allow access

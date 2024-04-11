@@ -1,9 +1,3 @@
----
-description: >
-  Describes the global value and derivative functions in XAD with overloads for all active
-  data types and expressions.
----
-
 # Global Functions
 
 This section lists functions that are specific to the active data types

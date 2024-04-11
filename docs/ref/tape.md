@@ -1,8 +1,3 @@
----
-description: >
-  Reference for the XAD Tape type, used to record operations in adjoint mode automatic differentiation.
----
-
 # Tape
 
 ## `Tape`

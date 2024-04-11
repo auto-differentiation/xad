@@ -1,9 +1,3 @@
----
-description: >
-  The class AReal defines an active data type for adjoint mode in XAD, 
-  which tracks derivative information on a tape.
----
-
 # Adjoint Mode Type `AReal`
 
 ## Overview

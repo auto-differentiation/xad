@@ -1,9 +1,3 @@
----
-description: Macros and utilities to obtain version information of XAD.
-hide: 
-  - toc
----
-
 # Version Information
 
 The XAD version can be queried through a set of preprocessor macros,

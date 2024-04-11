@@ -81,7 +81,7 @@ The documentation site also contains [tutorials](https://auto-differentiation.gi
 [examples](https://auto-differentiation.github.io/examples/), 
 and information about [integrating XAD into QuantLib](https://auto-differentiation.github.io/quantlib-risks/cxx/).
 
-The sources for the site are located in the [docs](docs) directory in this repository.
+The sources for the reference section of the site are located in the [docs](docs) directory in this repository.
 
 ## Getting Help
 

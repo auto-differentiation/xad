@@ -1,9 +1,3 @@
----
-description: Reference for the header file organisation and namespace used by XAD
-hide:
-  - toc
----
-
 # Headers and Namespaces
 
 All XAD data types and operations are defined in the `xad` namespace.

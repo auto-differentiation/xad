@@ -1,8 +1,3 @@
----
-description: >
-  Specialisation of the std::complex type for XAD active data types.
----
-
 # Complex
 
 ## Overview

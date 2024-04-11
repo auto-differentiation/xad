@@ -1,7 +1,3 @@
----
-description: Smoothed versions of non-differentiable functions provided for convenience with XAD.
----
-
 # Smoothed Mathematical Functions
 
 The functions in this section are smoothed equivalents of the original
