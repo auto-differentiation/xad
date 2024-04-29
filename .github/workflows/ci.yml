@@ -322,7 +322,7 @@ jobs:
 
   build_and_test_macos:
     name: Mac
-    runs-on: macos-latest
+    runs-on: macos-13
     strategy:
       fail-fast: false
       matrix:
