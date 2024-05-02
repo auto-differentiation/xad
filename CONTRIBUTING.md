@@ -3,7 +3,7 @@
 We love pull requests from everyone. By participating in this project, you agree to abide
 by our [code of conduct](CODE_OF_CONDUCT.md).
 
-1.  Fork, then clone the repository:
+1.  [Fork](https://github.com/auto-differentiation/xad/fork), then clone the repository:
 
 ```bash
 git clone https://github.com/yourusername/xad.git
