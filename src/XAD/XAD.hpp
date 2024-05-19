@@ -24,6 +24,11 @@
 
 #pragma once
 
+// #if defined(__APPLE__) && defined(__clang__)
+// #if defined(__apple_build_version__) && (__apple_build_version__ >= 15000000)
+// #include <XAD/StdCompatibility.hpp>
+// #endif
+// #endif
 #include <XAD/BinaryDerivativeImpl.hpp>
 #include <XAD/BinaryExpr.hpp>
 #include <XAD/BinaryFunctors.hpp>
