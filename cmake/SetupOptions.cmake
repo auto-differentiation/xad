@@ -34,7 +34,12 @@ endif()
 option(XAD_WARNINGS_PARANOID "Use extra-paranoid warning level" ON)
 option(XAD_POSITION_INDEPENDENT_CODE "Generate PIC code, so it can be linked into a shared library" ON)
 
-set(XAD_SIMD_OPTION "NEON" CACHE STRING "SIMD instruction set to use")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(XAD_SIMD_OPTION "NEON" CACHE STRING "SIMD instruction set to use")
+else()
+    set(XAD_SIMD_OPTION "AVX" CACHE STRING "SIMD instruction set to use")
+endif()
+
 set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS SSE2 AVX AVX2 AVX512) # for drop-down in GUI
 message(STATUS "Using SIMD instruction set: ${XAD_SIMD_OPTION}")
 

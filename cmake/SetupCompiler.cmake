@@ -185,4 +185,3 @@ function(xad_add_executable name)
         MINSIZEREL_POSTFIX ""
     )
 endfunction()
-
