@@ -40,7 +40,7 @@ else()
     set(XAD_SIMD_OPTION "AVX" CACHE STRING "SIMD instruction set to use")
 endif()
 
-set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS SSE2 AVX AVX2 AVX512) # for drop-down in GUI
+set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS SSE2 AVX AVX2 AVX512 NEON) # for drop-down in GUI
 message(STATUS "Using SIMD instruction set: ${XAD_SIMD_OPTION}")
 
 option(XAD_ENABLE_ADDRESS_SANITIZER "Enable address sanitizer (Gcc/Clang only)" OFF)

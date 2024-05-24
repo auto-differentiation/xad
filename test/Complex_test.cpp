@@ -1452,10 +1452,7 @@ TYPED_TEST(ComplexTest, NormWithExplicitTemplateParam)
 {
     auto z = std::complex<TypeParam>(1.2, 1.2);
 
-    // Essentially the same call, but compiler on arm struggles with the overloads
-    // and throws error so it's been switched temporarily.
-    /*EXPECT_THAT(xad::value(std::norm<TypeParam>(z)), DoubleNear(2.88, 1e-9));*/
-    EXPECT_THAT(xad::value(xad::detail::norm_impl<TypeParam>(z)), DoubleNear(2.88, 1e-9));
+    EXPECT_THAT(xad::value(std::norm<TypeParam>(z)), DoubleNear(2.88, 1e-9));
 }
 
 TYPED_TEST(ComplexTest, NormOfDoubleOrInteger)

@@ -1375,6 +1375,17 @@ XAD_INLINE xad::FReal<T> norm(const complex<xad::FReal<T>>& x)
     return ::xad::detail::norm_impl(x);
 }
 
+// appleclang15 needs this overload for type paramed norm
+#if defined(__APPLE__) && defined(__clang__)
+#if defined(__apple_build_version__) && (__apple_build_version__ >= 15000000)
+template <class T>
+XAD_INLINE T norm(complex<T>& x)
+{
+    return ::xad::detail::norm_impl(x);
+}
+#endif
+#endif
+
 // return the expression type from multiplying x*x without actually evaluating it
 template <class Scalar, class Derived>
 XAD_INLINE auto norm(const xad::Expression<Scalar, Derived>& x) -> decltype(x * x)
