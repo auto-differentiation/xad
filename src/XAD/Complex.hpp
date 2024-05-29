@@ -1379,7 +1379,7 @@ XAD_INLINE xad::FReal<T> norm(const complex<xad::FReal<T>>& x)
 #if defined(__APPLE__) && defined(__clang__)
 #if defined(__apple_build_version__) && (__apple_build_version__ >= 15000000)
 template <class T>
-XAD_INLINE T norm(complex<T>& x)
+XAD_INLINE typename std::enable_if<!std::is_arithmetic<T>::value, T>::type norm(complex<T>& x)
 {
     return ::xad::detail::norm_impl(x);
 }
@@ -1492,20 +1492,22 @@ XAD_INLINE auto proj(const xad::FReal<T>& x) -> decltype(::xad::detail::proj_imp
 // different expr (derived1, derived2 - returns scalar)
 
 template <class T>
-XAD_INLINE complex<xad::AReal<T>> polar(const xad::AReal<T>& r, const xad::AReal<T>& theta = 0)
+XAD_INLINE complex<xad::AReal<T>> polar(const xad::AReal<T>& r,
+                                        const xad::AReal<T>& theta = xad::AReal<T>())
 {
     return xad::detail::polar_impl(r, theta);
 }
 
 template <class T>
-XAD_INLINE complex<xad::FReal<T>> polar(const xad::FReal<T>& r, const xad::FReal<T>& theta = 0)
+XAD_INLINE complex<xad::FReal<T>> polar(const xad::FReal<T>& r,
+                                        const xad::FReal<T>& theta = xad::FReal<T>())
 {
     return xad::detail::polar_impl(r, theta);
 }
 
 template <class Scalar, class Expr>
 XAD_INLINE complex<typename xad::ExprTraits<Expr>::value_type> polar(
-    const xad::Expression<Scalar, Expr>& r, const xad::Expression<Scalar, Expr>& theta = 0)
+    const xad::Expression<Scalar, Expr>& r, const xad::Expression<Scalar, Expr>& theta)
 {
     typedef typename xad::ExprTraits<Expr>::value_type type;
     return xad::detail::polar_impl(type(r), type(theta));
@@ -1688,7 +1690,7 @@ XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> polar(
 // expr, T - only enabled if T is scalar
 template <class Scalar, class Expr>
 XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> polar(
-    const xad::Expression<Scalar, Expr>& r, Scalar theta = 0)
+    const xad::Expression<Scalar, Expr>& r, Scalar theta = Scalar())
 {
     return xad::detail::polar_impl(r.derived(), typename xad::ExprTraits<Expr>::value_type(theta));
 }

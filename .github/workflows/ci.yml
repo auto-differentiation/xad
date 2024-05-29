@@ -33,6 +33,10 @@ jobs:
             compiler: msvc
             os: windows-2019
             vsvarsall: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+          - toolset: "14.1"
+            compiler: msvc
+            os: windows-2019
+            vsvarsall: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
         exclude:
           - compiler: clang
             toolset: "14.1"
@@ -415,53 +419,86 @@ jobs:
         fail-fast: false
         matrix:
           config: [Release, Debug]
+          include:
+            - config: Debug
+              coverage: true
+              coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
+              coverage_ld_flags: "-ftest-coverage"
+            - config: Release
+              coverage: false
       runs-on: macos-latest
       steps:
         - uses: actions/checkout@v3
-        - name: Setup dependencies
+        - name: setup
           run: |
             brew update
             brew install ccache ninja
-        - name: Setup Clang 15
+        - name: setup coverage
+          if: ${{ matrix.coverage }}
           run: |
-            brew install llvm@15
-            echo 'export PATH="/usr/local/opt/llvm@15/bin:$PATH"' >> $GITHUB_ENV
-        - name: Configure
+            brew install lcov
+        - uses: actions/checkout@v3
+        - name: ccache
+          uses: hendrikmuhs/ccache-action@v1.2.10
+          with:
+            key: macos-${{ matrix.config }}
+        - name: configure
           run: |
             mkdir build
             cd build
             cmake .. -GNinja \
               -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-              -DCMAKE_CXX_COMPILER=clang++ \
+              -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ \
               -DCMAKE_C_COMPILER=clang \
               -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
               -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
-        - name: Build
+        - name: build
           run: |
             cd build
             cmake --build .
-        - name: Test
+        - name: coverage baseline
+          if: ${{ matrix.coverage }}
+          run: |
+            cd build
+            mkdir coverage tmp
+            lcov --no-external --keep-going --capture --initial --directory ${{ github.workspace }} --output-file ./tmp/lcov_base.info
+        - name: test
           run: |
             cd build
             ctest --no-compress-output --output-on-failure --parallel $(sysctl -n hw.ncpu) --output-junit test_results.xml
-        - name: Upload test results
+        - name: upload test results
           if: always()
           uses: actions/upload-artifact@v3
           with:
             name: Test Results (Mac Clang-15-${{ matrix.config }})
             path: build/test_results.xml
-        - name: Install
+        - name: coverage tests
+          if: ${{ matrix.coverage }}
+          run: |
+            cd build
+            lcov --no-external --keep-going --capture --directory ${{ github.workspace }} --output-file ./tmp/lcov_run.info
+            lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info  --ignore-errors inconsistent  --output-file ./tmp/lcov_total.info
+            lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --ignore-errors inconsistent --output-file ./coverage/lcov.info
+        - name: upload coverage results
+          if: ${{ matrix.coverage }}
+          uses: coverallsapp/github-action@master
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            flag-name: macos
+            path-to-lcov: build/coverage/lcov.info
+            parallel: true
+        - name: install
           run: |
             cd build
             cmake --install .
-        - name: Install test
+        - name: install test
           run: |
             mkdir installtest
             cd installtest
             cmake ../samples -GNinja \
               -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
               -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"  \
-              -DCMAKE_CXX_COMPILER=clang++ \
+              -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ \
               -DCMAKE_C_COMPILER=clang
             cmake --build .
 
