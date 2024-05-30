@@ -1376,14 +1376,13 @@ XAD_INLINE xad::FReal<T> norm(const complex<xad::FReal<T>>& x)
 }
 
 // appleclang15 needs this overload for type paramed norm
-#if defined(__APPLE__) && defined(__clang__)
-#if defined(__apple_build_version__) && (__apple_build_version__ >= 15000000)
+#if defined(__APPLE__) && defined(__clang__) && defined(__apple_build_version__) &&                \
+    (__apple_build_version__ >= 15000000)
 template <class T>
-XAD_INLINE typename std::enable_if<!std::is_arithmetic<T>::value, T>::type norm(complex<T>& x)
+XAD_INLINE typename std::enable_if<xad::ExprTraits<T>::isExpr, T>::type norm(complex<T>& x)
 {
     return ::xad::detail::norm_impl(x);
 }
-#endif
 #endif
 
 // return the expression type from multiplying x*x without actually evaluating it
