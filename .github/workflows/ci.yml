@@ -353,6 +353,11 @@ jobs:
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-ftest-coverage"
+        exclude:
+          - os: macos-13
+            compiler: clang15
+          - os: macos-latest
+            compiler: default
     runs-on: ${{ matrix.os }}
     steps:
       - name: setup
@@ -363,7 +368,7 @@ jobs:
         if: ${{ matrix.coverage }}
         # needs to be lcov1.14 specifically and brew no longer supports version selection
         run: |
-          git clone --branch v1.14 https://github.com/linux-test-project/lcov.git
+          git clone --branch v1.15 https://github.com/linux-test-project/lcov.git
           cd lcov
           sudo make install
       - uses: actions/checkout@v3
