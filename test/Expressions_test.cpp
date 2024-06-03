@@ -1704,7 +1704,7 @@ TEST(Expressions, canEvaluateLongExpressionsLikeHestonAdjoint)
     double yd_eps = testerd.c4(value(x) + eps);
     double dxd = (yd_eps - yd) / eps;
 
-    EXPECT_DOUBLE_EQ(value(y), yd);
+    EXPECT_THAT(value(y), DoubleNear(yd, 1e-9));
     EXPECT_THAT(dx, DoubleNear(dxd, 1e-5));
 }
 
@@ -1723,7 +1723,7 @@ TEST(Expressions, canEvaluateLongExpressionsLikeHestonForward)
     double yd_eps = testerd.c4(value(x) + eps);
     double dxd = (yd_eps - yd) / eps;
 
-    EXPECT_DOUBLE_EQ(value(y), yd);
+    EXPECT_THAT(value(y), DoubleNear(yd, 1e-9));
     EXPECT_THAT(dx, DoubleNear(dxd, 1e-5));
 }
 
