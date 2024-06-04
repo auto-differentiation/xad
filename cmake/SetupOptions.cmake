@@ -27,15 +27,26 @@ include(CMakeDependentOption)
 # Build options
 # Enable the tests only if this is the main project
 if(CMAKE_PROJECT_NAME STREQUAL "xad")
-    option(XAD_ENABLE_TESTS "Enable the XAD Tests" ON)
+    option(XAD_ENABLE_TESTS "Enable the XAD tests" ON)
 else()
     option(XAD_ENABLE_TESTS "Enable the XAD tests" OFF)
 endif()
 option(XAD_WARNINGS_PARANOID "Use extra-paranoid warning level" ON)
 option(XAD_POSITION_INDEPENDENT_CODE "Generate PIC code, so it can be linked into a shared library" ON)
 
-set(XAD_SIMD_OPTION "AVX" CACHE STRING "SIMD instruction set to use")
-set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS SSE2 AVX AVX2 AVX512) # for drop-down in GUI
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+    if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+        set(XAD_SIMD_OPTION "APPLE_M1" CACHE STRING "SIMD instruction set to use")
+        set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS APPLE_M1 NATIVE)
+    elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+        set(XAD_SIMD_OPTION "NATIVE" CACHE STRING "SIMD instruction set to use")
+        set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS NATIVE)
+    endif()
+else()
+    set(XAD_SIMD_OPTION "AVX" CACHE STRING "SIMD instruction set to use")
+    set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS SSE2 AVX AVX2 AVX512 NATIVE) # for drop-down in GUI
+endif()
+
 message(STATUS "Using SIMD instruction set: ${XAD_SIMD_OPTION}")
 
 option(XAD_ENABLE_ADDRESS_SANITIZER "Enable address sanitizer (Gcc/Clang only)" OFF)

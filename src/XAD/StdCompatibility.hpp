@@ -159,7 +159,7 @@ struct is_arithmetic<xad::FReal<T>> : std::is_arithmetic<T>
 {
 };
 template <class T>
-struct is_signed<xad::AReal<T>> : std::is_signed<T> 
+struct is_signed<xad::AReal<T>> : std::is_signed<T>
 {
 };
 template <class T>
