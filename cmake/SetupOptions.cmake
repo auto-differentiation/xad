@@ -37,14 +37,16 @@ option(XAD_POSITION_INDEPENDENT_CODE "Generate PIC code, so it can be linked int
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
     if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
         set(XAD_SIMD_OPTION "APPLE_M1" CACHE STRING "SIMD instruction set to use")
+        set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS APPLE_M1 NATIVE)
     elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
         set(XAD_SIMD_OPTION "NATIVE" CACHE STRING "SIMD instruction set to use")
+        set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS NATIVE)
     endif()
 else()
     set(XAD_SIMD_OPTION "AVX" CACHE STRING "SIMD instruction set to use")
+    set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS SSE2 AVX AVX2 AVX512 NATIVE) # for drop-down in GUI
 endif()
 
-set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS SSE2 AVX AVX2 AVX512 APPLE_M1 NATIVE) # for drop-down in GUI
 message(STATUS "Using SIMD instruction set: ${XAD_SIMD_OPTION}")
 
 option(XAD_ENABLE_ADDRESS_SANITIZER "Enable address sanitizer (Gcc/Clang only)" OFF)
