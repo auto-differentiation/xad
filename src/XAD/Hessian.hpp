@@ -31,7 +31,7 @@ template <class T>
 class Hessian
 {
   public:
-    Hessian() {}
+    Hessian(std::function<T(std::vector<T> &)> func) : foo(func) {}
 
     std::vector<std::vector<T>> compute(std::vector<T> &v)
     {
@@ -48,7 +48,7 @@ class Hessian
             derivative(value(v[i])) = 1.0;
             tape.newRecording();
 
-            T y = q(v[0], v[1]);
+            T y = foo(v);
             tape.registerOutput(y);
             value(derivative(y)) = 1.0;
 
@@ -56,8 +56,8 @@ class Hessian
 
             for (unsigned int j = 0; j < domain; j++)
             {
-                std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
-                          << "\n";
+                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
+                //           << "\n";
                 matrix[i][j] = derivative(derivative(v[j]));
             }
 
@@ -68,13 +68,7 @@ class Hessian
     }
 
   private:
-    T q(T a, T b)
-    {
-        T c = a * a;
-        T d = b * b;
-        return c + d;
-    }
-
+    std::function<T(std::vector<T> &)> foo;
     unsigned int domain;
 };
 }  // namespace xad
