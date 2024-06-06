@@ -50,7 +50,16 @@ T tquad(std::vector<T> &x)
     return c + d + e;
 }
 
-TEST(HessianTest, SimpleQuadratic)
+template <class T>
+T foo(std::vector<T> &x)
+{
+    T c = exp(x[0]);
+    T d = sin(x[1]);
+    T e = cos(x[2]);
+    return c + d + e;
+}
+
+TEST(HessianTest, QuadraticForwardAdjoint)
 {
     typedef xad::fwd_adj<double> mode;
     typedef mode::active_type AD;
@@ -66,7 +75,7 @@ TEST(HessianTest, SimpleQuadratic)
             ASSERT_EQ(cross_hessian[i][j], computed_hessian[i][j]);
 }
 
-TEST(HessianTest, DDD)
+TEST(HessianTest, ThreeVarQuadratic)
 {
     typedef xad::fwd_adj<double> mode;
     typedef mode::active_type AD;
