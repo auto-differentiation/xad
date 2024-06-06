@@ -45,6 +45,7 @@ set(testfiles
     ReusableRange_test.cpp
     PartialRollback_test.cpp
     Hessian_test.cpp
+    Jacobian_test.cpp
 )
   
 if (CMAKE_COMPILER_IS_GNUCC)

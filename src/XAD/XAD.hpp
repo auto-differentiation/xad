@@ -37,6 +37,7 @@
 #include <XAD/Expression.hpp>
 #include <XAD/Hessian.hpp>
 #include <XAD/Interface.hpp>
+#include <XAD/Jacobian.hpp>
 #include <XAD/Literals.hpp>
 #include <XAD/MathFunctions.hpp>
 #include <XAD/Tape.hpp>

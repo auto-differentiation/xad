@@ -43,6 +43,7 @@ set(public_headers
     XAD/Expression.hpp
     XAD/Hessian.hpp	
     XAD/Interface.hpp	
+    XAD/Jacobian.hpp
     XAD/Literals.hpp
     XAD/Macros.hpp
     XAD/MathFunctions.hpp

@@ -61,14 +61,13 @@ T foo(std::vector<T> &x)
 
 TEST(HessianTest, QuadraticForwardAdjoint)
 {
-    typedef xad::fwd_adj<double> mode;
-    typedef mode::active_type AD;
+    typedef xad::AReal<xad::FReal<double>> AD;
 
     std::vector<AD> x = {3, 2};
-    xad::Hessian<AD> h(quad<AD>);
+    xad::Hessian<AD> h(quad<AD>, x);
 
     std::vector<std::vector<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
-    std::vector<std::vector<AD>> computed_hessian = h.compute(x);
+    std::vector<std::vector<AD>> computed_hessian = h.compute();
 
     for (unsigned int i = 0; i < cross_hessian.size(); i++)
         for (unsigned int j = 0; j < cross_hessian.size(); j++)
@@ -81,11 +80,11 @@ TEST(HessianTest, ThreeVarQuadratic)
     typedef mode::active_type AD;
 
     std::vector<AD> x = {3, 2, 4};
-    xad::Hessian<AD> h(tquad<AD>);
+    xad::Hessian<AD> hes(tquad<AD>, x);
 
     std::vector<std::vector<AD>> cross_hessian = {
         {2.0, 0.0, 0.0}, {0.0, 2.0, 0.0}, {0.0, 0.0, 2.0}};
-    std::vector<std::vector<AD>> computed_hessian = h.compute(x);
+    std::vector<std::vector<AD>> computed_hessian = hes.compute();
 
     for (unsigned int i = 0; i < cross_hessian.size(); i++)
         for (unsigned int j = 0; j < cross_hessian.size(); j++)

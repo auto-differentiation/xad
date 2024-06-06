@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Implementation of Hessian computing methods.
+   Implementation of Jacobian computing methods.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -29,46 +29,51 @@ namespace xad
 {
 
 template <class T>
-class Hessian
+class Jacobian
 {
   public:
-    Hessian(std::function<T(std::vector<T> &)> func, std::vector<T> &v) : foo(func), v(v) {}
+    Jacobian(std::vector<std::function<T(std::vector<T> &)>> foos, std::vector<T> &v,
+             xad::Tape<double> *tape)
+        : foos(foos),
+          v(v),
+          tape(tape),
+          domain(static_cast<unsigned int>(v.size())),
+          codomain(static_cast<unsigned int>(foos.size()))
+    {
+    }
 
     std::vector<std::vector<T>> compute()
     {
-        xad::Tape<xad::FReal<double>> tape;
-        domain = static_cast<unsigned int>(v.size());
-        std::vector<std::vector<T>> matrix(domain, std::vector<T>(domain, 0.0));
+        std::vector<std::vector<T>> matrix(codomain, std::vector<T>(domain, 0.0));
 
-        tape.registerInputs(v);
+        tape->registerInputs(v);
 
         for (unsigned int i = 0; i < domain; i++)
         {
-            derivative(value(v[i])) = 1.0;
-            tape.newRecording();
-
-            T y = foo(v);
-            tape.registerOutput(y);
-            value(derivative(y)) = 1.0;
-
-            tape.computeAdjoints();
-
-            for (unsigned int j = 0; j < domain; j++)
+            for (unsigned int j = 0; j < codomain; j++)
             {
-                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
-                //           << "\n";
-                matrix[i][j] = derivative(derivative(v[j]));
-            }
+                derivative(v[i]) = 1.0;
+                tape->newRecording();
 
-            derivative(value(v[i])) = 0.0;
+                T y = foos[j](v);
+                tape->registerOutput(y);
+                derivative(y) = 1.0;
+
+                tape->computeAdjoints();
+
+                // std::cout << "df" << j << "/dx" << i << " = " << derivative(v[i]) << std::endl;
+                matrix[i][j] = derivative(v[i]);
+                derivative(v[i]) = 0.0;
+            }
         }
 
         return matrix;
     }
 
   private:
-    std::function<T(std::vector<T> &)> foo;
+    std::vector<std::function<T(std::vector<T> &)>> foos;
     std::vector<T> v;
-    unsigned int domain;
+    Tape<double> *tape;
+    unsigned int domain, codomain;
 };
 }  // namespace xad
