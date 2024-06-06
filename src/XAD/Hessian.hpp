@@ -32,43 +32,84 @@ template <class T>
 class Hessian
 {
   public:
-    Hessian(std::function<T(std::vector<T> &)> func, std::vector<T> &v) : foo(func), v(v) {}
-
-    std::vector<std::vector<T>> compute()
+    // fwd_adj constructor
+    Hessian(std::function<T(std::vector<T> &)> func, const std::vector<T> &v,
+            xad::Tape<xad::FReal<double>> *tape)
+        : foo_(func),
+          v_(v),
+          domain_(static_cast<unsigned int>(v_.size())),
+          matrix_(domain_, std::vector<T>(domain_, 0.0))
     {
-        xad::Tape<xad::FReal<double>> tape;
-        domain = static_cast<unsigned int>(v.size());
-        std::vector<std::vector<T>> matrix(domain, std::vector<T>(domain, 0.0));
+        compute(tape);
+    }
 
-        tape.registerInputs(v);
+    // tapeless (fwd_fwd) constructor
+    Hessian(std::function<T(std::vector<T> &)> func, std::vector<T> &v)
+        : foo_(func),
+          v_(v),
+          domain_(static_cast<unsigned int>(v_.size())),
+          matrix_(domain_, std::vector<T>(domain_, 0.0))
+    {
+        compute();
+    }
 
-        for (unsigned int i = 0; i < domain; i++)
+    // fwd_adj
+    void compute(xad::Tape<xad::FReal<double>> *tape)
+    {
+        tape->registerInputs(v_);
+
+        for (unsigned int i = 0; i < domain_; i++)
         {
-            derivative(value(v[i])) = 1.0;
-            tape.newRecording();
+            derivative(value(v_[i])) = 1.0;
+            tape->newRecording();
 
-            T y = foo(v);
-            tape.registerOutput(y);
+            T y = foo_(v_);
+            tape->registerOutput(y);
             value(derivative(y)) = 1.0;
 
-            tape.computeAdjoints();
+            tape->computeAdjoints();
 
-            for (unsigned int j = 0; j < domain; j++)
+            for (unsigned int j = 0; j < domain_; j++)
             {
                 // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
                 //           << "\n";
-                matrix[i][j] = derivative(derivative(v[j]));
+                matrix_[i][j] = derivative(derivative(v_[j]));
             }
 
-            derivative(value(v[i])) = 0.0;
+            derivative(value(v_[i])) = 0.0;
         }
-
-        return matrix;
     }
 
+    // fwd_fwd
+    void compute()
+    {
+        for (unsigned int i = 0; i < domain_; i++)
+        {
+            value(derivative(v_[i])) = 1.0;
+
+            for (unsigned int j = 0; j < domain_; j++)
+            {
+                derivative(value(v_[j])) = 1.0;
+
+                T y = foo_(v_);
+
+                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(y))
+                //           << "\n";
+                matrix_[i][j] = derivative(derivative(y));
+
+                derivative(value(v_[j])) = 0.0;
+            }
+
+            value(derivative(v_[i])) = 0.0;
+        }
+    }
+
+    std::vector<std::vector<T>> get() { return matrix_; }
+
   private:
-    std::function<T(std::vector<T> &)> foo;
-    std::vector<T> v;
-    unsigned int domain;
+    std::function<T(std::vector<T> &)> foo_;
+    std::vector<T> v_;
+    unsigned int domain_;
+    std::vector<std::vector<T>> matrix_;
 };
 }  // namespace xad

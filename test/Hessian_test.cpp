@@ -59,32 +59,76 @@ T foo(std::vector<T> &x)
     return c + d + e;
 }
 
+template <class T>
+T single(std::vector<T> &x)
+{
+    return x[0] * x[0] * x[0] + x[0];
+}
+
 TEST(HessianTest, QuadraticForwardAdjoint)
 {
-    typedef xad::AReal<xad::FReal<double>> AD;
+    typedef xad::fwd_adj<double> mode;
+    typedef mode::active_type AD;
+    typedef mode::tape_type tape_type;
+
+    tape_type tape;
 
     std::vector<AD> x = {3, 2};
-    xad::Hessian<AD> h(quad<AD>, x);
+    xad::Hessian<AD> hes(quad<AD>, x, &tape);
 
     std::vector<std::vector<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
-    std::vector<std::vector<AD>> computed_hessian = h.compute();
+    std::vector<std::vector<AD>> computed_hessian = hes.get();
 
     for (unsigned int i = 0; i < cross_hessian.size(); i++)
         for (unsigned int j = 0; j < cross_hessian.size(); j++)
             ASSERT_EQ(cross_hessian[i][j], computed_hessian[i][j]);
 }
 
-TEST(HessianTest, ThreeVarQuadratic)
+TEST(HessianTest, SingleInputForwardAdjoint)
 {
     typedef xad::fwd_adj<double> mode;
     typedef mode::active_type AD;
+    typedef mode::tape_type tape_type;
 
-    std::vector<AD> x = {3, 2, 4};
-    xad::Hessian<AD> hes(tquad<AD>, x);
+    tape_type tape;
 
-    std::vector<std::vector<AD>> cross_hessian = {
-        {2.0, 0.0, 0.0}, {0.0, 2.0, 0.0}, {0.0, 0.0, 2.0}};
-    std::vector<std::vector<AD>> computed_hessian = hes.compute();
+    std::vector<AD> x = {3};
+    xad::Hessian<AD> hes(single<AD>, x, &tape);
+
+    std::vector<std::vector<AD>> cross_hessian = {{18.0}};
+    std::vector<std::vector<AD>> computed_hessian = hes.get();
+
+    for (unsigned int i = 0; i < cross_hessian.size(); i++)
+        for (unsigned int j = 0; j < cross_hessian.size(); j++)
+            ASSERT_EQ(cross_hessian[i][j], computed_hessian[i][j]);
+}
+
+TEST(HessianTest, QuadraticForwardForward)
+{
+    typedef xad::fwd_fwd<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> x = {3, 2};
+    xad::Hessian<AD> hes(quad<AD>, x);
+
+    std::vector<std::vector<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
+    std::vector<std::vector<AD>> computed_hessian = hes.get();
+
+    for (unsigned int i = 0; i < cross_hessian.size(); i++)
+        for (unsigned int j = 0; j < cross_hessian.size(); j++)
+            ASSERT_EQ(cross_hessian[i][j], computed_hessian[i][j]);
+}
+
+TEST(HessianTest, SingleInputForwardForward)
+{
+    typedef xad::fwd_fwd<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> x = {3};
+    xad::Hessian<AD> hes(single<AD>, x);
+
+    std::vector<std::vector<AD>> cross_hessian = {{18.0}};
+    std::vector<std::vector<AD>> computed_hessian = hes.get();
 
     for (unsigned int i = 0; i < cross_hessian.size(); i++)
         for (unsigned int j = 0; j < cross_hessian.size(); j++)

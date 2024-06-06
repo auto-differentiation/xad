@@ -41,6 +41,12 @@ T foo2(std::vector<T> &x)
     return x[1] + sin(x[0]);
 }
 
+template <typename T>
+std::vector<T> foo(std::vector<T> &x)
+{
+    return {foo1(x), foo2(x)};
+}
+
 TEST(JacobianTest, SimpleJacobianAdjoint)
 {
     typedef xad::adj<double> mode;
@@ -49,15 +55,11 @@ TEST(JacobianTest, SimpleJacobianAdjoint)
 
     tape_type tape;
 
-    std::vector<std::function<AD(std::vector<AD> &)>> funcs(2);
-    funcs[0] = foo1<AD>;
-    funcs[1] = foo2<AD>;
-
     std::vector<AD> x = {-2, 1};
-    xad::Jacobian<AD> jac(funcs, x, &tape);
+    xad::Jacobian<AD> jac(foo<AD>, x, &tape);
 
     std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(-2)}, {cos(1), 1.0}};
-    std::vector<std::vector<AD>> computed_jacobian = jac.compute();
+    std::vector<std::vector<AD>> computed_jacobian = jac.get();
 
     for (unsigned int i = 0; i < cross_jacobian.size(); i++)
         for (unsigned int j = 0; j < cross_jacobian.size(); j++)

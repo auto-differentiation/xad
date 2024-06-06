@@ -32,48 +32,54 @@ template <class T>
 class Jacobian
 {
   public:
-    Jacobian(std::vector<std::function<T(std::vector<T> &)>> foos, std::vector<T> &v,
+    Jacobian(std::function<std::vector<T>(std::vector<T> &)> foo, const std::vector<T> &v,
              xad::Tape<double> *tape)
-        : foos(foos),
-          v(v),
-          tape(tape),
-          domain(static_cast<unsigned int>(v.size())),
-          codomain(static_cast<unsigned int>(foos.size()))
+        : foo_(foo),
+          v_(v),
+          tape_(tape),
+          domain_(static_cast<unsigned int>(v_.size())),
+          codomain_(0),
+          matrix_(0)
     {
+        compute();
     }
 
-    std::vector<std::vector<T>> compute()
+    void compute()
     {
-        std::vector<std::vector<T>> matrix(codomain, std::vector<T>(domain, 0.0));
+        tape_->registerInputs(v_);
+        std::vector<T> res = foo_(v_);
+        codomain_ = static_cast<unsigned int>(res.size());
+        matrix_ = std::vector<std::vector<T>>(codomain_, std::vector<T>(domain_, 0.0));
 
-        tape->registerInputs(v);
-
-        for (unsigned int i = 0; i < domain; i++)
+        for (unsigned int i = 0; i < domain_; i++)
         {
-            for (unsigned int j = 0; j < codomain; j++)
+            for (unsigned int j = 0; j < codomain_; j++)
             {
-                derivative(v[i]) = 1.0;
-                tape->newRecording();
+                derivative(v_[i]) = 1.0;
+                tape_->newRecording();
 
-                T y = foos[j](v);
-                tape->registerOutput(y);
+                T y = res[j];
+                tape_->registerOutput(y);
                 derivative(y) = 1.0;
 
-                tape->computeAdjoints();
+                tape_->computeAdjoints();
 
-                // std::cout << "df" << j << "/dx" << i << " = " << derivative(v[i]) << std::endl;
-                matrix[i][j] = derivative(v[i]);
-                derivative(v[i]) = 0.0;
+                std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[i]) << std::endl;
+                matrix_[i][j] = derivative(v_[i]);
+                derivative(v_[i]) = 0.0;
             }
         }
 
-        return matrix;
+        std::cout << "reached" << std::endl;
     }
 
+    std::vector<std::vector<T>> get() { return matrix_; }
+
   private:
-    std::vector<std::function<T(std::vector<T> &)>> foos;
-    std::vector<T> v;
-    Tape<double> *tape;
-    unsigned int domain, codomain;
+    std::function<std::vector<T>(std::vector<T> &)> foo_;
+    std::vector<T> v_;
+    Tape<double> *tape_;
+    unsigned int domain_, codomain_;
+    std::vector<std::vector<T>> matrix_;
 };
 }  // namespace xad
