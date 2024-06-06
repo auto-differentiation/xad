@@ -41,6 +41,7 @@ set(public_headers
     XAD/Complex.hpp
     XAD/Exceptions.hpp
     XAD/Expression.hpp
+    XAD/Hessian.hpp	
     XAD/Interface.hpp	
     XAD/Literals.hpp
     XAD/Macros.hpp
