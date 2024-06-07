@@ -84,8 +84,9 @@ class Jacobian
 
         for (unsigned int i = 0; i < codomain_; i++)
         {
-            tape->registerOutput(res[i]);
-            derivative(res[i]) = 1.0;
+            T y = res[i];
+            tape->registerOutput(y);
+            derivative(y) = 1.0;
 
             tape->computeAdjoints();
 
@@ -94,8 +95,7 @@ class Jacobian
                 std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[j]) << std::endl;
                 matrix_[i][j] = derivative(v_[j]);
             }
-
-            derivative(res[i]) = 0.0;
+            derivative(y) = 0.0;
         }
     }
 
@@ -131,8 +131,8 @@ class Jacobian
     // fwd 2d vector
     void compute()
     {
-        std::vector<T> res = foo_(v_);
-        codomain_ = static_cast<unsigned int>(res.size());
+        // TODO: optimise to use less computations of foo_()
+        codomain_ = static_cast<unsigned int>(foo_(v_).size());
         matrix_ = std::vector<std::vector<T>>(codomain_, std::vector<T>(domain_, 0.0));
 
         for (unsigned int i = 0; i < domain_; i++)
@@ -141,12 +141,11 @@ class Jacobian
 
             for (unsigned int j = 0; j < codomain_; j++)
             {
-                T y = res[j];
+                T y = foo_(v_)[j];
 
                 std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
 
                 matrix_[i][j] = derivative(y);
-                // derivative(y) = 0.0;
             }
 
             derivative(v_[i]) = 0.0;
@@ -157,8 +156,7 @@ class Jacobian
     template <class RowIterator>
     void compute(RowIterator first, RowIterator last)
     {
-        std::vector<T> res = foo_(v_);
-        codomain_ = static_cast<unsigned int>(res.size());
+        codomain_ = static_cast<unsigned int>(foo_(v_).size());
 
         auto row = first;
 
@@ -170,12 +168,11 @@ class Jacobian
 
             for (unsigned int j = 0; j < codomain_; j++, col++)
             {
-                T y = res[j];
+                T y = foo_(v_)[j];
 
                 std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
 
                 *col = derivative(y);
-                // derivative(y) = 0.0;
             }
 
             derivative(v_[i]) = 0.0;

@@ -55,11 +55,30 @@ TEST(JacobianTest, SimpleAdjoint)
 
     tape_type tape;
 
-    std::vector<AD> x = {2, 1};
+    std::vector<AD> x = {3, 1};
     xad::Jacobian<AD> jac(foo<AD>, x, &tape);
 
-    std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(2)}, {cos(1), 1.0}};
+    std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(x[0])}, {cos(x[1]), 1.0}};
     std::vector<std::vector<AD>> computed_jacobian = jac.get();
+
+    for (unsigned int i = 0; i < cross_jacobian.size(); i++)
+        for (unsigned int j = 0; j < cross_jacobian.size(); j++)
+            ASSERT_EQ(cross_jacobian[i][j], computed_jacobian[i][j]);
+}
+
+TEST(JacobianTest, SimpleAdjointIterator)
+{
+    typedef xad::adj<double> mode;
+    typedef mode::tape_type tape_type;
+    typedef mode::active_type AD;
+
+    tape_type tape;
+
+    std::vector<AD> x = {3, 1};
+    std::vector<std::vector<AD>> computed_jacobian(2.0, std::vector<AD>(2.0, 0.0));
+    xad::Jacobian<AD> jac(foo<AD>, x, &tape, computed_jacobian.begin(), computed_jacobian.end());
+
+    std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(x[0])}, {cos(x[1]), 1.0}};
 
     for (unsigned int i = 0; i < cross_jacobian.size(); i++)
         for (unsigned int j = 0; j < cross_jacobian.size(); j++)
@@ -76,6 +95,22 @@ TEST(JacobianTest, SimpleForward)
 
     std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(-2)}, {cos(1), 1.0}};
     std::vector<std::vector<AD>> computed_jacobian = jac.get();
+
+    for (unsigned int i = 0; i < cross_jacobian.size(); i++)
+        for (unsigned int j = 0; j < cross_jacobian.size(); j++)
+            ASSERT_EQ(cross_jacobian[i][j], computed_jacobian[i][j]);
+}
+
+TEST(JacobianTest, SimpleForwardIterator)
+{
+    typedef xad::fwd<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> x = {-2, 1};
+    std::vector<std::vector<AD>> computed_jacobian(2.0, std::vector<AD>(2.0, 0.0));
+    xad::Jacobian<AD> jac(foo<AD>, x, computed_jacobian.begin(), computed_jacobian.end());
+
+    std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(-2)}, {cos(1), 1.0}};
 
     for (unsigned int i = 0; i < cross_jacobian.size(); i++)
         for (unsigned int j = 0; j < cross_jacobian.size(); j++)
