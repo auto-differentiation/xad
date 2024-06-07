@@ -15,4 +15,6 @@ which is imported to the website at [auto-differentiation.github.io](https://aut
 *   [Tape](ref/tape.md)
 *   [CheckpointCallback](ref/chkpt_cb.md)
 *   [Exceptions](ref/exceptions.md)
+*   [Hessian](ref/hessian.md)
+*   [Jacobian](ref/jacobian.md)
 *   [Version Information](ref/version.md)

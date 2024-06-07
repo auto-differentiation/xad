@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <functional>
+#include <type_traits>
 #include <vector>
 
 namespace xad
@@ -50,9 +51,10 @@ class Hessian
         : foo_(func), v_(v), domain_(static_cast<unsigned int>(v_.size())), matrix_(0)
     {
         if (std::distance(first, last) != domain_)
-        {
-            // throw exception
-        }
+            throw OutOfRange("Iterator not allocated enough space");
+        static_assert(has_begin<decltype(*first)>::value,
+                      "RowIterator must dereference to a type that implements a begin() method");
+
         compute(tape, first, last);
     }
 
@@ -73,9 +75,10 @@ class Hessian
         : foo_(func), v_(v), domain_(static_cast<unsigned int>(v_.size())), matrix_(0)
     {
         if (std::distance(first, last) != domain_)
-        {
-            // throw exception
-        }
+            throw OutOfRange("Iterator not allocated enough space");
+        static_assert(has_begin<decltype(*first)>::value,
+                      "RowIterator must dereference to a type that implements a begin() method");
+
         compute(first, last);
     }
 
@@ -198,5 +201,16 @@ class Hessian
     std::vector<T> v_;
     unsigned int domain_;
     std::vector<std::vector<T>> matrix_;
+
+    template <typename U>
+    static auto has_begin_impl(int) -> decltype(std::declval<U>().begin(), std::true_type{});
+
+    template <typename U>
+    static std::false_type has_begin_impl(...);
+
+    template <typename U>
+    struct has_begin : decltype(has_begin_impl<U>(0))
+    {
+    };
 };
 }  // namespace xad
