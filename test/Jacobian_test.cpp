@@ -75,14 +75,24 @@ TEST(JacobianTest, SimpleAdjointIterator)
     tape_type tape;
 
     std::vector<AD> x = {3, 1};
-    std::vector<std::vector<AD>> computed_jacobian(2.0, std::vector<AD>(2.0, 0.0));
+    std::list<std::list<AD>> computed_jacobian(2.0, std::list<AD>(2.0, 0.0));
     xad::Jacobian<AD> jac(foo<AD>, x, &tape, computed_jacobian.begin(), computed_jacobian.end());
 
-    std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(x[0])}, {cos(x[1]), 1.0}};
+    std::list<std::list<AD>> cross_jacobian = {{1.0, cos(x[0])}, {cos(x[1]), 1.0}};
 
-    for (unsigned int i = 0; i < cross_jacobian.size(); i++)
-        for (unsigned int j = 0; j < cross_jacobian.size(); j++)
-            ASSERT_EQ(cross_jacobian[i][j], computed_jacobian[i][j]);
+    auto row1 = computed_jacobian.begin(), row2 = cross_jacobian.begin();
+    while (row1 != computed_jacobian.end() && row2 != cross_jacobian.end())
+    {
+        auto col1 = row1->begin(), col2 = row2->begin();
+        while (col1 != row1->end() && col2 != row2->end())
+        {
+            ASSERT_EQ(*col1, *col2);
+            col1++;
+            col2++;
+        }
+        row1++;
+        row2++;
+    }
 }
 
 TEST(JacobianTest, SimpleForward)
@@ -107,12 +117,22 @@ TEST(JacobianTest, SimpleForwardIterator)
     typedef mode::active_type AD;
 
     std::vector<AD> x = {-2, 1};
-    std::vector<std::vector<AD>> computed_jacobian(2.0, std::vector<AD>(2.0, 0.0));
+    std::list<std::list<AD>> computed_jacobian(2.0, std::list<AD>(2.0, 0.0));
     xad::Jacobian<AD> jac(foo<AD>, x, computed_jacobian.begin(), computed_jacobian.end());
 
-    std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(-2)}, {cos(1), 1.0}};
+    std::list<std::list<AD>> cross_jacobian = {{1.0, cos(-2)}, {cos(1), 1.0}};
 
-    for (unsigned int i = 0; i < cross_jacobian.size(); i++)
-        for (unsigned int j = 0; j < cross_jacobian.size(); j++)
-            ASSERT_EQ(cross_jacobian[i][j], computed_jacobian[i][j]);
+    auto row1 = computed_jacobian.begin(), row2 = cross_jacobian.begin();
+    while (row1 != computed_jacobian.end() && row2 != cross_jacobian.end())
+    {
+        auto col1 = row1->begin(), col2 = row2->begin();
+        while (col1 != row1->end() && col2 != row2->end())
+        {
+            ASSERT_EQ(*col1, *col2);
+            col1++;
+            col2++;
+        }
+        row1++;
+        row2++;
+    }
 }

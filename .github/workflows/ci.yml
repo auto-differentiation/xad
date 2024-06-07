@@ -6,7 +6,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolset: ["14.0", "14.1", "14.2", "14.3"]
+        toolset: ["14.0", "14.1", "14.2", "14.4"]
         compiler: [msvc, clang]
         config: [Release, Debug]
         include:

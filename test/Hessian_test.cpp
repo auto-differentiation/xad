@@ -93,14 +93,24 @@ TEST(HessianTest, QuadraticForwardAdjointWithIterator)
     tape_type tape;
 
     std::vector<AD> x = {3, 2};
-    std::vector<std::vector<AD>> computed_hessian(x.size(), std::vector<AD>(x.size(), 0.0));
+    std::list<std::list<AD>> computed_hessian(x.size(), std::list<AD>(x.size(), 0.0));
     xad::Hessian<AD> hes(quad<AD>, x, &tape, computed_hessian.begin(), computed_hessian.end());
 
-    std::vector<std::vector<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
+    std::list<std::list<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
 
-    for (unsigned int i = 0; i < cross_hessian.size(); i++)
-        for (unsigned int j = 0; j < cross_hessian.size(); j++)
-            ASSERT_EQ(cross_hessian[i][j], computed_hessian[i][j]);
+    auto row1 = computed_hessian.begin(), row2 = cross_hessian.begin();
+    while (row1 != computed_hessian.end() && row2 != cross_hessian.end())
+    {
+        auto col1 = row1->begin(), col2 = row2->begin();
+        while (col1 != row1->end() && col2 != row2->end())
+        {
+            ASSERT_EQ(*col1, *col2);
+            col1++;
+            col2++;
+        }
+        row1++;
+        row2++;
+    }
 }
 
 TEST(HessianTest, SingleInputForwardAdjoint)
@@ -144,14 +154,24 @@ TEST(HessianTest, QuadraticForwardForwardWithIterator)
     typedef mode::active_type AD;
 
     std::vector<AD> x = {3, 2};
-    std::vector<std::vector<AD>> computed_hessian(x.size(), std::vector<AD>(x.size(), 0.0));
+    std::list<std::list<AD>> computed_hessian(x.size(), std::list<AD>(x.size(), 0.0));
     xad::Hessian<AD> hes(quad<AD>, x, computed_hessian.begin(), computed_hessian.end());
 
-    std::vector<std::vector<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
+    std::list<std::list<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
 
-    for (unsigned int i = 0; i < cross_hessian.size(); i++)
-        for (unsigned int j = 0; j < cross_hessian.size(); j++)
-            ASSERT_EQ(cross_hessian[i][j], computed_hessian[i][j]);
+    auto row1 = computed_hessian.begin(), row2 = cross_hessian.begin();
+    while (row1 != computed_hessian.end() && row2 != cross_hessian.end())
+    {
+        auto col1 = row1->begin(), col2 = row2->begin();
+        while (col1 != row1->end() && col2 != row2->end())
+        {
+            ASSERT_EQ(*col1, *col2);
+            col1++;
+            col2++;
+        }
+        row1++;
+        row2++;
+    }
 }
 
 TEST(HessianTest, SingleInputForwardForward)
