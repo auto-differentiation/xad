@@ -27,7 +27,7 @@
 
 namespace xad
 {
-
+// TODO: optimise to use less computations of foo_() for all compute() methods
 template <class T>
 class Jacobian
 {
@@ -77,25 +77,22 @@ class Jacobian
     void compute(xad::Tape<double> *tape)
     {
         tape->registerInputs(v_);
-        tape->newRecording();
-        std::vector<T> res = foo_(v_);
-        codomain_ = static_cast<unsigned int>(res.size());
+        codomain_ = static_cast<unsigned int>(foo_(v_).size());
         matrix_ = std::vector<std::vector<T>>(codomain_, std::vector<T>(domain_, 0.0));
 
-        for (unsigned int i = 0; i < codomain_; i++)
+        for (unsigned int i = 0; i < domain_; i++)
         {
-            T y = res[i];
-            tape->registerOutput(y);
-            derivative(y) = 1.0;
-
-            tape->computeAdjoints();
-
-            for (unsigned int j = 0; j < domain_; j++)
+            for (unsigned int j = 0; j < codomain_; j++)
             {
-                std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[j]) << std::endl;
-                matrix_[i][j] = derivative(v_[j]);
+                tape->newRecording();
+                T y = foo_(v_)[j];
+                tape->registerOutput(y);
+                derivative(y) = 1.0;
+                tape->computeAdjoints();
+
+                // std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[i]) << std::endl;
+                matrix_[i][j] = derivative(v_[i]);
             }
-            derivative(y) = 0.0;
         }
     }
 
@@ -104,34 +101,30 @@ class Jacobian
     void compute(xad::Tape<double> *tape, RowIterator first, RowIterator last)
     {
         tape->registerInputs(v_);
-        tape->newRecording();
-        std::vector<T> res = foo_(v_);
-        codomain_ = static_cast<unsigned int>(res.size());
+        codomain_ = static_cast<unsigned int>(foo_(v_).size());
         auto row = first;
 
-        for (unsigned int i = 0; i < codomain_; i++, row++)
+        for (unsigned int i = 0; i < domain_; i++, row++)
         {
-            tape->registerOutput(res[i]);
-            derivative(res[i]) = 1.0;
-
-            tape->computeAdjoints();
-
             auto col = row->begin();
 
-            for (unsigned int j = 0; j < domain_; j++, col++)
+            for (unsigned int j = 0; j < codomain_; j++, col++)
             {
-                std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[j]) << std::endl;
-                *col = derivative(v_[j]);
-            }
+                tape->newRecording();
+                T y = foo_(v_)[j];
+                tape->registerOutput(y);
+                derivative(y) = 1.0;
+                tape->computeAdjoints();
 
-            derivative(res[i]) = 0.0;
+                // std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[i]) << std::endl;
+                *col = derivative(v_[i]);
+            }
         }
     }
 
     // fwd 2d vector
     void compute()
     {
-        // TODO: optimise to use less computations of foo_()
         codomain_ = static_cast<unsigned int>(foo_(v_).size());
         matrix_ = std::vector<std::vector<T>>(codomain_, std::vector<T>(domain_, 0.0));
 
@@ -142,9 +135,7 @@ class Jacobian
             for (unsigned int j = 0; j < codomain_; j++)
             {
                 T y = foo_(v_)[j];
-
-                std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
-
+                // std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
                 matrix_[i][j] = derivative(y);
             }
 
@@ -169,9 +160,7 @@ class Jacobian
             for (unsigned int j = 0; j < codomain_; j++, col++)
             {
                 T y = foo_(v_)[j];
-
-                std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
-
+                // std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
                 *col = derivative(y);
             }
 
