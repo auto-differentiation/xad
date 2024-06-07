@@ -32,7 +32,7 @@ template <class T>
 class Hessian
 {
   public:
-    // fwd_adj constructor
+    // fwd_adj 2d vector constructor
     Hessian(std::function<T(std::vector<T> &)> func, const std::vector<T> &v,
             xad::Tape<xad::FReal<double>> *tape)
         : foo_(func),
@@ -43,7 +43,20 @@ class Hessian
         compute(tape);
     }
 
-    // tapeless (fwd_fwd) constructor
+    // fwd_adj iterator constructor
+    template <class RowIterator>
+    Hessian(std::function<T(std::vector<T> &)> func, const std::vector<T> &v,
+            xad::Tape<xad::FReal<double>> *tape, RowIterator first, RowIterator last)
+        : foo_(func), v_(v), domain_(static_cast<unsigned int>(v_.size())), matrix_(0)
+    {
+        if (std::distance(first, last) != domain_)
+        {
+            // throw exception
+        }
+        compute(tape, first, last);
+    }
+
+    // tapeless (fwd_fwd) 2d vector constructor
     Hessian(std::function<T(std::vector<T> &)> func, std::vector<T> &v)
         : foo_(func),
           v_(v),
@@ -53,7 +66,20 @@ class Hessian
         compute();
     }
 
-    // fwd_adj
+    // tapeless (fwd_fwd) iterator constructor
+    template <class RowIterator>
+    Hessian(std::function<T(std::vector<T> &)> func, std::vector<T> &v, RowIterator first,
+            RowIterator last)
+        : foo_(func), v_(v), domain_(static_cast<unsigned int>(v_.size())), matrix_(0)
+    {
+        if (std::distance(first, last) != domain_)
+        {
+            // throw exception
+        }
+        compute(first, last);
+    }
+
+    // fwd_adj 2d vector
     void compute(xad::Tape<xad::FReal<double>> *tape)
     {
         tape->registerInputs(v_);
@@ -80,7 +106,39 @@ class Hessian
         }
     }
 
-    // fwd_fwd
+    // fwd_adj iterator
+    template <class RowIterator>
+    void compute(xad::Tape<xad::FReal<double>> *tape, RowIterator first, RowIterator last)
+    {
+        tape->registerInputs(v_);
+
+        auto row = first;
+
+        for (unsigned int i = 0; i < domain_; i++, row++)
+        {
+            derivative(value(v_[i])) = 1.0;
+            tape->newRecording();
+
+            T y = foo_(v_);
+            tape->registerOutput(y);
+            value(derivative(y)) = 1.0;
+
+            tape->computeAdjoints();
+
+            auto col = row->begin();
+
+            for (unsigned int j = 0; j < domain_; j++, col++)
+            {
+                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
+                //           << "\n";
+                *col = derivative(derivative(v_[j]));
+            }
+
+            derivative(value(v_[i])) = 0.0;
+        }
+    }
+
+    // fwd_fwd 2d vector
     void compute()
     {
         for (unsigned int i = 0; i < domain_; i++)
@@ -94,8 +152,37 @@ class Hessian
                 T y = foo_(v_);
 
                 // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(y))
-                //           << "\n";
+                //           << "\n";ß
                 matrix_[i][j] = derivative(derivative(y));
+
+                derivative(value(v_[j])) = 0.0;
+            }
+
+            value(derivative(v_[i])) = 0.0;
+        }
+    }
+
+    // fwd_fwd iterator
+    template <class RowIterator>
+    void compute(RowIterator first, RowIterator last)
+    {
+        auto row = first;
+
+        for (unsigned int i = 0; i < domain_; i++, row++)
+        {
+            value(derivative(v_[i])) = 1.0;
+
+            auto col = row->begin();
+
+            for (unsigned int j = 0; j < domain_; j++, col++)
+            {
+                derivative(value(v_[j])) = 1.0;
+
+                T y = foo_(v_);
+
+                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(y))
+                //           << "\n";
+                *col = derivative(derivative(y));
 
                 derivative(value(v_[j])) = 0.0;
             }

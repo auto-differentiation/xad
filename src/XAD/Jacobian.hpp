@@ -32,45 +32,154 @@ template <class T>
 class Jacobian
 {
   public:
+    // adj 2d vector constructor
     Jacobian(std::function<std::vector<T>(std::vector<T> &)> foo, const std::vector<T> &v,
              xad::Tape<double> *tape)
-        : foo_(foo),
-          v_(v),
-          tape_(tape),
-          domain_(static_cast<unsigned int>(v_.size())),
-          codomain_(0),
-          matrix_(0)
+        : foo_(foo), v_(v), domain_(static_cast<unsigned int>(v_.size())), codomain_(0), matrix_(0)
+    {
+        compute(tape);
+    }
+
+    // adj iterator constructor
+    template <class RowIterator>
+    Jacobian(std::function<std::vector<T>(std::vector<T> &)> foo, const std::vector<T> &v,
+             xad::Tape<double> *tape, RowIterator first, RowIterator last)
+        : foo_(foo), v_(v), domain_(static_cast<unsigned int>(v_.size())), codomain_(0), matrix_(0)
+    {
+        if (std::distance(first, last) != domain_)
+        {
+            // throw exception
+        }
+        compute(tape, first, last);
+    }
+
+    // tapeless fwd 2d vector constructor
+    Jacobian(std::function<std::vector<T>(std::vector<T> &)> foo, const std::vector<T> &v)
+        : foo_(foo), v_(v), domain_(static_cast<unsigned int>(v_.size())), codomain_(0), matrix_(0)
     {
         compute();
     }
 
+    // tapeless fwd iterator constructor
+    template <class RowIterator>
+    Jacobian(std::function<std::vector<T>(std::vector<T> &)> foo, const std::vector<T> &v,
+             RowIterator first, RowIterator last)
+        : foo_(foo), v_(v), domain_(static_cast<unsigned int>(v_.size())), codomain_(0), matrix_(0)
+    {
+        if (std::distance(first, last) != domain_)
+        {
+            // throw exception
+        }
+        compute(first, last);
+    }
+
+    // adj 2d vector
+    void compute(xad::Tape<double> *tape)
+    {
+        tape->registerInputs(v_);
+        tape->newRecording();
+        std::vector<T> res = foo_(v_);
+        codomain_ = static_cast<unsigned int>(res.size());
+        matrix_ = std::vector<std::vector<T>>(codomain_, std::vector<T>(domain_, 0.0));
+
+        for (unsigned int i = 0; i < codomain_; i++)
+        {
+            tape->registerOutput(res[i]);
+            derivative(res[i]) = 1.0;
+
+            tape->computeAdjoints();
+
+            for (unsigned int j = 0; j < domain_; j++)
+            {
+                std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[j]) << std::endl;
+                matrix_[i][j] = derivative(v_[j]);
+            }
+
+            derivative(res[i]) = 0.0;
+        }
+    }
+
+    // adj iterator
+    template <class RowIterator>
+    void compute(xad::Tape<double> *tape, RowIterator first, RowIterator last)
+    {
+        tape->registerInputs(v_);
+        tape->newRecording();
+        std::vector<T> res = foo_(v_);
+        codomain_ = static_cast<unsigned int>(res.size());
+        auto row = first;
+
+        for (unsigned int i = 0; i < codomain_; i++, row++)
+        {
+            tape->registerOutput(res[i]);
+            derivative(res[i]) = 1.0;
+
+            tape->computeAdjoints();
+
+            auto col = row->begin();
+
+            for (unsigned int j = 0; j < domain_; j++, col++)
+            {
+                std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[j]) << std::endl;
+                *col = derivative(v_[j]);
+            }
+
+            derivative(res[i]) = 0.0;
+        }
+    }
+
+    // fwd 2d vector
     void compute()
     {
-        tape_->registerInputs(v_);
         std::vector<T> res = foo_(v_);
         codomain_ = static_cast<unsigned int>(res.size());
         matrix_ = std::vector<std::vector<T>>(codomain_, std::vector<T>(domain_, 0.0));
 
         for (unsigned int i = 0; i < domain_; i++)
         {
+            derivative(v_[i]) = 1.0;
+
             for (unsigned int j = 0; j < codomain_; j++)
             {
-                derivative(v_[i]) = 1.0;
-                tape_->newRecording();
-
                 T y = res[j];
-                tape_->registerOutput(y);
-                derivative(y) = 1.0;
 
-                tape_->computeAdjoints();
+                std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
 
-                std::cout << "df" << j << "/dx" << i << " = " << derivative(v_[i]) << std::endl;
-                matrix_[i][j] = derivative(v_[i]);
-                derivative(v_[i]) = 0.0;
+                matrix_[i][j] = derivative(y);
+                // derivative(y) = 0.0;
             }
-        }
 
-        std::cout << "reached" << std::endl;
+            derivative(v_[i]) = 0.0;
+        }
+    }
+
+    // fwd iterator
+    template <class RowIterator>
+    void compute(RowIterator first, RowIterator last)
+    {
+        std::vector<T> res = foo_(v_);
+        codomain_ = static_cast<unsigned int>(res.size());
+
+        auto row = first;
+
+        for (unsigned int i = 0; i < domain_; i++, row++)
+        {
+            derivative(v_[i]) = 1.0;
+
+            auto col = row->begin();
+
+            for (unsigned int j = 0; j < codomain_; j++, col++)
+            {
+                T y = res[j];
+
+                std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
+
+                *col = derivative(y);
+                // derivative(y) = 0.0;
+            }
+
+            derivative(v_[i]) = 0.0;
+        }
     }
 
     std::vector<std::vector<T>> get() { return matrix_; }
@@ -78,7 +187,6 @@ class Jacobian
   private:
     std::function<std::vector<T>(std::vector<T> &)> foo_;
     std::vector<T> v_;
-    Tape<double> *tape_;
     unsigned int domain_, codomain_;
     std::vector<std::vector<T>> matrix_;
 };
