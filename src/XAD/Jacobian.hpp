@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Implementation of Jacobian computing methods.
+   Implementation of jacobian computing methods.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -130,8 +130,6 @@ void computeJacobian(std::vector<xad::FReal<T>> &v,
 {
     unsigned int domain = static_cast<unsigned int>(v.size()),
                  codomain = static_cast<unsigned int>(foo(v).size());
-    std::vector<std::vector<xad::FReal<T>>> matrix(
-        std::vector<std::vector<xad::FReal<T>>>(codomain, std::vector<xad::FReal<T>>(domain, 0.0)));
 
     if (std::distance(first, last) != domain)
         throw OutOfRange("Iterator not allocated enough space");

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Tests for xad::Jacobian class.
+   Tests for jacobian computation methods.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.

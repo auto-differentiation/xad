@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Tests for xad::Hessian class.
+   Tests for hessian methods.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.

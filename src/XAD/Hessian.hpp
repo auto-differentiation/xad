@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Implementation of Hessian computing methods.
+   Implementation of hessian computing methods.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
