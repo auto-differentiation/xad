@@ -38,7 +38,7 @@ std::vector<std::vector<xad::AReal<T>>> computeJacobian(
     unsigned int domain = static_cast<unsigned int>(v.size()),
                  codomain = static_cast<unsigned int>(foo(v).size());
 
-    std::vector<std::vector<xad::AReal<T>>> matrix_(
+    std::vector<std::vector<xad::AReal<T>>> matrix(
         std::vector<std::vector<xad::AReal<T>>>(codomain, std::vector<xad::AReal<T>>(domain, 0.0)));
 
     for (unsigned int i = 0; i < domain; i++)
@@ -52,11 +52,11 @@ std::vector<std::vector<xad::AReal<T>>> computeJacobian(
             tape->computeAdjoints();
 
             // std::cout << "df" << j << "/dx" << i << " = " << derivative(v[i]) << std::endl;
-            matrix_[i][j] = derivative(v[i]);
+            matrix[i][j] = derivative(v[i]);
         }
     }
 
-    return matrix_;
+    return matrix;
 }
 
 // adj iterator
@@ -102,7 +102,7 @@ std::vector<std::vector<xad::FReal<T>>> computeJacobian(
 {
     unsigned int domain = static_cast<unsigned int>(v.size()),
                  codomain = static_cast<unsigned int>(foo(v).size());
-    std::vector<std::vector<xad::FReal<T>>> matrix_(
+    std::vector<std::vector<xad::FReal<T>>> matrix(
         std::vector<std::vector<xad::FReal<T>>>(codomain, std::vector<xad::FReal<T>>(domain, 0.0)));
 
     for (unsigned int i = 0; i < domain; i++)
@@ -113,13 +113,13 @@ std::vector<std::vector<xad::FReal<T>>> computeJacobian(
         {
             xad::FReal<T> y = foo(v)[j];
             // std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
-            matrix_[i][j] = derivative(y);
+            matrix[i][j] = derivative(y);
         }
 
         derivative(v[i]) = 0.0;
     }
 
-    return matrix_;
+    return matrix;
 }
 
 // fwd iterator
@@ -130,7 +130,7 @@ void computeJacobian(std::vector<xad::FReal<T>> &v,
 {
     unsigned int domain = static_cast<unsigned int>(v.size()),
                  codomain = static_cast<unsigned int>(foo(v).size());
-    std::vector<std::vector<xad::FReal<T>>> matrix_(
+    std::vector<std::vector<xad::FReal<T>>> matrix(
         std::vector<std::vector<xad::FReal<T>>>(codomain, std::vector<xad::FReal<T>>(domain, 0.0)));
 
     if (std::distance(first, last) != domain)
