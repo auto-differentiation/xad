@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <complex>
+#include <functional>
 #include <type_traits>
 #include <typeinfo>
 #include <vector>
@@ -74,10 +75,9 @@ TEST(HessianTest, QuadraticForwardAdjoint)
     tape_type tape;
 
     std::vector<AD> x = {3, 2};
-    xad::Hessian<AD> hes(quad<AD>, x, &tape);
 
     std::vector<std::vector<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
-    std::vector<std::vector<AD>> computed_hessian = hes.get();
+    auto computed_hessian = xad::computeHessian<double>(x, quad<AD>, &tape);
 
     for (unsigned int i = 0; i < cross_hessian.size(); i++)
         for (unsigned int j = 0; j < cross_hessian.size(); j++)
@@ -94,7 +94,8 @@ TEST(HessianTest, QuadraticForwardAdjointWithIterator)
 
     std::vector<AD> x = {3, 2};
     std::list<std::list<AD>> computed_hessian(x.size(), std::list<AD>(x.size(), 0.0));
-    xad::Hessian<AD> hes(quad<AD>, x, &tape, computed_hessian.begin(), computed_hessian.end());
+    xad::computeHessian<decltype(begin(computed_hessian)), double>(
+        x, quad<AD>, &tape, begin(computed_hessian), end(computed_hessian));
 
     std::list<std::list<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
 
@@ -122,10 +123,10 @@ TEST(HessianTest, SingleInputForwardAdjoint)
     tape_type tape;
 
     std::vector<AD> x = {3};
-    xad::Hessian<AD> hes(single<AD>, x, &tape);
 
     std::vector<std::vector<AD>> cross_hessian = {{18.0}};
-    std::vector<std::vector<AD>> computed_hessian = hes.get();
+    std::vector<std::vector<AD>> computed_hessian =
+        xad::computeHessian<double>(x, single<AD>, &tape);
 
     for (unsigned int i = 0; i < cross_hessian.size(); i++)
         for (unsigned int j = 0; j < cross_hessian.size(); j++)
@@ -138,10 +139,9 @@ TEST(HessianTest, QuadraticForwardForward)
     typedef mode::active_type AD;
 
     std::vector<AD> x = {3, 2};
-    xad::Hessian<AD> hes(quad<AD>, x);
 
     std::vector<std::vector<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
-    std::vector<std::vector<AD>> computed_hessian = hes.get();
+    std::vector<std::vector<AD>> computed_hessian = xad::computeHessian<double>(x, quad<AD>);
 
     for (unsigned int i = 0; i < cross_hessian.size(); i++)
         for (unsigned int j = 0; j < cross_hessian.size(); j++)
@@ -155,7 +155,8 @@ TEST(HessianTest, QuadraticForwardForwardWithIterator)
 
     std::vector<AD> x = {3, 2};
     std::list<std::list<AD>> computed_hessian(x.size(), std::list<AD>(x.size(), 0.0));
-    xad::Hessian<AD> hes(quad<AD>, x, computed_hessian.begin(), computed_hessian.end());
+    xad::computeHessian<decltype(begin(computed_hessian)), double>(
+        x, quad<AD>, begin(computed_hessian), end(computed_hessian));
 
     std::list<std::list<AD>> cross_hessian = {{2.0, 0.0}, {0.0, 2.0}};
 
@@ -180,10 +181,9 @@ TEST(HessianTest, SingleInputForwardForward)
     typedef mode::active_type AD;
 
     std::vector<AD> x = {3};
-    xad::Hessian<AD> hes(single<AD>, x);
 
     std::vector<std::vector<AD>> cross_hessian = {{18.0}};
-    std::vector<std::vector<AD>> computed_hessian = hes.get();
+    std::vector<std::vector<AD>> computed_hessian = xad::computeHessian<double>(x, single<AD>);
 
     for (unsigned int i = 0; i < cross_hessian.size(); i++)
         for (unsigned int j = 0; j < cross_hessian.size(); j++)

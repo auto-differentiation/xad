@@ -29,188 +29,172 @@
 namespace xad
 {
 
-template <class T>
-class Hessian
+namespace detail
 {
-  public:
-    // fwd_adj 2d vector constructor
-    Hessian(std::function<T(std::vector<T> &)> func, const std::vector<T> &v,
-            xad::Tape<xad::FReal<double>> *tape)
-        : foo_(func),
-          v_(v),
-          domain_(static_cast<unsigned int>(v_.size())),
-          matrix_(domain_, std::vector<T>(domain_, 0.0))
-    {
-        compute(tape);
-    }
+template <typename U>
+static auto has_begin_impl(int) -> decltype(std::declval<U>().begin(), std::true_type{});
 
-    // fwd_adj iterator constructor
-    template <class RowIterator>
-    Hessian(std::function<T(std::vector<T> &)> func, const std::vector<T> &v,
-            xad::Tape<xad::FReal<double>> *tape, RowIterator first, RowIterator last)
-        : foo_(func), v_(v), domain_(static_cast<unsigned int>(v_.size())), matrix_(0)
-    {
-        if (std::distance(first, last) != domain_)
-            throw OutOfRange("Iterator not allocated enough space");
-        static_assert(has_begin<decltype(*first)>::value,
-                      "RowIterator must dereference to a type that implements a begin() method");
+template <typename U>
+static std::false_type has_begin_impl(...);
 
-        compute(tape, first, last);
-    }
-
-    // tapeless (fwd_fwd) 2d vector constructor
-    Hessian(std::function<T(std::vector<T> &)> func, std::vector<T> &v)
-        : foo_(func),
-          v_(v),
-          domain_(static_cast<unsigned int>(v_.size())),
-          matrix_(domain_, std::vector<T>(domain_, 0.0))
-    {
-        compute();
-    }
-
-    // tapeless (fwd_fwd) iterator constructor
-    template <class RowIterator>
-    Hessian(std::function<T(std::vector<T> &)> func, std::vector<T> &v, RowIterator first,
-            RowIterator last)
-        : foo_(func), v_(v), domain_(static_cast<unsigned int>(v_.size())), matrix_(0)
-    {
-        if (std::distance(first, last) != domain_)
-            throw OutOfRange("Iterator not allocated enough space");
-        static_assert(has_begin<decltype(*first)>::value,
-                      "RowIterator must dereference to a type that implements a begin() method");
-
-        compute(first, last);
-    }
-
-    // fwd_adj 2d vector
-    void compute(xad::Tape<xad::FReal<double>> *tape)
-    {
-        tape->registerInputs(v_);
-
-        for (unsigned int i = 0; i < domain_; i++)
-        {
-            derivative(value(v_[i])) = 1.0;
-            tape->newRecording();
-
-            T y = foo_(v_);
-            tape->registerOutput(y);
-            value(derivative(y)) = 1.0;
-
-            tape->computeAdjoints();
-
-            for (unsigned int j = 0; j < domain_; j++)
-            {
-                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
-                //           << "\n";
-                matrix_[i][j] = derivative(derivative(v_[j]));
-            }
-
-            derivative(value(v_[i])) = 0.0;
-        }
-    }
-
-    // fwd_adj iterator
-    template <class RowIterator>
-    void compute(xad::Tape<xad::FReal<double>> *tape, RowIterator first, RowIterator last)
-    {
-        tape->registerInputs(v_);
-
-        auto row = first;
-
-        for (unsigned int i = 0; i < domain_; i++, row++)
-        {
-            derivative(value(v_[i])) = 1.0;
-            tape->newRecording();
-
-            T y = foo_(v_);
-            tape->registerOutput(y);
-            value(derivative(y)) = 1.0;
-
-            tape->computeAdjoints();
-
-            auto col = row->begin();
-
-            for (unsigned int j = 0; j < domain_; j++, col++)
-            {
-                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
-                //           << "\n";
-                *col = derivative(derivative(v_[j]));
-            }
-
-            derivative(value(v_[i])) = 0.0;
-        }
-    }
-
-    // fwd_fwd 2d vector
-    void compute()
-    {
-        for (unsigned int i = 0; i < domain_; i++)
-        {
-            value(derivative(v_[i])) = 1.0;
-
-            for (unsigned int j = 0; j < domain_; j++)
-            {
-                derivative(value(v_[j])) = 1.0;
-
-                T y = foo_(v_);
-
-                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(y))
-                //           << "\n";ß
-                matrix_[i][j] = derivative(derivative(y));
-
-                derivative(value(v_[j])) = 0.0;
-            }
-
-            value(derivative(v_[i])) = 0.0;
-        }
-    }
-
-    // fwd_fwd iterator
-    template <class RowIterator>
-    void compute(RowIterator first, RowIterator last)
-    {
-        auto row = first;
-
-        for (unsigned int i = 0; i < domain_; i++, row++)
-        {
-            value(derivative(v_[i])) = 1.0;
-
-            auto col = row->begin();
-
-            for (unsigned int j = 0; j < domain_; j++, col++)
-            {
-                derivative(value(v_[j])) = 1.0;
-
-                T y = foo_(v_);
-
-                // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(y))
-                //           << "\n";
-                *col = derivative(derivative(y));
-
-                derivative(value(v_[j])) = 0.0;
-            }
-
-            value(derivative(v_[i])) = 0.0;
-        }
-    }
-
-    std::vector<std::vector<T>> get() { return matrix_; }
-
-  private:
-    std::function<T(std::vector<T> &)> foo_;
-    std::vector<T> v_;
-    unsigned int domain_;
-    std::vector<std::vector<T>> matrix_;
-
-    template <typename U>
-    static auto has_begin_impl(int) -> decltype(std::declval<U>().begin(), std::true_type{});
-
-    template <typename U>
-    static std::false_type has_begin_impl(...);
-
-    template <typename U>
-    struct has_begin : decltype(has_begin_impl<U>(0))
-    {
-    };
+template <typename U>
+struct has_begin : decltype(has_begin_impl<U>(0))
+{
 };
+}  // namespace detail
+
+// fwd_adj 2d vector
+template <typename T>
+std::vector<std::vector<xad::AReal<xad::FReal<T>>>> computeHessian(
+    std::vector<xad::AReal<xad::FReal<T>>> &v,
+    std::function<xad::AReal<xad::FReal<T>>(std::vector<xad::AReal<xad::FReal<T>>> &)> func,
+    xad::Tape<xad::FReal<T>> *tape)
+{
+    unsigned int domain(static_cast<unsigned int>(v.size()));
+    std::vector<std::vector<xad::AReal<xad::FReal<T>>>> matrix(
+        domain, std::vector<xad::AReal<xad::FReal<T>>>(domain, 0.0));
+    std::function<xad::AReal<xad::FReal<T>>(std::vector<xad::AReal<xad::FReal<T>>> &)> foo = func;
+
+    tape->registerInputs(v);
+
+    for (unsigned int i = 0; i < domain; i++)
+    {
+        derivative(value(v[i])) = 1.0;
+        tape->newRecording();
+
+        xad::AReal<xad::FReal<T>> y = foo(v);
+        tape->registerOutput(y);
+        value(derivative(y)) = 1.0;
+
+        tape->computeAdjoints();
+
+        for (unsigned int j = 0; j < domain; j++)
+        {
+            // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
+            //           << "\n";
+            matrix[i][j] = derivative(derivative(v[j]));
+        }
+
+        derivative(value(v[i])) = 0.0;
+    }
+
+    return matrix;
+}
+
+// fwd_adj iterator
+template <class RowIterator, typename T>
+void computeHessian(
+    std::vector<xad::AReal<xad::FReal<T>>> &v,
+    std::function<xad::AReal<xad::FReal<T>>(std::vector<xad::AReal<xad::FReal<T>>> &)> func,
+    xad::Tape<xad::FReal<T>> *tape, RowIterator first, RowIterator last)
+{
+    unsigned int domain(static_cast<unsigned int>(v.size()));
+    std::function<xad::AReal<xad::FReal<T>>(std::vector<xad::AReal<xad::FReal<T>>> &)> foo = func;
+
+    if (std::distance(first, last) != domain)
+        throw OutOfRange("Iterator not allocated enough space");
+    static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+                  "RowIterator must dereference to a type that implements a begin() method");
+
+    tape->registerInputs(v);
+
+    auto row = first;
+
+    for (unsigned int i = 0; i < domain; i++, row++)
+    {
+        derivative(value(v[i])) = 1.0;
+        tape->newRecording();
+
+        xad::AReal<xad::FReal<T>> y = foo(v);
+        tape->registerOutput(y);
+        value(derivative(y)) = 1.0;
+
+        tape->computeAdjoints();
+
+        auto col = row->begin();
+
+        for (unsigned int j = 0; j < domain; j++, col++)
+        {
+            // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
+            //           << "\n";
+            *col = derivative(derivative(v[j]));
+        }
+
+        derivative(value(v[i])) = 0.0;
+    }
+}
+
+// fwd_fwd 2d vector
+template <typename T>
+std::vector<std::vector<xad::FReal<xad::FReal<T>>>> computeHessian(
+    std::vector<xad::FReal<xad::FReal<T>>> &v,
+    std::function<xad::FReal<xad::FReal<T>>(std::vector<xad::FReal<xad::FReal<T>>> &)> func)
+{
+    unsigned int domain(static_cast<unsigned int>(v.size()));
+    std::vector<std::vector<xad::FReal<xad::FReal<T>>>> matrix(
+        domain, std::vector<xad::FReal<xad::FReal<T>>>(domain, 0.0));
+    std::function<xad::FReal<xad::FReal<T>>(std::vector<xad::FReal<xad::FReal<T>>> &)> foo = func;
+
+    for (unsigned int i = 0; i < domain; i++)
+    {
+        value(derivative(v[i])) = 1.0;
+
+        for (unsigned int j = 0; j < domain; j++)
+        {
+            derivative(value(v[j])) = 1.0;
+
+            xad::FReal<xad::FReal<T>> y = foo(v);
+
+            // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(y))
+            //           << "\n";ß
+            matrix[i][j] = derivative(derivative(y));
+
+            derivative(value(v[j])) = 0.0;
+        }
+
+        value(derivative(v[i])) = 0.0;
+    }
+
+    return matrix;
+}
+
+// fwd_fwd iterator
+template <class RowIterator, typename T>
+void computeHessian(
+    std::vector<xad::FReal<xad::FReal<T>>> &v,
+    std::function<xad::FReal<xad::FReal<T>>(std::vector<xad::FReal<xad::FReal<T>>> &)> func,
+    RowIterator first, RowIterator last)
+{
+    unsigned int domain(static_cast<unsigned int>(v.size()));
+    std::function<xad::FReal<xad::FReal<T>>(std::vector<xad::FReal<xad::FReal<T>>> &)> foo = func;
+
+    if (std::distance(first, last) != domain)
+        throw OutOfRange("Iterator not allocated enough space");
+    static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+                  "RowIterator must dereference to a type that implements a begin() method");
+
+    auto row = first;
+
+    for (unsigned int i = 0; i < domain; i++, row++)
+    {
+        value(derivative(v[i])) = 1.0;
+
+        auto col = row->begin();
+
+        for (unsigned int j = 0; j < domain; j++, col++)
+        {
+            derivative(value(v[j])) = 1.0;
+
+            xad::FReal<xad::FReal<T>> y = foo(v);
+
+            // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(y))
+            //           << "\n";
+            *col = derivative(derivative(y));
+
+            derivative(value(v[j])) = 0.0;
+        }
+
+        value(derivative(v[i])) = 0.0;
+    }
+}
 }  // namespace xad

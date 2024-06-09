@@ -56,10 +56,10 @@ TEST(JacobianTest, SimpleAdjoint)
     tape_type tape;
 
     std::vector<AD> x = {3, 1};
-    xad::Jacobian<AD> jac(foo<AD>, x, &tape);
 
     std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(x[0])}, {cos(x[1]), 1.0}};
-    std::vector<std::vector<AD>> computed_jacobian = jac.get();
+    std::vector<std::vector<AD>> computed_jacobian =
+        xad::computeJacobian<double>(x, foo<AD>, &tape);
 
     for (unsigned int i = 0; i < cross_jacobian.size(); i++)
         for (unsigned int j = 0; j < cross_jacobian.size(); j++)
@@ -76,9 +76,10 @@ TEST(JacobianTest, SimpleAdjointIterator)
 
     std::vector<AD> x = {3, 1};
     std::list<std::list<AD>> computed_jacobian(2.0, std::list<AD>(2.0, 0.0));
-    xad::Jacobian<AD> jac(foo<AD>, x, &tape, computed_jacobian.begin(), computed_jacobian.end());
 
     std::list<std::list<AD>> cross_jacobian = {{1.0, cos(x[0])}, {cos(x[1]), 1.0}};
+    xad::computeJacobian<decltype(begin(computed_jacobian)), double>(
+        x, foo<AD>, &tape, begin(computed_jacobian), end(computed_jacobian));
 
     auto row1 = computed_jacobian.begin(), row2 = cross_jacobian.begin();
     while (row1 != computed_jacobian.end() && row2 != cross_jacobian.end())
@@ -101,10 +102,9 @@ TEST(JacobianTest, SimpleForward)
     typedef mode::active_type AD;
 
     std::vector<AD> x = {-2, 1};
-    xad::Jacobian<AD> jac(foo<AD>, x);
 
     std::vector<std::vector<AD>> cross_jacobian = {{1.0, cos(-2)}, {cos(1), 1.0}};
-    std::vector<std::vector<AD>> computed_jacobian = jac.get();
+    std::vector<std::vector<AD>> computed_jacobian = xad::computeJacobian<double>(x, foo<AD>);
 
     for (unsigned int i = 0; i < cross_jacobian.size(); i++)
         for (unsigned int j = 0; j < cross_jacobian.size(); j++)
@@ -118,9 +118,10 @@ TEST(JacobianTest, SimpleForwardIterator)
 
     std::vector<AD> x = {-2, 1};
     std::list<std::list<AD>> computed_jacobian(2.0, std::list<AD>(2.0, 0.0));
-    xad::Jacobian<AD> jac(foo<AD>, x, computed_jacobian.begin(), computed_jacobian.end());
 
     std::list<std::list<AD>> cross_jacobian = {{1.0, cos(-2)}, {cos(1), 1.0}};
+    xad::computeJacobian<decltype(begin(computed_jacobian)), double>(
+        x, foo<AD>, begin(computed_jacobian), end(computed_jacobian));
 
     auto row1 = computed_jacobian.begin(), row2 = cross_jacobian.begin();
     while (row1 != computed_jacobian.end() && row2 != cross_jacobian.end())
