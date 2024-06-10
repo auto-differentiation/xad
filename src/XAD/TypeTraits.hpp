@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   The main include file, including all other headers.
+   Implementation of helper traits.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -22,27 +22,24 @@
 
 ******************************************************************************/
 
-#pragma once
+#include <type_traits>
 
-#include <XAD/BinaryDerivativeImpl.hpp>
-#include <XAD/BinaryExpr.hpp>
-#include <XAD/BinaryFunctors.hpp>
-#include <XAD/BinaryMathFunctors.hpp>
-#include <XAD/BinaryOperators.hpp>
-#include <XAD/CheckpointCallback.hpp>
-#include <XAD/ChunkContainer.hpp>
-#include <XAD/Complex.hpp>
-#include <XAD/Config.hpp>
-#include <XAD/Exceptions.hpp>
-#include <XAD/Expression.hpp>
-#include <XAD/Interface.hpp>
-#include <XAD/Literals.hpp>
-#include <XAD/MathFunctions.hpp>
-#include <XAD/Tape.hpp>
-#include <XAD/TapeContainer.hpp>
-#include <XAD/Traits.hpp>
-#include <XAD/UnaryExpr.hpp>
-#include <XAD/UnaryFunctors.hpp>
-#include <XAD/UnaryMathFunctors.hpp>
-#include <XAD/UnaryOperators.hpp>
-#include <XAD/Version.hpp>
+namespace xad
+{
+
+namespace detail
+{
+
+template <typename U>
+static auto has_begin_impl(int) -> decltype(std::declval<U>().begin(), std::false_type{});
+
+template <typename U>
+static std::true_type has_begin_impl(...);
+
+template <typename U>
+struct has_begin : decltype(has_begin_impl<U>(0))
+{
+};
+
+}  // namespace detail
+}  // namespace xad

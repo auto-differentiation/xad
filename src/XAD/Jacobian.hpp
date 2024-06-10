@@ -22,6 +22,9 @@
 
 ******************************************************************************/
 
+#include <XAD/TypeTraits.hpp>
+#include <XAD/XAD.hpp>
+
 #include <functional>
 #include <type_traits>
 #include <vector>
@@ -30,49 +33,44 @@ namespace xad
 {
 // adj 2d vector
 template <typename T>
-std::vector<std::vector<xad::AReal<T>>> computeJacobian(
-    std::vector<xad::AReal<T>> &v,
-    std::function<std::vector<xad::AReal<T>>(std::vector<xad::AReal<T>> &)> foo, xad::Tape<T> *tape)
+std::vector<std::vector<T>> computeJacobian(
+    const std::vector<xad::AReal<T>> &vec,
+    std::function<std::vector<xad::AReal<T>>(std::vector<xad::AReal<T>> &)> foo,
+    xad::Tape<T> *tape = xad::Tape<T>::getActive())
 {
-    tape->registerInputs(v);
-    unsigned int domain = static_cast<unsigned int>(v.size()),
-                 codomain = static_cast<unsigned int>(foo(v).size());
-
-    std::vector<std::vector<xad::AReal<T>>> matrix(
-        std::vector<std::vector<xad::AReal<T>>>(codomain, std::vector<xad::AReal<T>>(domain, 0.0)));
-
-    for (unsigned int i = 0; i < domain; i++)
-    {
-        for (unsigned int j = 0; j < codomain; j++)
-        {
-            tape->newRecording();
-            xad::AReal<T> y = foo(v)[j];
-            tape->registerOutput(y);
-            derivative(y) = 1.0;
-            tape->computeAdjoints();
-
-            // std::cout << "df" << j << "/dx" << i << " = " << derivative(v[i]) << std::endl;
-            matrix[i][j] = derivative(v[i]);
-        }
-    }
-
+    auto v(vec);
+    std::vector<std::vector<T>> matrix(foo(v).size(), std::vector<T>(v.size(), 0.0));
+    computeJacobian(vec, foo, begin(matrix), end(matrix), tape);
     return matrix;
 }
 
 // adj iterator
 template <class RowIterator, typename T>
-void computeJacobian(std::vector<xad::AReal<T>> &v,
+void computeJacobian(const std::vector<xad::AReal<T>> &vec,
                      std::function<std::vector<xad::AReal<T>>(std::vector<xad::AReal<T>> &)> foo,
-                     xad::Tape<T> *tape, RowIterator first, RowIterator last)
+                     RowIterator first, RowIterator last,
+                     xad::Tape<T> *tape = xad::Tape<T>::getActive())
 {
+    auto v(vec);
+
+    if (!tape)
+    {
+        std::unique_ptr<xad::Tape<T>> t;
+        t = std::unique_ptr<xad::Tape<T>>(new xad::Tape<T>());
+        if (!t)
+            throw xad::NoTapeException();
+        tape = t.get();
+    }
+
     tape->registerInputs(v);
     unsigned int domain = static_cast<unsigned int>(v.size()),
                  codomain = static_cast<unsigned int>(foo(v).size());
 
     if (std::distance(first, last) != domain)
         throw OutOfRange("Iterator not allocated enough space");
-    static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
-                  "RowIterator must dereference to a type that implements a begin() method");
+    static_assert(
+        !xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+        "RowIterator must dereference to a type that implements a begin() method");
 
     auto row = first;
 
@@ -96,45 +94,31 @@ void computeJacobian(std::vector<xad::AReal<T>> &v,
 
 // fwd 2d vector
 template <typename T>
-std::vector<std::vector<xad::FReal<T>>> computeJacobian(
-    std::vector<xad::FReal<T>> &v,
+std::vector<std::vector<T>> computeJacobian(
+    const std::vector<xad::FReal<T>> &vec,
     std::function<std::vector<xad::FReal<T>>(std::vector<xad::FReal<T>> &)> foo)
 {
-    unsigned int domain = static_cast<unsigned int>(v.size()),
-                 codomain = static_cast<unsigned int>(foo(v).size());
-    std::vector<std::vector<xad::FReal<T>>> matrix(
-        std::vector<std::vector<xad::FReal<T>>>(codomain, std::vector<xad::FReal<T>>(domain, 0.0)));
-
-    for (unsigned int i = 0; i < domain; i++)
-    {
-        derivative(v[i]) = 1.0;
-
-        for (unsigned int j = 0; j < codomain; j++)
-        {
-            xad::FReal<T> y = foo(v)[j];
-            // std::cout << "df" << j << "/dx" << i << " = " << derivative(y) << std::endl;
-            matrix[i][j] = derivative(y);
-        }
-
-        derivative(v[i]) = 0.0;
-    }
-
+    auto v(vec);
+    std::vector<std::vector<T>> matrix(foo(v).size(), std::vector<T>(v.size(), 0.0));
+    computeJacobian(vec, foo, begin(matrix), end(matrix));
     return matrix;
 }
 
 // fwd iterator
 template <class RowIterator, typename T>
-void computeJacobian(std::vector<xad::FReal<T>> &v,
+void computeJacobian(const std::vector<xad::FReal<T>> &vec,
                      std::function<std::vector<xad::FReal<T>>(std::vector<xad::FReal<T>> &)> foo,
                      RowIterator first, RowIterator last)
 {
+    auto v(vec);
     unsigned int domain = static_cast<unsigned int>(v.size()),
                  codomain = static_cast<unsigned int>(foo(v).size());
 
     if (std::distance(first, last) != domain)
         throw OutOfRange("Iterator not allocated enough space");
-    static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
-                  "RowIterator must dereference to a type that implements a begin() method");
+    static_assert(
+        !xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+        "RowIterator must dereference to a type that implements a begin() method");
 
     auto row = first;
 

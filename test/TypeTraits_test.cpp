@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   The main include file, including all other headers.
+   Tests for helper traits.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -22,27 +22,32 @@
 
 ******************************************************************************/
 
-#pragma once
+#include <XAD/TypeTraits.hpp>
 
-#include <XAD/BinaryDerivativeImpl.hpp>
-#include <XAD/BinaryExpr.hpp>
-#include <XAD/BinaryFunctors.hpp>
-#include <XAD/BinaryMathFunctors.hpp>
-#include <XAD/BinaryOperators.hpp>
-#include <XAD/CheckpointCallback.hpp>
-#include <XAD/ChunkContainer.hpp>
-#include <XAD/Complex.hpp>
-#include <XAD/Config.hpp>
-#include <XAD/Exceptions.hpp>
-#include <XAD/Expression.hpp>
-#include <XAD/Interface.hpp>
-#include <XAD/Literals.hpp>
-#include <XAD/MathFunctions.hpp>
-#include <XAD/Tape.hpp>
-#include <XAD/TapeContainer.hpp>
-#include <XAD/Traits.hpp>
-#include <XAD/UnaryExpr.hpp>
-#include <XAD/UnaryFunctors.hpp>
-#include <XAD/UnaryMathFunctors.hpp>
-#include <XAD/UnaryOperators.hpp>
-#include <XAD/Version.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <list>
+
+TEST(TypeTraits, HasBeginVectorOfVectorsIterator)
+{
+    using It = std::vector<std::vector<int>>::iterator;
+    EXPECT_TRUE(xad::detail::has_begin<It>::value);
+}
+
+TEST(TypeTraits, HasBeginVectorOfVectors)
+{
+    using It = std::vector<std::vector<int>>;
+    EXPECT_FALSE(xad::detail::has_begin<It>::value);
+}
+
+TEST(TypeTraits, HasBeginListIterator)
+{
+    using It = std::list<int>::iterator;
+    EXPECT_TRUE(xad::detail::has_begin<It>::value);
+}
+
+TEST(TypeTraits, HasBeginList)
+{
+    using It = std::list<int>;
+    EXPECT_FALSE(xad::detail::has_begin<It>::value);
+}
