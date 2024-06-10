@@ -370,9 +370,6 @@ TEST(HessianTest, QuadraticForwardAdjointAutoTape)
 {
     typedef xad::fwd_adj<double> mode;
     typedef mode::active_type AD;
-    typedef mode::tape_type tape_type;
-
-    tape_type tape;
 
     std::vector<AD> x = {3.0, 2.0};
 

@@ -22,6 +22,7 @@
 
 ******************************************************************************/
 
+#pragma once
 #include <type_traits>
 
 namespace xad
@@ -31,10 +32,10 @@ namespace detail
 {
 
 template <typename U>
-static auto has_begin_impl(int) -> decltype(std::declval<U>().begin(), std::false_type{});
+static auto has_begin_impl(int) -> decltype(std::declval<U>().begin(), std::true_type{});
 
 template <typename U>
-static std::true_type has_begin_impl(...);
+static std::false_type has_begin_impl(...);
 
 template <typename U>
 struct has_begin : decltype(has_begin_impl<U>(0))

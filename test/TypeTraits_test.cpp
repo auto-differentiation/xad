@@ -31,23 +31,29 @@
 TEST(TypeTraits, HasBeginVectorOfVectorsIterator)
 {
     using It = std::vector<std::vector<int>>::iterator;
-    EXPECT_TRUE(xad::detail::has_begin<It>::value);
+    EXPECT_FALSE(xad::detail::has_begin<It>::value);
 }
 
 TEST(TypeTraits, HasBeginVectorOfVectors)
 {
     using It = std::vector<std::vector<int>>;
-    EXPECT_FALSE(xad::detail::has_begin<It>::value);
+    EXPECT_TRUE(xad::detail::has_begin<It>::value);
 }
 
 TEST(TypeTraits, HasBeginListIterator)
 {
     using It = std::list<int>::iterator;
-    EXPECT_TRUE(xad::detail::has_begin<It>::value);
+    EXPECT_FALSE(xad::detail::has_begin<It>::value);
 }
 
 TEST(TypeTraits, HasBeginList)
 {
     using It = std::list<int>;
+    EXPECT_TRUE(xad::detail::has_begin<It>::value);
+}
+
+TEST(TypeTraits, HasBeginNonIterable)
+{
+    using It = size_t;
     EXPECT_FALSE(xad::detail::has_begin<It>::value);
 }

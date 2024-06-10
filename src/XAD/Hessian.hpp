@@ -22,6 +22,7 @@
 
 ******************************************************************************/
 
+#pragma once
 #include <XAD/TypeTraits.hpp>
 #include <XAD/XAD.hpp>
 
@@ -52,48 +53,38 @@ void computeHessian(
     RowIterator first, RowIterator last,
     xad::Tape<xad::FReal<T>> *tape = xad::Tape<xad::FReal<T>>::getActive())
 {
-    auto v(vec);
-    unsigned int domain(static_cast<unsigned int>(v.size()));
+    unsigned int domain(static_cast<unsigned int>(vec.size()));
 
     if (std::distance(first, last) != domain)
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(
-        !xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+        xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
         "RowIterator must dereference to a type that implements a begin() method");
-
+    std::unique_ptr<xad::Tape<xad::FReal<T>>> t;
     if (!tape)
     {
-        std::unique_ptr<xad::Tape<xad::FReal<T>>> t;
         t = std::unique_ptr<xad::Tape<xad::FReal<T>>>(new xad::Tape<xad::FReal<T>>());
-        if (!t)
-            throw xad::NoTapeException();
         tape = t.get();
     }
 
+    auto v(vec);
     tape->registerInputs(v);
 
     auto row = first;
-
     for (unsigned int i = 0; i < domain; i++, row++)
     {
         derivative(value(v[i])) = 1.0;
         tape->newRecording();
-
         xad::AReal<xad::FReal<T>> y = foo(v);
         tape->registerOutput(y);
         value(derivative(y)) = 1.0;
-
         tape->computeAdjoints();
 
         auto col = row->begin();
-
         for (unsigned int j = 0; j < domain; j++, col++)
         {
-            // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(v[j]))
-            //           << "\n";
             *col = derivative(derivative(v[j]));
         }
-
         derivative(value(v[i])) = 0.0;
     }
 }
@@ -116,36 +107,28 @@ void computeHessian(
     std::function<xad::FReal<xad::FReal<T>>(std::vector<xad::FReal<xad::FReal<T>>> &)> foo,
     RowIterator first, RowIterator last)
 {
-    auto v(vec);
-    unsigned int domain(static_cast<unsigned int>(v.size()));
+    unsigned int domain(static_cast<unsigned int>(vec.size()));
 
     if (std::distance(first, last) != domain)
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(
-        !xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+        xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
         "RowIterator must dereference to a type that implements a begin() method");
 
-    auto row = first;
+    auto v(vec);
 
+    auto row = first;
     for (unsigned int i = 0; i < domain; i++, row++)
     {
         value(derivative(v[i])) = 1.0;
-
         auto col = row->begin();
-
         for (unsigned int j = 0; j < domain; j++, col++)
         {
             derivative(value(v[j])) = 1.0;
-
             xad::FReal<xad::FReal<T>> y = foo(v);
-
-            // std::cout << "d2y/dx" << i << "dx" << j << " = " << derivative(derivative(y))
-            //           << "\n";
             *col = derivative(derivative(y));
-
             derivative(value(v[j])) = 0.0;
         }
-
         value(derivative(v[i])) = 0.0;
     }
 }

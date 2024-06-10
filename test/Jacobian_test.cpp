@@ -21,7 +21,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ******************************************************************************/
-/*
+
 #include <XAD/Jacobian.hpp>
 #include <XAD/XAD.hpp>
 
@@ -259,4 +259,22 @@ TEST(JacobianTest, TrigonometricFunctionForward)
         for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
             ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
 }
-*/
+
+TEST(JacobianTest, TrigonometricFunctionAdjointAutoTape)
+{
+    typedef xad::adj<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> x = {M_PI / 4, M_PI / 3};
+
+    // f(x) = [ sin(x[0]), cos(x[1]) ]
+    auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {sin(x[0]), cos(x[1])}; };
+
+    std::vector<std::vector<AD>> expected_jacobian = {{cos(x[0]), 0.0}, {0.0, -sin(x[1])}};
+
+    auto computed_jacobian = xad::computeJacobian<double>(x, foo);
+
+    for (unsigned int i = 0; i < expected_jacobian.size(); i++)
+        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
+            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
+}
