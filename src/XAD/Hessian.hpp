@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Implementation of hessian computing methods.
+   Implementation of Hessian matrix computing methods.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #pragma once
+
 #include <XAD/TypeTraits.hpp>
 #include <XAD/XAD.hpp>
 

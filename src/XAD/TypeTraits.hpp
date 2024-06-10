@@ -23,11 +23,11 @@
 ******************************************************************************/
 
 #pragma once
+
 #include <type_traits>
 
 namespace xad
 {
-
 namespace detail
 {
 
