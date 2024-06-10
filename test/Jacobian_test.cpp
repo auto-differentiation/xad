@@ -22,6 +22,7 @@
 
 ******************************************************************************/
 
+#define _USE_MATH_DEFINES
 #include <XAD/Jacobian.hpp>
 #include <XAD/XAD.hpp>
 
@@ -31,10 +32,6 @@
 #include <list>
 #include <numeric>
 #include <vector>
-
-#ifndef M_PI
-#define M_PI 3.141592653589793238462643383279502884197169399
-#endif
 
 TEST(JacobianTest, SimpleAdjoint)
 {
