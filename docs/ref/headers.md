@@ -9,14 +9,15 @@ Typically, this is all that clients need to include.
 
 There are four additional headers provided that can be included on demand:
 
-*   `XAD/Complex.hpp` - For using complex numbers with XAD data types (see [Complex](complex.md)).
-    This header should be included wherever [`#!c++ std::complex`](https://en.cppreference.com/w/cpp/numeric/complex) is used.
-*   `XAD/StdCompatibility.hpp` - This header imports the XAD math functions
-    into the `std` namespace, for compatibility reasons.
-    It enables using constructs like [`#!c++ std::sin(x)`](https://en.cppreference.com/w/cpp/numeric/math/sin) where `x` is an XAD type.
-    Additionally, it also specialises [`#!c++ std::numeric_limits`](https://en.cppreference.com/w/cpp/types/numeric_limits) for the XAD data types,
-    so that it provides traits similar to the standard floating point types.
-*   `XAD/Hessian.hpp` - Imports methods for computing the Hessian matrix of a single output function into the `xad` 
-    namespace.
-*   `XAD/Jacobian.hpp` - Imports methods for computing the Jacobian matrix of a function with multiple inputs and multiple
-    outputs into the `xad` namespace.
+* `XAD/Complex.hpp` - For using complex numbers with XAD data types
+   (see [Complex](complex.md)).
+   This header should be included wherever [`#!c++ std::complex`](https://en.cppreference.com/w/cpp/numeric/complex) is used.
+*  `XAD/StdCompatibility.hpp` - This header imports the XAD math functions
+   into the `std` namespace, for compatibility reasons.
+   It enables using constructs like [`#!c++ std::sin(x)`](https://en.cppreference.com/w/cpp/numeric/math/sin) where `x` is an XAD type.
+   Additionally, it also specialises [`#!c++ std::numeric_limits`](https://en.cppreference.com/w/cpp/types/numeric_limits) for the XAD data types,
+   so that it provides traits similar to the standard floating point types.
+*  `XAD/Hessian.hpp` - Imports methods for computing the Hessian matrix of a
+   single output function into the `xad` namespace.
+*  `XAD/Jacobian.hpp` - Imports methods for computing the Jacobian matrix of a
+   function with multiple inputs and multiple outputs into the `xad` namespace.

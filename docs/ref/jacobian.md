@@ -9,11 +9,15 @@ Users must include it as needed.
 
 Jacobians can be computed in `adj` or `fwd` mode.
 
-The `computeJacobian()` method takes a set of variables packaged in a `std::vector<T>` and a function with signature `std::vector<T> foo(std::vector<T>)`.
+The `computeJacobian()` method takes a set of variables packaged in a
+`std::vector<T>` and a function with signature
+`std::vector<T> foo(std::vector<T>)`.
 
 ## Return Types
 
-If provided with `RowIterators`, `computeHessian()` will write directly to them and return `void`. If no `RowIterators` are provided, the Hessian will be written to a `std::vector<std::vector<T>>` and returned.
+If provided with `RowIterators`, `computeHessian()` will write directly to
+them and return `void`. If no `RowIterators` are provided, the Hessian will be
+written to a `std::vector<std::vector<T>>` and returned.
 
 ## Specialisations
 
@@ -21,13 +25,15 @@ If provided with `RowIterators`, `computeHessian()` will write directly to them 
 
 ```c++
 template <class RowIterator, typename T>
-void computeJacobian(const std::vector<xad::AReal<T>> &vec,
-                     std::function<std::vector<xad::AReal<T>>(std::vector<xad::AReal<T>> &)> foo,
+void computeJacobian(const std::vector<AD> &vec,
+                     std::function<std::vector<AD>(std::vector<AD> &)> foo,
                      RowIterator first, RowIterator last,
                      xad::Tape<T> *tape = xad::Tape<T>::getActive())
 ```
 
-This mode uses a [Tape](ref/tape.md) to compute derivatives. This Tape will be instantiated within the method or set to the current active Tape using `Tape::getActive()` if none is passed as argument.
+This mode uses a [Tape](ref/tape.md) to compute derivatives. This Tape will
+be instantiated within the method or set to the current active Tape using
+`Tape::getActive()` if none is passed as argument.
 
 #### `fwd_fwd`
 
@@ -38,7 +44,8 @@ void computeJacobian(const std::vector<xad::FReal<T>> &vec,
                      RowIterator first, RowIterator last)
 ```
 
-This mode does not require a Tape and can help reduce the overhead that comes with one.
+This mode does not require a Tape and can help reduce the overhead that
+comes with one.
 
 ## Example Use
 
@@ -61,10 +68,22 @@ we'd like to compute the Jacobian
 
 $$
 J = \begin{bmatrix}
-\frac{\partial \sin(x + y)}{\partial x} & \frac{\partial \sin(x + y)}{\partial y} & \frac{\partial \sin(x + y)}{\partial z} & \frac{\partial \sin(x + y)}{\partial w} \\
-\frac{\partial \sin(y + z)}{\partial x} & \frac{\partial \sin(y + z)}{\partial y} & \frac{\partial \sin(y + z)}{\partial z} & \frac{\partial \sin(y + z)}{\partial w} \\
-\frac{\partial \cos(z + w)}{\partial x} & \frac{\partial \cos(z + w)}{\partial y} & \frac{\partial \cos(z + w)}{\partial z} & \frac{\partial \cos(z + w)}{\partial w} \\
-\frac{\partial \cos(w + x)}{\partial x} & \frac{\partial \cos(w + x)}{\partial y} & \frac{\partial \cos(w + x)}{\partial z} & \frac{\partial \cos(w + x)}{\partial w}
+\frac{\partial \sin(x + y)}{\partial x} &
+\frac{\partial \sin(x + y)}{\partial y} &
+\frac{\partial \sin(x + y)}{\partial z} &
+\frac{\partial \sin(x + y)}{\partial w} \\
+\frac{\partial \sin(y + z)}{\partial x} &
+\frac{\partial \sin(y + z)}{\partial y} &
+\frac{\partial \sin(y + z)}{\partial z} &
+\frac{\partial \sin(y + z)}{\partial w} \\
+\frac{\partial \cos(z + w)}{\partial x} &
+\frac{\partial \cos(z + w)}{\partial y} &
+\frac{\partial \cos(z + w)}{\partial z} &
+\frac{\partial \cos(z + w)}{\partial w} \\
+\frac{\partial \cos(w + x)}{\partial x} &
+\frac{\partial \cos(w + x)}{\partial y} &
+\frac{\partial \cos(w + x)}{\partial z} &
+\frac{\partial \cos(w + x)}{\partial w}
 \end{bmatrix}
 $$
 
@@ -78,11 +97,16 @@ First step is to setup the tape and active data types
     tape_type tape;
 ```
 
-Note that if no tape is setup, one will be created when computing the Jacobian. `fwd` mode is also supported in the same fashion. All that is left to do is define our input values and our function, then call `computeJacobian()`:
+Note that if no tape is setup, one will be created when computing the Jacobian.
+`fwd` mode is also supported in the same fashion. All that is left to do is
+define our input values and our function, then call `computeJacobian()`:
 
 ```c++
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {sin(x[0] + x[1]), sin(x[1] + x[2]), cos(x[2] + x[3]), cos(x[3] + x[0])}; };
+    { return {sin(x[0] + x[1]),
+              sin(x[1] + x[2]),
+              cos(x[2] + x[3]),
+              cos(x[3] + x[0])}; };
 
     auto jacobian = xad::computeJacobian<double>(x_ad, foo);
 ```

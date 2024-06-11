@@ -9,11 +9,14 @@ Users must include it as needed.
 
 Hessians can be computed in `fwd_adj` or `fwd_fwd` higher-order mode.
 
-The `computeHessian()` method takes a set of variables packaged in a `std::vector<T>` and a function with signature `T foo(std::vector<T>)`.
+The `computeHessian()` method takes a set of variables packaged in a
+`std::vector<T>` and a function with signature `T foo(std::vector<T>)`.
 
 ## Return Types
 
-If provided with `RowIterators`, `computeHessian()` will write directly to them and return `void`. If no `RowIterators` are provided, the Hessian will be written to a `std::vector<std::vector<T>>` and returned.
+If provided with `RowIterators`, `computeHessian()` will write directly to
+them and return `void`. If no `RowIterators` are provided, the Hessian will
+be written to a `std::vector<std::vector<T>>` and returned.
 
 ## Specialisations
 
@@ -22,26 +25,28 @@ If provided with `RowIterators`, `computeHessian()` will write directly to them 
 ```c++
 template <class RowIterator, typename T>
 void computeHessian(
-    const std::vector<xad::AReal<xad::FReal<T>>> &vec,
-    std::function<xad::AReal<xad::FReal<T>>(std::vector<xad::AReal<xad::FReal<T>>> &)> foo,
+    const std::vector<AD> &vec,
+    std::function<AD>(std::vector<AD> &)> foo,
     RowIterator first, RowIterator last,
     xad::Tape<xad::FReal<T>> *tape = xad::Tape<xad::FReal<T>>::getActive())
 ```
 
-This mode uses a [Tape](ref/tape.md) to compute second derivatives. This Tape will be instantiated within the method or set to the current active Tape using `Tape::getActive()` if none is passed as argument.
+This mode uses a [Tape](ref/tape.md) to compute second derivatives. This Tape
+will be instantiated within the method or set to the current active Tape using
+`Tape::getActive()` if none is passed as argument.
 
 #### `fwd_fwd`
 
 ```c++
 template <class RowIterator, typename T>
 void computeHessian(
-    const std::vector<xad::FReal<xad::FReal<T>>> &vec,
-    std::function<xad::FReal<xad::FReal<T>>(std::vector<xad::FReal<xad::FReal<T>>> &)> foo,
+    const std::vector<AD> &vec,
+    std::function<AD>(std::vector<AD> &)> foo,
     RowIterator first, RowIterator last)
 ```
 
-This mode does not require a Tape which can help reduce the overhead that comes with one.
-
+This mode does not require a Tape which can help reduce the overhead that comes
+with one.
 
 ## Example Use
 
@@ -50,7 +55,8 @@ Given $f(x, y, z, w) = sin(x * y) - cos(y * z) - sin(z * w) - cos(w * x)$, or
 ```c++
 auto foo = [](std::vector<AD> &x) -> AD
 {
-    return sin(x[0] * x[1]) - cos(x[1] * x[2]) - sin(x[2] * x[3]) - cos(x[3] * x[0]);
+    return sin(x[0] * x[1]) - cos(x[1] * x[2])
+         - sin(x[2] * x[3]) - cos(x[3] * x[0]);
 };
 ```
 
@@ -64,10 +70,22 @@ we'd like to compute the Hessian
 
 $$
 H = \begin{bmatrix}
-\frac{\partial^2 f}{\partial x^2} & \frac{\partial^2 f}{\partial x \partial y} & \frac{\partial^2 f}{\partial x \partial z} & \frac{\partial^2 f}{\partial x \partial w} \\
-\frac{\partial^2 f}{\partial y \partial x} & \frac{\partial^2 f}{\partial y^2} & \frac{\partial^2 f}{\partial y \partial z} & \frac{\partial^2 f}{\partial y \partial w} \\
-\frac{\partial^2 f}{\partial z \partial x} & \frac{\partial^2 f}{\partial z \partial y} & \frac{\partial^2 f}{\partial z^2} & \frac{\partial^2 f}{\partial z \partial w} \\
-\frac{\partial^2 f}{\partial w \partial x} & \frac{\partial^2 f}{\partial w \partial y} & \frac{\partial^2 f}{\partial w \partial z} & \frac{\partial^2 f}{\partial w^2}
+\frac{\partial^2 f}{\partial x^2} &
+\frac{\partial^2 f}{\partial x \partial y} &
+\frac{\partial^2 f}{\partial x \partial z} &
+\frac{\partial^2 f}{\partial x \partial w} \\
+\frac{\partial^2 f}{\partial y \partial x} &
+\frac{\partial^2 f}{\partial y^2} &
+\frac{\partial^2 f}{\partial y \partial z} &
+\frac{\partial^2 f}{\partial y \partial w} \\
+\frac{\partial^2 f}{\partial z \partial x} &
+\frac{\partial^2 f}{\partial z \partial y} &
+\frac{\partial^2 f}{\partial z^2} &
+\frac{\partial^2 f}{\partial z \partial w} \\
+\frac{\partial^2 f}{\partial w \partial x} &
+\frac{\partial^2 f}{\partial w \partial y} &
+\frac{\partial^2 f}{\partial w \partial z} &
+\frac{\partial^2 f}{\partial w^2}
 \end{bmatrix}
 $$
 
@@ -81,7 +99,9 @@ First step is to setup the tape and active data types
     tape_type tape;
 ```
 
-Note that if no tape is setup, one will be created when computing the Hessian. `fwd_fwd` mode is also supported in the same fashion. All that is left to do is define our input values and our function, then call `computeHessian()`:
+Note that if no tape is setup, one will be created when computing the Hessian.
+`fwd_fwd` mode is also supported in the same fashion. All that is left to do
+is define our input values and our function, then call `computeHessian()`:
 
 ```c++
     auto foo = [](std::vector<AD> &x) -> AD
