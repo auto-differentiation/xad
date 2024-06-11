@@ -28,6 +28,7 @@
 #include <XAD/XAD.hpp>
 
 #include <functional>
+#include <iterator>
 #include <type_traits>
 #include <vector>
 
@@ -120,16 +121,18 @@ void computeJacobian(const std::vector<xad::FReal<T>> &vec,
         throw OutOfRange("Iterator not allocated enough space (codomain)");
 
     auto row = first;
-    for (unsigned int i = 0; i < codomain; i++, row++)
+    for (unsigned int i = 0; i < domain; i++)
     {
-        auto col = row->begin();
-        for (unsigned int j = 0; j < domain; j++, col++)
+        derivative(v[i]) = 1.0;
+        auto y = foo(v);
+        derivative(v[i]) = 0.0;
+        for (unsigned int j = 0; j < codomain; j++)
         {
-            derivative(v[j]) = 1.0;
-            auto y = foo(v);
-            *col = derivative(y[i]);
-            std::cout << derivative(y[i]) << std::endl;
-            derivative(v[j]) = 0.0;
+            row = first;
+            std::advance(row, j);
+            auto col = row->begin();
+            std::advance(col, i);
+            *col = derivative(y[j]);
         }
     }
 }
