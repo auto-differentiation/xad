@@ -60,8 +60,41 @@ TEST(JacobianTest, SimpleAdjoint)
 TEST(JacobianTest, SimpleAdjointIteratorAutoTape)
 {
     typedef xad::adj<double> mode;
-    typedef mode::tape_type tape_type;
     typedef mode::active_type AD;
+
+    std::vector<AD> x = {3.0, 1.0};
+
+    // f(x) = [ x[0] + sin(x[1]), x[1] + sin(x[0]) ]
+    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
+    { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
+
+    std::list<std::list<AD>> expected_jacobian = {{1.0, cos(x[1])},  //
+                                                  {cos(x[0]), 1.0}};
+
+    std::list<std::list<AD>> computed_jacobian(2, std::list<AD>(2, 0.0));
+    xad::computeJacobian<decltype(begin(computed_jacobian)), double>(
+        x, foo, begin(computed_jacobian), end(computed_jacobian));
+
+    auto row1 = computed_jacobian.begin(), row2 = expected_jacobian.begin();
+    while (row1 != computed_jacobian.end() && row2 != expected_jacobian.end())
+    {
+        auto col1 = row1->begin(), col2 = row2->begin();
+        while (col1 != row1->end() && col2 != row2->end())
+        {
+            ASSERT_EQ(*col1, *col2);
+            col1++;
+            col2++;
+        }
+        row1++;
+        row2++;
+    }
+}
+
+TEST(JacobianTest, SimpleAdjointIteratorFetchTape)
+{
+    typedef xad::adj<double> mode;
+    typedef mode::active_type AD;
+    typedef mode::tape_type tape_type;
 
     tape_type tape;
 

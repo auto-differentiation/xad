@@ -56,9 +56,8 @@ void computeHessian(
 {
     unsigned int domain(static_cast<unsigned int>(vec.size()));
 
-    if (std::distance(first, last) != domain)
-        throw OutOfRange("Iterator not allocated enough space");
-    else if (std::distance(first->cbegin(), first->cend()) != domain)
+    if (std::distance(first, last) != domain ||
+        std::distance(first->cbegin(), first->cend()) != domain)
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(
         xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
@@ -112,9 +111,8 @@ void computeHessian(
 {
     unsigned int domain(static_cast<unsigned int>(vec.size()));
 
-    if (std::distance(first, last) != domain)
-        throw OutOfRange("Iterator not allocated enough space");
-    else if (std::distance(first->cbegin(), first->cend()) != domain)
+    if (std::distance(first, last) != domain ||
+        std::distance(first->cbegin(), first->cend()) != domain)
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(
         xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
