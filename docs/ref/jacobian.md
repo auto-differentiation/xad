@@ -60,7 +60,12 @@ std::vector<AD> x_ad({1.0, 1.5, 1.3, 1.2});
 we'd like to compute the Jacobian
 
 $$
-J = \begin{bmatrix} \frac{\partial \sin(x + y)}{\partial x} & \frac{\partial \sin(x + y)}{\partial y} & \frac{\partial \sin(x + y)}{\partial z} & \frac{\partial \sin(x + y)}{\partial w} \\ \frac{\partial \sin(y + z)}{\partial x} & \frac{\partial \sin(y + z)}{\partial y} & \frac{\partial \sin(y + z)}{\partial z} & \frac{\partial \sin(y + z)}{\partial w} \\ \frac{\partial \cos(z + w)}{\partial x} & \frac{\partial \cos(z + w)}{\partial y} & \frac{\partial \cos(z + w)}{\partial z} & \frac{\partial \cos(z + w)}{\partial w} \\ \frac{\partial \cos(w + x)}{\partial x} & \frac{\partial \cos(w + x)}{\partial y} & \frac{\partial \cos(w + x)}{\partial z} & \frac{\partial \cos(w + x)}{\partial w} \end{bmatrix}
+J = \begin{bmatrix}
+\frac{\partial \sin(x + y)}{\partial x} & \frac{\partial \sin(x + y)}{\partial y} & \frac{\partial \sin(x + y)}{\partial z} & \frac{\partial \sin(x + y)}{\partial w} \\
+\frac{\partial \sin(y + z)}{\partial x} & \frac{\partial \sin(y + z)}{\partial y} & \frac{\partial \sin(y + z)}{\partial z} & \frac{\partial \sin(y + z)}{\partial w} \\
+\frac{\partial \cos(z + w)}{\partial x} & \frac{\partial \cos(z + w)}{\partial y} & \frac{\partial \cos(z + w)}{\partial z} & \frac{\partial \cos(z + w)}{\partial w} \\
+\frac{\partial \cos(w + x)}{\partial x} & \frac{\partial \cos(w + x)}{\partial y} & \frac{\partial \cos(w + x)}{\partial z} & \frac{\partial \cos(w + x)}{\partial w}
+\end{bmatrix}
 $$
 
 First step is to setup the tape and active data types
