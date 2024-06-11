@@ -1,6 +1,9 @@
 /*******************************************************************************
 
-   Tests for helper traits.
+   Computes
+     f(x, y, z, w) = [sin(x + y) sin(y + z) cos(z + w) cos(w + x)]
+   and its Jacobian matrix using adjoint mode.
+
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -22,39 +25,34 @@
 
 ******************************************************************************/
 
-#include <XAD/TypeTraits.hpp>
+#include <iostream>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-#include <list>
+#include <XAD/Jacobian.hpp>
+#include <XAD/XAD.hpp>
 
-TEST(TypeTraits, HasBeginVectorOfVectorsIteratorDereferenced)
+int main()
 {
-    std::vector<std::vector<int>> t(0);
-    auto row = t.begin();
-    EXPECT_TRUE(xad::detail::has_begin<decltype(*row)>::value);
-}
+    // tape and active data type for 1st order adjoint computation
+    typedef xad::adj<double> mode;
+    typedef mode::tape_type tape_type;
+    typedef mode::active_type AD;
 
-TEST(TypeTraits, HasBeginVectorOfVectors)
-{
-    using It = std::vector<std::vector<int>>;
-    EXPECT_TRUE(xad::detail::has_begin<It>::value);
-}
+    // initialize tape (not required)
+    tape_type tape;
 
-TEST(TypeTraits, HasBeginListIteratorReferenced)
-{
-    using It = std::list<int>::iterator;
-    EXPECT_FALSE(xad::detail::has_begin<It>::value);
-}
+    // input vector
+    std::vector<AD> x_ad({1.0, 1.5, 1.3, 1.2});
 
-TEST(TypeTraits, HasBeginList)
-{
-    using It = std::list<int>;
-    EXPECT_TRUE(xad::detail::has_begin<It>::value);
-}
+    // many-input many-output function
+    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
+    { return {sin(x[0] + x[1]), sin(x[1] + x[2]), cos(x[2] + x[3]), cos(x[3] + x[0])}; };
 
-TEST(TypeTraits, HasBeginNonIterable)
-{
-    using It = size_t;
-    EXPECT_FALSE(xad::detail::has_begin<It>::value);
+    auto jacobian = xad::computeJacobian<double>(x_ad, foo);
+
+    // output results
+    for (auto row : jacobian)
+    {
+        for (auto elem : row) std::cout << elem << " ";
+        std::cout << std::endl;
+    }
 }
