@@ -105,7 +105,8 @@ is define our input values and our function, then call `computeHessian()`:
 
 ```c++
     auto foo = [](std::vector<AD> &x) -> AD
-    { return sin(x[0] * x[1]) - cos(x[1] * x[2]) - sin(x[2] * x[3]) - cos(x[3] * x[0]); };
+    { return sin(x[0] * x[1]) - cos(x[1] * x[2])
+           - sin(x[2] * x[3]) - cos(x[3] * x[0]); };
 
     auto hessian = xad::computeHessian<double>(x_ad, foo);
 ```

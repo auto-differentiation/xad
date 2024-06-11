@@ -39,8 +39,8 @@ be instantiated within the method or set to the current active Tape using
 
 ```c++
 template <class RowIterator, typename T>
-void computeJacobian(const std::vector<xad::FReal<T>> &vec,
-                     std::function<std::vector<xad::FReal<T>>(std::vector<xad::FReal<T>> &)> foo,
+void computeJacobian(const std::vector<AD> &vec,
+                     std::function<std::vector<AD>(std::vector<AD> &)> foo,
                      RowIterator first, RowIterator last)
 ```
 
