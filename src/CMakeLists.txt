@@ -52,6 +52,7 @@ set(public_headers
     XAD/Tape.hpp
     XAD/TapeContainer.hpp
     XAD/Traits.hpp
+    XAD/TypeTraits.hpp
     XAD/UnaryExpr.hpp
     XAD/UnaryFunctors.hpp
     XAD/UnaryMathFunctors.hpp
