@@ -384,3 +384,28 @@ TEST(HessianTest, QuadraticForwardAdjointAutoTape)
         for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
             ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
 }
+
+TEST(HessianTest, OutOfBoundsDomainSizeMismatch)
+{
+    typedef xad::fwd_adj<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> x = {1.0, 2.0};
+
+    auto foo = [](std::vector<AD> &x) -> AD { return x[0]; };
+
+    std::vector<std::vector<AD>> jacobian(2, std::vector<AD>(3));
+
+    auto launch = [](std::vector<AD> x,
+                     std::function<xad::AReal<xad::FReal<double>>(
+                         std::vector<xad::AReal<xad::FReal<double>>> &)>
+                         foo,
+                     std::vector<std::vector<xad::AReal<xad::FReal<double>>>>::iterator first,
+                     std::vector<std::vector<xad::AReal<xad::FReal<double>>>>::iterator last)
+    {
+        using RowIterator = decltype(first);
+        xad::computeHessian<RowIterator, double>(x, foo, first, last);
+    };
+
+    EXPECT_THROW(launch(x, foo, begin(jacobian), end(jacobian)), xad::OutOfRange);
+}

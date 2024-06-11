@@ -311,3 +311,51 @@ TEST(JacobianTest, TrigonometricFunctionAdjointAutoTape)
             ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
         }
 }
+
+TEST(JacobianTest, OutOfBoundsDomainSizeMismatch)
+{
+    typedef xad::adj<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> x = {1.0, 2.0};
+
+    auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[1]}; };
+
+    std::vector<std::vector<AD>> jacobian(2, std::vector<AD>(3));
+
+    auto launch =
+        [](std::vector<AD> x,
+           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
+           std::vector<std::vector<xad::AReal<double>>>::iterator first,
+           std::vector<std::vector<xad::AReal<double>>>::iterator last)
+    {
+        using RowIterator = decltype(first);
+        xad::computeJacobian<RowIterator, double>(x, foo, first, last);
+    };
+
+    EXPECT_THROW(launch(x, foo, begin(jacobian), end(jacobian)), xad::OutOfRange);
+}
+
+TEST(JacobianTest, OutOfBoundsCodomainSizeMismatch)
+{
+    typedef xad::adj<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> x = {1.0};
+
+    auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[0]}; };
+
+    std::vector<std::vector<AD>> jacobian(1, std::vector<AD>(1));
+
+    auto launch =
+        [](std::vector<AD> x,
+           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
+           std::vector<std::vector<xad::AReal<double>>>::iterator first,
+           std::vector<std::vector<xad::AReal<double>>>::iterator last)
+    {
+        using RowIterator = decltype(first);
+        xad::computeJacobian<RowIterator, double>(x, foo, first, last);
+    };
+
+    EXPECT_THROW(launch(x, foo, begin(jacobian), end(jacobian)), xad::OutOfRange);
+}
