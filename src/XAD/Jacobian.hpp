@@ -67,15 +67,14 @@ void computeJacobian(const std::vector<xad::AReal<T>> &vec,
     }
 
     auto v(vec);
-    unsigned int domain = static_cast<unsigned int>(vec.size()),
-                 codomain = static_cast<unsigned int>(foo(v).size());
-
-    if (std::distance(first, last) != codomain)
-        throw OutOfRange("Iterator not allocated enough space (codomain)");
 
     tape->registerInputs(v);
     tape->newRecording();
     auto y = foo(v);
+    unsigned int domain = static_cast<unsigned int>(vec.size()),
+                 codomain = static_cast<unsigned int>(y.size());
+    if (std::distance(first, last) != codomain)
+        throw OutOfRange("Iterator not allocated enough space (codomain)");
     tape->registerOutputs(y);
 
     auto row = first;
