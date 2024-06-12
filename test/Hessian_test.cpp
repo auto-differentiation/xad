@@ -49,13 +49,12 @@ TEST(HessianTest, QuadraticForwardAdjoint)
     // f(x) = x[0]^2 + x[1]^2
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] + x[1] * x[1]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {{2.0, 0.0}, {0.0, 2.0}};
+    std::vector<std::vector<double>> expected_hessian = {{2.0, 0.0}, {0.0, 2.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, QuadraticForwardAdjointAutoTape)
@@ -68,13 +67,12 @@ TEST(HessianTest, QuadraticForwardAdjointAutoTape)
     // f(x) = x[0]^2 + x[1]^2
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] + x[1] * x[1]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {{2.0, 0.0}, {0.0, 2.0}};
+    std::vector<std::vector<double>> expected_hessian = {{2.0, 0.0}, {0.0, 2.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, QuadraticForwardAdjointFetchTape)
@@ -90,13 +88,12 @@ TEST(HessianTest, QuadraticForwardAdjointFetchTape)
     // f(x) = x[0]^2 + x[1]^2
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] + x[1] * x[1]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {{2.0, 0.0}, {0.0, 2.0}};
+    std::vector<std::vector<double>> expected_hessian = {{2.0, 0.0}, {0.0, 2.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, QuadraticForwardAdjointWithIterator)
@@ -112,25 +109,17 @@ TEST(HessianTest, QuadraticForwardAdjointWithIterator)
     // f(x) = x[0]^2 + x[1]^2
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] + x[1] * x[1]; };
 
-    std::list<std::list<AD>> expected_hessian = {{2.0, 0.0}, {0.0, 2.0}};
+    std::list<std::list<double>> expected_hessian = {{2.0, 0.0}, {0.0, 2.0}};
 
-    std::list<std::list<AD>> computed_hessian(x.size(), std::list<AD>(x.size(), 0.0));
+    std::list<std::list<double>> computed_hessian(x.size(), std::list<double>(x.size(), 0.0));
     xad::computeHessian<decltype(begin(computed_hessian)), double>(x, foo, begin(computed_hessian),
                                                                    end(computed_hessian), &tape);
 
-    auto row1 = computed_hessian.begin(), row2 = expected_hessian.begin();
-    while (row1 != computed_hessian.end() && row2 != expected_hessian.end())
-    {
-        auto col1 = row1->begin(), col2 = row2->begin();
-        while (col1 != row1->end() && col2 != row2->end())
-        {
-            ASSERT_EQ(*col1, *col2);
-            col1++;
-            col2++;
-        }
-        row1++;
-        row2++;
-    }
+    auto expected_it = expected_hessian.begin();
+    auto computed_it = computed_hessian.begin();
+    for (; expected_it != expected_hessian.end() && computed_it != computed_hessian.end();
+         ++expected_it, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), *expected_it));
 }
 
 TEST(HessianTest, SingleInputForwardAdjoint)
@@ -146,13 +135,12 @@ TEST(HessianTest, SingleInputForwardAdjoint)
     // f(x) = x[0]^3 + x[0]
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] * x[0] + x[0]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {{18.0}};
+    std::vector<std::vector<double>> expected_hessian = {{18.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, QuadraticForwardForward)
@@ -165,14 +153,13 @@ TEST(HessianTest, QuadraticForwardForward)
     // f(x) = x[0]^2 + x[1]^2
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] + x[1] * x[1]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {{2.0, 0.0},  //
-                                                     {0.0, 2.0}};
+    std::vector<std::vector<double>> expected_hessian = {{2.0, 0.0},  //
+                                                         {0.0, 2.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, QuadraticForwardForwardWithIterator)
@@ -185,26 +172,18 @@ TEST(HessianTest, QuadraticForwardForwardWithIterator)
     // f(x) = x[0]^2 + x[1]^2
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] + x[1] * x[1]; };
 
-    std::list<std::list<AD>> expected_hessian = {{2.0, 0.0},  //
-                                                 {0.0, 2.0}};
+    std::list<std::list<double>> expected_hessian = {{2.0, 0.0},  //
+                                                     {0.0, 2.0}};
 
-    std::list<std::list<AD>> computed_hessian(x.size(), std::list<AD>(x.size(), 0.0));
+    std::list<std::list<double>> computed_hessian(x.size(), std::list<double>(x.size(), 0.0));
     xad::computeHessian<decltype(begin(computed_hessian)), double>(x, foo, begin(computed_hessian),
                                                                    end(computed_hessian));
 
-    auto row1 = computed_hessian.begin(), row2 = expected_hessian.begin();
-    while (row1 != computed_hessian.end() && row2 != expected_hessian.end())
-    {
-        auto col1 = row1->begin(), col2 = row2->begin();
-        while (col1 != row1->end() && col2 != row2->end())
-        {
-            ASSERT_EQ(*col1, *col2);
-            col1++;
-            col2++;
-        }
-        row1++;
-        row2++;
-    }
+    auto expected_it = expected_hessian.begin();
+    auto computed_it = computed_hessian.begin();
+    for (; expected_it != expected_hessian.end() && computed_it != computed_hessian.end();
+         ++expected_it, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), *expected_it));
 }
 
 TEST(HessianTest, SingleInputForwardForward)
@@ -217,13 +196,12 @@ TEST(HessianTest, SingleInputForwardForward)
     // f(x) = x[0]^3 + x[0]
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] * x[0] + x[0]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {{18.0}};
+    std::vector<std::vector<double>> expected_hessian = {{18.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, QuadraticThreeVariablesForwardAdjoint)
@@ -239,14 +217,13 @@ TEST(HessianTest, QuadraticThreeVariablesForwardAdjoint)
     // f(x) = x[0]^2 + x[1]^2 + x[2]^2
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] + x[1] * x[1] + x[2] * x[2]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {
+    std::vector<std::vector<double>> expected_hessian = {
         {2.0, 0.0, 0.0}, {0.0, 2.0, 0.0}, {0.0, 0.0, 2.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, ComplexFunctionForwardAdjoint)
@@ -262,16 +239,16 @@ TEST(HessianTest, ComplexFunctionForwardAdjoint)
     // f(x) = x[0] * sin(x[1]) + x[2] * exp(x[3])
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * sin(x[1]) + x[2] * exp(x[3]); };
 
-    std::vector<std::vector<AD>> expected_hessian = {{0.0, cos(x[1]), 0.0, 0.0},
-                                                     {cos(x[1]), -x[0] * sin(x[1]), 0.0, 0.0},
-                                                     {0.0, 0.0, 0.0, exp(x[3])},
-                                                     {0.0, 0.0, exp(x[3]), x[2] * exp(x[3])}};
+    std::vector<std::vector<double>> expected_hessian = {
+        {0.0, cos(value(value(x[1]))), 0.0, 0.0},
+        {cos(value(value(x[1]))), -value(value(x[0])) * sin(value(value(x[1]))), 0.0, 0.0},
+        {0.0, 0.0, 0.0, exp(value(value(x[3])))},
+        {0.0, 0.0, exp(value(value(x[3]))), value(value(x[2])) * exp(value(value(x[3])))}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, FourthOrderPolynomialForwardAdjoint)
@@ -287,15 +264,15 @@ TEST(HessianTest, FourthOrderPolynomialForwardAdjoint)
     // f(x) = x[0]^4 + x[1]^4 + x[2]^4
     auto foo = [](std::vector<AD> &x) -> AD { return pow(x[0], 4) + pow(x[1], 4) + pow(x[2], 4); };
 
-    std::vector<std::vector<AD>> expected_hessian = {{12.0 * x[0] * x[0], 0.0, 0.0},
-                                                     {0.0, 12.0 * x[1] * x[1], 0.0},
-                                                     {0.0, 0.0, 12.0 * x[2] * x[2]}};
+    std::vector<std::vector<double>> expected_hessian = {
+        {12.0 * value(value(x[0])) * value(value(x[0])), 0.0, 0.0},
+        {0.0, 12.0 * value(value(x[1])) * value(value(x[1])), 0.0},
+        {0.0, 0.0, 12.0 * value(value(x[2])) * value(value(x[2]))}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, HigherOrderInteractionForwardAdjoint)
@@ -311,15 +288,15 @@ TEST(HessianTest, HigherOrderInteractionForwardAdjoint)
     // f(x) = x[0] * x[1] * x[2]
     auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[1] * x[2]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {{0.0, x[2], x[1]},  //
-                                                     {x[2], 0.0, x[0]},
-                                                     {x[1], x[0], 0.0}};
+    std::vector<std::vector<double>> expected_hessian = {
+        {0.0, value(value(x[2])), value(value(x[1]))},  //
+        {value(value(x[2])), 0.0, value(value(x[0]))},
+        {value(value(x[1])), value(value(x[0])), 0.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, QuadraticFourVariablesForwardAdjoint)
@@ -336,16 +313,15 @@ TEST(HessianTest, QuadraticFourVariablesForwardAdjoint)
     auto foo = [](std::vector<AD> &x) -> AD
     { return x[0] * x[0] + x[1] * x[1] + x[2] * x[2] + x[3] * x[3]; };
 
-    std::vector<std::vector<AD>> expected_hessian = {{2.0, 0.0, 0.0, 0.0},  //
-                                                     {0.0, 2.0, 0.0, 0.0},
-                                                     {0.0, 0.0, 2.0, 0.0},
-                                                     {0.0, 0.0, 0.0, 2.0}};
+    std::vector<std::vector<double>> expected_hessian = {{2.0, 0.0, 0.0, 0.0},  //
+                                                         {0.0, 2.0, 0.0, 0.0},
+                                                         {0.0, 0.0, 2.0, 0.0},
+                                                         {0.0, 0.0, 0.0, 2.0}};
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, LargeHessianForwardAdjoint)
@@ -369,14 +345,13 @@ TEST(HessianTest, LargeHessianForwardAdjoint)
         return result;
     };
 
-    std::vector<std::vector<AD>> expected_hessian(16, std::vector<AD>(16, 1.0));
+    std::vector<std::vector<double>> expected_hessian(16, std::vector<double>(16, 1.0));
     for (size_t i = 0; i < 16; ++i) expected_hessian[i][i] = 2.0;
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, LargeHessianForwardForward)
@@ -397,14 +372,13 @@ TEST(HessianTest, LargeHessianForwardForward)
         return result;
     };
 
-    std::vector<std::vector<AD>> expected_hessian(16, std::vector<AD>(16, 1.0));
+    std::vector<std::vector<double>> expected_hessian(16, std::vector<double>(16, 1.0));
     for (size_t i = 0; i < 16; ++i) expected_hessian[i][i] = 2.0;
 
-    auto computed_hessian = xad::computeHessian<double>(x, foo);
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_hessian.size(); i++)
-        for (unsigned int j = 0; j < expected_hessian[i].size(); j++)
-            ASSERT_EQ(expected_hessian[i][j], computed_hessian[i][j]);
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
 }
 
 TEST(HessianTest, OutOfBoundsDomainSizeMismatch)
@@ -416,14 +390,14 @@ TEST(HessianTest, OutOfBoundsDomainSizeMismatch)
 
     auto foo = [](std::vector<AD> &x) -> AD { return x[0]; };
 
-    std::vector<std::vector<AD>> jacobian(2, std::vector<AD>(3));
+    std::vector<std::vector<double>> jacobian(2, std::vector<double>(3));
 
     auto launch = [](std::vector<AD> x,
                      std::function<xad::AReal<xad::FReal<double>>(
                          std::vector<xad::AReal<xad::FReal<double>>> &)>
                          foo,
-                     std::vector<std::vector<xad::AReal<xad::FReal<double>>>>::iterator first,
-                     std::vector<std::vector<xad::AReal<xad::FReal<double>>>>::iterator last)
+                     std::vector<std::vector<double>>::iterator first,
+                     std::vector<std::vector<double>>::iterator last)
     {
         using RowIterator = decltype(first);
         xad::computeHessian<RowIterator, double>(x, foo, first, last);

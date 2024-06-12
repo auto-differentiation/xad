@@ -44,10 +44,10 @@ int main()
     std::vector<AD> x_ad({1.0, 1.5, 1.3, 1.2});
 
     // many-input many-output function
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
+    std::function<std::vector<AD>(std::vector<AD>&)> foo = [](std::vector<AD>& x) -> std::vector<AD>
     { return {sin(x[0] + x[1]), sin(x[1] + x[2]), cos(x[2] + x[3]), cos(x[3] + x[0])}; };
 
-    auto jacobian = xad::computeJacobian<double>(x_ad, foo);
+    auto jacobian = computeJacobian(x_ad, foo);
 
     // output results
     for (auto row : jacobian)

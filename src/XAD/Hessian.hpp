@@ -28,6 +28,7 @@
 #include <XAD/XAD.hpp>
 
 #include <functional>
+#include <memory>
 #include <type_traits>
 #include <vector>
 
@@ -37,9 +38,9 @@ namespace xad
 // fwd_adj 2d vector
 template <typename T>
 std::vector<std::vector<T>> computeHessian(
-    const std::vector<xad::AReal<xad::FReal<T>>> &vec,
-    std::function<xad::AReal<xad::FReal<T>>(std::vector<xad::AReal<xad::FReal<T>>> &)> foo,
-    xad::Tape<xad::FReal<T>> *tape = xad::Tape<xad::FReal<T>>::getActive())
+    const std::vector<AReal<FReal<T>>> &vec,
+    std::function<AReal<FReal<T>>(std::vector<AReal<FReal<T>>> &)> foo,
+    Tape<FReal<T>> *tape = Tape<FReal<T>>::getActive())
 {
     std::vector<std::vector<T>> matrix(vec.size(), std::vector<T>(vec.size(), 0.0));
     computeHessian(vec, foo, begin(matrix), end(matrix), tape);
@@ -47,25 +48,23 @@ std::vector<std::vector<T>> computeHessian(
 }
 
 // fwd_adj iterator
-template <class RowIterator, typename T>
-void computeHessian(
-    const std::vector<xad::AReal<xad::FReal<T>>> &vec,
-    std::function<xad::AReal<xad::FReal<T>>(std::vector<xad::AReal<xad::FReal<T>>> &)> foo,
-    RowIterator first, RowIterator last,
-    xad::Tape<xad::FReal<T>> *tape = xad::Tape<xad::FReal<T>>::getActive())
+template <typename RowIterator, typename T>
+void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
+                    std::function<AReal<FReal<T>>(std::vector<AReal<FReal<T>>> &)> foo,
+                    RowIterator first, RowIterator last,
+                    Tape<FReal<T>> *tape = Tape<FReal<T>>::getActive())
 {
     unsigned int domain(static_cast<unsigned int>(vec.size()));
 
     if (std::distance(first, last) != domain ||
         std::distance(first->cbegin(), first->cend()) != domain)
         throw OutOfRange("Iterator not allocated enough space");
-    static_assert(
-        xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
-        "RowIterator must dereference to a type that implements a begin() method");
-    std::unique_ptr<xad::Tape<xad::FReal<T>>> t;
+    static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+                  "RowIterator must dereference to a type that implements a begin() method");
+    std::unique_ptr<Tape<FReal<T>>> t;
     if (!tape)
     {
-        t = std::unique_ptr<xad::Tape<xad::FReal<T>>>(new xad::Tape<xad::FReal<T>>());
+        t = std::unique_ptr<Tape<FReal<T>>>(new Tape<FReal<T>>());
         tape = t.get();
     }
 
@@ -77,7 +76,7 @@ void computeHessian(
     {
         derivative(value(v[i])) = 1.0;
         tape->newRecording();
-        xad::AReal<xad::FReal<T>> y = foo(v);
+        AReal<FReal<T>> y = foo(v);
         tape->registerOutput(y);
         value(derivative(y)) = 1.0;
         tape->computeAdjoints();
@@ -94,8 +93,8 @@ void computeHessian(
 // fwd_fwd 2d vector
 template <typename T>
 std::vector<std::vector<T>> computeHessian(
-    const std::vector<xad::FReal<xad::FReal<T>>> &vec,
-    std::function<xad::FReal<xad::FReal<T>>(std::vector<xad::FReal<xad::FReal<T>>> &)> foo)
+    const std::vector<FReal<FReal<T>>> &vec,
+    std::function<FReal<FReal<T>>(std::vector<FReal<FReal<T>>> &)> foo)
 {
     std::vector<std::vector<T>> matrix(vec.size(), std::vector<T>(vec.size(), 0.0));
     computeHessian(vec, foo, begin(matrix), end(matrix));
@@ -103,20 +102,18 @@ std::vector<std::vector<T>> computeHessian(
 }
 
 // fwd_fwd iterator
-template <class RowIterator, typename T>
-void computeHessian(
-    const std::vector<xad::FReal<xad::FReal<T>>> &vec,
-    std::function<xad::FReal<xad::FReal<T>>(std::vector<xad::FReal<xad::FReal<T>>> &)> foo,
-    RowIterator first, RowIterator last)
+template <typename RowIterator, typename T>
+void computeHessian(const std::vector<FReal<FReal<T>>> &vec,
+                    std::function<FReal<FReal<T>>(std::vector<FReal<FReal<T>>> &)> foo,
+                    RowIterator first, RowIterator last)
 {
     unsigned int domain(static_cast<unsigned int>(vec.size()));
 
     if (std::distance(first, last) != domain ||
         std::distance(first->cbegin(), first->cend()) != domain)
         throw OutOfRange("Iterator not allocated enough space");
-    static_assert(
-        xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
-        "RowIterator must dereference to a type that implements a begin() method");
+    static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+                  "RowIterator must dereference to a type that implements a begin() method");
 
     auto v(vec);
 
@@ -128,7 +125,7 @@ void computeHessian(
         for (unsigned int j = 0; j < domain; j++, col++)
         {
             derivative(value(v[j])) = 1.0;
-            xad::FReal<xad::FReal<T>> y = foo(v);
+            FReal<FReal<T>> y = foo(v);
             *col = derivative(derivative(y));
             derivative(value(v[j])) = 0.0;
         }

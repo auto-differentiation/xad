@@ -37,9 +37,9 @@ namespace xad
 // adj 2d vector
 template <typename T>
 std::vector<std::vector<T>> computeJacobian(
-    const std::vector<xad::AReal<T>> &vec,
-    std::function<std::vector<xad::AReal<T>>(std::vector<xad::AReal<T>> &)> foo,
-    xad::Tape<T> *tape = xad::Tape<T>::getActive())
+    const std::vector<AReal<T>> &vec,
+    std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
+    Tape<T> *tape = Tape<T>::getActive())
 {
     auto v(vec);
     std::vector<std::vector<T>> matrix(foo(v).size(), std::vector<T>(v.size(), 0.0));
@@ -48,21 +48,19 @@ std::vector<std::vector<T>> computeJacobian(
 }
 
 // adj iterator
-template <class RowIterator, typename T>
-void computeJacobian(const std::vector<xad::AReal<T>> &vec,
-                     std::function<std::vector<xad::AReal<T>>(std::vector<xad::AReal<T>> &)> foo,
-                     RowIterator first, RowIterator last,
-                     xad::Tape<T> *tape = xad::Tape<T>::getActive())
+template <typename RowIterator, typename T>
+void computeJacobian(const std::vector<AReal<T>> &vec,
+                     std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
+                     RowIterator first, RowIterator last, Tape<T> *tape = Tape<T>::getActive())
 {
     if (std::distance(first->cbegin(), first->cend()) != vec.size())
         throw OutOfRange("Iterator not allocated enough space (domain)");
-    static_assert(
-        xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
-        "RowIterator must dereference to a type that implements a begin() method");
-    std::unique_ptr<xad::Tape<T>> t;
+    static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+                  "RowIterator must dereference to a type that implements a begin() method");
+    std::unique_ptr<Tape<T>> t;
     if (!tape)
     {
-        t = std::unique_ptr<xad::Tape<T>>(new xad::Tape<T>());
+        t = std::unique_ptr<Tape<T>>(new Tape<T>());
         tape = t.get();
     }
 
@@ -91,8 +89,8 @@ void computeJacobian(const std::vector<xad::AReal<T>> &vec,
 // fwd 2d vector
 template <typename T>
 std::vector<std::vector<T>> computeJacobian(
-    const std::vector<xad::FReal<T>> &vec,
-    std::function<std::vector<xad::FReal<T>>(std::vector<xad::FReal<T>> &)> foo)
+    const std::vector<FReal<T>> &vec,
+    std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo)
 {
     auto v(vec);
     std::vector<std::vector<T>> matrix(foo(v).size(), std::vector<T>(v.size(), 0.0));
@@ -101,16 +99,15 @@ std::vector<std::vector<T>> computeJacobian(
 }
 
 // fwd iterator
-template <class RowIterator, typename T>
-void computeJacobian(const std::vector<xad::FReal<T>> &vec,
-                     std::function<std::vector<xad::FReal<T>>(std::vector<xad::FReal<T>> &)> foo,
+template <typename RowIterator, typename T>
+void computeJacobian(const std::vector<FReal<T>> &vec,
+                     std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo,
                      RowIterator first, RowIterator last)
 {
     if (std::distance(first->cbegin(), first->cend()) != vec.size())
         throw OutOfRange("Iterator not allocated enough space (domain)");
-    static_assert(
-        xad::detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
-        "RowIterator must dereference to a type that implements a begin() method");
+    static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
+                  "RowIterator must dereference to a type that implements a begin() method");
 
     auto v(vec);
     unsigned int domain = static_cast<unsigned int>(vec.size()),

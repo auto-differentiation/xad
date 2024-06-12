@@ -16,41 +16,43 @@ The `computeHessian()` method takes a set of variables packaged in a
 
 If provided with `RowIterators`, `computeHessian()` will write directly to
 them and return `void`. If no `RowIterators` are provided, the Hessian will
-be written to a `std::vector<std::vector<T>>` and returned.
+be written to a `std::vector<std::vector<T>>` and returned (`T` is
+usually `double`).
 
 ## Specialisations
 
-#### `fwd_adj`
+### Forward over Adjoint Mode
 
 ```c++
-template <class RowIterator, typename T>
+template <typename RowIterator, typename T>
 void computeHessian(
-    const std::vector<AD> &vec,
-    std::function<AD>(std::vector<AD> &)> foo,
+    const std::vector<AReal<FReal<T>>> &vec,
+    std::function<AReal<FReal<T>>(std::vector<AReal<FReal<T>>> &)> foo,
     RowIterator first, RowIterator last,
-    xad::Tape<xad::FReal<T>> *tape = xad::Tape<xad::FReal<T>>::getActive())
+    Tape<FReal<T>> *tape = Tape<FReal<T>>::getActive())
 ```
 
 This mode uses a [Tape](ref/tape.md) to compute second derivatives. This Tape
 will be instantiated within the method or set to the current active Tape using
 `Tape::getActive()` if none is passed as argument.
 
-#### `fwd_fwd`
+### Forward over Forward Mode
 
 ```c++
-template <class RowIterator, typename T>
+template <typename RowIterator, typename T>
 void computeHessian(
-    const std::vector<AD> &vec,
-    std::function<AD>(std::vector<AD> &)> foo,
+    const std::vector<FReal<FReal<T>>> &vec,
+    std::function<FReal<FReal<T>>(std::vector<FReal<FReal<T>>> &)> foo,
     RowIterator first, RowIterator last)
 ```
 
 This mode does not require a Tape which can help reduce the overhead that comes
-with one.
+with it, at the expense of requiring more executions of the function given to
+determine the full Hessian.
 
 ## Example Use
 
-Given $f(x, y, z, w) = sin(x * y) - cos(y * z) - sin(z * w) - cos(w * x)$, or
+Given $f(x, y, z, w) = sin(x y) - cos(y z) - sin(z w) - cos(w x)$, or
 
 ```c++
 auto foo = [](std::vector<AD> &x) -> AD
@@ -60,7 +62,7 @@ auto foo = [](std::vector<AD> &x) -> AD
 };
 ```
 
-with the derivatives of interest being
+with the derivatives of interest calculated at the point
 
 ```c++
 std::vector<AD> x_ad({1.0, 1.5, 1.3, 1.2});
@@ -104,11 +106,11 @@ Note that if no tape is setup, one will be created when computing the Hessian.
 is define our input values and our function, then call `computeHessian()`:
 
 ```c++
-    auto foo = [](std::vector<AD> &x) -> AD
+    std::function<AD(std::vector<AD> &)> foo = [](std::vector<AD> &x) -> AD
     { return sin(x[0] * x[1]) - cos(x[1] * x[2])
            - sin(x[2] * x[3]) - cos(x[3] * x[0]); };
 
-    auto hessian = xad::computeHessian<double>(x_ad, foo);
+    auto hessian = computeHessian(x_ad, foo);
 ```
 
 Note the signature of `foo()`. Any other signature will throw an error.

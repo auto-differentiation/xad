@@ -33,6 +33,8 @@
 #include <numeric>
 #include <vector>
 
+using namespace ::testing;
+
 TEST(JacobianTest, SimpleAdjoint)
 {
     typedef xad::adj<double> mode;
@@ -47,14 +49,14 @@ TEST(JacobianTest, SimpleAdjoint)
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
     { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
 
-    std::vector<std::vector<AD>> expected_jacobian = {{1.0, cos(x[1])},  //
-                                                      {cos(x[0]), 1.0}};
+    std::vector<std::vector<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
+                                                          {cos(value(x[0])), 1.0}};
 
-    auto computed_jacobian = xad::computeJacobian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_jacobian =
+        xad::computeJacobian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_jacobian.size(); i++)
-        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
-            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
 }
 
 TEST(JacobianTest, SimpleAdjointIteratorAutoTape)
@@ -68,26 +70,18 @@ TEST(JacobianTest, SimpleAdjointIteratorAutoTape)
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
     { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
 
-    std::list<std::list<AD>> expected_jacobian = {{1.0, cos(x[1])},  //
-                                                  {cos(x[0]), 1.0}};
+    std::list<std::list<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
+                                                      {cos(value(x[0])), 1.0}};
 
-    std::list<std::list<AD>> computed_jacobian(2, std::list<AD>(2, 0.0));
+    std::list<std::list<double>> computed_jacobian(2, std::list<double>(2, 0.0));
     xad::computeJacobian<decltype(begin(computed_jacobian)), double>(
         x, foo, begin(computed_jacobian), end(computed_jacobian));
 
-    auto row1 = computed_jacobian.begin(), row2 = expected_jacobian.begin();
-    while (row1 != computed_jacobian.end() && row2 != expected_jacobian.end())
-    {
-        auto col1 = row1->begin(), col2 = row2->begin();
-        while (col1 != row1->end() && col2 != row2->end())
-        {
-            ASSERT_EQ(*col1, *col2);
-            col1++;
-            col2++;
-        }
-        row1++;
-        row2++;
-    }
+    auto expected_it = expected_jacobian.begin();
+    auto computed_it = computed_jacobian.begin();
+    for (; expected_it != expected_jacobian.end() && computed_it != computed_jacobian.end();
+         ++expected_it, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), *expected_it));
 }
 
 TEST(JacobianTest, SimpleAdjointIteratorFetchTape)
@@ -104,26 +98,18 @@ TEST(JacobianTest, SimpleAdjointIteratorFetchTape)
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
     { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
 
-    std::list<std::list<AD>> expected_jacobian = {{1.0, cos(x[1])},  //
-                                                  {cos(x[0]), 1.0}};
+    std::list<std::list<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
+                                                      {cos(value(x[0])), 1.0}};
 
-    std::list<std::list<AD>> computed_jacobian(2, std::list<AD>(2, 0.0));
+    std::list<std::list<double>> computed_jacobian(2, std::list<double>(2, 0.0));
     xad::computeJacobian<decltype(begin(computed_jacobian)), double>(
         x, foo, begin(computed_jacobian), end(computed_jacobian));
 
-    auto row1 = computed_jacobian.begin(), row2 = expected_jacobian.begin();
-    while (row1 != computed_jacobian.end() && row2 != expected_jacobian.end())
-    {
-        auto col1 = row1->begin(), col2 = row2->begin();
-        while (col1 != row1->end() && col2 != row2->end())
-        {
-            ASSERT_EQ(*col1, *col2);
-            col1++;
-            col2++;
-        }
-        row1++;
-        row2++;
-    }
+    auto expected_it = expected_jacobian.begin();
+    auto computed_it = computed_jacobian.begin();
+    for (; expected_it != expected_jacobian.end() && computed_it != computed_jacobian.end();
+         ++expected_it, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), *expected_it));
 }
 
 TEST(JacobianTest, SimpleForward)
@@ -137,14 +123,13 @@ TEST(JacobianTest, SimpleForward)
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
     { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
 
-    std::vector<std::vector<AD>> expected_jacobian = {{1.0, cos(x[1])},  //
-                                                      {cos(x[0]), 1.0}};
+    std::vector<std::vector<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
+                                                          {cos(value(x[0])), 1.0}};
 
-    auto computed_jacobian = xad::computeJacobian<double>(x, foo);
+    std::vector<std::vector<double>> computed_jacobian = xad::computeJacobian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_jacobian.size(); i++)
-        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
-            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
 }
 
 TEST(JacobianTest, SimpleForwardIterator)
@@ -158,26 +143,18 @@ TEST(JacobianTest, SimpleForwardIterator)
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
     { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
 
-    std::list<std::list<AD>> expected_jacobian = {{1.0, cos(x[1])},  //
-                                                  {cos(x[0]), 1.0}};
+    std::list<std::list<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
+                                                      {cos(value(x[0])), 1.0}};
 
-    std::list<std::list<AD>> computed_jacobian(2, std::list<AD>(2, 0.0));
+    std::list<std::list<double>> computed_jacobian(2, std::list<double>(2, 0.0));
     xad::computeJacobian<decltype(begin(computed_jacobian)), double>(
         x, foo, begin(computed_jacobian), end(computed_jacobian));
 
-    auto row1 = computed_jacobian.begin(), row2 = expected_jacobian.begin();
-    while (row1 != computed_jacobian.end() && row2 != expected_jacobian.end())
-    {
-        auto col1 = row1->begin(), col2 = row2->begin();
-        while (col1 != row1->end() && col2 != row2->end())
-        {
-            ASSERT_EQ(*col1, *col2);
-            col1++;
-            col2++;
-        }
-        row1++;
-        row2++;
-    }
+    auto expected_it = expected_jacobian.begin();
+    auto computed_it = computed_jacobian.begin();
+    for (; expected_it != expected_jacobian.end() && computed_it != computed_jacobian.end();
+         ++expected_it, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), *expected_it));
 }
 
 TEST(JacobianTest, ComplexFunctionAdjoint)
@@ -194,14 +171,15 @@ TEST(JacobianTest, ComplexFunctionAdjoint)
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
     { return {x[0] * x[1], x[2] * exp(x[3])}; };
 
-    std::vector<std::vector<AD>> expected_jacobian = {{x[1], x[0], 0.0, 0.0},
-                                                      {0.0, 0.0, exp(x[3]), x[2] * exp(x[3])}};
+    std::vector<std::vector<double>> expected_jacobian = {
+        {value(x[1]), value(x[0]), 0.0, 0.0},
+        {0.0, 0.0, exp(value(x[3])), value(x[2]) * exp(value(x[3]))}};
 
-    auto computed_jacobian = xad::computeJacobian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_jacobian =
+        xad::computeJacobian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_jacobian.size(); i++)
-        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
-            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
 }
 
 TEST(JacobianTest, DomainLargerThanCodomainForward)
@@ -214,14 +192,13 @@ TEST(JacobianTest, DomainLargerThanCodomainForward)
     // f(x) = [ x[0] + x[1], x[2] * x[3] ]
     auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0] + x[1], x[2] * x[3]}; };
 
-    std::vector<std::vector<AD>> expected_jacobian = {{1.0, 1.0, 0.0, 0.0},  //
-                                                      {0.0, 0.0, x[3], x[2]}};
+    std::vector<std::vector<double>> expected_jacobian = {{1.0, 1.0, 0.0, 0.0},  //
+                                                          {0.0, 0.0, value(x[3]), value(x[2])}};
 
-    auto computed_jacobian = xad::computeJacobian<double>(x, foo);
+    std::vector<std::vector<double>> computed_jacobian = xad::computeJacobian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_jacobian.size(); i++)
-        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
-            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
 }
 
 TEST(JacobianTest, DomainLargerThanCodomainAdjoint)
@@ -234,14 +211,13 @@ TEST(JacobianTest, DomainLargerThanCodomainAdjoint)
     // f(x) = [ x[0] + x[1], x[2] * x[3] ]
     auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0] + x[1], x[2] * x[3]}; };
 
-    std::vector<std::vector<AD>> expected_jacobian = {{1.0, 1.0, 0.0, 0.0},  //
-                                                      {0.0, 0.0, x[3], x[2]}};
+    std::vector<std::vector<double>> expected_jacobian = {{1.0, 1.0, 0.0, 0.0},  //
+                                                          {0.0, 0.0, value(x[3]), value(x[2])}};
 
-    auto computed_jacobian = xad::computeJacobian<double>(x, foo);
+    std::vector<std::vector<double>> computed_jacobian = xad::computeJacobian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_jacobian.size(); i++)
-        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
-            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
 }
 
 TEST(JacobianTest, DomainSmallerThanCodomainAdjoint)
@@ -258,15 +234,15 @@ TEST(JacobianTest, DomainSmallerThanCodomainAdjoint)
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
     { return {x[0] + x[1], x[0] - x[1], x[0] * x[1]}; };
 
-    std::vector<std::vector<AD>> expected_jacobian = {{1.0, 1.0},  //
-                                                      {1.0, -1.0},
-                                                      {x[1], x[0]}};
+    std::vector<std::vector<double>> expected_jacobian = {{1.0, 1.0},  //
+                                                          {1.0, -1.0},
+                                                          {value(x[1]), value(x[0])}};
 
-    auto computed_jacobian = xad::computeJacobian<double>(x, foo, &tape);
+    std::vector<std::vector<double>> computed_jacobian =
+        xad::computeJacobian<double>(x, foo, &tape);
 
     for (unsigned int i = 0; i < expected_jacobian.size(); i++)
-        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
-            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
 }
 
 TEST(JacobianTest, ComplexDomainNotEqualCodomainForwardIterator)
@@ -280,27 +256,19 @@ TEST(JacobianTest, ComplexDomainNotEqualCodomainForwardIterator)
     auto foo = [](std::vector<AD> &x) -> std::vector<AD>
     { return {x[0] + x[1], x[1] * x[2], exp(x[0])}; };
 
-    std::list<std::list<AD>> expected_jacobian = {{1.0, 1.0, 0.0},  //
-                                                  {0.0, x[2], x[1]},
-                                                  {exp(x[0]), 0.0, 0.0}};
+    std::list<std::list<double>> expected_jacobian = {{1.0, 1.0, 0.0},  //
+                                                      {0.0, value(x[2]), value(x[1])},
+                                                      {exp(value(x[0])), 0.0, 0.0}};
 
-    std::list<std::list<AD>> computed_jacobian(3, std::list<AD>(3, 0.0));
+    std::list<std::list<double>> computed_jacobian(3, std::list<double>(3, 0.0));
     xad::computeJacobian<decltype(begin(computed_jacobian)), double>(
         x, foo, begin(computed_jacobian), end(computed_jacobian));
 
-    auto row1 = computed_jacobian.begin(), row2 = expected_jacobian.begin();
-    while (row1 != computed_jacobian.end() && row2 != expected_jacobian.end())
-    {
-        auto col1 = row1->begin(), col2 = row2->begin();
-        while (col1 != row1->end() && col2 != row2->end())
-        {
-            ASSERT_EQ(*col1, *col2);
-            col1++;
-            col2++;
-        }
-        row1++;
-        row2++;
-    }
+    auto expected_it = expected_jacobian.begin();
+    auto computed_it = computed_jacobian.begin();
+    for (; expected_it != expected_jacobian.end() && computed_it != computed_jacobian.end();
+         ++expected_it, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), *expected_it));
 }
 
 TEST(JacobianTest, TrigonometricFunctionForward)
@@ -313,14 +281,13 @@ TEST(JacobianTest, TrigonometricFunctionForward)
     // f(x) = [ sin(x[0]), cos(x[1]) ]
     auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {sin(x[0]), cos(x[1])}; };
 
-    std::vector<std::vector<AD>> expected_jacobian = {{cos(x[0]), 0.0},  //
-                                                      {0.0, -sin(x[1])}};
+    std::vector<std::vector<double>> expected_jacobian = {{cos(value(x[0])), 0.0},  //
+                                                          {0.0, -sin(value(x[1]))}};
 
-    auto computed_jacobian = xad::computeJacobian<double>(x, foo);
+    std::vector<std::vector<double>> computed_jacobian = xad::computeJacobian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_jacobian.size(); i++)
-        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
-            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
 }
 
 TEST(JacobianTest, TrigonometricFunctionAdjointAutoTape)
@@ -333,16 +300,13 @@ TEST(JacobianTest, TrigonometricFunctionAdjointAutoTape)
     // f(x) = [ sin(x[0]), cos(x[1]) ]
     auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {sin(x[0]), cos(x[1])}; };
 
-    std::vector<std::vector<AD>> expected_jacobian = {{cos(x[0]), 0.0},  //
-                                                      {0.0, -sin(x[1])}};
+    std::vector<std::vector<double>> expected_jacobian = {{cos(value(x[0])), 0.0},  //
+                                                          {0.0, -sin(value(x[1]))}};
 
-    auto computed_jacobian = xad::computeJacobian<double>(x, foo);
+    std::vector<std::vector<double>> computed_jacobian = xad::computeJacobian<double>(x, foo);
 
     for (unsigned int i = 0; i < expected_jacobian.size(); i++)
-        for (unsigned int j = 0; j < expected_jacobian[i].size(); j++)
-        {
-            ASSERT_EQ(expected_jacobian[i][j], computed_jacobian[i][j]);
-        }
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
 }
 
 TEST(JacobianTest, OutOfBoundsDomainSizeMismatch)
@@ -354,13 +318,13 @@ TEST(JacobianTest, OutOfBoundsDomainSizeMismatch)
 
     auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[1]}; };
 
-    std::vector<std::vector<AD>> jacobian(2, std::vector<AD>(3));
+    std::vector<std::vector<double>> jacobian(2, std::vector<double>(3));
 
     auto launch =
         [](std::vector<AD> x,
            std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::vector<std::vector<xad::AReal<double>>>::iterator first,
-           std::vector<std::vector<xad::AReal<double>>>::iterator last)
+           std::vector<std::vector<double>>::iterator first,
+           std::vector<std::vector<double>>::iterator last)
     {
         using RowIterator = decltype(first);
         xad::computeJacobian<RowIterator, double>(x, foo, first, last);
@@ -378,13 +342,13 @@ TEST(JacobianTest, OutOfBoundsCodomainSizeMismatch)
 
     auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[0]}; };
 
-    std::vector<std::vector<AD>> jacobian(1, std::vector<AD>(1));
+    std::vector<std::vector<double>> jacobian(1, std::vector<double>(1));
 
     auto launch =
         [](std::vector<AD> x,
            std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::vector<std::vector<xad::AReal<double>>>::iterator first,
-           std::vector<std::vector<xad::AReal<double>>>::iterator last)
+           std::vector<std::vector<double>>::iterator first,
+           std::vector<std::vector<double>>::iterator last)
     {
         using RowIterator = decltype(first);
         xad::computeJacobian<RowIterator, double>(x, foo, first, last);
