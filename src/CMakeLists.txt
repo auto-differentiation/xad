@@ -41,7 +41,9 @@ set(public_headers
     XAD/Complex.hpp
     XAD/Exceptions.hpp
     XAD/Expression.hpp
+    XAD/Hessian.hpp	
     XAD/Interface.hpp	
+    XAD/Jacobian.hpp
     XAD/Literals.hpp
     XAD/Macros.hpp
     XAD/MathFunctions.hpp
@@ -50,6 +52,7 @@ set(public_headers
     XAD/Tape.hpp
     XAD/TapeContainer.hpp
     XAD/Traits.hpp
+    XAD/TypeTraits.hpp
     XAD/UnaryExpr.hpp
     XAD/UnaryFunctors.hpp
     XAD/UnaryMathFunctors.hpp

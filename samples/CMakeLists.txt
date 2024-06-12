@@ -70,5 +70,7 @@ add_subdirectory(checkpointing)
 add_subdirectory(external_function)
 add_subdirectory(SwapPricer)
 add_subdirectory(fwd_adj_2nd)
+add_subdirectory(Hessian)
+add_subdirectory(Jacobian)
 
 

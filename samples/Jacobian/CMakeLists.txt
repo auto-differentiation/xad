@@ -1,6 +1,6 @@
 ##############################################################################
 #   
-#  Cmake file for unit tests
+#  Jacobian sample CMake file
 #
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
@@ -22,39 +22,4 @@
 #   
 ##############################################################################
 
-set(testfiles 
-    TapeContainer_test.cpp
-    ChunkContainer_test.cpp
-    TestHelpers.hpp
-    Tape_test.cpp
-    Expressions_test.cpp
-    ExpressionsConversion_test.cpp
-    ExpressionMath1_test.cpp
-    ExpressionMath2_test.cpp
-    ExpressionMath3_test.cpp
-    Checkpointing_test.cpp
-    ExternalFunc_test.cpp
-    Exceptions_test.cpp
-    HigherOrder_test.cpp
-    Complex_test.cpp
-    ComplexAD_test.cpp
-    ExpressionMeta_test.cpp
-    Tbr_test.cpp
-    StreamOps_test.cpp
-    StdCompatibility_test.cpp 
-    ReusableRange_test.cpp
-    PartialRollback_test.cpp
-    Hessian_test.cpp
-    Jacobian_test.cpp
-    TypeTraits_test.cpp
-)
-  
-if (CMAKE_COMPILER_IS_GNUCC)
-    set_source_files_properties(ExpressionsConversion_test.cpp
-        COMPILE_FLAGS "-Wno-conversion")
-ENDIF()
-
-xad_add_test(xad_test ${testfiles})
-
-# extra tests for compile failures
-add_subdirectory(compile_failures)
+xad_add_sample(Jacobian main.cpp)
