@@ -27,10 +27,11 @@ underlying passive type (usually `double`).
 
 ```c++
 template <typename RowIterator, typename T>
-void computeJacobian(const std::vector<AReal<T>> &vec,
-                     std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
-                     RowIterator first, RowIterator last,
-                     Tape<T> *tape = Tape<T>::getActive())
+void computeJacobian(
+    const std::vector<AReal<T>> &vec,
+    std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
+    RowIterator first, RowIterator last,
+    Tape<T> *tape = Tape<T>::getActive())
 ```
 
 This mode uses a [Tape](ref/tape.md) to compute derivatives. This Tape will
@@ -41,9 +42,10 @@ be instantiated within the method or set to the current active Tape using
 
 ```c++
 template <typename RowIterator, typename T>
-void computeJacobian(const std::vector<FReal<T>> &vec,
-                     std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo,
-                     RowIterator first, RowIterator last)
+void computeJacobian(
+    const std::vector<FReal<T>> &vec,
+    std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo,
+    RowIterator first, RowIterator last)
 ```
 
 This mode does not require a Tape and can help reduce the overhead that
@@ -55,8 +57,8 @@ of outputs than inputs.
 Given $f(x, y, z, w) = [sin(x + y) sin(y + z) cos(z + w) cos(w + x)]$, or
 
 ```c++
-std::function<std::vector<AD>(std::vector<AD>&)> foo = [](std::vector<AD> &x) -> std::vector<AD>
-{
+std::function<std::vector<AD>(std::vector<AD>&)> foo =
+[](std::vector<AD> &x) -> std::vector<AD> {
     return {sin(x[0] + x[1]),
             sin(x[1] + x[2]),
             cos(x[2] + x[3]),
