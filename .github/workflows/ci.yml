@@ -1,5 +1,7 @@
 name: CI
 on: [push, pull_request]
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 jobs:
   build_and_test_windows:
     name: Windows
