@@ -5,18 +5,18 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [1.6.0] - 2024-07-17
+
+This release mainly adds support for more architectures and compilers and provides higher level derivative functions as well as examples.
 
 ### Added
 
-### Changed
-
-### Deprecated
+- Support for Mac M1+ architecture (ARM) as well as AppleClang 15 support (by @raneamri [#116](https://github.com/auto-differentiation/xad/pull/116))
+- High level functions to compute Jacobian and Hessian matrices (by @raneamri [#117](https://github.com/auto-differentiation/xad/pull/117))
 
 ### Removed
 
-### Fixed
-
+- Moved website to its own repository and keeping only the reference manual [#112](https://github.com/auto-differentiation/xad/pull/112)
 
 ## [1.5.2] - 2024-04-04
 
@@ -132,7 +132,7 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/xad/compare/v1.5.2...HEAD
+[1.6.0]: https://github.com/auto-differentiation/xad/compare/v1.5.2...v1.6.0
 
 [1.5.2]: https://github.com/auto-differentiation/xad/compare/v1.5.1...v1.5.2
 
