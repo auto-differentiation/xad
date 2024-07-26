@@ -54,7 +54,7 @@ jobs:
           choco install -y ninja sccache
       - name: ccache
         if: ${{ matrix.sccache == 'true' }}
-        uses: hendrikmuhs/ccache-action@v1.2.10
+        uses: hendrikmuhs/ccache-action@v1.2.13
         with:
           key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
           variant: sccache
@@ -157,7 +157,7 @@ jobs:
         with:
           github-api-token: ${{ secrets.CMAKE_TOKEN }}
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.10
+        uses: hendrikmuhs/ccache-action@v1.2.13
         with:
           key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
       - name: configure
@@ -260,7 +260,7 @@ jobs:
           sudo rm /usr/bin/cmake /usr/share/cmake-* -rf
           echo $(pwd)/cmake-3.29.0-linux-x86_64/bin >> $GITHUB_PATH
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.10
+        uses: hendrikmuhs/ccache-action@v1.2.13
         with:
           key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
       - name: configure
@@ -378,7 +378,7 @@ jobs:
           sudo make install
       - uses: actions/checkout@v3
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.10
+        uses: hendrikmuhs/ccache-action@v1.2.13
         with:
           key: macos-${{ matrix.config }}
       - name: configure
