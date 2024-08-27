@@ -132,7 +132,7 @@ install(EXPORT XADTargets
     DESTINATION ${config_install_dir}
 )
 configure_package_config_file(
-    "${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
+    "${PROJECT_SOURCE_DIR}/cmake/XADConfig.cmake.in"
     "${generated_dir}/XADConfig.cmake" 
     INSTALL_DESTINATION ${config_install_dir}
 )

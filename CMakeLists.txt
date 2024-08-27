@@ -34,19 +34,19 @@ project(xad
 
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-include(SetupVersion)
+include(XADSetupVersion)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)  # allow using solution folders
 include(GNUInstallDirs)   # for installation directories
 
-include(SetupOptions)
+include(XADSetupOptions)
 
 ############# build subdirectories ##########
 
 if(NOT XAD_DOCS_ONLY)
-    include(SetupCompiler)
+    include(XADSetupCompiler)
     if(XAD_ENABLE_TESTS)
-        include(SetupTesting)
+        include(XADSetupTesting)
     endif()
 
     add_subdirectory(src)
