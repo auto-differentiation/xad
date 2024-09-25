@@ -74,9 +74,3 @@ Please report any issues through our [**Issue Tracker**](https://github.com/auto
 - [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp): Fast risk evaluations in C++ and Python.
 
 ---
-
-### 📜 License
-
-XAD is licensed under the GNU Affero General Public License. See [LICENSE.md](LICENSE.md) for more details.
-
----
