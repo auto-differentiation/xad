@@ -9,22 +9,41 @@
 **XAD** is the ultimate solution for automatic differentiation, combining **ease of use** with **high performance**. It's designed to help you differentiate complex applications with speed and precision—whether you're optimizing neural networks, solving scientific problems, or performing financial risk analysis.
 
 <p align="center">
-  <a href="https://github.com/auto-differentiation/xad/releases/latest">
-    <img src="https://img.shields.io/github/v/release/auto-differentiation/xad?label=Download&sort=semver" alt="Download">
-  </a>
-  <a href="https://github.com/auto-differentiation/xad/blob/main/LICENSE.md">
-    <img src="https://img.shields.io/github/license/auto-differentiation/xad?label=License" alt="License">
-  </a>
-  <a href="https://doi.org/10.5281/zenodo.12764574">
-    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.12764574.svg" alt="DOI">
-  </a>
-  <a href="https://github.com/auto-differentiation/xad/actions/workflows/ci.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/xad/ci.yml?label=Build" alt="Build Status">
-  </a>
-  <a href="https://coveralls.io/github/auto-differentiation/xad?branch=main">
-    <img src="https://coveralls.io/repos/github/auto-differentiation/xad/badge.svg?branch=main" alt="Coverage">
-  </a>
+  <table style="border-collapse: collapse; margin: 0 auto;">
+    <tr>
+      <td style="border: none; padding: 0;">
+        <a href="https://github.com/auto-differentiation/xad/releases/latest">
+          <img src="https://img.shields.io/github/v/release/auto-differentiation/xad?label=Download&sort=semver" alt="Download"/>
+        </a>
+      </td>
+      <td style="border: none; padding: 0;">
+        <a href="https://github.com/auto-differentiation/xad/blob/main/LICENSE.md">
+          <img src="https://img.shields.io/github/license/auto-differentiation/xad?label=License" alt="License"/>
+        </a>
+      </td>
+      <td style="border: none; padding: 0;">
+        <a href="https://doi.org/10.5281/zenodo.12764574">
+          <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.12764574.svg" alt="DOI"/>
+        </a>
+      </td>
+      <td style="border: none; padding: 0;">
+        <a href="https://github.com/auto-differentiation/xad/actions/workflows/ci.yml">
+          <img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/xad/ci.yml?label=Build" alt="Build Status"/>
+        </a>
+      </td>
+      <td style="border: none; padding: 0;">
+        <a href="https://coveralls.io/github/auto-differentiation/xad?branch=main">
+          <img src="https://coveralls.io/repos/github/auto-differentiation/xad/badge.svg?branch=main" alt="Coverage"/>
+        </a>
+      </td>
+    </tr>
+  </table>
 </p>
+
+
+
+
+
 
 ## 🌟 Why XAD?
 
