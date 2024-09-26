@@ -8,64 +8,50 @@
 
 **XAD** is the ultimate solution for automatic differentiation, combining **ease of use** with **high performance**. It's designed to help you differentiate complex applications with speed and precision—whether you're optimizing neural networks, solving scientific problems, or performing financial risk analysis.
 
-<p align="center">
-  <table style="border-collapse: collapse; margin: 0 auto;">
-    <tr>
-      <td style="border: none; padding: 0;">
-        <a href="https://github.com/auto-differentiation/xad/releases/latest">
-          <img src="https://img.shields.io/github/v/release/auto-differentiation/xad?label=Download&sort=semver" alt="Download"/>
-        </a>
-      </td>
-      <td style="border: none; padding: 0;">
-        <a href="https://github.com/auto-differentiation/xad/blob/main/LICENSE.md">
-          <img src="https://img.shields.io/github/license/auto-differentiation/xad?label=License" alt="License"/>
-        </a>
-      </td>
-      <td style="border: none; padding: 0;">
-        <a href="https://doi.org/10.5281/zenodo.12764574">
-          <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.12764574.svg" alt="DOI"/>
-        </a>
-      </td>
-      <td style="border: none; padding: 0;">
-        <a href="https://github.com/auto-differentiation/xad/actions/workflows/ci.yml">
-          <img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/xad/ci.yml?label=Build" alt="Build Status"/>
-        </a>
-      </td>
-      <td style="border: none; padding: 0;">
-        <a href="https://coveralls.io/github/auto-differentiation/xad?branch=main">
-          <img src="https://coveralls.io/repos/github/auto-differentiation/xad/badge.svg?branch=main" alt="Coverage"/>
-        </a>
-      </td>
-    </tr>
-  </table>
+<p align="center" dir="auto">
+    <a href="https://github.com/auto-differentiation/xad/releases/latest">
+        <img src="https://img.shields.io/github/v/release/auto-differentiation/xad?label=Download&sort=semver" alt="Download" style="max-width: 100%;">
+    </a>
+    <a href="https://github.com/auto-differentiation/xad/blob/main/CONTRIBUTING.md">
+        <img src="https://img.shields.io/badge/PRs%20-welcome-brightgreen.svg" alt="PRs Welcome" style="max-width: 100%;">
+    </a>
+    <a href="https://github.com/auto-differentiation/xad/actions/workflows/ci.yml">
+        <img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/xad/ci.yml?label=Build&logo" alt="Build Status" style="max-width: 100%;">
+    </a>
+    <a href="https://coveralls.io/github/auto-differentiation/xad?branch=main">
+        <img src="https://coveralls.io/repos/github/auto-differentiation/xad/badge.svg?branch=main" alt="Coverage" style="max-width: 100%;">
+    </a>
+    <a href="https://www.codacy.com/gh/auto-differentiation/xad/dashboard">
+        <img src="https://img.shields.io/codacy/grade/1826d0a6c8ce4feb81ef3b482d65c7b4?logo=codacy&label=Quality%20%28Codacy%29" alt="Codacy Quality" style="max-width: 100%;">
+    </a>
 </p>
-
-
-
-
-
 
 ## 🌟 Why XAD?
 
 XAD is trusted by professionals for its **speed**, **flexibility**, and **scalability** across various fields:
 
-### Application Areas
-- **Machine Learning**: Streamline neural network training and model optimization.
-- **Finance**: Fast, accurate risk evaluations and derivative pricing.
-- **Scientific Computing**: Solve complex equations for physical simulations.
-- **Robotics**: Enhance control systems and motion planning.
-- **Optimization**: Boost engineering and financial optimization algorithms.
-- **Graphics & Meteorology**: Improve rendering and weather prediction models.
-- **Biotechnology**: Accurately model biological systems.
+#### Key Application Areas:
 
-### 🔑 Key Features
-- **Forward & Adjoint Mode**: Flexible, high-order differentiation.
-- **Checkpointing**: Memory-efficient tape management.
-- **Thread-Safe Tape**: Safe for parallel computation.
-- **External Function Interface**: Seamless library integration.
-- **Exception-Safety**: Robust for production.
-- **High Performance**: Scales efficiently for large codebases.
+- **Machine Learning & Deep Learning**: Accelerate neural network training and model optimization.
+- **Optimization in Engineering & Finance**: Solve complex problems with high precision.
+- **Numerical Analysis**: Improve methods for solving differential equations efficiently.
+- **Scientific Computing**: Simulate physical systems and processes with precision.
+- **Risk Management & Quantitative Finance**: Assess and hedge risks in sophisticated financial models.
+- **Computer Graphics**: Optimize rendering algorithms for high-quality graphics.
+- **Robotics**: Enhance control and simulation for robotic systems.
+- **Meteorology**: Improve accuracy in weather prediction models.
+- **Biotechnology**: Model complex biological processes effectively.
 
+#### Key Features
+
+- **Forward & Adjoint Mode**: Supports any order using operator overloading.
+- **Checkpointing Support**: Efficient tape memory management for large-scale applications.
+- **External Function Interface**: Seamlessly connect with external libraries.
+- **Thread-Safe Tape**: Ensure safe, concurrent operations.
+- **Exception-Safe**: Formal guarantees for stability and error handling.
+- **High Performance**: Optimized for speed and efficiency.
+- **Proven in Production**: Battle-tested in large-scale, mission-critical systems.
+- 
 ## 🚀 Getting Started
 
 ```bash
