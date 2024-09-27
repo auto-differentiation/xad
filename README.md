@@ -6,8 +6,8 @@
 
 # 🚀 XAD: Powerful Automatic Differentiation for C++ & Python
 
-**XAD** is the ultimate solution for automatic differentiation, combining **ease of use** with **high performance**. 
-It's designed to help you differentiate complex applications with speed and precision—whether 
+**XAD** is the ultimate solution for automatic differentiation, combining **ease of use** with **high performance**.
+It's designed to help you differentiate complex applications with speed and precision—whether
 you're optimizing neural networks, solving scientific problems, or performing financial risk analysis.
 
 <p align="center" dir="auto">
@@ -81,19 +81,19 @@ cmake ..
 make
 ```
 
-For more detailed guides, 
-refer to our [**Installation Guide**](https://auto-differentiation.github.io/installation/) 
+For more detailed guides,
+refer to our [**Installation Guide**](https://auto-differentiation.github.io/installation/)
 and explore [**Tutorials**](https://auto-differentiation.github.io/tutorials/).
 
 ## 🤝 Contributing
 
-Want to get involved? We welcome contributors from all backgrounds! Check out 
-our [**Contributing Guide**](CONTRIBUTING.md) and join the conversation in our 
+Want to get involved? We welcome contributors from all backgrounds! Check out
+our [**Contributing Guide**](CONTRIBUTING.md) and join the conversation in our
 [**Discussions**](https://github.com/auto-differentiation/xad/discussions).
 
 ## 🐛 Found a Bug?
 
-Please report any issues through our 
+Please report any issues through our
 [**Issue Tracker**](https://github.com/auto-differentiation/xad/issues).
 
 ---
