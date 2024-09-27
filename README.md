@@ -53,7 +53,7 @@ XAD is trusted by professionals for its **speed**, **flexibility**, and **scalab
 - **Exception-Safe**: Formal guarantees for stability and error handling.
 - **High Performance**: Optimized for speed and efficiency.
 - **Proven in Production**: Battle-tested in large-scale, mission-critical systems.
-- 
+
 ## 🚀 Getting Started
 
 ```bash
