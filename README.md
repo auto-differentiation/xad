@@ -6,7 +6,9 @@
 
 # 🚀 XAD: Powerful Automatic Differentiation for C++ & Python
 
-**XAD** is the ultimate solution for automatic differentiation, combining **ease of use** with **high performance**. It's designed to help you differentiate complex applications with speed and precision—whether you're optimizing neural networks, solving scientific problems, or performing financial risk analysis.
+**XAD** is the ultimate solution for automatic differentiation, combining **ease of use** with **high performance**. 
+It's designed to help you differentiate complex applications with speed and precision—whether 
+you're optimizing neural networks, solving scientific problems, or performing financial risk analysis.
 
 <p align="center" dir="auto">
     <a href="https://github.com/auto-differentiation/xad/releases/latest">
@@ -55,27 +57,35 @@ XAD is trusted by professionals for its **speed**, **flexibility**, and **scalab
 ## 🚀 Getting Started
 
 ```bash
-git clone https://github.com/auto-differentiation/xad
+git clone https://github.com/auto-differentiation/xad.git
 cd xad
-cmake .
+mkdir build
+cd build
+cmake ..
 make
 ```
 
-For more detailed guides, refer to our [**Installation Guide**](https://auto-differentiation.github.io/installation/) and explore [**Tutorials**](https://auto-differentiation.github.io/tutorials/).
+For more detailed guides, 
+refer to our [**Installation Guide**](https://auto-differentiation.github.io/installation/) 
+and explore [**Tutorials**](https://auto-differentiation.github.io/tutorials/).
 
 ## 🤝 Contributing
 
-Want to get involved? We welcome contributors from all backgrounds! Check out our [**Contributing Guide**](CONTRIBUTING.md) and join the conversation in our [**Discussions**](https://github.com/auto-differentiation/xad/discussions).
+Want to get involved? We welcome contributors from all backgrounds! Check out 
+our [**Contributing Guide**](CONTRIBUTING.md) and join the conversation in our 
+[**Discussions**](https://github.com/auto-differentiation/xad/discussions).
 
-### 🐛 Found a Bug?
+## 🐛 Found a Bug?
 
-Please report any issues through our [**Issue Tracker**](https://github.com/auto-differentiation/xad/issues).
+Please report any issues through our 
+[**Issue Tracker**](https://github.com/auto-differentiation/xad/issues).
 
 ---
 
-### 📦 Related Projects
+## 📦 Related Projects
 
 - [XAD-Py](https://github.com/auto-differentiation/xad-py): XAD in Python.
-- [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp): Fast risk evaluations in C++ and Python.
+- [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp): Fast
+  risk evaluations in C++ and Python.
 
 ---
