@@ -32,7 +32,7 @@ you're optimizing neural networks, solving scientific problems, or performing fi
 
 XAD is trusted by professionals for its **speed**, **flexibility**, and **scalability** across various fields:
 
-#### Key Application Areas:
+### Key Application Areas:
 
 - **Machine Learning & Deep Learning**: Accelerate neural network training and model optimization.
 - **Optimization in Engineering & Finance**: Solve complex problems with high precision.
@@ -44,7 +44,7 @@ XAD is trusted by professionals for its **speed**, **flexibility**, and **scalab
 - **Meteorology**: Improve accuracy in weather prediction models.
 - **Biotechnology**: Model complex biological processes effectively.
 
-#### Key Features
+### Key Features
 
 - **Forward & Adjoint Mode**: Supports any order using operator overloading.
 - **Checkpointing Support**: Efficient tape memory management for large-scale applications.
@@ -53,6 +53,24 @@ XAD is trusted by professionals for its **speed**, **flexibility**, and **scalab
 - **Exception-Safe**: Formal guarantees for stability and error handling.
 - **High Performance**: Optimized for speed and efficiency.
 - **Proven in Production**: Battle-tested in large-scale, mission-critical systems.
+
+## 💻 Example
+
+Calculate first-order derivatives of an arbitrary function with two inputs and one output using XAD in adjoint mode.
+
+```c++
+Adouble x0 = 1.3;              // initialise inputs
+Adouble x1 = 5.2;  
+tape.registerInput(x0);        // register independent variables
+tape.registerInput(x1);        // with the tape
+tape.newRecording();           // start recording derivatives
+Adouble y = func(x0, x1);      // run main function
+tape.registerOutput(y);        // register the output variable
+derivative(y) = 1.0;           // seed output adjoint to 1.0
+tape.computeAdjoints();        // roll back adjoints to inputs
+cout << "dy/dx0=" << derivative(x0) << "\n"
+     << "dy/dx1=" << derivative(x1) << "\n";
+```
 
 ## 🚀 Getting Started
 
