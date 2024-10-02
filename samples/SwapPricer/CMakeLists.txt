@@ -22,4 +22,4 @@
 #   
 ##############################################################################
 
-xad_add_sample(SwapPricer main.cpp SwapPricer.hpp )
+xad_add_sample(SwapPricer SOURCES main.cpp SwapPricer.hpp )
