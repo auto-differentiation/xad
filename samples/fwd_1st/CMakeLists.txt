@@ -22,4 +22,4 @@
 #   
 ##############################################################################
 
-xad_add_sample(fwd_1st main.cpp ../common/functions.hpp)
+xad_add_sample(fwd_1st SOURCES main.cpp ../common/functions.hpp)

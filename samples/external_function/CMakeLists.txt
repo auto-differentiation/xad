@@ -23,6 +23,7 @@
 ##############################################################################
 
 xad_add_sample(external_function 
+  SOURCES 
     main.cpp 
     external_sum_elements.hpp
     ../common/functions.hpp)

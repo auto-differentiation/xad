@@ -23,6 +23,7 @@
 ##############################################################################
 
 xad_add_sample(checkpointing
+  SOURCES 
     main.cpp
     sin_checkpoint.hpp
     ../common/functions.hpp
