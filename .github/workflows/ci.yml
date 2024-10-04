@@ -11,6 +11,7 @@ jobs:
         toolset: ["14.0", "14.1", "14.2", "14.4"]
         compiler: [msvc, clang]
         config: [Release, Debug]
+        standard: ["11", "17"]
         include:
           - config: Debug
             sccache: "false"
@@ -68,6 +69,7 @@ jobs:
              -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" ^
              -DCMAKE_CXX_COMPILER="${{ matrix.cxx }}" ^
              -DCMAKE_C_COMPILER="${{ matrix.cc }}" ^
+             -DCMAKE_CXX_STANDARD="${{ matrix.standard }}" ^
              ${{ matrix.cmake_extra }} ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} 
       - name: build
@@ -103,6 +105,7 @@ jobs:
           cmake ..\\samples -GNinja ^
              -DCMAKE_CXX_COMPILER="${{ matrix.cxx }}" ^
              -DCMAKE_C_COMPILER="${{ matrix.cc }}" ^
+             -DCMAKE_CXX_STANDARD="${{ matrix.standard }}" ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
              ${{ matrix.cmake_extra }} ^
              -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"
@@ -121,6 +124,7 @@ jobs:
           - clang-15
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
+        standard: ["11", "17"]
         include:
           - compiler: clang-11
             cxx: clang++-11
@@ -168,6 +172,7 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
@@ -197,6 +202,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"  \
+            -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }}
           cmake --build .
@@ -216,21 +222,30 @@ jobs:
           - gcc11
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
+        standard: [c++11, c++17]
         exclude:
           - config: Debug
             reuse_slots: ON
+          - compiler: gcc5
+            standard: c++17
+          - compiler: gcc6
+            standard: c++17
+          - compiler: gcc7
+            standard: c++17
         include:
           - config: Debug
             compiler: gcc11
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
             coverage_ld_flags: "-lgcov"
+            standard: c++11
           - compiler: gcc11
             config: Debug    # also with reusing slots, for coverage
             reuse_slots: ON
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
             coverage_ld_flags: "-lgcov"
+            standard: c++11
     runs-on: ubuntu-latest
     container: 
       image: conanio/${{ matrix.compiler }}
@@ -272,7 +287,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
-            -DCMAKE_CXX_FLAGS="${{ matrix.coverage_cxx_flags }}" \
+            -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install
@@ -324,6 +339,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_PREFIX_PATH="${{ env.GITHUB_WORKSPACE }}/install"  \
+            -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard}}"  \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}"
@@ -337,6 +353,7 @@ jobs:
         config: [Release, Debug]
         os: [macos-13, macos-latest]
         compiler: [default, clang15]
+        standard: [c++11, c++17]
         include:
           - config: Release
             os: macos-13
@@ -348,6 +365,7 @@ jobs:
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-ftest-coverage"
+            standard: c++11
           - config: Release
             os: macos-latest
             compiler: clang15
@@ -358,6 +376,7 @@ jobs:
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-ftest-coverage"
+            standard: c++17
         exclude:
           - os: macos-13
             compiler: clang15
@@ -388,7 +407,7 @@ jobs:
           cmake .. -GNinja \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-            -DCMAKE_CXX_FLAGS="${{ matrix.coverage_cxx_flags }}" \
+            -DCMAKE_CXX_FLAGS="-std=${{matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }}
@@ -439,6 +458,7 @@ jobs:
           cmake ../samples -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }}" \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install" \
             ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }}
           cmake --build .
