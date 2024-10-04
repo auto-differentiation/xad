@@ -23,7 +23,7 @@ git checkout -b feature/my-changed-main
 
 5.  Push your fork 
 
-6.  [Submit a pull request][pr]. Not that you will have to sign the [Contributor License Agreement][cla] 
+6.  [Submit a pull request][pr]. Note that you will have to sign the [Contributor License Agreement][cla] 
     before the PR can be merged.
 
 At this point, you are depending on the core team to review your request. 
@@ -108,4 +108,4 @@ For convenience, there is a `.clang-format` file in the root of the project whic
 
 [pr]: https://github.com/auto-differentiation/xad/compare/
 
-[cla]: https://gist.github.com/auto-differentation-dev/4a5c0cf1fbfed7be64308d1c2f47bd25
+[cla]: https://gist.github.com/auto-differentiation-dev/4a5c0cf1fbfed7be64308d1c2f47bd25
