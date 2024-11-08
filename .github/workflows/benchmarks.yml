@@ -322,6 +322,7 @@ jobs:
       - quantlib
       - libor
     steps:
+      - uses: actions/checkout@v4
       - name: Set runid variable
         run: |
           gh variable list
