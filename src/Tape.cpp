@@ -585,11 +585,46 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
             {
                 for (auto opi = it[-1].first, ope = st.first; opi != ope; ++opi)
                 {
+                //  std::cout << ope - opi << "step" << sizeof(opi)<<'\n'; 
                     auto multiplier = multiplier_[opi];
                     auto slot = slot_[opi];
                     auto& der = derivatives_[slot];
                     der = detail::fused_multiply_add(multiplier, a, der);
+                    // derivatives_[slot] = (multiplier * a) + derivatives_[slot];
                 }
+
+                // auto opi = it[-1].first;
+                // auto ope = st.first;
+                // if (ope - opi >= 4)
+                // {
+                //     auto multiplier0 = multiplier_[opi];
+                //     auto slot0 = slot_[opi];
+                //     auto& der0 = derivatives_[slot0];
+                //     der0 = multiplier0* a + der0;
+                //     opi++;
+                //     auto multiplier1 = multiplier_[opi];
+                //     auto slot1 = slot_[opi];
+                //     auto& der1 = derivatives_[slot1];
+                //     der1 = multiplier1* a + der1;
+                //     opi++;
+                //     auto multiplier2 = multiplier_[opi];
+                //     auto slot2 = slot_[opi];
+                //     auto& der2 = derivatives_[slot2];
+                //     der2 = multiplier2* a + der2;
+                //     opi++;
+                //     auto multiplier3 = multiplier_[opi];
+                //     auto slot3 = slot_[opi];
+                //     auto& der3 = derivatives_[slot3];
+                //     der3 = multiplier3* a + der3;
+                //     opi++;
+                // }
+                // for (;opi != ope ; ++opi) 
+                // {
+                //     auto multiplier = multiplier_[opi];
+                //     auto slot = slot_[opi];
+                //     auto& der = derivatives_[slot];
+                //     der = multiplier * a + der;
+                // }
             }
         }
         // last iteration separate
