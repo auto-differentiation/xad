@@ -6,7 +6,7 @@ on:
 
 jobs:
   libor:
-    if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
+    # if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: Libor Swaption Sample
     runs-on: ubuntu-latest
     container: 
