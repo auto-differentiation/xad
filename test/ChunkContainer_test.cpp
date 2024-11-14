@@ -197,3 +197,18 @@ TEST(ChunkContainer, append)
 
     for (int i = 0; i < 18; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
 }
+
+TEST(ChunkContainer, push_back_reserved)
+{
+    ChunkContainer<int, 8> chk;
+
+    size_t size = 16;
+
+    chk.reserve(size);
+
+    for (int i = 0; i < size; ++i) chk.push_back(i);
+
+    for (int i = 0; i < size; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+
+    EXPECT_THAT(chk.size(), Eq(size));
+}

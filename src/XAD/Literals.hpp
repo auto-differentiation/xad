@@ -385,6 +385,7 @@ XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const Expression<Scalar, Expr
     if (expr.shouldRecord() || this->shouldRecord())
     {
         tape_type* s = tape_type::getActive();
+        s->reserve_for_expr(ExprTraits<Expr>().numVariables);
         expr.calc_derivatives(*s);
         // only register this variable after evaluating the expression, as this
         // variable might appear on the rhs of the equation too and if not yet

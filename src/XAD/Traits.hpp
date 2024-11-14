@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 namespace xad
 {
 
@@ -38,7 +40,7 @@ template <class T>
 struct ExprTraits
 {
     static const bool isExpr = false;
-    static const int numVariables = 0;
+    static const std::size_t numVariables = 0;
     static const bool isForward = false;
     static const bool isReverse = false;
     static const bool isLiteral = false;

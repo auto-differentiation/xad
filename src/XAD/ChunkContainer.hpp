@@ -235,6 +235,13 @@ class ChunkContainer
         ++idx_;
     }
 
+    void push_back_reserved(const_reference v)
+    {
+        assert(idx_ <= chunk_size);
+        ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+        ++idx_;
+    }
+
     template <class... Args>
     void emplace_back(Args&&... args)
     {

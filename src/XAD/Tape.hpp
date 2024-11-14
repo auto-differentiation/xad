@@ -244,6 +244,9 @@ class Tape
     // roll back the adjoints just to the given position (not to the start)
     void computeAdjointsTo(position_type pos);
 
+    // reserve enough on chunk for evaluating an expression
+    void reserve_for_expr(size_type numVariables);
+
   private:
     void computeAdjointsToImpl(position_type pos, position_type start);
     void initDerivatives();
@@ -313,23 +316,23 @@ template <class T>
 XAD_INLINE void Tape<T>::pushRhs(const T& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    multiplier_.push_back(multiplier);
-    slot_.push_back(slot);
+    multiplier_.push_back_reserved(multiplier);
+    slot_.push_back_reserved(slot);
 }
 
 template <class T>
 XAD_INLINE void Tape<T>::pushRhs(T&& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    multiplier_.push_back(std::move(multiplier));
-    slot_.push_back(slot);
+    multiplier_.push_back_reserved(std::move(multiplier));
+    slot_.push_back_reserved(slot);
 }
 
 template <class T>
 XAD_INLINE void Tape<T>::pushLhs(slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot));
+    statement_.push_back_reserved(std::make_pair(size_type(slot_.size()), slot));
 }
 
 template <class T>

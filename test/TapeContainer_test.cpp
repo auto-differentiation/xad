@@ -39,8 +39,8 @@ TEST(TapeContainer, basic)
     // we only require push_backs to be successful after reserving
     sc.reserve(2);
 
-    sc.push_back(2);
-    sc.push_back(3);
+    sc.push_back_reserved(2);
+    sc.push_back_reserved(3);
     EXPECT_EQ(2U, sc.size());
     EXPECT_FALSE(sc.empty());
     EXPECT_EQ(2, sc[0]);

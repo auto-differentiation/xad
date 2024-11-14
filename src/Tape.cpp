@@ -50,7 +50,7 @@ Tape<T>::Tape(bool activateNow)
     currentRec_ = &nestedRecordings_.top();
     if (activateNow)
         activate();
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back_reserved(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
 }
 
 template <class T>
@@ -529,6 +529,14 @@ void Tape<T>::computeAdjointsTo(position_type pos)
     LOG_DEBUG("after checkpoints, we go from " << start << " to " << pos);
     if (start > pos)
         computeAdjointsToImpl(pos, start);
+}
+
+template<typename T>
+XAD_FORCE_INLINE void Tape<T>::reserve_for_expr(Tape::size_type numVariables)
+{
+    slot_.reserve(numVariables);
+    multiplier_.reserve(numVariables);
+    statement_.reserve(numVariables);
 }
 
 namespace detail
