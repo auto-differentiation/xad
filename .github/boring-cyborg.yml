@@ -11,6 +11,8 @@ labelPRBasedOnFilePath:
     - test/**/*
   workflow:
     - .github/workflows/*
+  benchmarks:
+    - src/**/*
 
 ##### Greetings ########################################################################################################
 firstPRWelcomeComment: >
