@@ -483,9 +483,9 @@ class ChunkContainer
     {
         return getHighPart(i) + size_type(getLowPart(i) > 0U);
     }
-    static size_type getHighPart(size_type i) { return i / chunk_size; }
-    static size_type getLowPart(size_type i) { return i % chunk_size; }
-    static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
+    [[nodiscard]] static XAD_FORCE_INLINE size_type getHighPart(size_type i) { return i / chunk_size; }
+    [[nodiscard]] static  XAD_FORCE_INLINE size_type getLowPart(size_type i) { return i % chunk_size; }
+    [[nodiscard]] static XAD_FORCE_INLINE size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
 
  private:
     //  void check_space()
