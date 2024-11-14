@@ -224,7 +224,7 @@ class Tape
     void pushRhs(const Real& multiplier, slot_type slot);
     void pushRhs(Real&& multiplier, slot_type slot);
     void pushLhs(slot_type slot);
-    void pushAll(slot_type lhs, Real* multipliers, slot_type* slots, unsigned n);
+    void pushAll(slot_type lhs,  std::pair<Real, slot_type>* mults_slots, unsigned n);
 
     // capacity
     size_type getNumVariables() const;
@@ -259,8 +259,7 @@ class Tape
     }
 
     static XAD_THREAD_LOCAL Tape* active_tape_;
-    typename TapeContainerTraits<Real>::type multiplier_;
-    TapeContainerTraits<slot_type>::type slot_;
+    typename TapeContainerTraits<std::pair<Real, slot_type> >::type mult_slot_;
     TapeContainerTraits<std::pair<slot_type, slot_type> >::type statement_;
     std::vector<Real> derivatives_;
     typedef std::pair<position_type, CheckpointCallback<Tape>*> chkpt_type;
@@ -316,30 +315,27 @@ template <class T>
 XAD_INLINE void Tape<T>::pushRhs(const T& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    multiplier_.push_back_reserved(multiplier);
-    slot_.push_back_reserved(slot);
+    mult_slot_.push_back_reserved(std::pair<T, slot_type >(multiplier, slot));
 }
 
 template <class T>
 XAD_INLINE void Tape<T>::pushRhs(T&& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    multiplier_.push_back_reserved(std::move(multiplier));
-    slot_.push_back_reserved(slot);
+    mult_slot_.push_back_reserved(std::pair<T, slot_type >(multiplier, slot));
 }
 
 template <class T>
 XAD_INLINE void Tape<T>::pushLhs(slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    statement_.push_back_reserved(std::make_pair(size_type(slot_.size()), slot));
+    statement_.push_back_reserved(std::make_pair(size_type(mult_slot_.size()), slot));
 }
 
 template <class T>
-XAD_INLINE void Tape<T>::pushAll(slot_type lhs, T* multipliers, slot_type* slots, unsigned n)
+XAD_INLINE void Tape<T>::pushAll(slot_type lhs,  std::pair<T, slot_type>* mults_slots, unsigned n)
 {
-    multiplier_.append(multipliers, multipliers + n);
-    slot_.append(slots, slots + n);
+    mult_slot_.append(mults_slots, mults_slots + n);
     pushLhs(lhs);
 }
 

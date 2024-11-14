@@ -50,13 +50,12 @@ Tape<T>::Tape(bool activateNow)
     currentRec_ = &nestedRecordings_.top();
     if (activateNow)
         activate();
-    statement_.push_back_reserved(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back_reserved(std::make_pair(size_type(mult_slot_.size()), slot_type(INVALID_SLOT)));
 }
 
 template <class T>
 Tape<T>::Tape(Tape&& o) noexcept
-    : multiplier_(std::move(o.multiplier_)),
-      slot_(std::move(o.slot_)),
+    : mult_slot_(std::move(o.mult_slot_)),
       statement_(std::move(o.statement_)),
       derivatives_(std::move(o.derivatives_)),
       checkpoints_(std::move(o.checkpoints_)),
@@ -76,8 +75,7 @@ Tape<T>::Tape(Tape&& o) noexcept
 template <class T>
 Tape<T>& Tape<T>::operator=(Tape&& o) noexcept
 {
-    multiplier_ = std::move(o.multiplier_);
-    slot_ = std::move(o.slot_);
+    mult_slot_ = std::move(o.mult_slot_);
     statement_ = std::move(o.statement_);
     derivatives_ = std::move(o.derivatives_);
     checkpoints_ = std::move(o.checkpoints_);
@@ -104,8 +102,7 @@ Tape<T>::~Tape()
 template <class T>
 void Tape<T>::clearAll()
 {
-    multiplier_.clear();
-    slot_.clear();
+    mult_slot_.clear();
     statement_.clear();
     derivatives_.clear();
     checkpoints_.clear();
@@ -113,7 +110,7 @@ void Tape<T>::clearAll()
     reusable_ranges_.clear();
 #endif
     while (!nestedRecordings_.empty()) nestedRecordings_.pop();
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back(std::make_pair(size_type(mult_slot_.size()), slot_type(INVALID_SLOT)));
     nestedRecordings_.push(SubRecording(this));
     currentRec_ = &nestedRecordings_.top();
 }
@@ -307,10 +304,9 @@ void Tape<T>::foldSubrecording()
     //     << ", cur max: " << cur->maxDerivative_ << "\n";
     if (derivatives_.size() > cur->maxDerivative_)
         derivatives_.resize(cur->maxDerivative_);
-    if (multiplier_.size() > prev.opStartPos_)
+    if (mult_slot_.size() > prev.opStartPos_)
     {
-        slot_.resize(prev.opStartPos_);
-        multiplier_.resize(prev.opStartPos_);
+        mult_slot_.resize(prev.opStartPos_);
     }
     if (statement_.size() > prev.statementStartPos_)
         statement_.resize(prev.statementStartPos_);
@@ -346,7 +342,7 @@ void Tape<T>::newNestedRecording()
     currentRec_->maxDerivative_ = currentRec_->prevMax_;
 
     newr.statementStartPos_ = slot_type(statement_.size());
-    newr.opStartPos_ = slot_type(multiplier_.size());
+    newr.opStartPos_ = slot_type(mult_slot_.size());
     newr.derivativesInitialized_ = false;
     newr.startDerivative_ = currentRec_->maxDerivative_;
     nestedRecordings_.push(newr);
@@ -368,20 +364,19 @@ void Tape<T>::endNestedRecording()
 template <class T>
 void Tape<T>::newRecording()
 {
-    multiplier_.clear();
-    slot_.clear();
+    mult_slot_.clear();
     statement_.clear();
     checkpoints_.clear();
     foldSubrecordings();
     currentRec_->maxDerivative_ = currentRec_->iDerivative_ + 1;
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back(std::make_pair(size_type(mult_slot_.size()), slot_type(INVALID_SLOT)));
     currentRec_->derivativesInitialized_ = false;
 }
 
 template <class T>
 typename Tape<T>::size_type Tape<T>::getNumOperations() const
 {
-    return size_type(slot_.size());
+    return size_type(mult_slot_.size());
 }
 
 template <class T>
@@ -471,7 +466,7 @@ void Tape<T>::printStatus() const
     }
     std::cout << "XAD Tape Info:\n"
               << "   Statements: " << statement_.size() - 1 << "\n"
-              << "   Operations: " << slot_.size() << "\n"
+              << "   Operations: " << mult_slot_.size() << "\n"
               << "   Total der : " << currentRec_->maxDerivative_ << "\n"
               << "   Der alloc : " << derivatives_.size() << "\n"
               << "   curr der  : " << currentRec_->numDerivatives_ << "\n"
@@ -534,8 +529,7 @@ void Tape<T>::computeAdjointsTo(position_type pos)
 template<typename T>
 XAD_FORCE_INLINE void Tape<T>::reserve_for_expr(Tape::size_type numVariables)
 {
-    slot_.reserve(numVariables);
-    multiplier_.reserve(numVariables);
+    mult_slot_.reserve(numVariables);
     statement_.reserve(numVariables);
 }
 
@@ -592,7 +586,10 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
             {
                 derivatives_[st.second] = T();
                 for (auto opi = it[-1].first, ope = st.first; opi != ope; ++opi)
-                    derivatives_[slot_[opi]] += multiplier_[opi] * a;
+                {
+                    auto& mult_slot_opi = mult_slot_[opi];
+                    derivatives_[mult_slot_opi.second] += mult_slot_opi.first * a;
+                }
             }
         }
         // last iteration separate
@@ -605,7 +602,10 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
             {
                 derivatives_[st.second] = T();
                 for (auto opi = prevendpoint, ope = st.first; opi != ope; ++opi)
-                    derivatives_[slot_[opi]] += multiplier_[opi] * a;
+                {
+                    auto& mult_slot_opi = mult_slot_[opi];
+                    derivatives_[mult_slot_opi.second] += mult_slot_opi.first * a;
+                }
             }
         }
 
@@ -616,8 +616,8 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
 template <class T>
 std::size_t Tape<T>::getMemory() const
 {
-    return sizeof(T) * (multiplier_.size() + derivatives_.size()) +
-           sizeof(slot_type) * (slot_.size() +
+    return sizeof(T) * (mult_slot_.size() + derivatives_.size()) +
+           sizeof(slot_type) * (mult_slot_.size() +
                                 // statement_endpoint_.size() + statement_slot_.size()
                                 2 * statement_.size())
 #ifdef XAD_TAPE_REUSE_SLOTS
@@ -639,7 +639,7 @@ template <class T>
 void Tape<T>::insertCallback(CheckpointCallback<Tape<T> >* cb)
 {
     checkpoints_.push_back(std::make_pair(position_type(statement_.size()), cb));
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back(std::make_pair(size_type(mult_slot_.size()), slot_type(INVALID_SLOT)));
 }
 
 template <class T>
@@ -666,8 +666,7 @@ void Tape<T>::resetTo(position_type pos)
 
     std::pair<slot_type, slot_type> st = statement_[pos];
     statement_.resize(pos + 1);
-    multiplier_.resize(st.first);
-    slot_.resize(st.first);
+    mult_slot_.resize(st.first);
     if (!checkpoints_.empty())
     {
         auto newend = std::upper_bound(std::begin(checkpoints_), std::end(checkpoints_), pos,

@@ -307,9 +307,13 @@ TEST(Tape, canPushCombined)
 
     s.newRecording();
     auto zs = s.registerVariable();
-    std::array<double, 3> mul = {{std::cos(x1), x2, x1}};
-    std::array<xad::Tape<double>::slot_type, 3> sl = {{x1s, x1s, x2s}};
-    s.pushAll(zs, mul.data(), sl.data(), 3);
+    std::array<std::pair<double, xad::Tape<double>::slot_type>, 3> mul_slot = {{
+            std::pair<double, xad::Tape<double>::slot_type>(std::cos(x1), x1s),
+            std::pair<double, xad::Tape<double>::slot_type>(x2, x1s),
+            std::pair<double, xad::Tape<double>::slot_type>(x1, x2s),
+        }};
+
+    s.pushAll(zs, mul_slot.data(), 3);
     s.setDerivative(zs, 1.0);
     s.computeAdjoints();
     EXPECT_DOUBLE_EQ(1.0, s.getDerivative(x1s));
