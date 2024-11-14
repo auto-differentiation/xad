@@ -227,26 +227,50 @@ class ChunkContainer
             idx_ = idx_ - chunk_size;
         }
     }
+    
 
     void push_back(const_reference v)
     {
-        check_space();
-
+        if (idx_ == chunk_size) 
+        {
+            if (chunk_ == chunkList_.size() - 1) 
+            {
+                chunkList_.reserve(chunkList_.size() + 1);
+                char* chunk = static_cast<char*>(
+                    aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+                if (!chunk) throw std::bad_alloc();
+                
+                chunkList_.push_back(chunk);
+            }
+            ++chunk_;
+            idx_ = 0;
+        }
         ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
         ++idx_;
     }
 
     void push_back(T && v)
     {
-        check_space();
-
+        if (idx_ == chunk_size) 
+        {
+            if (chunk_ == chunkList_.size() - 1) 
+            {
+                chunkList_.reserve(chunkList_.size() + 1);
+                char* chunk = static_cast<char*>(
+                    aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+                if (!chunk) throw std::bad_alloc();
+                chunkList_.push_back(chunk);
+            }
+            ++chunk_;
+            idx_ = 0;
+        }
         ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
         ++idx_;
     }
     template <class... Args>
     void emplace_back(Args&&... args)
     {
-        check_space();
+       
         ::new (chunkList_[chunk_] + idx_ * sizeof(value_type))
             value_type(std::forward<Args>(args)...);
         ++idx_;
@@ -259,7 +283,6 @@ class ChunkContainer
 
         if (s < size())
         {
-            // clear the remainder - for now without destruct
             destructAllImpl<std::is_trivially_destructible<value_type>::value>::make(this, s,
                                                                                      size());
             chunk_ = getHighPart(s);
@@ -308,7 +331,21 @@ class ChunkContainer
             auto endn = chunk_size - idx_;
             for (size_type i = 0; i < endn; ++i) ::new (dst++) value_type(*first++);
             idx_ = chunk_size;
-            check_space();  // appends a chunk, moves idx_ / chunk_
+           if (idx_ == chunk_size)
+            {
+                if (chunk_ == chunkList_.size() - 1) 
+                {
+                    chunkList_.reserve(chunkList_.size() + 1);
+                    
+                    char* chunk = static_cast<char*>(
+                        aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+                    if (!chunk) throw std::bad_alloc();
+                    
+                    chunkList_.push_back(chunk);
+                }
+                ++chunk_;
+                idx_ = 0;
+            }
             endn = static_cast<size_type>(std::distance(first, last));
             dst = reinterpret_cast<value_type*>(chunkList_[chunk_]);
             for (size_type i = 0; i < endn; ++i) ::new (dst++) value_type(*first++);
@@ -378,8 +415,21 @@ class ChunkContainer
             clear();
             return;
         }
-
-        check_space(s);
+        if (idx_ == chunk_size) {
+            // Pre-allocate chunks to avoid frequent allocations
+            if (chunk_ == chunkList_.size() - 1) {
+                // Reserve space in chunkList_ to avoid reallocation
+                chunkList_.reserve(chunkList_.size() + 1);
+                
+                char* chunk = static_cast<char*>(
+                    aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+                if (!chunk) throw std::bad_alloc();
+                
+                chunkList_.push_back(chunk);
+            }
+            ++chunk_;
+            idx_ = 0;
+        }
         size_type nc = getHighPart(s);
         size_type lc = getLowPart(s);
 
@@ -438,22 +488,10 @@ class ChunkContainer
     static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
 
  private:
-     void check_space()
-    {
-        char* chunk ;
-        if (idx_ == chunk_size)
-        {
-            if (chunk_ == chunkList_.size() - 1)
-            {
-                if ((chunk = reinterpret_cast<char*>(
-                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size))) == NULL)
-                    throw std::bad_alloc();
-                chunkList_.push_back(chunk);
-            }
-            ++chunk_;
-            idx_ = 0;
-        }
-    }
+    //  void check_space()
+    // {
+        
+    // }
 
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
 
