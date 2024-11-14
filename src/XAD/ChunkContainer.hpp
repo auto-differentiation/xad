@@ -162,6 +162,7 @@ class ChunkContainer
             detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size * d));
         if (chunks == NULL)
             throw std::bad_alloc();
+            
         for (size_type i = 0; i < d; ++i)
         {
             chunkList_.push_back(chunks + (i * sizeof(value_type) * chunk_size));

@@ -176,10 +176,27 @@ class Tape
         }
     }
 
-    XAD_INLINE void registerOutputs(std::vector<active_type>& v)
-    {
-        for (auto& x : v) registerOutput(x);
+XAD_INLINE void registerOutputs(std::vector<active_type>& v)
+{
+    auto first = v.begin();
+    auto last = v.end();
+    auto mid = first + ((last - first) / 8) * 8;
+    
+    while (first != mid) {
+        registerOutput(*first++);
+        registerOutput(*first++);
+        registerOutput(*first++);
+        registerOutput(*first++);
+        registerOutput(*first++);
+        registerOutput(*first++);
+        registerOutput(*first++);
+        registerOutput(*first++);
     }
+    
+    while (first != last) {
+        registerOutput(*first++);
+    }
+}
 
     template <class It>
     XAD_INLINE void registerOutputs(It first, It last)
