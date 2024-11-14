@@ -534,6 +534,20 @@ void Tape<T>::computeAdjointsTo(position_type pos)
 namespace detail
 {
 
+// template <class T>
+// XAD_FORCE_INLINE T fused_multiply_add(const T& a, const T& b, const T& c)
+// {
+//     return c + (a * b);
+// }
+
+// XAD_FORCE_INLINE double fused_multiply_add(double a, double b, double c)
+// {
+//     return std::fma(a, b, c);
+// }
+
+// XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) { return std::fma(a, b, c); }
+
+
 template <class T>
 XAD_FORCE_INLINE T fused_multiply_add(const T& a, const T& b, const T& c)
 {
@@ -542,12 +556,23 @@ XAD_FORCE_INLINE T fused_multiply_add(const T& a, const T& b, const T& c)
 
 XAD_FORCE_INLINE double fused_multiply_add(double a, double b, double c)
 {
+#ifdef FP_FAST_FMA
     return std::fma(a, b, c);
+#else
+    return c + (a * b);
+#endif
 }
 
-XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) { return std::fma(a, b, c); }
+XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) {
+#ifdef FP_FAST_FMAF
+    return std::fma(a, b, c);
+#else
+    return c + (a * b);
+#endif
+}
 
 }  // namespace detail
+
 
 template <class T>
 void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
@@ -576,20 +601,38 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
         if (chunk_it == chunk_eit + 1)
             endidx = endcidx;
 
+// #ifndef __GNUC
+//     #define __builtin_prefetch(...) 
+// #endif
+        // for (auto it = (*chunk_it) + idx, eit = (*chunk_it) + endidx; it != eit; --it)
+        // {
+        //     //__builtin_prefetch(it - 1, 0, 1); // GCC prefetching
+        //     auto st = *it;
+        //     auto a = derivatives_[st.second];
+        //     derivatives_[st.second] = T();
+        //     if (a != T())
+        //     {
+        //         for (auto opi = it[-1].first, ope = st.first; opi != ope; ++opi)
+        //         {
+        //             auto multiplier = multiplier_[opi];
+        //             auto slot = slot_[opi];
+        //             auto& der = derivatives_[slot];
+        //             der = detail::fused_multiply_add(multiplier, a, der);
+        //         }
+        //     }
+        // }
+
         for (auto it = (*chunk_it) + idx, eit = (*chunk_it) + endidx; it != eit; --it)
         {
-            auto st = *it;
-            auto a = derivatives_[st.second];
-            derivatives_[st.second] = T();
-            if (a != T())
-            {
-                for (auto opi = it[-1].first, ope = st.first; opi != ope; ++opi)
-                {
-                    auto multiplier = multiplier_[opi];
-                    auto slot = slot_[opi];
-                    auto& der = derivatives_[slot];
-                    der = detail::fused_multiply_add(multiplier, a, der);
-                }
+            auto a = derivatives_[it->second];
+            derivatives_[it->second] = T();
+            if (a == T())
+                continue ;
+            auto ope = it->first;
+            for (auto opi = it[-1].first; opi != ope; ++opi) {
+                auto multiplier = multiplier_[opi];
+                auto slot = slot_[opi];
+                derivatives_[slot] += (multiplier * a);
             }
         }
         // last iteration separate
