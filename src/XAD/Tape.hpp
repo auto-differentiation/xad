@@ -34,6 +34,9 @@
 #include <stack>
 #include <type_traits>
 #include <vector>
+#include <iostream>
+#include <numeric>
+#include <sstream>
 
 namespace xad
 {
@@ -150,11 +153,27 @@ class Tape
     {
         registerInputs(v.begin(), v.end());
     }
-
+    
     template <class It>
     XAD_INLINE void registerInputs(It first, It last)
     {
-        while (first != last) registerInput(*first++);
+        // while (first != last)  registerInput(*first++);
+        auto numElements = last - first;
+        auto completeChunks = numElements / 8;
+        auto remainingElements = numElements % 8;
+        for (std::size_t i = 0; i < completeChunks; ++i) {
+            registerInput(*first++);
+            registerInput(*first++);
+            registerInput(*first++);
+            registerInput(*first++);
+            registerInput(*first++);
+            registerInput(*first++);
+            registerInput(*first++);
+            registerInput(*first++);
+        }
+        for (int i = 0; i < remainingElements; ++i) {
+            registerInput(*first++);
+        }
     }
 
     XAD_INLINE void registerOutputs(std::vector<active_type>& v)
@@ -165,7 +184,26 @@ class Tape
     template <class It>
     XAD_INLINE void registerOutputs(It first, It last)
     {
-        while (first != last) registerOutput(*first++);
+        
+        // while (first != last) registerOutput(*first++);
+         
+        auto numElements = last - first;
+        auto completeChunks = numElements / 8;
+        auto remainingElements = numElements % 8;
+        for (std::size_t i = 0; i < completeChunks; ++i) {
+           registerOutput(*first++);
+           registerOutput(*first++);
+           registerOutput(*first++);
+           registerOutput(*first++);
+           registerOutput(*first++);
+           registerOutput(*first++);
+           registerOutput(*first++);
+           registerOutput(*first++);
+        }
+        for (int i = 0; i < remainingElements; ++i) {
+           registerOutput(*first++);
+        }
+
     }
 
     // recording and adjoint control

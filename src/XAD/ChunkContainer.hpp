@@ -151,23 +151,23 @@ class ChunkContainer
 
     ~ChunkContainer() { _free_memory(); }
 
-    void reserve(size_type s)
+ void reserve(size_type s)
+{
+    size_type nc = getNumChunks(s);
+    if (nc > chunkList_.size())
     {
-        size_type nc = getNumChunks(s);
-        if (nc > chunkList_.size())
+        const size_type d = nc - chunkList_.size();
+        chunkList_.reserve(nc);
+        char* chunks = reinterpret_cast<char*>(
+            detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size * d));
+        if (chunks == NULL)
+            throw std::bad_alloc();
+        for (size_type i = 0; i < d; ++i)
         {
-            size_type d = nc - chunkList_.size();
-            for (size_type i = 0; i < d; ++i)
-            {
-                char* chunk = reinterpret_cast<char*>(
-                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-                if (chunk == NULL)
-                    throw std::bad_alloc();
-                chunkList_.push_back(chunk);
-            }
+            chunkList_.push_back(chunks + (i * sizeof(value_type) * chunk_size));
         }
     }
-
+}
     template <bool, bool = true>
     struct destructAllImpl
     {
