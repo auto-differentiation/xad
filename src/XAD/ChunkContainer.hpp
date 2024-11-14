@@ -98,7 +98,7 @@ namespace xad
 {
 namespace detail
 {
-inline void* aligned_alloc(size_t alignment, size_t size)
+XAD_FORCE_INLINE void* aligned_alloc(size_t alignment, size_t size)
 {
     if (size < alignment)
         size = alignment;
@@ -236,6 +236,13 @@ class ChunkContainer
         ++idx_;
     }
 
+    void push_back(T && v)
+    {
+        check_space();
+
+        ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+        ++idx_;
+    }
     template <class... Args>
     void emplace_back(Args&&... args)
     {
@@ -430,16 +437,16 @@ class ChunkContainer
     static size_type getLowPart(size_type i) { return i % chunk_size; }
     static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
 
-  private:
-    void check_space()
+ private:
+     void check_space()
     {
+        char* chunk ;
         if (idx_ == chunk_size)
         {
             if (chunk_ == chunkList_.size() - 1)
             {
-                char* chunk = reinterpret_cast<char*>(
-                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-                if (chunk == NULL)
+                if ((chunk = reinterpret_cast<char*>(
+                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size))) == NULL)
                     throw std::bad_alloc();
                 chunkList_.push_back(chunk);
             }
@@ -458,7 +465,7 @@ class ChunkContainer
             detail::aligned_free(c);
         }
     }
-
+   
     std::vector<char*> chunkList_;
     size_type chunk_, idx_;
 };

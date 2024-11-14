@@ -106,10 +106,7 @@ class Tape
 
     XAD_INLINE static void setActive(Tape* t)
     {
-        if (active_tape_ != nullptr)
-            throw TapeAlreadyActive();
-        else
-            active_tape_ = t;
+        active_tape_ != nullptr ? throw TapeAlreadyActive():active_tape_ = t;
     }
 
     XAD_INLINE static void deactivateAll() { active_tape_ = nullptr; }
@@ -161,7 +158,7 @@ class Tape
         auto numElements = last - first;
         auto completeChunks = numElements / 8;
         auto remainingElements = numElements % 8;
-        for (std::size_t i = 0; i < completeChunks; ++i) {
+        for (int i = 0; i < completeChunks; ++i) {
             registerInput(*first++);
             registerInput(*first++);
             registerInput(*first++);
@@ -207,7 +204,7 @@ XAD_INLINE void registerOutputs(std::vector<active_type>& v)
         auto numElements = last - first;
         auto completeChunks = numElements / 8;
         auto remainingElements = numElements % 8;
-        for (std::size_t i = 0; i < completeChunks; ++i) {
+        for (int i = 0; i < completeChunks; ++i) {
            registerOutput(*first++);
            registerOutput(*first++);
            registerOutput(*first++);
