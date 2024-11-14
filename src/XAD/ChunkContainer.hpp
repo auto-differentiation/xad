@@ -469,12 +469,12 @@ class ChunkContainer
         return;
     }
 
-    reference operator[](size_type i)
+    [[nodiscard]] XAD_FORCE_INLINE reference operator[](size_type i)
     {
         return reinterpret_cast<pointer>(chunkList_[getHighPart(i)])[getLowPart(i)];
     }
 
-    const_reference operator[](size_type i) const
+    [[nodiscard]] XAD_FORCE_INLINE const_reference operator[](size_type i) const
     {
         return reinterpret_cast<const_pointer>(chunkList_[getHighPart(i)])[getLowPart(i)];
     }
