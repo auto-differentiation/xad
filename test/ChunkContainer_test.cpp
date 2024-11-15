@@ -202,11 +202,11 @@ TEST(ChunkContainer, push_back_reserved)
 {
     ChunkContainer<int, 8> chk;
 
-    size_t size = 16;
+    size_t size = 19;
 
     chk.reserve(size);
 
-    for (int i = 0; i < size; ++i) chk.push_back(i);
+    for (int i = 0; i < size; ++i) chk.push_back_reserved(i);
 
     for (int i = 0; i < size; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
 
