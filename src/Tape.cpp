@@ -50,7 +50,7 @@ Tape<T>::Tape(bool activateNow)
     currentRec_ = &nestedRecordings_.top();
     if (activateNow)
         activate();
-    statement_.push_back_reserved(
+    statement_.push_back(
         std::make_pair(size_type(mult_slot_.size()), slot_type(INVALID_SLOT)));
 }
 
