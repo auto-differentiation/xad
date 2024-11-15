@@ -47,6 +47,7 @@ set(testfiles
     Hessian_test.cpp
     Jacobian_test.cpp
     TypeTraits_test.cpp
+    Vector_test.cpp
 )
   
 if (CMAKE_COMPILER_IS_GNUCC)
