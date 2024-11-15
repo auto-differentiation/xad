@@ -66,6 +66,7 @@ jobs:
             "https://api.github.com/repos/auto-differentiation/xad/actions/artifacts/2194914152/zip" \
             --output artifact.zip
           unzip artifact.zip
+          chmod +x LiborSwaptionPricer
       - name: Run Reference
         if: github.event_name == 'pull_request'
         run: |
@@ -210,6 +211,7 @@ jobs:
             "https://api.github.com/repos/auto-differentiation/xad/actions/artifacts/2194915762/zip" \
             --output artifact.zip
           unzip artifact.zip
+          chmod +x quantlib-test-suite
       - name: Pull Reference AdjointBermudan
         if: github.event_name == 'pull_request'
         run: |
@@ -221,6 +223,7 @@ jobs:
             "https://api.github.com/repos/auto-differentiation/xad/actions/artifacts/2194915846/zip" \
             --output artifact.zip
           unzip artifact.zip
+          chmod +x AdjointBermudanSwaption
       - name: Run Reference Test-suite
         if: github.event_name == 'pull_request'
         run: |
