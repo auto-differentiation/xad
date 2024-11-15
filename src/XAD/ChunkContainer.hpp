@@ -235,6 +235,15 @@ class ChunkContainer
         ++idx_;
     }
 
+    void push_back_no_check(const_reference v) {
+        if (idx_ == chunk_size) {
+            chunk_++;
+            idx_ = 0;
+        }
+        ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+        ++idx_;
+    }
+
     template <class... Args>
     void emplace_back(Args&&... args)
     {
@@ -457,7 +466,7 @@ class ChunkContainer
             detail::aligned_free(c);
         }
     }
-
+    
     std::vector<char*> chunkList_;
     size_type chunk_, idx_;
 };

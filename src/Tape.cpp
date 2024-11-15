@@ -50,13 +50,12 @@ Tape<T>::Tape(bool activateNow)
     currentRec_ = &nestedRecordings_.top();
     if (activateNow)
         activate();
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back(std::make_pair(size_type(multiplier_.size()), slot_type(INVALID_SLOT)));
 }
 
 template <class T>
 Tape<T>::Tape(Tape&& o) noexcept
     : multiplier_(std::move(o.multiplier_)),
-      slot_(std::move(o.slot_)),
       statement_(std::move(o.statement_)),
       derivatives_(std::move(o.derivatives_)),
       checkpoints_(std::move(o.checkpoints_)),
@@ -77,7 +76,6 @@ template <class T>
 Tape<T>& Tape<T>::operator=(Tape&& o) noexcept
 {
     multiplier_ = std::move(o.multiplier_);
-    slot_ = std::move(o.slot_);
     statement_ = std::move(o.statement_);
     derivatives_ = std::move(o.derivatives_);
     checkpoints_ = std::move(o.checkpoints_);
@@ -105,7 +103,6 @@ template <class T>
 void Tape<T>::clearAll()
 {
     multiplier_.clear();
-    slot_.clear();
     statement_.clear();
     derivatives_.clear();
     checkpoints_.clear();
@@ -113,7 +110,7 @@ void Tape<T>::clearAll()
     reusable_ranges_.clear();
 #endif
     while (!nestedRecordings_.empty()) nestedRecordings_.pop();
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back(std::make_pair(size_type(multiplier_.size()), slot_type(INVALID_SLOT)));
     nestedRecordings_.push(SubRecording(this));
     currentRec_ = &nestedRecordings_.top();
 }
@@ -309,7 +306,6 @@ void Tape<T>::foldSubrecording()
         derivatives_.resize(cur->maxDerivative_);
     if (multiplier_.size() > prev.opStartPos_)
     {
-        slot_.resize(prev.opStartPos_);
         multiplier_.resize(prev.opStartPos_);
     }
     if (statement_.size() > prev.statementStartPos_)
@@ -369,19 +365,18 @@ template <class T>
 void Tape<T>::newRecording()
 {
     multiplier_.clear();
-    slot_.clear();
     statement_.clear();
     checkpoints_.clear();
     foldSubrecordings();
     currentRec_->maxDerivative_ = currentRec_->iDerivative_ + 1;
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back(std::make_pair(size_type(multiplier_.size()), slot_type(INVALID_SLOT)));
     currentRec_->derivativesInitialized_ = false;
 }
 
 template <class T>
 typename Tape<T>::size_type Tape<T>::getNumOperations() const
 {
-    return size_type(slot_.size());
+    return size_type(multiplier_.size());
 }
 
 template <class T>
@@ -471,7 +466,7 @@ void Tape<T>::printStatus() const
     }
     std::cout << "XAD Tape Info:\n"
               << "   Statements: " << statement_.size() - 1 << "\n"
-              << "   Operations: " << slot_.size() << "\n"
+              << "   Operations: " << multiplier_.size() << "\n"
               << "   Total der : " << currentRec_->maxDerivative_ << "\n"
               << "   Der alloc : " << derivatives_.size() << "\n"
               << "   curr der  : " << currentRec_->numDerivatives_ << "\n"
@@ -540,13 +535,6 @@ XAD_FORCE_INLINE T fused_multiply_add(const T& a, const T& b, const T& c)
     return c + (a * b);
 }
 
-XAD_FORCE_INLINE double fused_multiply_add(double a, double b, double c)
-{
-    return std::fma(a, b, c);
-}
-
-XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) { return std::fma(a, b, c); }
-
 }  // namespace detail
 
 template <class T>
@@ -585,8 +573,8 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
             {
                 for (auto opi = it[-1].first, ope = st.first; opi != ope; ++opi)
                 {
-                    auto multiplier = multiplier_[opi];
-                    auto slot = slot_[opi];
+                    auto multiplier = multiplier_[opi].first;
+                    auto slot = multiplier_[opi].second;
                     auto& der = derivatives_[slot];
                     der = detail::fused_multiply_add(multiplier, a, der);
                 }
@@ -603,8 +591,8 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
             {
                 for (auto opi = prevendpoint, ope = st.first; opi != ope; ++opi)
                 {
-                    derivatives_[slot_[opi]] =
-                        detail::fused_multiply_add(multiplier_[opi], a, derivatives_[slot_[opi]]);
+                    derivatives_[multiplier_[opi].second] = detail::fused_multiply_add(
+                        multiplier_[opi].first, a, derivatives_[multiplier_[opi].second]);
                 }
             }
         }
@@ -616,10 +604,10 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
 template <class T>
 std::size_t Tape<T>::getMemory() const
 {
-    return sizeof(T) * (multiplier_.size() + derivatives_.size()) +
-           sizeof(slot_type) * (slot_.size() +
-                                // statement_endpoint_.size() + statement_slot_.size()
-                                2 * statement_.size())
+    return sizeof(T) * (derivatives_.size()) +
+           sizeof(slot_type) * (  // statement_endpoint_.size() + statement_slot_.size()
+                                   2 * statement_.size()) +
+           sizeof(std::pair<T, slot_type>) * multiplier_.size()
 #ifdef XAD_TAPE_REUSE_SLOTS
            + sizeof(reusable_ranges_.front()) * reusable_ranges_.size()
 #endif
@@ -639,7 +627,7 @@ template <class T>
 void Tape<T>::insertCallback(CheckpointCallback<Tape<T> >* cb)
 {
     checkpoints_.push_back(std::make_pair(position_type(statement_.size()), cb));
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot_type(INVALID_SLOT)));
+    statement_.push_back(std::make_pair(size_type(multiplier_.size()), slot_type(INVALID_SLOT)));
 }
 
 template <class T>
@@ -667,7 +655,7 @@ void Tape<T>::resetTo(position_type pos)
     std::pair<slot_type, slot_type> st = statement_[pos];
     statement_.resize(pos + 1);
     multiplier_.resize(st.first);
-    slot_.resize(st.first);
+
     if (!checkpoints_.empty())
     {
         auto newend = std::upper_bound(std::begin(checkpoints_), std::end(checkpoints_), pos,

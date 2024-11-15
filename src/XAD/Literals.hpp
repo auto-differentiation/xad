@@ -33,6 +33,11 @@
 #include <iosfwd>
 #include <utility>
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 namespace xad
 {
 template <class>
@@ -183,11 +188,11 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 
     XAD_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
     {
-        if (o.shouldRecord())
+        auto s = tape_type::getActive();
+        if (s && o.shouldRecord())
         {
-            auto s = tape_type::getActive();
             slot_ = s->registerVariable();
-            o.calc_derivatives(*s);
+            pushAll<1>(o);
             s->pushLhs(slot_);
         }
         this->a_ = o.getValue();
@@ -213,8 +218,8 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 
     XAD_INLINE ~AReal()
     {
-        if (slot_ != INVALID_SLOT)
-            if (auto tape = tape_type::getActive())
+        if (auto tape = tape_type::getActive())
+            if (slot_ != INVALID_SLOT)
                 tape->unregisterVariable(slot_);
     }
 
@@ -222,9 +227,10 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 
     XAD_INLINE AReal& operator=(nested_type x)
     {
+        auto tape = tape_type::getActive();
         this->a_ = x;
-        if (slot_ != INVALID_SLOT)
-            tape_type::getActive()->pushLhs(slot_);
+        if (tape && slot_ != INVALID_SLOT)
+            tape->pushLhs(slot_);
         return *this;
     }
 
@@ -239,16 +245,28 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     XAD_INLINE void setAdjoint(Scalar a) { setDerivative(a); }
     XAD_INLINE Scalar getAdjoint() const { return getDerivative(); }
 
-    XAD_INLINE void calc_derivatives(tape_type& s, const Scalar& mul) const
-    {
-        if (slot_ != INVALID_SLOT)
-            s.pushRhs(mul, slot_);
+    template<size_t Size>
+    XAD_FORCE_INLINE void pushRhs(DerivInfo<Scalar, Size> &info, const Scalar &mul, slot_type slot) const {
+        info.multipliers[info.index] = mul;
+        info.slots[info.index] = slot;
+        info.index++;
     }
 
-    XAD_INLINE void calc_derivatives(tape_type& s) const
+    template<size_t Size>
+    XAD_INLINE void calc_derivatives(
+        DerivInfo<Scalar, Size> &info, tape_type& s, const Scalar& mul) const
     {
+        (void)s;
         if (slot_ != INVALID_SLOT)
-            s.pushRhs(Scalar(1), slot_);
+            pushRhs(info, mul, slot_);
+    }
+    template<size_t Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<Scalar, Size> &info,
+                tape_type& s) const
+    {
+        (void)s;
+        if (slot_ != INVALID_SLOT)
+            pushRhs(info, Scalar(1), slot_);
     }
 
     template <typename Slot>
@@ -301,7 +319,25 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     }
     XAD_INLINE bool shouldRecord() const { return slot_ != INVALID_SLOT; }
 
+
   private:
+    template<size_t Size, typename Expr>
+    XAD_FORCE_INLINE void pushAll(const Expr &expr) const
+    {
+        DerivInfo<Scalar, Size> info;
+        tape_type* t = tape_type::getActive();
+
+        expr.calc_derivatives(info, *t);
+
+        auto &c = t->getMultipliers();
+
+        if (c.getLowPart(c.size()) + info.index - 1 >= c.chunk_size)
+            c.reserve(c.size() + info.index);
+      
+        for (size_t i = 0; i < info.index; i++)
+            c.push_back_no_check(std::make_pair(info.multipliers[i], info.slots[i]));
+    }
+    
     template <class T>
     friend class Tape;
     typename tape_type::slot_type slot_;
@@ -323,11 +359,14 @@ struct ADVar : public Expression<Scalar, ADVar<Scalar>>
 
     XAD_INLINE const Scalar& value() const { return ar_.value(); }
 
-    XAD_INLINE void calc_derivatives(tape_type& s, const Scalar& mul) const
+    template<size_t Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<Scalar, Size> &info, tape_type& s, const Scalar& mul) const
     {
-        ar_.calc_derivatives(s, mul);
+        ar_.calc_derivatives(info, s, mul);
     }
-    XAD_INLINE void calc_derivatives(tape_type& s) const { ar_.calc_derivative(s); }
+    template<size_t Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<Scalar, Size> &info, tape_type& s) const { ar_.calc_derivative(info, s); }
+
     template <typename Slot>
     XAD_INLINE void calc_derivatives(Slot* slot, Scalar* muls, int& n, const Scalar& mul) const
     {
@@ -352,12 +391,12 @@ struct ADVar : public Expression<Scalar, ADVar<Scalar>>
 template <class Scalar>
 XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const AReal& o)
 {
-    if (o.shouldRecord() || this->shouldRecord())
+    tape_type* s = tape_type::getActive();
+    if (s && (o.shouldRecord() || this->shouldRecord()))
     {
-        tape_type* s = tape_type::getActive();
         if (slot_ == INVALID_SLOT)
             slot_ = s->registerVariable();
-        o.calc_derivatives(*s);
+        pushAll<1>(o);
         s->pushLhs(slot_);
     }
     this->a_ = o.getValue();
@@ -369,11 +408,11 @@ template <class Expr>
 XAD_INLINE AReal<Scalar>::AReal(Expression<Scalar, Expr> const& expr)
     : base_type(expr.getValue()), slot_(INVALID_SLOT)
 {
-    if (expr.shouldRecord())
+    tape_type* s = tape_type::getActive();
+    if (s && expr.shouldRecord())
     {
-        tape_type* s = tape_type::getActive();
         slot_ = s->registerVariable();
-        expr.calc_derivatives(*s);
+        pushAll<ExprTraits<Expr>::numVariables>(expr);
         s->pushLhs(slot_);
     }
 }
@@ -382,10 +421,10 @@ template <class Scalar>
 template <class Expr>
 XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const Expression<Scalar, Expr>& expr)
 {
-    if (expr.shouldRecord() || this->shouldRecord())
+    tape_type* s = tape_type::getActive();
+    if (s && (expr.shouldRecord() || this->shouldRecord()))
     {
-        tape_type* s = tape_type::getActive();
-        expr.calc_derivatives(*s);
+        pushAll<ExprTraits<Expr>::numVariables>(expr);
         // only register this variable after evaluating the expression, as this
         // variable might appear on the rhs of the equation too and if not yet
         // registered, it doesn't need recording of derivatives
@@ -593,3 +632,7 @@ typedef AReal<float> AF;
 typedef FReal<double> FAD;
 typedef FReal<float> FAF;
 }  // namespace xad
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
