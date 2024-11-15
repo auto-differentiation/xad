@@ -588,7 +588,8 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
                     auto multiplier = multiplier_[opi];
                     auto slot = slot_[opi];
                     auto& der = derivatives_[slot];
-                    der = detail::fused_multiply_add(multiplier, a, der);
+                    // der = detail::fused_multiply_add(multiplier, a, der);
+                    der += multiplier * a;
                 }
             }
         }
@@ -603,8 +604,11 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
             {
                 for (auto opi = prevendpoint, ope = st.first; opi != ope; ++opi)
                 {
-                    derivatives_[slot_[opi]] =
-                        detail::fused_multiply_add(multiplier_[opi], a, derivatives_[slot_[opi]]);
+                    auto multiplier = multiplier_[opi];
+                    auto slot = slot_[opi];
+                    auto& der = derivatives_[slot];
+                    // der = detail::fused_multiply_add(multiplier, a, der);
+                    der += multiplier * a;
                 }
             }
         }
