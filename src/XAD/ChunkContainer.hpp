@@ -31,8 +31,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <vector>
 #include <memory>
+#include <vector>
 
 // cross-platform aligned (de-)allocation
 
@@ -128,10 +128,9 @@ class ChunkContainer
 
     ChunkContainer() : chunk_(0), idx_(0)
     {
-        chunkList_.reserve(32);
-        reserve(1);
+        chunkList_.reserve(1024U);
+        reserve(1024U);
     }
-
     ChunkContainer(ChunkContainer&& o) noexcept
         : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_)
     {
@@ -229,8 +228,8 @@ class ChunkContainer
 
     void push_back(const_reference v)
     {
-        check_space();
-
+        if (idx_ == chunk_size)
+            check_space();
         ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
         ++idx_;
     }
@@ -238,7 +237,8 @@ class ChunkContainer
     template <class... Args>
     void emplace_back(Args&&... args)
     {
-        check_space();
+        if (idx_ == chunk_size)
+            check_space();
         ::new (chunkList_[chunk_] + idx_ * sizeof(value_type))
             value_type(std::forward<Args>(args)...);
         ++idx_;
@@ -432,19 +432,16 @@ class ChunkContainer
   private:
     void check_space()
     {
-        if (idx_ == chunk_size)
+        if (chunk_ == chunkList_.size() - 1)
         {
-            if (chunk_ == chunkList_.size() - 1)
-            {
-                char* chunk = reinterpret_cast<char*>(
-                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-                if (chunk == NULL)
-                    throw std::bad_alloc();
-                chunkList_.push_back(chunk);
-            }
-            ++chunk_;
-            idx_ = 0;
+            char* chunk = reinterpret_cast<char*>(
+                detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+            if (chunk == NULL)
+                throw std::bad_alloc();
+            chunkList_.push_back(chunk);
         }
+        ++chunk_;
+        idx_ = 0;
     }
 
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
