@@ -27,7 +27,7 @@
 #include <XAD/Exceptions.hpp>
 #include <XAD/Macros.hpp>
 #include <type_traits>
-
+#include <iostream>
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -35,6 +35,16 @@
 #include <memory>
 
 // cross-platform aligned (de-)allocation
+
+#ifndef XAD_LIKELY
+    #if defined(__GNUC__) || defined(__clang__)
+        #define XAD_LIKELY(x)   __builtin_expect(!!(x), 1)
+        #define XAD_UNLIKELY(x) __builtin_expect(!!(x), 0)
+    #else
+        #define XAD_LIKELY(x)   (x)
+        #define XAD_UNLIKELY(x) (x)
+    #endif
+#endif
 
 #if defined(__APPLE__) || defined(__ANDROID__) ||                                                  \
     (defined(__linux__) && defined(__GLIBCXX__) && !defined(_GLIBCXX_HAVE_ALIGNED_ALLOC))
@@ -128,7 +138,7 @@ class ChunkContainer
 
     ChunkContainer() : chunk_(0), idx_(0)
     {
-        chunkList_.reserve(32);
+        chunkList_.reserve(262144);
         reserve(1);
     }
 
@@ -156,14 +166,13 @@ class ChunkContainer
         size_type nc = getNumChunks(s);
         if (nc > chunkList_.size())
         {
-            size_type d = nc - chunkList_.size();
-            for (size_type i = 0; i < d; ++i)
+            size_type i = chunkList_.size();
+            chunkList_.resize(nc);
+            for (; i < nc; ++i)
             {
-                char* chunk = reinterpret_cast<char*>(
+                chunkList_[i] = reinterpret_cast<char*>(
                     detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-                if (chunk == NULL)
-                    throw std::bad_alloc();
-                chunkList_.push_back(chunk);
+                if (!chunkList_[i]) throw std::bad_alloc();
             }
         }
     }
@@ -227,10 +236,32 @@ class ChunkContainer
         }
     }
 
-    void push_back(const_reference v)
+    void push_back(const_reference v) 
     {
-        check_space();
-
+        // most common case where there is space on our chunk
+        if (XAD_LIKELY(idx_ < chunk_size)) {
+            ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+            ++idx_;
+            return;
+        }
+        
+        // no need to alloc new chunk
+        if (XAD_LIKELY(chunk_ < chunkList_.size() - 1)) {
+            // We have a chunk available
+            ++chunk_;
+            ::new (reinterpret_cast<value_type*>(chunkList_[chunk_])) value_type(v);
+            idx_ = 1;
+            return;
+        }
+        
+        // need allocation for the new chunk
+        char* chunk = reinterpret_cast<char*>(
+            detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+        if (XAD_UNLIKELY(chunk == NULL))
+            throw std::bad_alloc();
+        chunkList_.push_back(chunk);
+        ++chunk_;
+        idx_ = 0;
         ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
         ++idx_;
     }
@@ -428,7 +459,8 @@ class ChunkContainer
     static size_type getHighPart(size_type i) { return i / chunk_size; }
     static size_type getLowPart(size_type i) { return i % chunk_size; }
     static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
-
+    std::vector<char*> chunkList_;
+    size_type chunk_, idx_;
   private:
     void check_space()
     {
@@ -458,7 +490,6 @@ class ChunkContainer
         }
     }
 
-    std::vector<char*> chunkList_;
-    size_type chunk_, idx_;
+
 };
 }  // namespace xad
