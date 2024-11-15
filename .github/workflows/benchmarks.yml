@@ -60,11 +60,7 @@ jobs:
         run: |
           mkdir -p build/samples/LiborSwaptionPricer/ref
           cd build/samples/LiborSwaptionPricer/ref
-          curl -H "Authorization: Bearer ${{ secrets.WORKFLOW_READ_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            -L \
-            "https://api.github.com/repos/auto-differentiation/xad/actions/artifacts/2194914152/zip" \
-            --output artifact.zip
+          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/libor_exe.zip" --output artifact.zip
           unzip artifact.zip
           chmod +x LiborSwaptionPricer
       - name: Run Reference
@@ -205,11 +201,7 @@ jobs:
         run: |
           mkdir -p QuantLib/build/test-suite/ref
           cd QuantLib/build/test-suite/ref
-          curl -H "Authorization: Bearer ${{ secrets.WORKFLOW_READ_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            -L \
-            "https://api.github.com/repos/auto-differentiation/xad/actions/artifacts/2194915762/zip" \
-            --output artifact.zip
+          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/test-suite.zip" --output artifact.zip
           unzip artifact.zip
           chmod +x quantlib-test-suite
       - name: Pull Reference AdjointBermudan
@@ -217,11 +209,7 @@ jobs:
         run: |
           mkdir -p QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
           cd QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
-          curl -H "Authorization: Bearer ${{ secrets.WORKFLOW_READ_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            -L \
-            "https://api.github.com/repos/auto-differentiation/xad/actions/artifacts/2194915846/zip" \
-            --output artifact.zip
+          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/swaption.zip" --output artifact.zip
           unzip artifact.zip
           chmod +x AdjointBermudanSwaption
       - name: Run Reference Test-suite
