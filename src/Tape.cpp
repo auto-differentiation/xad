@@ -542,10 +542,13 @@ XAD_FORCE_INLINE T fused_multiply_add(const T& a, const T& b, const T& c)
 
 XAD_FORCE_INLINE double fused_multiply_add(double a, double b, double c)
 {
-    return std::fma(a, b, c);
+    // return std::fma(a, b, c);
+    return c + (a * b);
 }
 
-XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) { return std::fma(a, b, c); }
+// XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) { return std::fma(a, b, c);
+// }
+XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) { return c + (a * b); }
 
 }  // namespace detail
 
