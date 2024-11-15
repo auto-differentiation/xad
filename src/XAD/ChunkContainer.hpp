@@ -237,7 +237,7 @@ class ChunkContainer
 
     void push_back_reserved(const_reference v)
     {
-        assert(idx_ <= chunk_size);
+        assert(idx_ < chunk_size);
         ::new (reinterpret_cast<value_type*>(chunkList_[chunk_ + (idx_ / chunk_size)]) +
                (idx_ % chunk_size)) value_type(v);
         ++idx_;
