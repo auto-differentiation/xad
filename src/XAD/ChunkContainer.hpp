@@ -35,6 +35,12 @@
 #include <memory>
 
 // cross-platform aligned (de-)allocation
+// added
+#if defined(_MSC_VER)
+    #define XAD_NEVER_INLINE __declspec(noinline) 
+#else
+    #define XAD_NEVER_INLINE __attribute__((noinline))
+#endif
 
 #if defined(__APPLE__) || defined(__ANDROID__) ||                                                  \
     (defined(__linux__) && defined(__GLIBCXX__) && !defined(_GLIBCXX_HAVE_ALIGNED_ALLOC))
@@ -114,7 +120,7 @@ namespace xad
 
 template <class T, std::size_t ChunkSize = 1024U * 1024U * 8U>
 class ChunkContainer
-{
+{   
   public:
     typedef std::size_t size_type;
     typedef T value_type;
@@ -125,6 +131,17 @@ class ChunkContainer
     static const std::size_t chunk_size = ChunkSize;
 
     static const int ALIGNMENT = 128;
+
+    //added
+    XAD_FORCE_INLINE void push_back(const_reference v)
+        {
+        if (idx_ < chunk_size) {
+            ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+            ++idx_;
+            return;
+        }
+        allocate_new_chunk(v);
+    }
 
     ChunkContainer() : chunk_(0), idx_(0)
     {
@@ -227,13 +244,14 @@ class ChunkContainer
         }
     }
 
-    void push_back(const_reference v)
-    {
-        check_space();
+    // added, orignal push_back
+    // void push_back(const_reference v)
+    // {
+    //     check_space();
 
-        ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
-        ++idx_;
-    }
+    //     ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+    //     ++idx_;
+    // }
 
     template <class... Args>
     void emplace_back(Args&&... args)
@@ -430,6 +448,9 @@ class ChunkContainer
     static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
 
   private:
+
+    //added
+    XAD_NEVER_INLINE void allocate_new_chunk(const_reference v);
     void check_space()
     {
         if (idx_ == chunk_size)
@@ -460,5 +481,19 @@ class ChunkContainer
 
     std::vector<char*> chunkList_;
     size_type chunk_, idx_;
-};
+};  
+    // added
+    template <class T, std::size_t ChunkSize>
+    XAD_NEVER_INLINE void ChunkContainer<T, ChunkSize>::allocate_new_chunk(const_reference v) {
+        if (chunk_ == chunkList_.size() - 1) {
+            char* chunk = reinterpret_cast<char*>(
+                detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+            if (!chunk) throw std::bad_alloc();
+            chunkList_.push_back(chunk);
+        }
+        ++chunk_;
+        idx_ = 0;
+        ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+        ++idx_;
+    }
 }  // namespace xad

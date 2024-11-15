@@ -24,6 +24,13 @@
 
 #pragma once
 
+// added
+#if defined(_MSC_VER)
+    #define XAD_ALIGN(n) __declspec(align(n))
+#else
+    #define XAD_ALIGN(n) __attribute__((aligned(n)))
+#endif
+
 #include <XAD/Config.hpp>
 #include <XAD/Exceptions.hpp>
 #include <XAD/Macros.hpp>
@@ -256,10 +263,17 @@ class Tape
     }
 
     static XAD_THREAD_LOCAL Tape* active_tape_;
-    typename TapeContainerTraits<Real>::type multiplier_;
-    TapeContainerTraits<slot_type>::type slot_;
-    TapeContainerTraits<std::pair<slot_type, slot_type> >::type statement_;
-    std::vector<Real> derivatives_;
+    // added 
+    XAD_ALIGN(64) typename TapeContainerTraits<Real>::type multiplier_;
+    XAD_ALIGN(64) TapeContainerTraits<slot_type>::type slot_;
+    XAD_ALIGN(64) TapeContainerTraits<std::pair<slot_type, slot_type>>::type statement_;
+    XAD_ALIGN(64) std::vector<Real> derivatives_;
+
+    // typename TapeContainerTraits<Real>::type multiplier_;
+    // TapeContainerTraits<slot_type>::type slot_;
+    // TapeContainerTraits<std::pair<slot_type, slot_type> >::type statement_;
+    // std::vector<Real> derivatives_;
+
     typedef std::pair<position_type, CheckpointCallback<Tape>*> chkpt_type;
     std::vector<chkpt_type> checkpoints_;
     std::vector<CheckpointCallback<Tape>*> callbacks_;

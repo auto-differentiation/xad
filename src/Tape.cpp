@@ -531,87 +531,140 @@ void Tape<T>::computeAdjointsTo(position_type pos)
         computeAdjointsToImpl(pos, start);
 }
 
-namespace detail
-{
+// namespace detail
+// {
 
+//     template <class T>
+//     XAD_FORCE_INLINE T fused_multiply_add(const T& a, const T& b, const T& c)
+//     {
+//         return c + (a * b);
+//     }
+
+//     XAD_FORCE_INLINE double fused_multiply_add(double a, double b, double c)
+//     {
+//         return std::fma(a, b, c);
+//     }
+
+//     XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) { return std::fma(a, b, c); }
+
+// }  // namespace detail
+
+
+// //added
+namespace detail {
+    template <class T>
+    XAD_FORCE_INLINE T fused_multiply_add(const T& a, const T& b, const T& c) {
+        #if defined(__FMA__) 
+            return std::fma(a, b, c);
+        #else
+            return c + (a * b);
+        #endif
+    }
+
+    // Specializations for float and double
+    template <>
+    XAD_FORCE_INLINE double fused_multiply_add<double>(const double& a, const double& b, const double& c) {
+        return std::fma(a, b, c);
+    }
+
+    template <>
+    XAD_FORCE_INLINE float fused_multiply_add<float>(const float& a, const float& b, const float& c) {
+        return std::fma(a, b, c);
+    }
+} // namespace detail
+
+// template <class T>
+// void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
+// {
+//     LOG_DEBUG("computing adj from " << start << " to " << pos);
+
+//     // go from statements, back to front (statements 0 point is added at
+//     // initialization - it has endpoint set to zero)
+
+//     if (pos == start)
+//         return;
+//     typedef TapeContainerTraits<std::pair<slot_type, slot_type> >::type s_type;
+//     auto startchunk = s_type::getHighPart(start);
+//     auto idx = s_type::getLowPart(start);
+//     auto endchunk = s_type::getHighPart(pos + 1);
+//     auto endcidx = s_type::getLowPart(pos + 1);
+//     auto endidx = endcidx;
+//     if (startchunk != endchunk)
+//         endidx = 0;
+//     auto chunk_it = statement_.chunk_begin() + startchunk;
+//     auto chunk_eit = statement_.chunk_begin() + endchunk - 1;
+//     const int chunksz = int(s_type::chunk_size);
+
+//     for (; chunk_it != chunk_eit; --chunk_it)
+//     {
+//         if (chunk_it == chunk_eit + 1)
+//             endidx = endcidx;
+
+//         for (auto it = (*chunk_it) + idx, eit = (*chunk_it) + endidx; it != eit; --it)
+//         {
+//             auto st = *it;
+//             auto a = derivatives_[st.second];
+//             derivatives_[st.second] = T();
+//             if (a != T())
+//             {
+//                 for (auto opi = it[-1].first, ope = st.first; opi != ope; ++opi)
+//                 {
+//                     auto multiplier = multiplier_[opi];
+//                     auto slot = slot_[opi];
+//                     auto& der = derivatives_[slot];
+//                     der = detail::fused_multiply_add(multiplier, a, der);
+//                 }
+//             }
+//         }
+//         // last iteration separate
+//         {
+//             auto prevendpoint =
+//                 endidx == 0 ? chunk_it[-1][chunksz - 1].first : chunk_it[0][endidx - 1].first;
+//             auto st = chunk_it[0][endidx];
+//             auto a = derivatives_[st.second];
+//             derivatives_[st.second] = T();
+//             if (a != T())
+//             {
+//                 for (auto opi = prevendpoint, ope = st.first; opi != ope; ++opi)
+//                 {
+//                     derivatives_[slot_[opi]] =
+//                         detail::fused_multiply_add(multiplier_[opi], a, derivatives_[slot_[opi]]);
+//                 }
+//             }
+//         }
+
+//         idx = chunksz - 1;
+//     }
+// }
+
+// added
 template <class T>
-XAD_FORCE_INLINE T fused_multiply_add(const T& a, const T& b, const T& c)
-{
-    return c + (a * b);
-}
+void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start) {
+    if (pos == start) return;
+    
+    #pragma omp simd
+    for (auto stmt_idx = start; stmt_idx > pos; --stmt_idx) {
+        const auto& st = statement_[stmt_idx];
+        T adj_val = derivatives_[st.second];
+        derivatives_[st.second] = T();
 
-XAD_FORCE_INLINE double fused_multiply_add(double a, double b, double c)
-{
-    return std::fma(a, b, c);
-}
-
-XAD_FORCE_INLINE float fused_multiply_add(float a, float b, float c) { return std::fma(a, b, c); }
-
-}  // namespace detail
-
-template <class T>
-void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
-{
-    LOG_DEBUG("computing adj from " << start << " to " << pos);
-
-    // go from statements, back to front (statements 0 point is added at
-    // initialization - it has endpoint set to zero)
-
-    if (pos == start)
-        return;
-    typedef TapeContainerTraits<std::pair<slot_type, slot_type> >::type s_type;
-    auto startchunk = s_type::getHighPart(start);
-    auto idx = s_type::getLowPart(start);
-    auto endchunk = s_type::getHighPart(pos + 1);
-    auto endcidx = s_type::getLowPart(pos + 1);
-    auto endidx = endcidx;
-    if (startchunk != endchunk)
-        endidx = 0;
-    auto chunk_it = statement_.chunk_begin() + startchunk;
-    auto chunk_eit = statement_.chunk_begin() + endchunk - 1;
-    const int chunksz = int(s_type::chunk_size);
-
-    for (; chunk_it != chunk_eit; --chunk_it)
-    {
-        if (chunk_it == chunk_eit + 1)
-            endidx = endcidx;
-
-        for (auto it = (*chunk_it) + idx, eit = (*chunk_it) + endidx; it != eit; --it)
-        {
-            auto st = *it;
-            auto a = derivatives_[st.second];
-            derivatives_[st.second] = T();
-            if (a != T())
-            {
-                for (auto opi = it[-1].first, ope = st.first; opi != ope; ++opi)
-                {
-                    auto multiplier = multiplier_[opi];
-                    auto slot = slot_[opi];
-                    auto& der = derivatives_[slot];
-                    der = detail::fused_multiply_add(multiplier, a, der);
-                }
+        if (adj_val != T()) {
+            const auto end_op = st.first;
+            const auto start_op = statement_[stmt_idx-1].first;
+            
+            #pragma omp simd
+            for (auto opi = start_op; opi < end_op; ++opi) {
+                derivatives_[slot_[opi]] = 
+                    detail::fused_multiply_add(
+                        multiplier_[opi], 
+                        adj_val,
+                        derivatives_[slot_[opi]]
+                    );
             }
         }
-        // last iteration separate
-        {
-            auto prevendpoint =
-                endidx == 0 ? chunk_it[-1][chunksz - 1].first : chunk_it[0][endidx - 1].first;
-            auto st = chunk_it[0][endidx];
-            auto a = derivatives_[st.second];
-            derivatives_[st.second] = T();
-            if (a != T())
-            {
-                for (auto opi = prevendpoint, ope = st.first; opi != ope; ++opi)
-                {
-                    derivatives_[slot_[opi]] =
-                        detail::fused_multiply_add(multiplier_[opi], a, derivatives_[slot_[opi]]);
-                }
-            }
-        }
-
-        idx = chunksz - 1;
     }
 }
+
 
 template <class T>
 std::size_t Tape<T>::getMemory() const
