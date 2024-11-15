@@ -115,7 +115,6 @@ jobs:
           echo "result=| ${REF_TIME}s | ${OUT_TIME}s | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
       
   quantlib:
-    if: github.event_name == 'workflow_dispatch'
     name: QuantLib Samples
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
