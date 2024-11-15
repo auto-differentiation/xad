@@ -530,7 +530,7 @@ template<typename T>
 XAD_FORCE_INLINE void Tape<T>::reserve_for_expr(typename Tape::size_type numVariables)
 {
     mult_slot_.reserve(numVariables);
-    statement_.reserve(numVariables);
+    statement_.reserve(1);
 }
 
 namespace detail
