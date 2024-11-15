@@ -313,6 +313,18 @@ template <class T>
 XAD_INLINE void Tape<T>::pushRhs(const T& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
+    
+    if (XAD_LIKELY(multiplier_.idx_ < ChunkContainer<T>::chunk_size && 
+                   slot_.idx_ < ChunkContainer<slot_type>::chunk_size)) {
+        ::new (reinterpret_cast<T*>(multiplier_.chunkList_[multiplier_.chunk_]) + 
+              multiplier_.idx_) T(multiplier);
+        ::new (reinterpret_cast<slot_type*>(slot_.chunkList_[slot_.chunk_]) + 
+              slot_.idx_) slot_type(slot);
+        ++multiplier_.idx_;
+        ++slot_.idx_;
+        return;
+    }
+    // for complex cases
     multiplier_.push_back(multiplier);
     slot_.push_back(slot);
 }
