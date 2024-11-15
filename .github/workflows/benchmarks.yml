@@ -56,14 +56,13 @@ jobs:
           overwrite: true
       # if we are in a pull request, pull the uploaded artifact from earlier and run
       - name: Pull Reference
-        uses: actions/download-artifact@v4
         if: github.event_name == 'pull_request'
-        with:
-          name: libor_exe
-          repository: auto-differentiation/xad
-          path: build/samples/LiborSwaptionPricer/ref
-          github-token: ${{ secrets.WORKFLOW_READ_TOKEN }}
-          run-id: ${{vars.REFERENCE_RUN_ID }}
+        run: |
+          mkdir -p build/samples/LiborSwaptionPricer/ref
+          cd build/samples/LiborSwaptionPricer/ref
+          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/libor_exe.zip" --output artifact.zip
+          unzip artifact.zip
+          chmod +x LiborSwaptionPricer
       - name: Run Reference
         if: github.event_name == 'pull_request'
         run: |
@@ -113,7 +112,6 @@ jobs:
           echo "result=| ${REF_TIME}s | ${OUT_TIME}s | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
       
   quantlib:
-    if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: QuantLib Samples
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
@@ -199,23 +197,21 @@ jobs:
           overwrite: true
       # if we are in a pull request, pull the uploaded artifact from earlier and run
       - name: Pull Reference Test-suite
-        uses: actions/download-artifact@v4
         if: github.event_name == 'pull_request'
-        with:
-          name: ql_test_exe
-          repository: auto-differentiation/xad
-          path: QuantLib/build/test-suite/ref
-          github-token: ${{ secrets.WORKFLOW_READ_TOKEN }}
-          run-id: ${{ vars.REFERENCE_RUN_ID }}
+        run: |
+          mkdir -p QuantLib/build/test-suite/ref
+          cd QuantLib/build/test-suite/ref
+          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/test-suite.zip" --output artifact.zip
+          unzip artifact.zip
+          chmod +x quantlib-test-suite
       - name: Pull Reference AdjointBermudan
-        uses: actions/download-artifact@v4
         if: github.event_name == 'pull_request'
-        with:
-          name: ql_bermudan_exe
-          repository: auto-differentiation/xad
-          path: QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
-          github-token: ${{ secrets.WORKFLOW_READ_TOKEN }}
-          run-id: ${{ vars.REFERENCE_RUN_ID }}
+        run: |
+          mkdir -p QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
+          cd QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
+          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/swaption.zip" --output artifact.zip
+          unzip artifact.zip
+          chmod +x AdjointBermudanSwaption
       - name: Run Reference Test-suite
         if: github.event_name == 'pull_request'
         run: |
