@@ -272,6 +272,8 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 
     XAD_INLINE Scalar getDerivative() const { return derivative(); }
 
+    // We think the improvement will be here but we don't have enough time to improve it.
+
     XAD_INLINE const Scalar& derivative() const
     {
         auto t = tape_type::getActive();
