@@ -44,6 +44,10 @@
 #include <AvailabilityMacros.h>
 #endif
 
+#if !defined(__GNUC__) && !defined(__clang__)
+#define __builtin_expect(x, y) (x)
+#endif
+
 namespace xad
 {
 namespace detail
@@ -229,17 +233,18 @@ class ChunkContainer
 
     XAD_FORCE_INLINE void push_back(const_reference v)
     {
-        if (idx_ == chunk_size)
+        if (__builtin_expect(idx_ == chunk_size, 0))
             check_space();
 
         ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
         ++idx_;
     }
+	
 
     template <class... Args>
     void emplace_back(Args&&... args)
     {
-        if (idx_ == chunk_size)
+        if (__builtin_expect(idx_ == chunk_size, 0))
             check_space();
         ::new (chunkList_[chunk_] + idx_ * sizeof(value_type))
             value_type(std::forward<Args>(args)...);
@@ -302,7 +307,7 @@ class ChunkContainer
             auto endn = chunk_size - idx_;
             for (size_type i = 0; i < endn; ++i) ::new (dst++) value_type(*first++);
             idx_ = chunk_size;
-            if (idx_ == chunk_size)
+			if (__builtin_expect(idx_ == chunk_size, 0))
                 check_space();  // appends a chunk, moves idx_ / chunk_
             endn = static_cast<size_type>(std::distance(first, last));
             dst = reinterpret_cast<value_type*>(chunkList_[chunk_]);
@@ -435,19 +440,16 @@ class ChunkContainer
   private:
     void check_space()
     {
-        // if (idx_ == chunk_size)
-        // {
-            if (chunk_ == chunkList_.size() - 1)
-            {
-                char* chunk = reinterpret_cast<char*>(
-                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-                if (chunk == NULL)
-                    throw std::bad_alloc();
-                chunkList_.push_back(chunk);
-            }
-            ++chunk_;
-            idx_ = 0;
-        // }
+		if (chunk_ == chunkList_.size() - 1)
+		{
+			char* chunk = reinterpret_cast<char*>(
+				detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+			if (chunk == NULL)
+				throw std::bad_alloc();
+			chunkList_.push_back(chunk);
+		}
+		++chunk_;
+		idx_ = 0;
     }
 
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
