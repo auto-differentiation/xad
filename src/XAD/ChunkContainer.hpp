@@ -227,7 +227,7 @@ class ChunkContainer
         }
     }
 
-    void push_back(const_reference v)
+    XAD_FORCE_INLINE void push_back(const_reference v)
     {
         if (idx_ == chunk_size)
             check_space();
