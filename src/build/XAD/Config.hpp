@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Utility macro declarations.
+   Configuration settings for the build
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -24,44 +24,26 @@
 
 #pragma once
 
-#include <XAD/Config.hpp>
+/* These options can be changed in client code, after XAD has already been compiled */
 
-namespace xad
-{
-namespace detail
-{
-template <class T>
-void ignore_unused_variable(const T&)
-{
-}
-}  // namespace detail
-}  // namespace xad
-
-#if !defined(__GNUC__) && !defined(__clang__)
-#define __builtin_expect(x, y) (x)
+// Use strong inlining for higher performance - but compiles significantly slower
+#ifndef XAD_USE_STRONG_INLINE
+/* #undef XAD_USE_STRONG_INLINE */
 #endif
 
-#define XAD_UNUSED_VARIABLE(x) ::xad::detail::ignore_unused_variable(x)
-
-#ifdef _WIN32
-#define XAD_FORCE_INLINE __forceinline
-#else
-#define XAD_FORCE_INLINE __attribute__((always_inline)) inline
+// Allow conversion operator from active type to integers, potentially missing some
+// AAD variable dependency tracking
+#ifndef XAD_ALLOW_INT_CONVERSION
+/* #undef XAD_ALLOW_INT_CONVERSION */
 #endif
 
-#ifdef XAD_USE_STRONG_INLINE
-#define XAD_INLINE XAD_FORCE_INLINE
-#else
-#define XAD_INLINE inline
-#endif
 
-#ifdef XAD_NO_THREADLOCAL
-#define XAD_THREAD_LOCAL
-#else
-// we can't use thread_local here, as MacOS has an issue with that
-#ifdef _WIN32
-#define XAD_THREAD_LOCAL __declspec(thread)
-#else
-#define XAD_THREAD_LOCAL __thread
-#endif
-#endif
+/******* The following options should not be touched after compilation of XAD */
+
+// keep track of freed-up slots in the tape and re-use them
+/* #undef XAD_TAPE_REUSE_SLOTS */
+
+// Disable thread-local tape usage
+/* #undef XAD_NO_THREADLOCAL */
+
+

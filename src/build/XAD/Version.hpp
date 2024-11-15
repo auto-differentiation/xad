@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Utility macro declarations.
+   Version information
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -24,44 +24,12 @@
 
 #pragma once
 
-#include <XAD/Config.hpp>
+#define XAD_VERSION_MAJOR 
+#define XAD_VERSION_MINOR 
+#define XAD_VERSION_PATCH 
+#define XAD_VERSION_SUFFIX ""
+#define XAD_VERSION_PATCHSTRING ""
+/* #undef XAD_IS_PRERELEASE */
 
-namespace xad
-{
-namespace detail
-{
-template <class T>
-void ignore_unused_variable(const T&)
-{
-}
-}  // namespace detail
-}  // namespace xad
-
-#if !defined(__GNUC__) && !defined(__clang__)
-#define __builtin_expect(x, y) (x)
-#endif
-
-#define XAD_UNUSED_VARIABLE(x) ::xad::detail::ignore_unused_variable(x)
-
-#ifdef _WIN32
-#define XAD_FORCE_INLINE __forceinline
-#else
-#define XAD_FORCE_INLINE __attribute__((always_inline)) inline
-#endif
-
-#ifdef XAD_USE_STRONG_INLINE
-#define XAD_INLINE XAD_FORCE_INLINE
-#else
-#define XAD_INLINE inline
-#endif
-
-#ifdef XAD_NO_THREADLOCAL
-#define XAD_THREAD_LOCAL
-#else
-// we can't use thread_local here, as MacOS has an issue with that
-#ifdef _WIN32
-#define XAD_THREAD_LOCAL __declspec(thread)
-#else
-#define XAD_THREAD_LOCAL __thread
-#endif
-#endif
+#define XAD_VERSION 
+#define XAD_VERSION_STRING ""

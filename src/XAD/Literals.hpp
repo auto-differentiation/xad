@@ -213,7 +213,7 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 
     XAD_INLINE ~AReal()
     {
-        if (slot_ != INVALID_SLOT)
+        if (__builtin_expect(slot_ != INVALID_SLOT, 1))
             if (auto tape = tape_type::getActive())
                 tape->unregisterVariable(slot_);
     }
@@ -223,7 +223,7 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     XAD_INLINE AReal& operator=(nested_type x)
     {
         this->a_ = x;
-        if (slot_ != INVALID_SLOT)
+	if (__builtin_expect(slot_ != INVALID_SLOT, 1))
             tape_type::getActive()->pushLhs(slot_);
         return *this;
     }

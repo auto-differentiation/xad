@@ -601,10 +601,8 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
             if (a == T())
                 continue ;
             auto ope = it->first;
-            for (auto opi = it[-1].first; opi != ope; ++opi) {
-				auto x = pairs_[opi];
-                derivatives_[x.second] += (x.first * a);
-            }
+            for (auto opi = it[-1].first; opi != ope; ++opi)
+                derivatives_[pairs_[opi].second] += (pairs_[opi].first * a);
         }
         // last iteration separate
         {

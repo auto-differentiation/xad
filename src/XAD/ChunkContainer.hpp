@@ -44,10 +44,6 @@
 #include <AvailabilityMacros.h>
 #endif
 
-#if !defined(__GNUC__) && !defined(__clang__)
-#define __builtin_expect(x, y) (x)
-#endif
-
 namespace xad
 {
 namespace detail
