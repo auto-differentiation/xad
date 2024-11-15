@@ -244,6 +244,10 @@ class Tape
     // roll back the adjoints just to the given position (not to the start)
     void computeAdjointsTo(position_type pos);
 
+    typename TapeContainerTraits<std::pair<Real, slot_type>>::type &getMultipliers() {
+        return multiplier_;
+    }
+
   private:
     void computeAdjointsToImpl(position_type pos, position_type start);
     void initDerivatives();
@@ -256,8 +260,7 @@ class Tape
     }
 
     static XAD_THREAD_LOCAL Tape* active_tape_;
-    typename TapeContainerTraits<Real>::type multiplier_;
-    TapeContainerTraits<slot_type>::type slot_;
+    typename TapeContainerTraits<std::pair<Real, slot_type>>::type multiplier_;
     TapeContainerTraits<std::pair<slot_type, slot_type> >::type statement_;
     std::vector<Real> derivatives_;
     typedef std::pair<position_type, CheckpointCallback<Tape>*> chkpt_type;
@@ -313,30 +316,28 @@ template <class T>
 XAD_INLINE void Tape<T>::pushRhs(const T& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    multiplier_.push_back(multiplier);
-    slot_.push_back(slot);
+    multiplier_.push_back(std::make_pair(multiplier, slot));
 }
 
 template <class T>
 XAD_INLINE void Tape<T>::pushRhs(T&& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    multiplier_.push_back(std::move(multiplier));
-    slot_.push_back(slot);
+    multiplier_.push_back(std::make_pair(std::move(multiplier), slot));
 }
 
 template <class T>
 XAD_INLINE void Tape<T>::pushLhs(slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot));
+    statement_.push_back(std::make_pair(size_type(multiplier_.size()), slot));
 }
 
 template <class T>
 XAD_INLINE void Tape<T>::pushAll(slot_type lhs, T* multipliers, slot_type* slots, unsigned n)
 {
-    multiplier_.append(multipliers, multipliers + n);
-    slot_.append(slots, slots + n);
+    for (unsigned i = 0; i < n; i++)
+        multiplier_.push_back(std::make_pair(multipliers[i], slots[i]));
     pushLhs(lhs);
 }
 
