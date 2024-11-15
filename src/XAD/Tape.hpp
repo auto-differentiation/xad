@@ -224,7 +224,7 @@ class Tape
     void pushRhs(const Real& multiplier, slot_type slot);
     void pushRhs(Real&& multiplier, slot_type slot);
     void pushLhs(slot_type slot);
-    void pushAll(slot_type lhs,  std::pair<Real, slot_type>* mults_slots, unsigned n);
+    void pushAll(slot_type lhs, std::pair<Real, slot_type>* mults_slots, unsigned n);
 
     // capacity
     size_type getNumVariables() const;
@@ -315,14 +315,14 @@ template <class T>
 XAD_INLINE void Tape<T>::pushRhs(const T& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    mult_slot_.push_back_reserved(std::pair<T, slot_type >(multiplier, slot));
+    mult_slot_.push_back_reserved(std::pair<T, slot_type>(multiplier, slot));
 }
 
 template <class T>
 XAD_INLINE void Tape<T>::pushRhs(T&& multiplier, slot_type slot)
 {
     assert(slot != INVALID_SLOT);
-    mult_slot_.push_back_reserved(std::pair<T, slot_type >(multiplier, slot));
+    mult_slot_.push_back_reserved(std::pair<T, slot_type>(multiplier, slot));
 }
 
 template <class T>
@@ -333,7 +333,7 @@ XAD_INLINE void Tape<T>::pushLhs(slot_type slot)
 }
 
 template <class T>
-XAD_INLINE void Tape<T>::pushAll(slot_type lhs,  std::pair<T, slot_type>* mults_slots, unsigned n)
+XAD_INLINE void Tape<T>::pushAll(slot_type lhs, std::pair<T, slot_type>* mults_slots, unsigned n)
 {
     mult_slot_.append(mults_slots, mults_slots + n);
     pushLhs(lhs);
