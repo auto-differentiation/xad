@@ -179,10 +179,9 @@ jobs:
       # if we are on main branch & triggered by workflow-dispatch, push artefact
       - name: Prepare Pushes
         run: |
-          cd QuantLib/build/test-suite/
-          cp -a ../ql/libQuantLib.so* .
-          cd ../QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption
-          cp -a ${{ github.workspace }}/QuantLib/build/ql/libQuantLib.so* .
+          cd QuantLib/build/ql/
+          cp -a libQuantLib.so* ../test-suite/
+          cp -a libQuantLib.so* ../QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption
       - name: Push Reference Test-suite
         uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
