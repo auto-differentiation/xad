@@ -24,6 +24,7 @@
 
 #pragma once
 #include <XAD/Macros.hpp>
+#include <immintrin.h>
 
 namespace xad
 {
@@ -37,6 +38,29 @@ struct add_op
     XAD_INLINE Scalar derivative_b(const Scalar&, const Scalar&) const { return Scalar(1); }
 };
 
+template <>
+struct add_op<double>
+{
+    XAD_INLINE double operator()(const double a, const double b) const
+    {
+        return _mm_cvtsd_f64(_mm_add_sd(_mm_set_sd(a), _mm_set_sd(b)));
+    }
+
+    XAD_INLINE double derivative_a(const double, const double) const { return 1; }
+    XAD_INLINE double derivative_b(const double, const double) const { return 1; }
+};
+
+template <>
+struct add_op<float>
+{
+    XAD_INLINE float operator()(const float a, const float b) const
+    {
+        return _mm_cvtss_f32(_mm_add_ss(_mm_set_ss(a), _mm_set_ss(b)));
+    }
+    XAD_INLINE float derivative_a(const float, const float) const { return 1; }
+    XAD_INLINE float derivative_b(const float, const float) const { return 1; }
+};
+
 template <class Scalar>
 struct prod_op
 {
@@ -45,6 +69,29 @@ struct prod_op
     XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar& b) const { return b; }
 
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar&) const { return a; }
+};
+
+template <>
+struct prod_op<double>
+{
+    XAD_INLINE double operator()(const double a, const double b) const
+    {
+        return _mm_cvtsd_f64(_mm_mul_sd(_mm_set_sd(a), _mm_set_sd(b)));
+    }
+
+    XAD_INLINE double derivative_a(const double, const double b) const { return b; }
+    XAD_INLINE double derivative_b(const double a, const double) const { return a; }
+};
+
+template <>
+struct prod_op<float>
+{
+    XAD_INLINE float operator()(const float a, const float b) const
+    {
+        return _mm_cvtss_f32(_mm_mul_ss(_mm_set_ss(a), _mm_set_ss(b)));
+    }
+    XAD_INLINE float derivative_a(const float, const float b) const { return b; }
+    XAD_INLINE float derivative_b(const float a, const float) const { return a; }
 };
 
 template <class Scalar>
@@ -57,6 +104,29 @@ struct sub_op
     XAD_INLINE Scalar derivative_b(const Scalar&, const Scalar&) const { return Scalar(-1); }
 };
 
+template <>
+struct sub_op<double>
+{
+    XAD_INLINE double operator()(const double a, const double b) const
+    {
+        return _mm_cvtsd_f64(_mm_sub_sd(_mm_set_sd(a), _mm_set_sd(b)));
+    }
+
+    XAD_INLINE double derivative_a(const double, const double) const { return 1; }
+    XAD_INLINE double derivative_b(const double, const double) const { return -1; }
+};
+
+template <>
+struct sub_op<float>
+{
+    XAD_INLINE float operator()(const float a, const float b) const
+    {
+        return _mm_cvtss_f32(_mm_sub_ss(_mm_set_ss(a), _mm_set_ss(b)));
+    }
+    XAD_INLINE float derivative_a(const float, const float) const { return 1; }
+    XAD_INLINE float derivative_b(const float, const float) const { return -1; }
+};
+
 template <class Scalar>
 struct div_op
 {
@@ -65,5 +135,28 @@ struct div_op
     XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar& b) const { return Scalar(1) / b; }
 
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const { return -a / (b * b); }
+};
+
+template <>
+struct div_op<double>
+{
+    XAD_INLINE double operator()(const double a, const double b) const
+    {
+        return _mm_cvtsd_f64(_mm_div_sd(_mm_set_sd(a), _mm_set_sd(b)));
+    }
+
+    XAD_INLINE double derivative_a(const double, const double b) const { return 1 / b; }
+    XAD_INLINE double derivative_b(const double a, const double b) const { return -a / (b * b); }
+};
+
+template <>
+struct div_op<float>
+{
+    XAD_INLINE float operator()(const float a, const float b) const
+    {
+        return _mm_cvtss_f32(_mm_div_ss(_mm_set_ss(a), _mm_set_ss(b)));
+    }
+    XAD_INLINE float derivative_a(const float, const float b) const { return 1 / b; }
+    XAD_INLINE float derivative_b(const float a, const float b) const { return -a / (b * b); }
 };
 }  // namespace xad
