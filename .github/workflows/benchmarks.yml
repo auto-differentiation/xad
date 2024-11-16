@@ -145,7 +145,7 @@ jobs:
       - name: Setup
         run: |
           apt-get update \
-          && apt-get install -y ninja-build bc datamash
+          && apt-get install -y ninja-build bc datamash unzip
       - name: Configure
         run: |
           cd QuantLib
