@@ -33,6 +33,7 @@
 #include <cstdlib>
 #include <vector>
 #include <memory>
+#include "tools/Vector.hpp"
 
 // cross-platform aligned (de-)allocation
 
@@ -227,13 +228,28 @@ class ChunkContainer
         }
     }
 
-    void push_back(const_reference v)
+void push_back(const_reference val)
+{
+    // Reserve an extra chunk in advance if the current chunk is almost full
+    if (idx_ == chunk_size) // Check once here to allocate the extra chunk, but only rarely
     {
-        check_space();
-
-        ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
-        ++idx_;
+        // Add a new empty chunk in advance so we never reach capacity within `push_back`
+        chunkList_.push_back(reinterpret_cast<char*>(detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size)));
+        ++chunk_;
+        idx_ = 0;
     }
+
+    // Insert the new element without needing to check `idx_ == chunk_size` on each call
+    ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(val);
+    ++idx_;
+}
+    // void push_back(const_reference v)
+    // {
+    //     check_space();
+
+    //     ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+    //     ++idx_;
+    // }
 
     template <class... Args>
     void emplace_back(Args&&... args)
@@ -458,7 +474,7 @@ class ChunkContainer
         }
     }
 
-    std::vector<char*> chunkList_;
+    ft::vector<char*> chunkList_;
     size_type chunk_, idx_;
 };
 }  // namespace xad
