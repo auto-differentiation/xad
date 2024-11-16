@@ -201,7 +201,7 @@ jobs:
         run: |
           mkdir -p QuantLib/build/test-suite/ref
           cd QuantLib/build/test-suite/ref
-          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/test-suite.zip" --output artifact.zip
+          wget "https://xadhackathon.s3.eu-west-1.amazonaws.com/test-suite.zip" --output-document artifact.zip
           unzip artifact.zip
           chmod +x quantlib-test-suite
       - name: Pull Reference AdjointBermudan
@@ -209,7 +209,7 @@ jobs:
         run: |
           mkdir -p QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
           cd QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
-          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/swaption.zip" --output artifact.zip
+          wget "https://xadhackathon.s3.eu-west-1.amazonaws.com/swaption.zip" --output-document artifact.zip
           unzip artifact.zip
           chmod +x AdjointBermudanSwaption
       - name: Run Reference Test-suite
