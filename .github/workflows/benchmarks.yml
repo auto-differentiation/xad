@@ -177,12 +177,18 @@ jobs:
           cd QuantLib/build
           ./QuantLib-Risks-Cpp/test-suite/quantlib-risks-test-suite --log_level=message
       # if we are on main branch & triggered by workflow-dispatch, push artefact
+      - name: Prepare Pushes
+        run: |
+          cd QuantLib/build/test-suite/
+          cp -a ../ql/libQuantLib.so* .
+          cd ../QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption
+          cp -a ${{ github.workspace }}/QuantLib/build/ql/libQuantLib.so* .
       - name: Push Reference Test-suite
         uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
           name: ql_test_exe
-          path: QuantLib/build/test-suite/quantlib-test-suite
+          path: QuantLib/build/test-suite/*uant*ib*
           if-no-files-found: error
           retention-days: 90
           overwrite: true
@@ -191,7 +197,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         with:
           name: ql_bermudan_exe
-          path: QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/AdjointBermudanSwaption
+          path: QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/*
           if-no-files-found: error
           retention-days: 90
           overwrite: true
@@ -220,6 +226,7 @@ jobs:
           ls -l
           file ./quantlib-test-suite
           chmod +x ./quantlib-test-suite
+          export LD_LIBRARY_PATH=.
           # warmup run
           ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because"
           rm -f ../reference.log || true
@@ -270,6 +277,7 @@ jobs:
           chmod +x ./AdjointBermudanSwaption
           rm -f ../reference.log || true
           # warmup run
+          export LD_LIBRARY_PATH=.
           ./AdjointBermudanSwaption 200 
           for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
             ./AdjointBermudanSwaption 200 | tee -a ../reference.log ; \
