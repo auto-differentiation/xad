@@ -53,7 +53,7 @@ void computeJacobian(const std::vector<AReal<T>> &vec,
                      std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
                      RowIterator first, RowIterator last, Tape<T> *tape = Tape<T>::getActive())
 {
-    if (static_cast<unsigned int>(std::distance(first->cbegin(), first->cend())) != vec.size())
+    if (static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != vec.size())
         throw OutOfRange("Iterator not allocated enough space (domain)");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
@@ -69,19 +69,19 @@ void computeJacobian(const std::vector<AReal<T>> &vec,
     tape->registerInputs(v);
     tape->newRecording();
     auto y = foo(v);
-    unsigned int domain = static_cast<unsigned int>(vec.size()),
-                 codomain = static_cast<unsigned int>(y.size());
-    if (static_cast<unsigned int>(std::distance(first, last)) != codomain)
+    std::size_t domain = static_cast<std::size_t>(vec.size()),
+                 codomain = static_cast<std::size_t>(y.size());
+    if (static_cast<std::size_t>(std::distance(first, last)) != codomain)
         throw OutOfRange("Iterator not allocated enough space (codomain)");
     tape->registerOutputs(y);
 
     auto row = first;
-    for (unsigned int i = 0; i < codomain; i++, row++)
+    for (std::size_t i = 0; i < codomain; i++, row++)
     {
         auto col = row->begin();
         derivative(y[i]) = 1.0;
         tape->computeAdjoints();
-        for (unsigned int j = 0; j < domain; j++, col++) *col = derivative(v[j]);
+        for (std::size_t j = 0; j < domain; j++, col++) *col = derivative(v[j]);
         tape->clearDerivatives();
     }
 }
@@ -104,25 +104,25 @@ void computeJacobian(const std::vector<FReal<T>> &vec,
                      std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo,
                      RowIterator first, RowIterator last)
 {
-    if (static_cast<unsigned int>(std::distance(first->cbegin(), first->cend())) != vec.size())
+    if (static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != vec.size())
         throw OutOfRange("Iterator not allocated enough space (domain)");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
 
     auto v(vec);
-    unsigned int domain = static_cast<unsigned int>(vec.size()),
-                 codomain = static_cast<unsigned int>(foo(v).size());
+    std::size_t domain = static_cast<std::size_t>(vec.size()),
+                 codomain = static_cast<std::size_t>(foo(v).size());
 
     if (std::distance(first, last) != codomain)
         throw OutOfRange("Iterator not allocated enough space (codomain)");
 
     auto row = first;
-    for (unsigned int i = 0; i < domain; i++)
+    for (std::size_t i = 0; i < domain; i++)
     {
         derivative(v[i]) = 1.0;
         auto y = foo(v);
         derivative(v[i]) = 0.0;
-        for (unsigned int j = 0; j < codomain; j++)
+        for (std::size_t j = 0; j < codomain; j++)
         {
             row = first;
             std::advance(row, j);
