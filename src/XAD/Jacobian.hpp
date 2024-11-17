@@ -53,7 +53,7 @@ void computeJacobian(const std::vector<AReal<T>> &vec,
                      std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
                      RowIterator first, RowIterator last, Tape<T> *tape = Tape<T>::getActive())
 {
-    if (std::distance(first->cbegin(), first->cend()) != vec.size())
+    if (static_cast<unsigned int>(std::distance(first->cbegin(), first->cend())) != vec.size())
         throw OutOfRange("Iterator not allocated enough space (domain)");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
@@ -71,7 +71,7 @@ void computeJacobian(const std::vector<AReal<T>> &vec,
     auto y = foo(v);
     unsigned int domain = static_cast<unsigned int>(vec.size()),
                  codomain = static_cast<unsigned int>(y.size());
-    if (std::distance(first, last) != codomain)
+    if (static_cast<unsigned int>(std::distance(first, last)) != codomain)
         throw OutOfRange("Iterator not allocated enough space (codomain)");
     tape->registerOutputs(y);
 
@@ -104,7 +104,7 @@ void computeJacobian(const std::vector<FReal<T>> &vec,
                      std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo,
                      RowIterator first, RowIterator last)
 {
-    if (std::distance(first->cbegin(), first->cend()) != vec.size())
+    if (static_cast<unsigned int>(std::distance(first->cbegin(), first->cend())) != vec.size())
         throw OutOfRange("Iterator not allocated enough space (domain)");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");

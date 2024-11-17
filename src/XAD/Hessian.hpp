@@ -56,8 +56,8 @@ void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
 {
     unsigned int domain(static_cast<unsigned int>(vec.size()));
 
-    if (std::distance(first, last) != domain ||
-        std::distance(first->cbegin(), first->cend()) != domain)
+    if (static_cast<unsigned int>(std::distance(first, last)) != domain ||
+        static_cast<unsigned int>(std::distance(first->cbegin(), first->cend())) != domain)
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
@@ -109,8 +109,8 @@ void computeHessian(const std::vector<FReal<FReal<T>>> &vec,
 {
     unsigned int domain(static_cast<unsigned int>(vec.size()));
 
-    if (std::distance(first, last) != domain ||
-        std::distance(first->cbegin(), first->cend()) != domain)
+    if (static_cast<unsigned int>(std::distance(first, last)) != domain ||
+        static_cast<unsigned int>(std::distance(first->cbegin(), first->cend())) != domain)
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
