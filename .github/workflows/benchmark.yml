@@ -26,44 +26,16 @@ jobs:
           ref: main
           path: main
 
-      - name: Debug main directory
-        run: |
-          echo "Checking main directory:"
-          ls -la main || echo "Directory 'main' does not exist or is empty"
-    
-      - name: Clone main branch
-        if: failure()  # Only runs if the previous step fails
-        run: |
-          git clone --branch main --single-branch https://github.com/${{ github.repository }} main
-
       - name: Setup
         run: |
           mkdir pr/build main/build
           echo "Setup complete"
 
-      - name: Verify main directory
-        run: |
-          if [ -d "main" ]; then
-            echo "main is a directory"
-          else
-            echo "main is not a directory"
-            exit 1
-          fi
-
-      - name: Debug main directory permissions
-        run: |
-          echo "Directory ownership and permissions:"
-          ls -ld main
-          echo "Contents of main:"
-          ls -la main
-
       - name: Reference
         run: |
-          cd main
-          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build
-          cd build/samples/LiborSwaptionPricer
-          ./LiborSwaptionPricer 50000 > main_benchmark.log
+          cmake -S main -B main/build -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build main/build
+          ./main/build/samples/LiborSwaptionPricer/LiborSwaptionPricer 50000 > main_benchmark.log
         working-directory: main
 
       - name: Benchmark
