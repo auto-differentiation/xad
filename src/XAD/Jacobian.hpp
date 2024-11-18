@@ -110,8 +110,8 @@ void computeJacobian(const std::vector<FReal<T>> &vec,
                   "RowIterator must dereference to a type that implements a begin() method");
 
     auto v(vec);
-    std::size_t domain = static_cast<std::size_t>(vec.size()),
-                 codomain = static_cast<std::size_t>(foo(v).size());
+    std::size_t domain = vec.size();
+    std::size_t codomain = foo(v).size();
 
     if (std::distance(first, last) != codomain)
         throw OutOfRange("Iterator not allocated enough space (codomain)");
