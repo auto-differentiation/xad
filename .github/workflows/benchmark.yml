@@ -26,6 +26,16 @@ jobs:
           ref: main
           path: main
 
+      - name: Debug main directory
+        run: |
+          echo "Checking main directory:"
+          ls -la main || echo "Directory 'main' does not exist or is empty"
+    
+      - name: Clone main branch
+        if: failure()  # Only runs if the previous step fails
+        run: |
+          git clone --branch main --single-branch https://github.com/${{ github.repository }} main
+
       - name: Setup
         run: |
           mkdir pr/build main/build
