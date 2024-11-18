@@ -32,20 +32,19 @@ jobs:
           echo "Setup complete"
 
       - name: Reference
-        run: |
-          cmake -S main -B main/build -GNinja -DCMAKE_BUILD_TYPE=Release
-          cmake --build main/build
-          ./main/build/samples/LiborSwaptionPricer/LiborSwaptionPricer 50000 > main_benchmark.log
         working-directory: main
+        run: |
+          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+          ./build/samples/LiborSwaptionPricer/LiborSwaptionPricer 50000 > main_benchmark.log
 
       - name: Benchmark
+        working-directory: pr
         run: |
-          cd pr
           cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
           cd build/samples/LiborSwaptionPricer
           ./LiborSwaptionPricer 50000 > pr_benchmark.log
-        working-directory: pr
 
       - name: Compare
         run: |
