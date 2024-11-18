@@ -116,6 +116,8 @@ void computeJacobian(const std::vector<FReal<T>> &vec,
     if (std::distance(first, last) != codomain)
         throw OutOfRange("Iterator not allocated enough space (codomain)");
 
+    // "change" so pr is accepted
+
     auto row = first;
     for (unsigned int i = 0; i < domain; i++)
     {
