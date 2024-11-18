@@ -35,6 +35,8 @@ jobs:
         working-directory: main
         run: |
           set -e
+          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
           cd build/samples/LiborSwaptionPricer
           ls -l
           file ./LiborSwaptionPricer
@@ -50,6 +52,8 @@ jobs:
         working-directory: pr
         run: |
           set -e
+          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
           cd build/samples/LiborSwaptionPricer
           rm -f output.log || true
           # warmup run
