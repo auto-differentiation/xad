@@ -34,25 +34,51 @@ jobs:
       - name: Reference
         working-directory: main
         run: |
-          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build
-          ./build/samples/LiborSwaptionPricer/LiborSwaptionPricer 50000 > main_benchmark.log
+          set -e
+          cd build/samples/LiborSwaptionPricer/ref
+          ls -l
+          file ./LiborSwaptionPricer
+          chmod +x ./LiborSwaptionPricer
+          rm -f ../reference.log || true
+          # warmup run
+          ./LiborSwaptionPricer 50000
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./LiborSwaptionPricer 50000 | tee -a ../reference.log ; \
+          done
 
       - name: Benchmark
         working-directory: pr
         run: |
-          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build
+          set -e
           cd build/samples/LiborSwaptionPricer
-          ./LiborSwaptionPricer 50000 > pr_benchmark.log
+          rm -f output.log || true
+          # warmup run
+          ./LiborSwaptionPricer 50000
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./LiborSwaptionPricer 50000 | tee -a output.log ; \
+          done
 
       - name: Compare
         run: |
-          PR_TIME=$(grep "Time" pr/build/samples/LiborSwaptionPricer/pr_benchmark.log | awk '{print $NF}')
-          MAIN_TIME=$(grep "Time" main/build/samples/LiborSwaptionPricer/main_benchmark.log | awk '{print $NF}')
-          DIFF=$(echo "$MAIN_TIME - $PR_TIME" | bc)
-          PERCENT=$(echo "scale=2; ($DIFF / $MAIN_TIME) * 100" | bc)
-          echo "Reference Time (Main): $MAIN_TIME"
-          echo "PR Time: $PR_TIME"
-          echo "Difference: $DIFF seconds"
-          echo "Improvement: $PERCENT%"
+          set -e
+          apt-get update && apt-get install -y bc datamash
+          echo "Min   Max   Mean  StdDev  Median  TrimMean  GeoMean  HarmMean"
+
+          echo "*Output*"
+          awk '$2 == "AAD" { print $4  }' pr/build/samples/LiborSwaptionPricer/output.log | \
+          datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+          OUT_TIME=$(awk '$2 == "AAD" { print $4  }' pr/build/samples/LiborSwaptionPricer/output.log | \
+          datamash median 1)
+
+          echo "*Reference*"
+          awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
+          datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+          REF_TIME=$(awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
+          datamash median 1)
+
+          DIFFERENCE=$(echo "scale=9; $REF_TIME - $OUT_TIME" | bc | awk '{printf "%.3f\n", $1}')
+          PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Difference: $DIFFERENCE"
+          echo "Percentage: $PERCENTAGE"
+
+          echo "result=| ${REF_TIME}s | ${OUT_TIME}s | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
