@@ -11,6 +11,8 @@ jobs:
   compare:
     name: Compare Benchmarks
     runs-on: ubuntu-latest
+    container: 
+      image: ghcr.io/foonathan/gcc:12
     steps:
       - name: Check out main branch
         uses: actions/checkout@v4
