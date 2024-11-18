@@ -67,7 +67,7 @@ jobs:
         run: |
           set -e
           apt-get update && apt-get install -y bc datamash --fix-missing
- 
+          
           OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4  }' pr/build/samples/LiborSwaptionPricer/benchmark.log | \
           datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
           OUT_TIME=$(awk '$2 == "AAD" { print $4  }' pr/build/samples/LiborSwaptionPricer/benchmark.log | \
@@ -77,51 +77,29 @@ jobs:
           datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
           REF_TIME=$(awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
           datamash median 1)
-
-          DIFFERENCE=$(echo "scale=9; $REF_TIME - $OUT_TIME" | bc | awk '{printf "%.3f\n", $1}')
-          PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
-          
-          REF_METRICS=($REFERENCE_RESULTS)
-          OUT_METRICS=($OUTPUT_RESULTS)
-
-          echo "ref_time=$REF_TIME" >> $GITHUB_OUTPUT
-          echo "out_time=$OUT_TIME" >> $GITHUB_OUTPUT
-          echo "difference=$DIFFERENCE" >> $GITHUB_OUTPUT
-          echo "percentage=$PERCENTAGE" >> $GITHUB_OUTPUT
-          echo "ref_min=${REF_METRICS[0]}" >> $GITHUB_OUTPUT
-          echo "ref_max=${REF_METRICS[1]}" >> $GITHUB_OUTPUT
-          echo "ref_mean=${REF_METRICS[2]}" >> $GITHUB_OUTPUT
-          echo "ref_stddev=${REF_METRICS[3]}" >> $GITHUB_OUTPUT
-          echo "ref_median=${REF_METRICS[4]}" >> $GITHUB_OUTPUT
-          echo "ref_trimmean=${REF_METRICS[5]}" >> $GITHUB_OUTPUT
-          echo "ref_geomean=${REF_METRICS[6]}" >> $GITHUB_OUTPUT
-          echo "ref_harmmean=${REF_METRICS[7]}" >> $GITHUB_OUTPUT
-          echo "out_min=${OUT_METRICS[0]}" >> $GITHUB_OUTPUT
-          echo "out_max=${OUT_METRICS[1]}" >> $GITHUB_OUTPUT
-          echo "out_mean=${OUT_METRICS[2]}" >> $GITHUB_OUTPUT
-          echo "out_stddev=${OUT_METRICS[3]}" >> $GITHUB_OUTPUT
-          echo "out_median=${OUT_METRICS[4]}" >> $GITHUB_OUTPUT
-          echo "out_trimmean=${OUT_METRICS[5]}" >> $GITHUB_OUTPUT
-          echo "out_geomean=${OUT_METRICS[6]}" >> $GITHUB_OUTPUT
-          echo "out_harmmean=${OUT_METRICS[7]}" >> $GITHUB_OUTPUT
-
+      
+          # Write the results to a markdown file
+          echo "### Benchmark Comparison" > benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "**Output Results:**" >> benchmark_results.md
+          echo "$OUTPUT_RESULTS" >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "**Output Time:**" >> benchmark_results.md
+          echo "$OUT_TIME" >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "**Reference Results:**" >> benchmark_results.md
+          echo "$REFERENCE_RESULTS" >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "**Reference Time:**" >> benchmark_results.md
+          echo "$REF_TIME" >> benchmark_results.md
+      
+          echo "RESULTS_FILE=$(pwd)/benchmark_results.md" >> $GITHUB_ENV
+      
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ### Benchmark Comparison
-
-            | Metric        | Reference (s)   | Output (s)      |
-            |---------------|-----------------|-----------------|
-            | **Min**       | `${{ steps.compare.outputs.ref_min }}` | `${{ steps.compare.outputs.out_min }}` |
-            | **Max**       | `${{ steps.compare.outputs.ref_max }}` | `${{ steps.compare.outputs.out_max }}` |
-            | **Mean**      | `${{ steps.compare.outputs.ref_mean }}` | `${{ steps.compare.outputs.out_mean }}` |
-            | **StdDev**    | `${{ steps.compare.outputs.ref_stddev }}` | `${{ steps.compare.outputs.out_stddev }}` |
-            | **Median**    | `${{ steps.compare.outputs.ref_median }}` | `${{ steps.compare.outputs.out_median }}` |
-            | **TrimMean**  | `${{ steps.compare.outputs.ref_trimmean }}` | `${{ steps.compare.outputs.out_trimmean }}` |
-            | **GeoMean**   | `${{ steps.compare.outputs.ref_geomean }}` | `${{ steps.compare.outputs.out_geomean }}` |
-            | **HarmMean**  | `${{ steps.compare.outputs.ref_harmmean }}` | `${{ steps.compare.outputs.out_harmmean }}` |
-
-            **Difference:** `${{ steps.compare.outputs.difference }}s`  
-            **Improvement:** `${{ steps.compare.outputs.percentage }}%`
+            $(cat $RESULTS_FILE)
+        env:
+          RESULTS_FILE: ${{ env.RESULTS_FILE }}
