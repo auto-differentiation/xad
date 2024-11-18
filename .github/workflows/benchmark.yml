@@ -41,6 +41,22 @@ jobs:
           mkdir pr/build main/build
           echo "Setup complete"
 
+      - name: Verify main directory
+        run: |
+          if [ -d "main" ]; then
+            echo "main is a directory"
+          else
+            echo "main is not a directory"
+            exit 1
+          fi
+
+      - name: Debug main directory permissions
+        run: |
+          echo "Directory ownership and permissions:"
+          ls -ld main
+          echo "Contents of main:"
+          ls -la main
+
       - name: Reference
         run: |
           cd main
