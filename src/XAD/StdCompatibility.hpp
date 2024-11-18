@@ -205,6 +205,82 @@ struct is_compound<xad::FReal<T>> : std::true_type
 {
 };
 
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+
+// For some reason, in VS 2022, a generic template for is_floating_point_v is not used
+// in overload resolution. We need to fully specialise the template for common types
+// here (first and second order only for now)
+
+#define XAD_TEMPLATE_TRAIT_FUNC_FIRST(name_v, value)                                               \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<double>> = value;                                      \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<float>> = value;                                       \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<long double>> = value;                                 \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<double>> = value;                                      \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<float>> = value;                                       \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<long double>> = value
+
+#define XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, value)                                              \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<xad::AReal<double>>> = value;                          \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<xad::AReal<float>>> = value;                           \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<xad::AReal<long double>>> = value;                     \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<xad::AReal<double>>> = value;                          \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<xad::AReal<float>>> = value;                           \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<xad::AReal<long double>>> = value;                     \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<xad::FReal<double>>> = value;                          \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<xad::FReal<float>>> = value;                           \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::AReal<xad::FReal<long double>>> = value;                     \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<xad::FReal<double>>> = value;                          \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<xad::FReal<float>>> = value;                           \
+    template <>                                                                                    \
+    inline constexpr bool name_v<xad::FReal<xad::FReal<long double>>> = value
+
+#define XAD_TEMPLATE_TRAIT_FUNC(name_v, value)                                                     \
+    XAD_TEMPLATE_TRAIT_FUNC_FIRST(name_v, value);                                                  \
+    XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, value)
+
+XAD_TEMPLATE_TRAIT_FUNC(is_floating_point_v, true);
+XAD_TEMPLATE_TRAIT_FUNC(is_arithmetic_v, true);
+XAD_TEMPLATE_TRAIT_FUNC(is_integral_v, false);
+XAD_TEMPLATE_TRAIT_FUNC(is_fundamental_v, false);
+XAD_TEMPLATE_TRAIT_FUNC(is_scalar_v, false);
+XAD_TEMPLATE_TRAIT_FUNC(is_compound_v, true);
+
+#undef XAD_TEMPLATE_TRAIT_FUNC
+#undef XAD_TEMPLATE_TRAIT_FUNC_FIRST
+#undef XAD_TEMPLATE_TRAIT_FUNC_SECOND
+
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<double>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<float>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<long double>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FReal<double>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FReal<float>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FReal<long double>>> = true;
+
+#endif
+
 #if defined(_MSC_VER)
 
 // for MSVC, we need this workaround so that the safety checks in their STL
@@ -215,13 +291,66 @@ struct is_compound<xad::FReal<T>> : std::true_type
 //
 // (In GCC, std::is_floating_point is used instead, where traits above work)
 
-template <class T>
-constexpr bool _Is_any_of_v<xad::AReal<T>, float, double, long double> =
-    _Is_any_of_v<T, float, double, long double>;
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L || defined(__clang__))
+#define _XAD_INLINE_VAR inline
+#else
+#define _XAD_INLINE_VAR
+#endif
 
-template <class T>
-constexpr bool _Is_any_of_v<xad::FReal<T>, float, double, long double> =
-    _Is_any_of_v<T, float, double, long double>;
+template <>
+_XAD_INLINE_VAR constexpr bool _Is_any_of_v<xad::AReal<double>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool _Is_any_of_v<xad::AReal<float>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool _Is_any_of_v<xad::AReal<long double>, float, double, long double> =
+    true;
+template <>
+_XAD_INLINE_VAR constexpr bool _Is_any_of_v<xad::FReal<double>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool _Is_any_of_v<xad::FReal<float>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool _Is_any_of_v<xad::FReal<long double>, float, double, long double> =
+    true;
+
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::AReal<xad::AReal<double>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::AReal<xad::AReal<float>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::AReal<xad::AReal<long double>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::FReal<xad::AReal<double>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::FReal<xad::AReal<float>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::FReal<xad::AReal<long double>>, float, double, long double> = true;
+
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::AReal<xad::FReal<double>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::AReal<xad::FReal<float>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::AReal<xad::FReal<long double>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::FReal<xad::FReal<double>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::FReal<xad::FReal<float>>, float, double, long double> = true;
+template <>
+_XAD_INLINE_VAR constexpr bool
+    _Is_any_of_v<xad::FReal<xad::FReal<long double>>, float, double, long double> = true;
+
+#undef _XAD_INLINE_VAR
 
 #else
 }

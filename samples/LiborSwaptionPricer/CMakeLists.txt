@@ -1,6 +1,7 @@
 ##############################################################################
 #   
-#  Hessian sample CMake file
+#  Cmake file for 1st order adjoint mode for a Monte-Carlo Libor Swaption
+#  portfolio pricer.
 #
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
@@ -22,4 +23,14 @@
 #   
 ##############################################################################
 
-xad_add_sample(Hessian SOURCES main.cpp)
+xad_add_sample(LiborSwaptionPricer 
+  SOURCES 
+    LiborData.hpp  
+    LiborFunctions.hpp 
+    LiborPricers.hpp
+    LiborPricers.cpp 
+    main.cpp
+  TEST_ARGS
+    100 
+    test
+)

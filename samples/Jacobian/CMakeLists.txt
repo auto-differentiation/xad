@@ -22,4 +22,4 @@
 #   
 ##############################################################################
 
-xad_add_sample(Jacobian main.cpp)
+xad_add_sample(Jacobian SOURCES main.cpp)

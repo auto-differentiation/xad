@@ -270,6 +270,39 @@ TYPED_TEST(StdCompatibilityTempl, Traits)
                   "trivially destructable for fwd mode");
 }
 
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+TYPED_TEST(StdCompatibilityTempl, TraitsTemplateVars)
+{
+    static_assert(std::is_floating_point_v<TypeParam>, "active real should be floating point");
+    static_assert(std::is_arithmetic_v<TypeParam>, "active real should be arithmetic");
+    static_assert(!std::is_pod_v<TypeParam>, "active type is not POD");
+    static_assert(std::is_convertible_v<TypeParam, TypeParam>, "convertible to itself");
+    static_assert(std::is_convertible_v<double, TypeParam>, "doubles are convertible");
+    static_assert(std::is_convertible_v<int, TypeParam>, "integers are convertible");
+    static_assert(!std::is_convertible_v<TypeParam, int>, "not implicitly convertible to int");
+    static_assert(!std::is_convertible_v<TypeParam, long long>,
+                  "not implicitly convertible to long long");
+    static_assert(!std::is_convertible_v<TypeParam, char>, "not implicitly convertible to char");
+    static_assert(std::is_integral_v<TypeParam> == false, "not an integral type");
+    static_assert(std::is_fundamental_v<TypeParam> == false, "not fundamental");
+    static_assert(!std::is_scalar_v<TypeParam>,
+                  "it's not a scalar type - would cause issues with constexpr etc");
+    static_assert(std::is_object_v<TypeParam>, "it's an object type");
+    static_assert(std::is_compound_v<TypeParam>, "it's compound");
+    static_assert(!std::is_trivial_v<TypeParam>, "it's not a trivial type");
+    // forward or forward over forward is trivally copyable
+    constexpr bool fwd =
+        xad::ExprTraits<TypeParam>::isForward &&
+        (xad::ExprTraits<typename xad::ExprTraits<TypeParam>::scalar_type>::isForward ||
+         !xad::ExprTraits<typename xad::ExprTraits<TypeParam>::scalar_type>::isExpr);
+#if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
+    static_assert(std::is_trivially_copyable_v<TypeParam> == fwd, "trivially copyable");
+#endif
+    static_assert(std::is_trivially_destructible_v<TypeParam> == fwd,
+                  "trivially destructable for fwd mode");
+}
+#endif
+
 template <class T>
 class StdCompatibilityConstexprTempl : public ::testing::Test
 {
