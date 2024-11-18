@@ -41,11 +41,11 @@ jobs:
           ls -l
           file ./LiborSwaptionPricer
           chmod +x ./LiborSwaptionPricer
-          rm -f ../reference.log || true
+          rm -f reference.log || true
           # warmup run
           ./LiborSwaptionPricer 50000
           for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
-            ./LiborSwaptionPricer 50000 | tee -a ../reference.log ; \
+            ./LiborSwaptionPricer 50000 | tee -a reference.log ; \
           done
 
       - name: Benchmark
