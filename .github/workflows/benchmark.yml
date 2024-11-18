@@ -34,7 +34,7 @@ jobs:
       - name: Reference
         run: |
           cd main
-          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
           cd build/samples/LiborSwaptionPricer
           ./LiborSwaptionPricer 50000 > main_benchmark.log
@@ -43,7 +43,7 @@ jobs:
       - name: Benchmark
         run: |
           cd pr
-          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
           cd build/samples/LiborSwaptionPricer
           ./LiborSwaptionPricer 50000 > pr_benchmark.log
