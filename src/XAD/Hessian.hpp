@@ -107,7 +107,7 @@ void computeHessian(const std::vector<FReal<FReal<T>>> &vec,
                     std::function<FReal<FReal<T>>(std::vector<FReal<FReal<T>>> &)> foo,
                     RowIterator first, RowIterator last)
 {
-    std::size_t domain(static_cast<std::size_t>(vec.size()));
+    std::size_t domain = vec.size();
 
     if (static_cast<std::size_t>(std::distance(first, last)) != domain ||
         static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != domain)
