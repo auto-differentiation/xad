@@ -35,7 +35,7 @@ jobs:
         working-directory: main
         run: |
           set -e
-          cd build/samples/LiborSwaptionPricer/ref
+          cd build/samples/LiborSwaptionPricer
           ls -l
           file ./LiborSwaptionPricer
           chmod +x ./LiborSwaptionPricer
