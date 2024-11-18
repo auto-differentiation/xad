@@ -1,0 +1,60 @@
+name: Benchmarks
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+jobs:
+  compare:
+    name: Compare Benchmarks
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/foonathan/gcc:12
+
+    steps:
+      # checkout pr
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          path: pr
+
+      # checkout main
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      - name: Setup
+        run: |
+          mkdir pr/build main/build
+          echo "Setup complete"
+
+      - name: Reference
+        run: |
+          cd main
+          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+          cd build/samples/LiborSwaptionPricer
+          ./LiborSwaptionPricer 50000 > main_benchmark.log
+        working-directory: main
+
+      - name: Benchmark
+        run: |
+          cd pr
+          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+          cd build/samples/LiborSwaptionPricer
+          ./LiborSwaptionPricer 50000 > pr_benchmark.log
+        working-directory: pr
+
+      - name: Compare
+        run: |
+          PR_TIME=$(grep "Time" pr/build/samples/LiborSwaptionPricer/pr_benchmark.log | awk '{print $NF}')
+          MAIN_TIME=$(grep "Time" main/build/samples/LiborSwaptionPricer/main_benchmark.log | awk '{print $NF}')
+          DIFF=$(echo "$MAIN_TIME - $PR_TIME" | bc)
+          PERCENT=$(echo "scale=2; ($DIFF / $MAIN_TIME) * 100" | bc)
+          echo "Reference Time (Main): $MAIN_TIME"
+          echo "PR Time: $PR_TIME"
+          echo "Difference: $DIFF seconds"
+          echo "Improvement: $PERCENT%"
