@@ -54,7 +54,7 @@ void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
                     RowIterator first, RowIterator last,
                     Tape<FReal<T>> *tape = Tape<FReal<T>>::getActive())
 {
-    std::size_t domain(static_cast<std::size_t>(vec.size()));
+    std::size_t domain = vec.size();
 
     if (static_cast<std::size_t>(std::distance(first, last)) != domain ||
         static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != domain)
