@@ -113,7 +113,7 @@ void computeJacobian(const std::vector<FReal<T>> &vec,
     std::size_t domain = vec.size();
     std::size_t codomain = foo(v).size();
 
-    if (std::distance(first, last) != codomain)
+    if (static_cast<std::size_t>(std::distance(first, last)) != codomain)
         throw OutOfRange("Iterator not allocated enough space (codomain)");
 
     auto row = first;
