@@ -100,7 +100,6 @@ jobs:
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ${{ env.RESULTS_FILE }}
+          body-path: ${{ env.RESULTS_FILE }}
         env:
           RESULTS_FILE: ${{ env.RESULTS_FILE }}
