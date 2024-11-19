@@ -112,6 +112,10 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
 
+    strategy:
+      matrix:
+        tests: ["testPathwiseGreeks"]
+
     steps:
       - name: Hardware characteristics
         run: |
@@ -174,14 +178,14 @@ jobs:
 
           cmake --build .
 
-      - name: Reference Pathwise Greeks Benchmark
+      - name: Reference ${{ matrix.tests }}
         run: |
           cd QuantLib/build/test-suite
-          rm -f reference.log || true
+          rm -f ${{ matrix.tests }}-reference.log || true
           # warmup run
-          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" 
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/${{ matrix.tests }}" | grep -v "is skipped because" 
           for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
-            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a reference.log ; \
+            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/${{ matrix.tests }}" | grep -v "is skipped because" | tee -a ${{ matrix.tests }}-reference.log ; \
           done
 
       - name: Benchmark Build
@@ -204,24 +208,24 @@ jobs:
 
           cmake --build .
 
-      - name: Benchmark Pathwise Greeks Benchmark
+      - name: Benchmark ${{ matrix.tests }}
         run: |
           cd QuantLib/benchmark-build/test-suite
-          rm -f benchmark.log || true
+          rm -f ${{ matrix.tests }}-benchmark.log || true
           # warmup run
-          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" 
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/${{ matrix.tests }}" | grep -v "is skipped because" 
           for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
-            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a benchmark.log ; \
+            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/${{ matrix.tests }}" | grep -v "is skipped because" | tee -a ${{ matrix.tests }}-benchmark.log ; \
           done
           
-      - name: Compare
+      - name: Compare ${{ matrix.tests }}
         id: compare
         run: |
           set -e
           apt-get update && apt-get install -y bc datamash --fix-missing
 
-          REFERENCE_LOG="QuantLib/build/test-suite/reference.log"
-          BENCHMARK_LOG="QuantLib/benchmark-build/test-suite/benchmark.log"
+          REFERENCE_LOG="QuantLib/build/test-suite/${{ matrix.tests }}-reference.log"
+          BENCHMARK_LOG="QuantLib/benchmark-build/test-suite/${{ matrix.tests }}-benchmark.log"
 
           echo "Min   Max   Mean  StdDev   Median  TrimMean  GeoMean  HarmMean"
           
