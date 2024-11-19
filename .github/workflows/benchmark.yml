@@ -222,30 +222,51 @@ jobs:
         run: |
           set -e
           apt-get update && apt-get install -y bc datamash --fix-missing
+          
+          REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
+          datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          REF_TIME=$(awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
+          datamash median 1)
 
           REFERENCE_LOG="QuantLib/build/test-suite/reference.log"
           BENCHMARK_LOG="QuantLib/benchmark-build/test-suite/benchmark.log"
 
-          OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          OUT_TIME=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash median 1)
+          echo "Min   Max   Mean  StdDev   Median  TrimMean  GeoMean  HarmMean"
+          
+          echo "*Output*"
+          OUTPUT_RESULTS=$(awk '$1 == "For" && $7 == "average" { print $8 }' "$BENCHMARK_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          OUT_TIME=$(awk '$1 == "For" && $7 == "average" { print $8 }' "$BENCHMARK_LOG" | datamash median 1)
+          
+          echo "*Reference*"
+          REFERENCE_RESULTS=$(awk '$1 == "For" && $7 == "average" { print $8 }' "$REFERENCE_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          REF_TIME=$(awk '$1 == "For" && $7 == "average" { print $8 }' "$REFERENCE_LOG" | datamash median 1)
 
-          REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          REF_TIME=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash median 1)
+          DIFFERENCE=$(echo "scale=9; $REF_TIME - $OUT_TIME" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Difference: $DIFFERENCE"
+          PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Percentage: $PERCENTAGE"
+          
+          echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
 
           cat <<EOF > benchmark_results.md
+      
           **Output Results:**
           $OUTPUT_RESULTS
-
+          
           **Output Time:**
           $OUT_TIME
-
+          
           **Reference Results:**
           $REFERENCE_RESULTS
-
+          
           **Reference Time:**
           $REF_TIME
-          EOF
 
+          **Difference:**
+          $DIFF
+          $PERCENTAGE %
+          EOF
+      
           echo "RESULTS_FILE=$(pwd)/benchmark_results.md" >> $GITHUB_ENV
 
       - name: Comment on PR
