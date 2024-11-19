@@ -151,7 +151,7 @@ jobs:
 
       - name: Setup
         env:
-          tests: '["testPathwiseGreeks", "testSwaptionVolMatrixCoherence"]'
+          tests: "testPathwiseGreeks,testSwaptionVolMatrixCoherence"
         run: |
           apt-get update \
           && apt-get install -y ninja-build bc datamash unzip
@@ -178,14 +178,14 @@ jobs:
 
       - name: Reference Runs
         run: |
-          TESTS=$(echo $TEST_NAMES | jq -r '.[]')
+          IFS=',' read -ra TESTS <<< "$tests"
 
-          echo "Running benchmarks for tests: $TESTS"
+          echo "Running benchmarks for: $tests"
 
           cd QuantLib/build/test-suite
           rm -f reference.log || true
 
-          for TEST_NAME in $TESTS; do
+          for TEST_NAME in "${TESTS[@]}"; do
             echo "Running benchmark for: $TEST_NAME"
 
             ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because"
@@ -219,14 +219,14 @@ jobs:
 
       - name: Benchmark Runs
         run: |
-          TESTS=$(echo $TEST_NAMES | jq -r '.[]')
+          IFS=',' read -ra TESTS <<< "$tests"
 
           echo "Running benchmarks for tests: $TESTS"
 
           cd QuantLib/benchmark-build/test-suite
           rm -f benchmark.log || true
 
-          for TEST_NAME in $TESTS; do
+          for TEST_NAME in "${TESTS[@]}"; do
             echo "Running benchmark for: $TEST_NAME"
 
             ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because"
