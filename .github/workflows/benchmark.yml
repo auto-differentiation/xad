@@ -7,7 +7,6 @@ on:
 
 jobs:
   libor:
-    if: false
     name: Libor Swaption Benchmarks
     runs-on: ubuntu-latest
     container:
@@ -73,18 +72,16 @@ jobs:
         run: |
           set -e
           apt-get update && apt-get install -y bc datamash --fix-missing
+
+          BENCHMARK_LOG=$(pr/build/samples/LiborSwaptionPricer/benchmark.log)
+          REFERENCE_LOG=$(pr/build/samples/LiborSwaptionPricer/reference.log)
           
-          OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4  }' pr/build/samples/LiborSwaptionPricer/benchmark.log | \
-          datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          OUT_TIME=$(awk '$2 == "AAD" { print $4  }' pr/build/samples/LiborSwaptionPricer/benchmark.log | \
-          datamash median 1)
+          OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4  }' "$BENCHMARK_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          OUT_TIME=$(awk '$2 == "AAD" { print $4  }' "$BENCHMARK_LOG" | datamash median 1)
           
-          REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
-          datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          REF_TIME=$(awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
-          datamash median 1)
+          REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4  }' "$REFERENCE_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          REF_TIME=$(awk '$2 == "AAD" { print $4  }' "$REFERENCE_LOG" | datamash median 1)
       
-          # Write the results to a markdown file
           cat <<EOF > benchmark_results.md
       
           **Output Results:**
@@ -241,6 +238,11 @@ jobs:
           PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
           echo "Percentage: $PERCENTAGE"
           
+          echo "Benchmark Log:"
+          cat "$BENCHMARK_LOG"
+          echo "Reference Log:"
+          cat "$REFERENCE_LOG"
+
           echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
 
           cat <<EOF > benchmark_results.md
