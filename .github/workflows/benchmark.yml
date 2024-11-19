@@ -114,7 +114,7 @@ jobs:
 
     strategy:
       matrix:
-        tests: ["testPathwiseGreeks"]
+        tests: ["testPathwiseGreeks", "testSwaptionVolMatrixCoherence"]
 
     steps:
       - name: Hardware characteristics
