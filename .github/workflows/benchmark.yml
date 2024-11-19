@@ -6,25 +6,31 @@ on:
   workflow_dispatch:
 
 jobs:
-  compare:
-    name: Compare Benchmarks
+  libor:
+    if: false
+    name: Libor Swaption Benchmarks
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/foonathan/gcc:12
 
     steps:
-      # checkout pr
+      - name: Hardware characteristics
+        run: |
+          echo "----------------- CPU ----------------"
+          lscpu
+          echo "------------------ Mem ---------------"
+          lsmem
+
       - name: Checkout PR
         uses: actions/checkout@v4
         with:
           path: pr
 
-      # checkout main
       - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: main
           path: main
+          ref: main
 
       - name: Setup
         run: |
@@ -96,6 +102,154 @@ jobs:
       
           echo "RESULTS_FILE=$(pwd)/benchmark_results.md" >> $GITHUB_ENV
       
+      - name: Comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: ${{ env.RESULTS_FILE }}
+        env:
+          RESULTS_FILE: ${{ env.RESULTS_FILE }}
+
+  quantlib:
+    name: QuantLib Benchmarks
+    runs-on: ubuntu-latest
+    container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
+
+    steps:
+      - name: Hardware characteristics
+        run: |
+          echo "----------------- CPU ----------------"
+          lscpu
+          echo "------------------ Mem ---------------"
+          lsmem
+
+      - name: Checkout XAD Main
+        uses: actions/checkout@v4
+        with:
+          path: main
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          path: pr
+
+      - name: Checkout QuantLib
+        uses: actions/checkout@v4
+        with:
+          repository: lballabio/QuantLib
+          ref: v1.35
+          path: QuantLib
+
+      - name: Checkout Risks-Cpp
+        uses: actions/checkout@v4
+        with:
+          path: QuantLib-Risks-Cpp
+          repository: auto-differentiation/QuantLib-Risks-Cpp
+          ref: a1fcf4f0fab0a464710c249aa76871421675babd
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: benchmark-quantlib
+
+      - name: Setup
+        run: |
+          apt-get update \
+          && apt-get install -y ninja-build bc datamash unzip
+
+      - name: Reference
+        run: |
+          cd QuantLib
+          mkdir -p build
+          cd build
+          cmake -G Ninja -DBOOST_ROOT=/usr \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DQLRISKS_DISABLE_AAD=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DQL_EXTERNAL_SUBDIRECTORIES="$(pwd)/main/../../xad;$(pwd)/../../QuantLib-Risks-Cpp" \
+            -DQL_EXTRA_LINK_LIBRARIES=QuantLib-Risks \
+            -DQL_NULL_AS_FUNCTIONS=ON \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            ..
+
+          cmake --build .
+          cd test-suite/ref
+          chmod +x ./quantlib-test-suite
+          export LD_LIBRARY_PATH=.
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because"
+          rm -f reference.log || true
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do
+            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a reference.log
+          done
+
+          # Save reference.log
+          mkdir -p ../../artifacts
+          cp reference.log ../../artifacts/reference.log
+
+      - name: Benchmark
+        run: |
+          cd QuantLib
+          mkdir -p benchmark-build
+          cd benchmark-build
+          cmake -G Ninja -DBOOST_ROOT=/usr \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DQLRISKS_DISABLE_AAD=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DQL_EXTERNAL_SUBDIRECTORIES="$(pwd)/pr/../../xad;$(pwd)/../../QuantLib-Risks-Cpp" \
+            -DQL_EXTRA_LINK_LIBRARIES=QuantLib-Risks \
+            -DQL_NULL_AS_FUNCTIONS=ON \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            ..
+
+          cmake --build .
+          cd test-suite/ref
+          chmod +x ./quantlib-test-suite
+          export LD_LIBRARY_PATH=.
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because"
+          rm -f benchmark.log || true
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do
+            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a benchmark.log
+          done
+
+          # Save benchmark.log
+          mkdir -p ../../artifacts
+          cp benchmark.log ../../artifacts/benchmark.log
+
+      - name: Compare
+        id: compare
+        run: |
+          set -e
+          apt-get update && apt-get install -y bc datamash --fix-missing
+
+          REFERENCE_LOG="QuantLib/artifacts/reference.log"
+          BENCHMARK_LOG="QuantLib/artifacts/benchmark.log"
+
+          OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          OUT_TIME=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash median 1)
+
+          REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          REF_TIME=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash median 1)
+
+          cat <<EOF > benchmark_results.md
+          **Output Results:**
+          $OUTPUT_RESULTS
+
+          **Output Time:**
+          $OUT_TIME
+
+          **Reference Results:**
+          $REFERENCE_RESULTS
+
+          **Reference Time:**
+          $REF_TIME
+          EOF
+
+          echo "RESULTS_FILE=$(pwd)/benchmark_results.md" >> $GITHUB_ENV
+
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4
         with:
