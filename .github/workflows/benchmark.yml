@@ -159,6 +159,7 @@ jobs:
 
       - name: Reference
         run: |
+          set -e
           cd QuantLib
           mkdir -p build
           cd build
@@ -174,22 +175,20 @@ jobs:
             -DXAD_SIMD_OPTION=AVX2 \
             ..
 
-          cmake --build .
-          cd test-suite/ref
-          chmod +x ./quantlib-test-suite
-          export LD_LIBRARY_PATH=.
-          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because"
+          cd QuantLib/build/test-suite
           rm -f reference.log || true
-          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do
-            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a reference.log
+          # warmup run
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" 
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a reference.log ; \
           done
 
-          # Save reference.log
           mkdir -p ../../artifacts
           cp reference.log ../../artifacts/reference.log
 
       - name: Benchmark
         run: |
+          set -e
           cd QuantLib
           mkdir -p benchmark-build
           cd benchmark-build
@@ -205,17 +204,14 @@ jobs:
             -DXAD_SIMD_OPTION=AVX2 \
             ..
 
-          cmake --build .
-          cd test-suite/ref
-          chmod +x ./quantlib-test-suite
-          export LD_LIBRARY_PATH=.
-          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because"
+          cd QuantLib/build/test-suite
           rm -f benchmark.log || true
-          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do
-            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a benchmark.log
+          # warmup run
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" 
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a benchmark.log ; \
           done
 
-          # Save benchmark.log
           mkdir -p ../../artifacts
           cp benchmark.log ../../artifacts/benchmark.log
 
