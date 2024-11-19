@@ -157,7 +157,7 @@ jobs:
           apt-get update \
           && apt-get install -y ninja-build bc datamash unzip
 
-      - name: Reference
+      - name: Reference Build
         run: |
           set -e
           cd QuantLib
@@ -175,6 +175,8 @@ jobs:
             -DXAD_SIMD_OPTION=AVX2 \
             ..
 
+      - name: Reference Pathwise Greeks Benchmark
+        run: |
           cd QuantLib/build/test-suite
           rm -f reference.log || true
           # warmup run
@@ -186,7 +188,7 @@ jobs:
           mkdir -p ../../artifacts
           cp reference.log ../../artifacts/reference.log
 
-      - name: Benchmark
+      - name: Benchmark Build
         run: |
           set -e
           cd QuantLib
@@ -204,6 +206,8 @@ jobs:
             -DXAD_SIMD_OPTION=AVX2 \
             ..
 
+      - name: Benchmark Pathwise Greeks Benchmark
+        run: |
           cd QuantLib/build/test-suite
           rm -f benchmark.log || true
           # warmup run
