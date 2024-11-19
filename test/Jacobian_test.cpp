@@ -46,8 +46,8 @@ TEST(JacobianTest, SimpleAdjoint)
     std::vector<AD> x = {3.0, 1.0};
 
     // f(x) = [ x[0] + sin(x[1]), x[1] + sin(x[0]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD>
+    { return {v[0] + sin(v[1]), v[1] + sin(v[0])}; };
 
     std::vector<std::vector<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
                                                           {cos(value(x[0])), 1.0}};
@@ -67,8 +67,8 @@ TEST(JacobianTest, SimpleAdjointIteratorAutoTape)
     std::vector<AD> x = {3.0, 1.0};
 
     // f(x) = [ x[0] + sin(x[1]), x[1] + sin(x[0]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD>
+    { return {v[0] + sin(v[1]), v[1] + sin(v[0])}; };
 
     std::list<std::list<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
                                                       {cos(value(x[0])), 1.0}};
@@ -95,8 +95,8 @@ TEST(JacobianTest, SimpleAdjointIteratorFetchTape)
     std::vector<AD> x = {3.0, 1.0};
 
     // f(x) = [ x[0] + sin(x[1]), x[1] + sin(x[0]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD>
+    { return {v[0] + sin(v[1]), v[1] + sin(v[0])}; };
 
     std::list<std::list<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
                                                       {cos(value(x[0])), 1.0}};
@@ -120,8 +120,8 @@ TEST(JacobianTest, SimpleForward)
     std::vector<AD> x = {-2.0, 1.0};
 
     // f(x) = [ x[0] + sin(x[1]), x[1] + sin(x[0]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD>
+    { return {v[0] + sin(v[1]), v[1] + sin(v[0])}; };
 
     std::vector<std::vector<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
                                                           {cos(value(x[0])), 1.0}};
@@ -140,8 +140,8 @@ TEST(JacobianTest, SimpleForwardIterator)
     std::vector<AD> x = {-2.0, 1.0};
 
     // f(x) = [ x[0] + sin(x[1]), x[1] + sin(x[0]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {x[0] + sin(x[1]), x[1] + sin(x[0])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD>
+    { return {v[0] + sin(v[1]), v[1] + sin(v[0])}; };
 
     std::list<std::list<double>> expected_jacobian = {{1.0, cos(value(x[1]))},  //
                                                       {cos(value(x[0])), 1.0}};
@@ -168,8 +168,8 @@ TEST(JacobianTest, ComplexFunctionAdjoint)
     std::vector<AD> x = {1.0, 2.0, 3.0, 4.0};
 
     // f(x) = [ x[0] * x[1], x[2] * exp(x[3]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {x[0] * x[1], x[2] * exp(x[3])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD>
+    { return {v[0] * v[1], v[2] * exp(v[3])}; };
 
     std::vector<std::vector<double>> expected_jacobian = {
         {value(x[1]), value(x[0]), 0.0, 0.0},
@@ -190,7 +190,7 @@ TEST(JacobianTest, DomainLargerThanCodomainForward)
     std::vector<AD> x = {1.0, 2.0, 3.0, 4.0};
 
     // f(x) = [ x[0] + x[1], x[2] * x[3] ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0] + x[1], x[2] * x[3]}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD> { return {v[0] + v[1], v[2] * v[3]}; };
 
     std::vector<std::vector<double>> expected_jacobian = {{1.0, 1.0, 0.0, 0.0},  //
                                                           {0.0, 0.0, value(x[3]), value(x[2])}};
@@ -209,7 +209,7 @@ TEST(JacobianTest, DomainLargerThanCodomainAdjoint)
     std::vector<AD> x = {1.0, 2.0, 3.0, 4.0};
 
     // f(x) = [ x[0] + x[1], x[2] * x[3] ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0] + x[1], x[2] * x[3]}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD> { return {v[0] + v[1], v[2] * v[3]}; };
 
     std::vector<std::vector<double>> expected_jacobian = {{1.0, 1.0, 0.0, 0.0},  //
                                                           {0.0, 0.0, value(x[3]), value(x[2])}};
@@ -231,8 +231,8 @@ TEST(JacobianTest, DomainSmallerThanCodomainAdjoint)
     std::vector<AD> x = {2.0, 3.0};
 
     // f(x) = [ x[0] + x[1], x[0] - x[1], x[0] * x[1] ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {x[0] + x[1], x[0] - x[1], x[0] * x[1]}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD>
+    { return {v[0] + v[1], v[0] - v[1], v[0] * v[1]}; };
 
     std::vector<std::vector<double>> expected_jacobian = {{1.0, 1.0},  //
                                                           {1.0, -1.0},
@@ -253,8 +253,8 @@ TEST(JacobianTest, ComplexDomainNotEqualCodomainForwardIterator)
     std::vector<AD> x = {1.0, 2.0, 3.0};
 
     // f(x) = [ x[0] + x[1], x[1] * x[2], exp(x[0]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
-    { return {x[0] + x[1], x[1] * x[2], exp(x[0])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD>
+    { return {v[0] + v[1], v[1] * v[2], exp(v[0])}; };
 
     std::list<std::list<double>> expected_jacobian = {{1.0, 1.0, 0.0},  //
                                                       {0.0, value(x[2]), value(x[1])},
@@ -279,7 +279,7 @@ TEST(JacobianTest, TrigonometricFunctionForward)
     std::vector<AD> x = {M_PI / 4, M_PI / 3};
 
     // f(x) = [ sin(x[0]), cos(x[1]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {sin(x[0]), cos(x[1])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD> { return {sin(v[0]), cos(v[1])}; };
 
     std::vector<std::vector<double>> expected_jacobian = {{cos(value(x[0])), 0.0},  //
                                                           {0.0, -sin(value(x[1]))}};
@@ -298,7 +298,7 @@ TEST(JacobianTest, TrigonometricFunctionAdjointAutoTape)
     std::vector<AD> x = {M_PI / 4, M_PI / 3};
 
     // f(x) = [ sin(x[0]), cos(x[1]) ]
-    auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {sin(x[0]), cos(x[1])}; };
+    auto foo = [](std::vector<AD> &v) -> std::vector<AD> { return {sin(v[0]), cos(v[1])}; };
 
     std::vector<std::vector<double>> expected_jacobian = {{cos(value(x[0])), 0.0},  //
                                                           {0.0, -sin(value(x[1]))}};
