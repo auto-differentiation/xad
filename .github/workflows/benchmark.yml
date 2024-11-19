@@ -222,11 +222,6 @@ jobs:
         run: |
           set -e
           apt-get update && apt-get install -y bc datamash --fix-missing
-          
-          REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
-          datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          REF_TIME=$(awk '$2 == "AAD" { print $4  }' main/build/samples/LiborSwaptionPricer/reference.log | \
-          datamash median 1)
 
           REFERENCE_LOG="QuantLib/build/test-suite/reference.log"
           BENCHMARK_LOG="QuantLib/benchmark-build/test-suite/benchmark.log"
