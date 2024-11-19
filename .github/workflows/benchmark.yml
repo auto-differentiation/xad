@@ -175,6 +175,8 @@ jobs:
             -DXAD_SIMD_OPTION=AVX2 \
             ..
 
+          cmake --build .
+
       - name: Reference Pathwise Greeks Benchmark
         run: |
           cd QuantLib/build/test-suite
@@ -206,9 +208,11 @@ jobs:
             -DXAD_SIMD_OPTION=AVX2 \
             ..
 
+          cmake --build .
+
       - name: Benchmark Pathwise Greeks Benchmark
         run: |
-          cd QuantLib/build/test-suite
+          cd QuantLib/benchmark-build/test-suite
           rm -f benchmark.log || true
           # warmup run
           ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" 
