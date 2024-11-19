@@ -167,7 +167,7 @@ jobs:
             -DQLRISKS_DISABLE_AAD=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DQL_EXTERNAL_SUBDIRECTORIES="$(pwd)/main/../../xad;$(pwd)/../../QuantLib-Risks-Cpp" \
+            -DQL_EXTERNAL_SUBDIRECTORIES="$(pwd)/../../main;$(pwd)/../../QuantLib-Risks-Cpp" \
             -DQL_EXTRA_LINK_LIBRARIES=QuantLib-Risks \
             -DQL_NULL_AS_FUNCTIONS=ON \
             -DXAD_NO_THREADLOCAL=ON \
@@ -198,7 +198,7 @@ jobs:
             -DQLRISKS_DISABLE_AAD=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DQL_EXTERNAL_SUBDIRECTORIES="$(pwd)/pr/../../xad;$(pwd)/../../QuantLib-Risks-Cpp" \
+            -DQL_EXTERNAL_SUBDIRECTORIES="$(pwd)/pr/../../pr;$(pwd)/../../QuantLib-Risks-Cpp" \
             -DQL_EXTRA_LINK_LIBRARIES=QuantLib-Risks \
             -DQL_NULL_AS_FUNCTIONS=ON \
             -DXAD_NO_THREADLOCAL=ON \
