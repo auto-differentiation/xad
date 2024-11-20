@@ -7,6 +7,7 @@ on:
 
 jobs:
   libor:
+    if: false # temporarily disabled
     name: Libor Swaption Benchmarks
     runs-on: ubuntu-latest
     container:
@@ -177,8 +178,10 @@ jobs:
           cmake --build .
 
       - name: Reference Runs
+        working-directory: /__w/xad/xad
         run: |
-          /xad/scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
+          chmod +x xad/scripts/run_benchmark.sh
+          bash /xad/scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
 
       - name: Benchmark Build
         run: |
@@ -201,9 +204,11 @@ jobs:
           cmake --build .
 
       - name: Benchmark Runs
+        working-directory: /__w/xad/xad
         run: |
-          /xad/scripts/run_benchmark.sh benchmark ${{ vars.REPETITIONS }} ${{ env.TESTS }}
-          
+          chmod +x xad/scripts/run_benchmark.sh
+          bash /xad/scripts/run_benchmark.sh benchmark ${{ vars.REPETITIONS }} ${{ env.TESTS }}
+            
       - name: Compare
         id: compare
         run: |
