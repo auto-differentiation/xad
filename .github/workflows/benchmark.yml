@@ -178,8 +178,8 @@ jobs:
           cmake --build .
 
       - name: Reference Runs
-        working-directory: /__w/xad/xad
         run: |
+          ls -R
           chmod +x scripts/run_benchmark.sh
           bash scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
 
@@ -213,7 +213,8 @@ jobs:
         id: compare
         working-directory: /__w/xad/xad
         run: |
-          chmod +x compare_results.sh
+          apt-get update && apt-get install -y bc datamash --fix-missing
+          chmod +x scripts/compare_results.sh
 
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4
