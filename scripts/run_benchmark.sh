@@ -16,28 +16,54 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
+BASE_DIR=$(pwd)
+LOG_DIR="$BASE_DIR/logs"
+mkdir -p "$LOG_DIR"
+
 if [ "$RUN_TYPE" == "reference" ]; then
-  TEST_SUITE_DIR="QuantLib/build/test-suite"
-  LOG_PREFIX="reference"
+  TEST_SUITE_DIR="$BASE_DIR/QuantLib/build/test-suite"
+  EXAMPLES_DIR="$BASE_DIR/QuantLib/build/QuantLib-Risks-Cpp/Examples"
+  LOG_FILE="$LOG_DIR/reference.log"
 elif [ "$RUN_TYPE" == "benchmark" ]; then
-  TEST_SUITE_DIR="QuantLib/benchmark-build/test-suite"
-  LOG_PREFIX="benchmark"
+  TEST_SUITE_DIR="$BASE_DIR/QuantLib/benchmark-build/test-suite"
+  EXAMPLES_DIR="$BASE_DIR/QuantLib/benchmark-build/QuantLib-Risks-Cpp/Examples"
+  LOG_FILE="$LOG_DIR/benchmark.log"
 fi
 
-echo "Running $RUN_TYPE runs for tests: ${tests[*]}"
+echo "Logs will be saved to: $LOG_FILE"
+rm -f "$LOG_FILE" || true
 
-cd "$TEST_SUITE_DIR" || exit 1
-rm -f "${LOG_PREFIX}.log" || true
+echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
 
 for TEST_NAME in "${tests[@]}"; do
-  echo "Running $RUN_TYPE for: $TEST_NAME"
+  if [[ "$TEST_NAME" == test* ]]; then
+    # Running as a test
+    echo "Running $RUN_TYPE test: $TEST_NAME"
+    cd "$TEST_SUITE_DIR" || exit 1
 
-  ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because"
+    ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because"
 
-  for i in $(seq 1 $REPETITIONS); do
-    ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because" | tee -a "${LOG_PREFIX}_${TEST_NAME}.log"
-  done
-  cat "${LOG_PREFIX}_${TEST_NAME}.log" >> "${LOG_PREFIX}.log"
+    for i in $(seq 1 $REPETITIONS); do
+      ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because" | tee -a "$LOG_FILE"
+    done
+
+  else
+    # Running as an example
+    echo "Running $RUN_TYPE example: $TEST_NAME"
+    cd "$EXAMPLES_DIR/$TEST_NAME" || exit 1
+
+    ls -l
+    file ./"$TEST_NAME"
+    chmod +x ./"$TEST_NAME"
+    export LD_LIBRARY_PATH=.
+    echo "Warmup run for $TEST_NAME"
+    ./"$TEST_NAME" 200
+
+    for i in $(seq 1 $REPETITIONS); do
+      ./"$TEST_NAME" 200 | tee -a "$LOG_FILE"
+    done
+    ls -l ..
+  fi
 done
 
-echo "$RUN_TYPE runs completed. Combined log saved to ${LOG_PREFIX}.log."
+echo "$RUN_TYPE runs completed. Combined log saved to $LOG_FILE."

@@ -111,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
     env:
-      TESTS: "testPathwiseGreeks testSwaptionVolMatrixCoherence"
+      TESTS: "testPathwiseGreeks testSwaptionVolMatrixCoherence AdjointBermudanSwaption"
 
     steps:
       - name: Hardware characteristics
