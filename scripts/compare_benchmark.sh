@@ -43,7 +43,6 @@ process_log() {
       awk -F 'it took on average ' '{print $2}' | \
       awk '{raw_time=$1; sub(/[a-z]+$/, "", raw_time); unit=$2; print raw_time, unit}'
   fi
-  fi
 }
 
 extract_normalized_times() {
