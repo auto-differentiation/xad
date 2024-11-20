@@ -180,8 +180,8 @@ jobs:
       - name: Reference Runs
         run: |
           ls -R
-          chmod +x scripts/run_benchmark.sh
-          bash scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
+          chmod +x ./main/scripts/run_benchmark.sh
+          bash ./main/scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
 
       - name: Benchmark Build
         run: |
@@ -204,10 +204,9 @@ jobs:
           cmake --build .
 
       - name: Benchmark Runs
-        working-directory: /__w/xad/xad
         run: |
-          chmod +x scripts/run_benchmark.sh
-          bash scripts/run_benchmark.sh benchmark ${{ vars.REPETITIONS }} ${{ env.TESTS }}
+          chmod +x ./main/scripts/run_benchmark.sh
+          bash ./main/scripts/run_benchmark.sh benchmark ${{ vars.REPETITIONS }} ${{ env.TESTS }}
             
       - name: Compare
         id: compare
