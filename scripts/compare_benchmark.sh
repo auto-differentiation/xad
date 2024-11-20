@@ -53,5 +53,9 @@ markdown+="$(generate_results "$REFERENCE_LOG" "Reference")\n"
 markdown+="## Benchmark Results\n\n"
 markdown+="$(generate_results "$BENCHMARK_LOG" "Benchmark")\n"
 
+echo -e "Generated Markdown Content:\n"
+echo -e "$markdown"what
 echo -e "$markdown" > benchmark_results.md
 echo "Benchmark and reference results saved to benchmark_results.md"
+
+echo "RESULTS_FILE=$(pwd)/benchmark_results.md" >> $GITHUB_ENV
