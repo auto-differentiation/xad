@@ -27,7 +27,7 @@ compute_difference() {
   local benchmark=$2
 
   local diff=$(echo "$reference - $benchmark" | bc)
-  local percentage_change=$(echo "scale=2; ($diff / $reference) * 100" | bc)
+  local percentage_change=$(awk "BEGIN { printf \"%.2f\", ($diff / $reference) * 100 }")
 
   echo "$diff $percentage_change"
 }
@@ -77,7 +77,7 @@ generate_results() {
   if [[ $test_count -gt 0 ]]; then
     overall_diff=$(echo "$total_ref - $total_bench" | bc)
     overall_percent=$(awk "BEGIN { printf \"%.2f\", ($overall_diff / $total_ref) * 100 }")
-    results+="### Overall Results\n\n"
+    results+="## Overall Results\n\n"
     results+="| Metric     | Reference | Benchmark | Difference | % Change |\n"
     results+="| ---------- | --------- | --------- | ---------- | -------- |\n"
     results+="| Total      | $total_ref | $total_bench | $overall_diff | $overall_percent% |\n\n"
