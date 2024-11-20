@@ -84,7 +84,7 @@ jobs:
           REF_TIME=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash median 1)
 
           DIFF=$(echo "$REF_TIME - $OUT_TIME" | bc)
-          PERCENTAGE_CHANGE=$(echo "scale=2; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100" | bc)
+          PERCENTAGE_CHANGE=$(awk "BEGIN { printf \"%.2f\", ($REF_TIME / $OUT_TIME) * 100 }")
 
           cat <<EOF > benchmark_results.md
           # Libor Benchmark and Reference Results
