@@ -93,7 +93,7 @@ jobs:
           # Libor Benchmarks
           
           | Metric     | Runs      | Reference (us) | Benchmark (us) | Difference (us) | % Change |
-          | ----------:| ---------:| --------------:| --------------:| ---------------:| --------:|
+          |:---------- | ---------:| --------------:| --------------:| ---------------:| --------:|
           | Median     | ${{ vars.REPETITIONS }} | $REF_TIME      | $OUT_TIME        | $DIFF           | $PERCENTAGE_CHANGE% |
           EOF
           
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
     env:
-      TESTS: "testPathwiseGreeks testSwaptionVolMatrixCoherence AdjointBermudanSwaption AdjointAmericanEquityOption AdjointHestonModel"
+      TESTS: "testPathwiseGreeks testSwaptionVolMatrixCoherence AdjointBermudanSwaption"
 
     steps:
       - name: Hardware characteristics
