@@ -191,7 +191,7 @@ jobs:
           echo "=== Running grep ==="
           grep -P '.*?Leaving test case "testSwaptionVolMatrixCoherence"; testing time: [0-9]+us' QuantLib/build/test-suite/reference.log
           echo "=== Extracting Numbers ==="
-          grep -P '.*?Leaving test case "testSwaptionVolMatrixCoherence"; testing time: [0-9]+us' QQuantLib/build/test-suite/reference.log | grep -oP '[0-9]+(?=us)'
+          grep -P '.*?Leaving test case "testSwaptionVolMatrixCoherence"; testing time: [0-9]+us' QuantLib/build/test-suite/reference.log | grep -oP '[0-9]+(?=us)'
   
 
       - name: Benchmark Build
