@@ -89,7 +89,7 @@ generate_results() {
   echo "$results"
 }
 
-markdown="# Benchmark and Reference Results\n\n"
+markdown="# QuantLib Benchmark and Reference Results\n\n"
 markdown+="$(generate_results "$REFERENCE_LOG" "$BENCHMARK_LOG" "")\n"
 
 echo -e "Generated Markdown Content:\n"
