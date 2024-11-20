@@ -3,6 +3,8 @@
 REFERENCE_LOG="QuantLib/build/test-suite/reference.log"
 BENCHMARK_LOG="QuantLib/benchmark-build/test-suite/benchmark.log"
 
+ggrep -P "Leaving test case testPathwiseGreeks; testing time: [0-9]+us" t.log | ggrep -oP "[0-9]+(?=us)"
+
 if [[ $# -lt 1 ]]; then
   echo "Usage: $0 <test_name1> [<test_name2> ... <test_nameN>]"
   exit 1
@@ -14,6 +16,12 @@ if [[ ! -f "$REFERENCE_LOG" || ! -f "$BENCHMARK_LOG" ]]; then
   echo "Error: One or both log files do not exist."
   exit 1
 fi
+
+echo "Contents of Benchmark Log"
+cat "$BENCHMARK_LOG" || echo "Benchmark log not found or empty."
+
+echo "Contents of Reference Log"
+cat "$REFERENCE_LOG" || echo "Reference log not found or empty."
 
 process_log() {
   local log_file=$1
