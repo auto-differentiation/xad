@@ -111,6 +111,8 @@ jobs:
     name: QuantLib Benchmarks
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
+    env:
+      TESTS: "testPathwiseGreeks testSwaptionVolMatrixCoherence"
 
     steps:
       - name: Hardware characteristics
@@ -176,7 +178,7 @@ jobs:
 
       - name: Reference Runs
         run: |
-          ./scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} testPathwiseGreeks testSwaptionVolMatrixCoherence
+          /xad/scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
 
       - name: Benchmark Build
         run: |
@@ -200,7 +202,7 @@ jobs:
 
       - name: Benchmark Runs
         run: |
-          ./scripts/run_benchmark.sh benchmark ${{ vars.REPETITIONS }} testPathwiseGreeks testSwaptionVolMatrixCoherence
+          /xad/scripts/run_benchmark.sh benchmark ${{ vars.REPETITIONS }} ${{ env.TESTS }}
           
       - name: Compare
         id: compare
