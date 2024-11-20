@@ -19,7 +19,7 @@ process_log() {
   local log_file=$1
   local test_name=$2
 
-  grep -P "Leaving test case \"$test_name\"; testing time: [0-9]+us" $log_file | grep -oP "[0-9]+(?=us)"
+  grep -P "Leaving test case $test_name; testing time: [0-9]+us" $log_file | grep -oP "[0-9]+(?=us)"
 }
 
 generate_results() {
