@@ -3,8 +3,6 @@
 REFERENCE_LOG="QuantLib/build/test-suite/reference.log"
 BENCHMARK_LOG="QuantLib/benchmark-build/test-suite/benchmark.log"
 
-ggrep -P "Leaving test case testPathwiseGreeks; testing time: [0-9]+us" t.log | ggrep -oP "[0-9]+(?=us)"
-
 if [[ $# -lt 1 ]]; then
   echo "Usage: $0 <test_name1> [<test_name2> ... <test_nameN>]"
   exit 1
@@ -27,7 +25,7 @@ process_log() {
   local log_file=$1
   local test_name=$2
 
-  grep -P "Leaving test case $test_name; testing time: [0-9]+us" $log_file | grep -oP "[0-9]+(?=us)"
+  grep -P ".*?Leaving test case $test_name; testing time: [0-9]+us" $log_file | grep -oP "[0-9]+(?=us)"
 }
 
 generate_results() {
