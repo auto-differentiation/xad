@@ -10,6 +10,12 @@ fi
 
 TEST_NAMES=("$@")
 
+echo "Benchmark Log Content"
+cat "$BENCHMARK_LOG" || echo "Benchmark log not found or empty."
+
+echo "Reference Log Content"
+cat "$REFERENCE_LOG" || echo "Reference log not found or empty."
+
 process_log() {
   local log_file=$1
   local test_name=$2
