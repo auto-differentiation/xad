@@ -91,13 +91,9 @@ jobs:
 
           ## Comparison Table
 
-          | Metric     | Reference | Benchmark | Difference | % Change |
-          | ---------- | --------- | --------- | ---------- | -------- |
-          | Median     | $REF_TIME | $OUT_TIME | $DIFF      | $PERCENTAGE_CHANGE% |
-          | Min        | $(echo "$REFERENCE_RESULTS" | awk '{print $1}') | $(echo "$OUTPUT_RESULTS" | awk '{print $1}') | - | - |
-          | Max        | $(echo "$REFERENCE_RESULTS" | awk '{print $2}') | $(echo "$OUTPUT_RESULTS" | awk '{print $2}') | - | - |
-          | Mean       | $(echo "$REFERENCE_RESULTS" | awk '{print $3}') | $(echo "$OUTPUT_RESULTS" | awk '{print $3}') | - | - |
-          | StdDev     | $(echo "$REFERENCE_RESULTS" | awk '{print $4}') | $(echo "$OUTPUT_RESULTS" | awk '{print $4}') | - | - |
+          | Metric     | Runs      | Reference | Benchmark | Difference | % Change |
+          | ---------- | --------- | --------- | --------- | ---------- | -------- |
+          | Median     |  ${{ vars.REPETITIONS }} | $REF_TIME | $OUT_TIME | $DIFF      | $PERCENTAGE_CHANGE% |
 
           EOF
 

@@ -46,6 +46,7 @@ generate_results() {
   for test_name in "${TEST_NAMES[@]}"; do
     ref_times=$(process_log "$ref_log" "$test_name")
     bench_times=$(process_log "$bench_log" "$test_name")
+    runs=$(echo "$ref_times" | wc -l)
 
     if [[ -n "$ref_times" && -n "$bench_times" ]]; then
       ref_median=$(echo "$ref_times" | datamash median 1)
@@ -59,13 +60,9 @@ generate_results() {
       stats_bench=$(echo "$bench_times" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
 
       results+="### $test_name\n\n"
-      results+="| Metric     | Reference | Benchmark | Difference | % Change |\n"
-      results+="| ---------- | --------- | --------- | ---------- | -------- |\n"
-      results+="| Median     | $ref_median | $bench_median | $diff | $percent% |\n"
-      results+="| Min        | $(echo "$stats_ref" | awk '{print $1}') | $(echo "$stats_bench" | awk '{print $1}') | - | - |\n"
-      results+="| Max        | $(echo "$stats_ref" | awk '{print $2}') | $(echo "$stats_bench" | awk '{print $2}') | - | - |\n"
-      results+="| Mean       | $(echo "$stats_ref" | awk '{print $3}') | $(echo "$stats_bench" | awk '{print $3}') | - | - |\n"
-      results+="| StdDev     | $(echo "$stats_ref" | awk '{print $4}') | $(echo "$stats_bench" | awk '{print $4}') | - | - |\n\n"
+      results+="| Metric     | Runs      | Reference | Benchmark | Difference | % Change |\n"
+      results+="| ---------- | --------- | --------- | --------- | ---------- | -------- |\n"
+      results+="| Median     | $runs     | $ref_median | $bench_median | $diff | $percent% |\n"
 
       total_diff=$(echo "$total_diff + $diff" | bc)
       total_ref=$(echo "$total_ref + $ref_median" | bc)
@@ -89,7 +86,7 @@ generate_results() {
   echo "$results"
 }
 
-markdown="# QuantLib Benchmark and Reference Results\n\n"
+markdown="# QuantLib Benchmark and Reference Median Runtimes for \n\n"
 markdown+="$(generate_results "$REFERENCE_LOG" "$BENCHMARK_LOG" "")\n"
 
 echo -e "Generated Markdown Content:\n"
