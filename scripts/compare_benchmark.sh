@@ -36,7 +36,7 @@ generate_results() {
         results+="### $label Results for $test_name\n\n"
         results+="| Min | Max | Mean | StdDev | Median | TrimMean | GeoMean | HarmMean |\n"
         results+="| --- | --- | ---- | ------ | ------ | -------- | ------- | -------- |\n"
-        results+="| $stats |\n\n"
+        results+="| $(echo "$stats" | awk '{ for (i = 1; i <= NF; i++) printf "%s | ", $i; }')\n\n"
       else
         results+="### $label Results for $test_name\n\nError processing statistics for $test_name.\n\n"
       fi
@@ -48,10 +48,10 @@ generate_results() {
 }
 
 markdown="# Benchmark and Reference Results\n\n"
-markdown+="## Benchmark Results\n\n"
-markdown+="$(generate_results "$BENCHMARK_LOG" "Benchmark")\n"
 markdown+="## Reference Results\n\n"
 markdown+="$(generate_results "$REFERENCE_LOG" "Reference")\n"
+markdown+="## Benchmark Results\n\n"
+markdown+="$(generate_results "$BENCHMARK_LOG" "Benchmark")\n"
 
 echo -e "$markdown" > benchmark_results.md
 echo "Benchmark and reference results saved to benchmark_results.md"
