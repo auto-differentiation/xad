@@ -7,7 +7,7 @@ on:
 
 jobs:
   libor:
-    if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
+    #if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: Libor Swaption Benchmarks
     runs-on: ubuntu-latest
     container:
@@ -108,7 +108,7 @@ jobs:
           RESULTS_FILE: ${{ env.RESULTS_FILE }}
 
   quantlib:
-    if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
+    #if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: QuantLib Benchmarks
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
