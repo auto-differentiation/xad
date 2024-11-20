@@ -7,7 +7,7 @@ on:
 
 jobs:
   libor:
-    if: false # temporarily disabled
+    if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: Libor Swaption Benchmarks
     runs-on: ubuntu-latest
     container:
@@ -74,30 +74,33 @@ jobs:
           set -e
           apt-get update && apt-get install -y bc datamash --fix-missing
 
-          BENCHMARK_LOG=$(pr/build/samples/LiborSwaptionPricer/benchmark.log)
-          REFERENCE_LOG=$(pr/build/samples/LiborSwaptionPricer/reference.log)
-          
-          OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4  }' "$BENCHMARK_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          OUT_TIME=$(awk '$2 == "AAD" { print $4  }' "$BENCHMARK_LOG" | datamash median 1)
-          
-          REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4  }' "$REFERENCE_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          REF_TIME=$(awk '$2 == "AAD" { print $4  }' "$REFERENCE_LOG" | datamash median 1)
-      
+          BENCHMARK_LOG="pr/build/samples/LiborSwaptionPricer/benchmark.log"
+          REFERENCE_LOG="pr/build/samples/LiborSwaptionPricer/reference.log"
+
+          OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          OUT_TIME=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash median 1)
+
+          REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+          REF_TIME=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash median 1)
+
+          DIFF=$(echo "$REF_TIME - $OUT_TIME" | bc)
+          PERCENTAGE_CHANGE=$(echo "scale=2; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100" | bc)
+
           cat <<EOF > benchmark_results.md
-      
-          **Output Results:**
-          $OUTPUT_RESULTS
-          
-          **Output Time:**
-          $OUT_TIME
-          
-          **Reference Results:**
-          $REFERENCE_RESULTS
-          
-          **Reference Time:**
-          $REF_TIME
+          # Benchmark and Reference Results
+
+          ## Comparison Table
+
+          | Metric     | Reference | Benchmark | Difference | % Change |
+          | ---------- | --------- | --------- | ---------- | -------- |
+          | Median     | $REF_TIME | $OUT_TIME | $DIFF      | $PERCENTAGE_CHANGE% |
+          | Min        | $(echo "$REFERENCE_RESULTS" | awk '{print $1}') | $(echo "$OUTPUT_RESULTS" | awk '{print $1}') | - | - |
+          | Max        | $(echo "$REFERENCE_RESULTS" | awk '{print $2}') | $(echo "$OUTPUT_RESULTS" | awk '{print $2}') | - | - |
+          | Mean       | $(echo "$REFERENCE_RESULTS" | awk '{print $3}') | $(echo "$OUTPUT_RESULTS" | awk '{print $3}') | - | - |
+          | StdDev     | $(echo "$REFERENCE_RESULTS" | awk '{print $4}') | $(echo "$OUTPUT_RESULTS" | awk '{print $4}') | - | - |
+
           EOF
-      
+
           echo "RESULTS_FILE=$(pwd)/benchmark_results.md" >> $GITHUB_ENV
       
       - name: Comment on PR
@@ -109,6 +112,7 @@ jobs:
           RESULTS_FILE: ${{ env.RESULTS_FILE }}
 
   quantlib:
+    if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: QuantLib Benchmarks
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
@@ -181,18 +185,6 @@ jobs:
         run: |
           chmod +x ./main/scripts/run_benchmark.sh
           bash ./main/scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
-
-      - name: Debug grep
-        run: |
-          echo "=== Log File ==="
-          cat QuantLib/build/test-suite/reference.log
-          echo "=== Grep Version ==="
-          grep --version
-          echo "=== Running grep ==="
-          grep -P '.*?Leaving test case "testSwaptionVolMatrixCoherence"; testing time: [0-9]+us' QuantLib/build/test-suite/reference.log
-          echo "=== Extracting Numbers ==="
-          grep -P '.*?Leaving test case "testSwaptionVolMatrixCoherence"; testing time: [0-9]+us' QuantLib/build/test-suite/reference.log | grep -oP '[0-9]+(?=us)'
-  
 
       - name: Benchmark Build
         run: |
