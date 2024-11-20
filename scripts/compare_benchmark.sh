@@ -1,5 +1,4 @@
 #!/bin/bash
-
 REFERENCE_LOG="QuantLib/build/test-suite/reference.log"
 BENCHMARK_LOG="QuantLib/benchmark-build/test-suite/benchmark.log"
 
@@ -9,12 +8,6 @@ if [[ $# -lt 1 ]]; then
 fi
 
 TEST_NAMES=("$@")
-
-echo "Benchmark Log Content"
-cat "$BENCHMARK_LOG" || echo "Benchmark log not found or empty."
-
-echo "Reference Log Content"
-cat "$REFERENCE_LOG" || echo "Reference log not found or empty."
 
 process_log() {
   local log_file=$1
@@ -38,30 +31,47 @@ process_tests() {
     test_times=$(process_log "$log_file" "$test_name")
 
     if [[ -n "$test_times" ]]; then
-      echo "$test_times" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+      stats=$(echo "$test_times" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+      echo "| Min | Max | Mean | StdDev | Median | TrimMean | GeoMean | HarmMean |"
+      echo "| --- | --- | ---- | ------ | ------ | -------- | ------- | -------- |"
+      echo "| $stats |"
+      echo
     else
       echo "No results found for $test_name in $log_file."
     fi
   done
 }
 
+generate_markdown() {
+  local log_file=$1
+  local label=$2
+
+  results=""
+  for test_name in "${TEST_NAMES[@]}"; do
+    test_times=$(process_log "$log_file" "$test_name")
+
+    if [[ -n "$test_times" ]]; then
+      stats=$(echo "$test_times" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
+      results+="### $label Results for $test_name\n\n"
+      results+="| Min | Max | Mean | StdDev | Median | TrimMean | GeoMean | HarmMean |\n"
+      results+="| --- | --- | ---- | ------ | ------ | -------- | ------- | -------- |\n"
+      results+="| $stats |\n\n"
+    else
+      results+="### $label Results for $test_name\n\nNo results found for $test_name in $log_file.\n\n"
+    fi
+  done
+  echo "$results"
+}
+
 process_tests "$BENCHMARK_LOG" "Benchmark"
+
 process_tests "$REFERENCE_LOG" "Reference"
 
-echo
-echo "Overall Comparison:"
-for test_name in "${TEST_NAMES[@]}"; do
-  benchmark_median=$(process_log "$BENCHMARK_LOG" "$test_name" | datamash median 1)
-  reference_median=$(process_log "$REFERENCE_LOG" "$test_name" | datamash median 1)
+markdown="# Benchmark and Reference Results\n\n"
+markdown+="## Benchmark Results\n\n"
+markdown+="$(generate_markdown "$BENCHMARK_LOG" "Benchmark")\n"
+markdown+="## Reference Results\n\n"
+markdown+="$(generate_markdown "$REFERENCE_LOG" "Reference")\n"
 
-  if [[ -n "$benchmark_median" && -n "$reference_median" ]]; then
-    difference=$(echo "scale=9; $reference_median - $benchmark_median" | bc | awk '{printf "%.3f\n", $1}')
-    percentage=$(echo "scale=9; (($reference_median - $benchmark_median) / $reference_median) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
-
-    echo "Test: $test_name"
-    echo "  Difference: $difference us"
-    echo "  Percentage: $percentage%"
-  else
-    echo "Test: $test_name - Insufficient data for comparison."
-  fi
-done
+echo -e "$markdown" > benchmark_results.md
+echo "Benchmark and reference results saved to benchmark_results.md"
