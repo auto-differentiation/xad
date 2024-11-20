@@ -179,7 +179,6 @@ jobs:
 
       - name: Reference Runs
         run: |
-          ls -R
           chmod +x ./main/scripts/run_benchmark.sh
           bash ./main/scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
 
@@ -210,10 +209,10 @@ jobs:
             
       - name: Compare
         id: compare
-        working-directory: /__w/xad/xad
         run: |
           apt-get update && apt-get install -y bc datamash --fix-missing
-          chmod +x scripts/compare_results.sh
+          chmod +x ./main/scripts/compare_benchmark.sh
+          bash ./main/scripts/compare_benchmark.sh
 
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4

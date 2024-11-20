@@ -37,8 +37,7 @@ for TEST_NAME in "${tests[@]}"; do
   for i in $(seq 1 $REPETITIONS); do
     ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because" | tee -a "${LOG_PREFIX}_${TEST_NAME}.log"
   done
+  cat "${LOG_PREFIX}_${TEST_NAME}.log" >> "${LOG_PREFIX}.log"
 done
-
-cat "${LOG_PREFIX}_*.log" > "${LOG_PREFIX}.log"
 
 echo "$RUN_TYPE runs completed. Combined log saved to ${LOG_PREFIX}.log."
