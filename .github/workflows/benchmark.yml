@@ -87,11 +87,9 @@ jobs:
           PERCENTAGE_CHANGE=$(awk "BEGIN { printf \"%.2f\", ($DIFF / $OUT_TIME) * 100 }")
 
           cat <<EOF > benchmark_results.md
-          # Libor Benchmark and Reference Results
+          # Libor Benchmarks
 
-          ## Comparison Table
-
-          | Metric     | Runs      | Reference | Benchmark | Difference | % Change |
+          | Metric     | Runs      | Reference (us) | Benchmark (us) | Difference (us) | % Change |
           | ---------- | --------- | --------- | --------- | ---------- | -------- |
           | Median     |  ${{ vars.REPETITIONS }} | $REF_TIME | $OUT_TIME | $DIFF      | $PERCENTAGE_CHANGE% |
 

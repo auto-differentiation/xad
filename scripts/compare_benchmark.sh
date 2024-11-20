@@ -35,18 +35,21 @@ compute_difference() {
 generate_results() {
   local ref_log=$1
   local bench_log=$2
-  local label=$3
 
   local results=""
   local total_diff=0
   local total_ref=0
   local total_bench=0
   local test_count=0
+  local total_runs=0
+
+  results+="| Test Name                  | Runs  | Reference (us) | Benchmark (us) | Difference (us) | % Change |\n"
+  results+="| -------------------------- | ----- | -------------- | -------------- | --------------- | -------- |\n"
 
   for test_name in "${TEST_NAMES[@]}"; do
     ref_times=$(process_log "$ref_log" "$test_name")
     bench_times=$(process_log "$bench_log" "$test_name")
-    runs=$(echo "$ref_times" | wc -l)
+    runs=$(($(echo "$ref_times" | wc -l) - 1))
 
     if [[ -n "$ref_times" && -n "$bench_times" ]]; then
       ref_median=$(echo "$ref_times" | datamash median 1)
@@ -56,37 +59,29 @@ generate_results() {
       diff=$(echo "$diff_and_percent" | awk '{print $1}')
       percent=$(echo "$diff_and_percent" | awk '{print $2}')
 
-      stats_ref=$(echo "$ref_times" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-      stats_bench=$(echo "$bench_times" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-
-      results+="### $test_name\n\n"
-      results+="| Metric     | Runs      | Reference | Benchmark | Difference | % Change |\n"
-      results+="| ---------- | --------- | --------- | --------- | ---------- | -------- |\n"
-      results+="| Median     | $runs     | $ref_median | $bench_median | $diff | $percent% |\n"
-
       total_diff=$(echo "$total_diff + $diff" | bc)
       total_ref=$(echo "$total_ref + $ref_median" | bc)
       total_bench=$(echo "$total_bench + $bench_median" | bc)
+      total_runs=$((total_runs + runs))
       test_count=$((test_count + 1))
+
+      results+="| $test_name                | $runs | $ref_median      | $bench_median      | $diff           | $percent% |\n"
     else
-      results+="### $label Results for $test_name\n\nNo results found for $test_name in one or both logs.\n\n"
+      results+="| $test_name                | N/A   | N/A              | N/A              | N/A             | N/A      |\n"
     fi
   done
 
-  # Overall metrics
   if [[ $test_count -gt 0 ]]; then
     overall_diff=$(echo "$total_ref - $total_bench" | bc)
     overall_percent=$(awk "BEGIN { printf \"%.2f\", ($overall_diff / $total_ref) * 100 }")
-    results+="## Overall Results\n\n"
-    results+="| Metric     | Reference | Benchmark | Difference | % Change |\n"
-    results+="| ---------- | --------- | --------- | ---------- | -------- |\n"
-    results+="| Total      | $total_ref | $total_bench | $overall_diff | $overall_percent% |\n\n"
+
+    results+="| **Total**                 | $total_runs | $total_ref      | $total_bench      | $overall_diff   | $overall_percent% |\n"
   fi
 
   echo "$results"
 }
 
-markdown="# QuantLib Benchmark and Reference Median Runtimes\n\n"
+markdown="# QuantLib Benchmarks\n\n"
 markdown+="$(generate_results "$REFERENCE_LOG" "$BENCHMARK_LOG" "")\n"
 
 echo -e "Generated Markdown Content:\n"
