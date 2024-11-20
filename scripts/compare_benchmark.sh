@@ -77,7 +77,7 @@ generate_results() {
   local total_runs=0
 
   results+="| Test/Example Name          | Runs  | Reference (us) | Benchmark (us) | Difference (us) | % Change |\n"
-  results+="| -------------------------- | ----: | -------------: | -------------: | --------------: | -------: |\n"
+  results+="| -------------------------: | ----: | -------------: | -------------: | --------------: | -------: |\n"
 
   for test_name in "${TEST_NAMES[@]}"; do
     ref_times=$(extract_normalized_times "$ref_log" "$test_name")
