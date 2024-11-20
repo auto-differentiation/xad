@@ -35,11 +35,11 @@ process_log() {
   if [[ "$test_name" == test* ]]; then
     grep -P ".*?Leaving test case \"$test_name\"; testing time: [0-9]+[a-z]+" "$log_file" | \
       awk -F 'testing time: ' '{print $2}' | \
-      awk '{raw_time=gensub(/[a-z]+$/, "", "g", $1); unit=gensub(/^[0-9]+/, "", "g", $1); print raw_time, unit}'
+      awk '{raw_time=$1; sub(/[a-z]+$/, "", raw_time); unit=$1; sub(/^[0-9]+/, "", unit); print raw_time, unit}'
   else
     grep -P ".*?Run for \"$test_name\".*: [0-9]+[a-z]+" "$log_file" | \
       awk -F ': ' '{print $2}' | \
-      awk '{raw_time=gensub(/[a-z]+$/, "", "g", $1); unit=gensub(/^[0-9]+/, "", "g", $1); print raw_time, unit}'
+      awk '{raw_time=$1; sub(/[a-z]+$/, "", raw_time); unit=$1; sub(/^[0-9]+/, "", unit); print raw_time, unit}'
   fi
 }
 

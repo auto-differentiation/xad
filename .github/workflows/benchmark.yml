@@ -73,28 +73,30 @@ jobs:
         run: |
           set -e
           apt-get update && apt-get install -y bc datamash --fix-missing
-
+          
           BENCHMARK_LOG="pr/build/samples/LiborSwaptionPricer/benchmark.log"
           REFERENCE_LOG="main/build/samples/LiborSwaptionPricer/reference.log"
-
+          
+          # Extract results and medians
           OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          OUT_TIME=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash median 1)
-
+          OUT_TIME=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash median 1 | awk '{printf "%.2f", $1}')
+          
           REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-          REF_TIME=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash median 1)
-
-          DIFF=$(echo "$REF_TIME - $OUT_TIME" | bc)
-          PERCENTAGE_CHANGE=$(awk "BEGIN { printf \"%.2f\", ($DIFF / $OUT_TIME) * 100 }")
-
+          REF_TIME=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash median 1 | awk '{printf "%.2f", $1}')
+          
+          # Compute differences and percentage changes
+          DIFF=$(echo "$REF_TIME - $OUT_TIME" | bc | awk '{printf "%.2f", $1}')
+          PERCENTAGE_CHANGE=$(awk "BEGIN { printf \"%.2f\", (($DIFF / $OUT_TIME) * 100) }")
+          
+          # Generate the Markdown table
           cat <<EOF > benchmark_results.md
           # Libor Benchmarks
-
+          
           | Metric     | Runs      | Reference (us) | Benchmark (us) | Difference (us) | % Change |
-          | ---------- | --------- | --------- | --------- | ---------- | -------- |
-          | Median     |  ${{ vars.REPETITIONS }} | $REF_TIME | $OUT_TIME | $DIFF      | $PERCENTAGE_CHANGE% |
-
+          | ----------:| ---------:| --------------:| --------------:| ---------------:| --------:|
+          | Median     | ${{ vars.REPETITIONS }} | $REF_TIME      | $OUT_TIME        | $DIFF           | $PERCENTAGE_CHANGE% |
           EOF
-
+          
           echo "RESULTS_FILE=$(pwd)/benchmark_results.md" >> $GITHUB_ENV
       
       - name: Comment on PR
