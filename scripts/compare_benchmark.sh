@@ -15,12 +15,6 @@ if [[ ! -f "$REFERENCE_LOG" || ! -f "$BENCHMARK_LOG" ]]; then
   exit 1
 fi
 
-echo "Contents of Benchmark Log"
-cat "$BENCHMARK_LOG" || echo "Benchmark log not found or empty."
-
-echo "Contents of Reference Log"
-cat "$REFERENCE_LOG" || echo "Reference log not found or empty."
-
 process_log() {
   local log_file=$1
   local test_name=$2
