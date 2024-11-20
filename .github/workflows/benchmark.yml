@@ -176,24 +176,7 @@ jobs:
 
       - name: Reference Runs
         run: |
-          tests=("testPathwiseGreeks" "testSwaptionVolMatrixCoherence")
-      
-          echo "Running benchmarks for: ${tests[*]}"
-      
-          cd QuantLib/build/test-suite
-          rm -f reference.log || true
-      
-          for TEST_NAME in "${tests[@]}"; do
-            echo "Running benchmark for: $TEST_NAME"
-      
-            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because"
-      
-            for i in $(seq 1 $REPETITIONS); do
-              ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because" | tee -a reference_$TEST_NAME.log
-            done
-          done
-      
-          cat reference_*.log > reference.log
+          ./scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} testPathwiseGreeks testSwaptionVolMatrixCoherence
 
       - name: Benchmark Build
         run: |
@@ -217,24 +200,7 @@ jobs:
 
       - name: Benchmark Runs
         run: |
-          tests=("testPathwiseGreeks" "testSwaptionVolMatrixCoherence")
-      
-          echo "Running benchmarks for: ${tests[*]}"
-      
-          cd QuantLib/benchmark-build/test-suite
-          rm -f benchmark.log || true
-      
-          for TEST_NAME in "${tests[@]}"; do
-            echo "Running benchmark for: $TEST_NAME"
-      
-            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because"
-      
-            for i in $(seq 1 $REPETITIONS); do
-              ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because" | tee -a benchmark_$TEST_NAME.log
-            done
-          done
-      
-          cat benchmark_*.log > benchmark.log
+          ./scripts/run_benchmark.sh benchmark ${{ vars.REPETITIONS }} testPathwiseGreeks testSwaptionVolMatrixCoherence
           
       - name: Compare
         id: compare
