@@ -19,23 +19,27 @@ process_log() {
   local log_file=$1
   local test_name=$2
 
-  grep -P ".*?Leaving test case $test_name; testing time: [0-9]+us" $log_file | grep -oP "[0-9]+(?=us)"
+  grep -P ".*?Leaving test case \"$test_name\"; testing time: [0-9]+us" $log_file | grep -oP "[0-9]+(?=us)"
 }
 
 generate_results() {
   local log_file=$1
   local label=$2
 
-  results=""
+  local results=""
   for test_name in "${TEST_NAMES[@]}"; do
     test_times=$(process_log "$log_file" "$test_name")
 
     if [[ -n "$test_times" ]]; then
       stats=$(echo "$test_times" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
-      results+="### $label Results for $test_name\n\n"
-      results+="| Min | Max | Mean | StdDev | Median | TrimMean | GeoMean | HarmMean |\n"
-      results+="| --- | --- | ---- | ------ | ------ | -------- | ------- | -------- |\n"
-      results+="| $stats |\n\n"
+      if [[ -n "$stats" ]]; then
+        results+="### $label Results for $test_name\n\n"
+        results+="| Min | Max | Mean | StdDev | Median | TrimMean | GeoMean | HarmMean |\n"
+        results+="| --- | --- | ---- | ------ | ------ | -------- | ------- | -------- |\n"
+        results+="| $stats |\n\n"
+      else
+        results+="### $label Results for $test_name\n\nError processing statistics for $test_name.\n\n"
+      fi
     else
       results+="### $label Results for $test_name\n\nNo results found for $test_name in $log_file.\n\n"
     fi
