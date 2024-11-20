@@ -49,7 +49,7 @@ generate_results() {
   for test_name in "${TEST_NAMES[@]}"; do
     ref_times=$(process_log "$ref_log" "$test_name")
     bench_times=$(process_log "$bench_log" "$test_name")
-    runs=$(($(echo "$ref_times" | wc -l) - 1))
+    runs=$(echo "$ref_times" | wc -l)
 
     if [[ -n "$ref_times" && -n "$bench_times" ]]; then
       ref_median=$(echo "$ref_times" | datamash median 1)
