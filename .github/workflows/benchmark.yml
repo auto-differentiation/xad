@@ -212,7 +212,7 @@ jobs:
         run: |
           apt-get update && apt-get install -y bc datamash --fix-missing
           chmod +x ./main/scripts/compare_benchmark.sh
-          bash ./main/scripts/compare_benchmark.sh
+          bash ./main/scripts/compare_benchmark.sh ${{ env.TESTS }}
 
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4

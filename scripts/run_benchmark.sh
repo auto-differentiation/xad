@@ -1,43 +1,61 @@
 #!/bin/bash
 
-if [ "$#" -lt 3 ]; then
-  echo "Usage: $0 <run_type> <repetitions> <test1> [<test2> ... <testN>]"
-  echo "run_type: 'reference' or 'benchmark'"
+REFERENCE_LOG="QuantLib/build/test-suite/reference.log"
+BENCHMARK_LOG="QuantLib/benchmark-build/test-suite/benchmark.log"
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 <test_name1> [<test_name2> ... <test_nameN>]"
   exit 1
 fi
 
-RUN_TYPE=$1
-REPETITIONS=$2
-shift 2
-tests=("$@")
+TEST_NAMES=("$@")
 
-if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
-  echo "Error: run_type must be either 'reference' or 'benchmark'."
-  exit 1
-fi
+process_log() {
+  local log_file=$1
+  local test_name=$2
 
-if [ "$RUN_TYPE" == "reference" ]; then
-  TEST_SUITE_DIR="QuantLib/build/test-suite"
-  LOG_PREFIX="reference"
-elif [ "$RUN_TYPE" == "benchmark" ]; then
-  TEST_SUITE_DIR="QuantLib/benchmark-build/test-suite"
-  LOG_PREFIX="benchmark"
-fi
+  awk -v test_name="$test_name" '
+    $0 ~ test_name && /Leaving test case/ {
+      match($0, /testing time: ([0-9]+)us/, arr);
+      if (arr[1] != "") print arr[1];
+    }
+  ' "$log_file"
+}
 
-echo "Running $RUN_TYPE runs for tests: ${tests[*]}"
+process_tests() {
+  local log_file=$1
+  local label=$2
 
-cd "$TEST_SUITE_DIR" || exit 1
-rm -f "${LOG_PREFIX}.log" || true
+  echo "*$label Results*"
+  for test_name in "${TEST_NAMES[@]}"; do
+    echo "$label results for $test_name:"
+    test_times=$(process_log "$log_file" "$test_name")
 
-for TEST_NAME in "${tests[@]}"; do
-  echo "Running $RUN_TYPE for: $TEST_NAME"
-
-  ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because"
-
-  for i in $(seq 1 $REPETITIONS); do
-    ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/$TEST_NAME" | grep -v "is skipped because" | tee -a "${LOG_PREFIX}_${TEST_NAME}.log"
+    if [[ -n "$test_times" ]]; then
+      echo "$test_times" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+    else
+      echo "No results found for $test_name in $log_file."
+    fi
   done
-  cat "${LOG_PREFIX}_${TEST_NAME}.log" >> "${LOG_PREFIX}.log"
-done
+}
 
-echo "$RUN_TYPE runs completed. Combined log saved to ${LOG_PREFIX}.log."
+process_tests "$BENCHMARK_LOG" "Benchmark"
+process_tests "$REFERENCE_LOG" "Reference"
+
+echo
+echo "Overall Comparison:"
+for test_name in "${TEST_NAMES[@]}"; do
+  benchmark_median=$(process_log "$BENCHMARK_LOG" "$test_name" | datamash median 1)
+  reference_median=$(process_log "$REFERENCE_LOG" "$test_name" | datamash median 1)
+
+  if [[ -n "$benchmark_median" && -n "$reference_median" ]]; then
+    difference=$(echo "scale=9; $reference_median - $benchmark_median" | bc | awk '{printf "%.3f\n", $1}')
+    percentage=$(echo "scale=9; (($reference_median - $benchmark_median) / $reference_median) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
+
+    echo "Test: $test_name"
+    echo "  Difference: $difference us"
+    echo "  Percentage: $percentage%"
+  else
+    echo "Test: $test_name - Insufficient data for comparison."
+  fi
+done
