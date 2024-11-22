@@ -237,11 +237,3 @@ jobs:
         with:
           name: pull_request_number
           path: $(pwd)/pull_request_number.txt
-
-      - name: Comment on PR
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body-path: ${{ env.RESULTS_FILE }}
-        env:
-          RESULTS_FILE: ${{ env.RESULTS_FILE }}
