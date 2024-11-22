@@ -89,7 +89,7 @@ jobs:
           PERCENTAGE_CHANGE=$(awk "BEGIN { printf \"%.2f\", (($DIFF / $OUT_TIME) * 100) }")
           
           # Generate the Markdown table
-          cat <<EOF > benchmark_results.md
+          cat <<EOF > libor_benchmark_results.md
           # Libor Benchmarks
           
           | Metric     | Runs      | Reference (us) | Benchmark (us) | Difference (us) | % Change |
@@ -97,7 +97,13 @@ jobs:
           | Median     | ${{ vars.REPETITIONS }} | $REF_TIME      | $OUT_TIME        | $DIFF           | $PERCENTAGE_CHANGE% |
           EOF
           
-          echo "RESULTS_FILE=$(pwd)/benchmark_results.md" >> $GITHUB_ENV
+          echo "RESULTS_FILE=$(pwd)/libor_benchmark_results.md" >> $GITHUB_ENV
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libor-benchmark-results
+          path: $(pwd)/libor_benchmark_results.md
       
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4
@@ -213,6 +219,24 @@ jobs:
           apt-get update && apt-get install -y bc datamash --fix-missing
           chmod +x ./main/scripts/compare_benchmark.sh
           bash ./main/scripts/compare_benchmark.sh ${{ env.TESTS }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ql-benchmark-results
+          path: $(pwd)/ql_benchmark_results.md
+
+      - name: Save the PR Number
+        shell: bash
+        env:
+          PULL_REQUEST_NUMBER: ${{ github.event.number }}
+        run: echo $PULL_REQUEST_NUMBER > $(pwd)/pull_request_number.txt
+
+      - name: Upload the PR Number
+        uses: actions/upload-artifact@v4
+        with:
+          name: pull_request_number
+          path: $(pwd)/pull_request_number.txt
 
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4

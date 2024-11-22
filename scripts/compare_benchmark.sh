@@ -119,7 +119,7 @@ markdown+="$(generate_results "$REFERENCE_LOG" "$BENCHMARK_LOG")\n"
 
 echo -e "Generated Markdown Content:\n"
 echo -e "$markdown"
-echo -e "$markdown" > "$LOG_DIR/benchmark_results.md"
-echo "Benchmark and reference results saved to $LOG_DIR/benchmark_results.md"
+echo -e "$markdown" > "$(pwd)/ql_benchmark_results.md"
+echo "Benchmark and reference results saved to $(pwd)/ql_benchmark_results.md"
 
-echo "RESULTS_FILE=$LOG_DIR/benchmark_results.md" >> $GITHUB_ENV
+echo "RESULTS_FILE=$(pwd)/ql_benchmark_results.md" >> $GITHUB_ENV
