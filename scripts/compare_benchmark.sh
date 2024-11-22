@@ -1,8 +1,7 @@
 #!/bin/bash
 
-LOG_DIR="$(pwd)/logs"
-REFERENCE_LOG="$LOG_DIR/reference.log"
-BENCHMARK_LOG="$LOG_DIR/benchmark.log"
+REFERENCE_LOG="$(pwd)/reference.log"
+BENCHMARK_LOG="$(pwd)/benchmark.log"
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: $0 <test_name1> [<test_name2> ... <test_nameN>]"
@@ -10,11 +9,6 @@ if [[ $# -lt 1 ]]; then
 fi
 
 TEST_NAMES=("$@")
-
-if [[ ! -f "$REFERENCE_LOG" || ! -f "$BENCHMARK_LOG" ]]; then
-  echo "Error: One or both log files do not exist in $LOG_DIR."
-  exit 1
-fi
 
 normalize_time() {
   local raw_time=$1

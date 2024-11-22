@@ -16,22 +16,15 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-BASE_DIR=$(pwd)
-LOG_DIR="$BASE_DIR/logs"
-mkdir -p "$LOG_DIR"
-
 if [ "$RUN_TYPE" == "reference" ]; then
-  TEST_SUITE_DIR="$BASE_DIR/QuantLib/build/test-suite"
-  EXAMPLES_DIR="$BASE_DIR/QuantLib/build/QuantLib-Risks-Cpp/Examples"
-  LOG_FILE="$LOG_DIR/reference.log"
+  TEST_SUITE_DIR="$(pwd)/QuantLib/build/test-suite"
+  EXAMPLES_DIR="$(pwd)/QuantLib/build/QuantLib-Risks-Cpp/Examples"
+  LOG_FILE="$(pwd)/reference.log"
 elif [ "$RUN_TYPE" == "benchmark" ]; then
-  TEST_SUITE_DIR="$BASE_DIR/QuantLib/benchmark-build/test-suite"
-  EXAMPLES_DIR="$BASE_DIR/QuantLib/benchmark-build/QuantLib-Risks-Cpp/Examples"
-  LOG_FILE="$LOG_DIR/benchmark.log"
+  TEST_SUITE_DIR="$(pwd)/QuantLib/benchmark-build/test-suite"
+  EXAMPLES_DIR="$(pwd)/QuantLib/benchmark-build/QuantLib-Risks-Cpp/Examples"
+  LOG_FILE="$(pwd)/benchmark.log"
 fi
-
-echo "Logs will be saved to: $LOG_FILE"
-rm -f "$LOG_FILE" || true
 
 echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
 
