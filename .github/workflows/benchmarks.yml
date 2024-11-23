@@ -213,7 +213,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ql-benchmark-results
-          path: $(pwd)/ql_benchmark_results.md
+          path: /__w/xad/xad/ql_benchmark_results.md
 
       - name: Save the PR Number
         shell: bash
@@ -225,4 +225,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pull_request_number
-          path: pull_request_number.txt
+          path: /__w/xad/xad/pull_request_number.txt
