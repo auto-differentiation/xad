@@ -50,7 +50,7 @@ jobs:
           rm -f reference.log || true
           # warmup run
           ./LiborSwaptionPricer 50000
-          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+          for i in $(seq 1 ${{ vars.REPETITIONS || 3 }}) ; do \
             ./LiborSwaptionPricer 50000 | tee -a reference.log ; \
           done
 
@@ -64,7 +64,7 @@ jobs:
           rm -f benchmark.log || true
           # warmup run
           ./LiborSwaptionPricer 50000
-          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+          for i in $(seq 1 ${{ vars.REPETITIONS || 3 }}) ; do \
             ./LiborSwaptionPricer 50000 | tee -a benchmark.log ; \
           done
 
@@ -77,24 +77,21 @@ jobs:
           BENCHMARK_LOG="pr/build/samples/LiborSwaptionPricer/benchmark.log"
           REFERENCE_LOG="main/build/samples/LiborSwaptionPricer/reference.log"
           
-          # Extract results and medians
           OUTPUT_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
           OUT_TIME=$(awk '$2 == "AAD" { print $4 }' "$BENCHMARK_LOG" | datamash median 1 | awk '{printf "%.2f", $1}')
           
           REFERENCE_RESULTS=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1)
           REF_TIME=$(awk '$2 == "AAD" { print $4 }' "$REFERENCE_LOG" | datamash median 1 | awk '{printf "%.2f", $1}')
           
-          # Compute differences and percentage changes
           DIFF=$(echo "$REF_TIME - $OUT_TIME" | bc | awk '{printf "%.2f", $1}')
           PERCENTAGE_CHANGE=$(awk "BEGIN { printf \"%.2f\", (($DIFF / $OUT_TIME) * 100) }")
           
-          # Generate the Markdown table
           cat <<EOF > libor_benchmark_results.md
           # Libor Benchmarks
           
           | Metric     | Runs      | Reference (us) | Benchmark (us) | Difference (us) | % Change |
           |:---------- | ---------:| --------------:| --------------:| ---------------:| --------:|
-          | Median     | ${{ vars.REPETITIONS }} | $REF_TIME      | $OUT_TIME        | $DIFF           | $PERCENTAGE_CHANGE% |
+          | Median     | ${{ vars.REPETITIONS || 3 }} | $REF_TIME      | $OUT_TIME        | $DIFF           | $PERCENTAGE_CHANGE% |
           EOF
           
           echo "RESULTS_FILE=$(pwd)/libor_benchmark_results.md" >> $GITHUB_ENV
@@ -103,7 +100,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: libor-benchmark-results
-          path: $(pwd)/libor_benchmark_results.md
+          path: libor_benchmark_results.md
 
   quantlib:
     #if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
@@ -178,7 +175,7 @@ jobs:
       - name: Reference Runs
         run: |
           chmod +x ./main/scripts/run_benchmark.sh
-          bash ./main/scripts/run_benchmark.sh reference ${{ vars.REPETITIONS }} ${{ env.TESTS }}
+          bash ./main/scripts/run_benchmark.sh "reference" ${{ vars.REPETITIONS || 3 }} ${{ env.TESTS }}
 
       - name: Benchmark Build
         run: |
@@ -203,7 +200,7 @@ jobs:
       - name: Benchmark Runs
         run: |
           chmod +x ./main/scripts/run_benchmark.sh
-          bash ./main/scripts/run_benchmark.sh benchmark ${{ vars.REPETITIONS }} ${{ env.TESTS }}
+          bash ./main/scripts/run_benchmark.sh "benchmark" ${{ vars.REPETITIONS || 3 }} ${{ env.TESTS }}
             
       - name: Compare
         id: compare
@@ -222,10 +219,10 @@ jobs:
         shell: bash
         env:
           PULL_REQUEST_NUMBER: ${{ github.event.number }}
-        run: echo $PULL_REQUEST_NUMBER > $(pwd)/pull_request_number.txt
+        run: echo $PULL_REQUEST_NUMBER > /pull_request_number.txt
 
       - name: Upload the PR Number
         uses: actions/upload-artifact@v4
         with:
           name: pull_request_number
-          path: $(pwd)/pull_request_number.txt
+          path: pull_request_number.txt
