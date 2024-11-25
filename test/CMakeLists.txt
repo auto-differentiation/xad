@@ -29,14 +29,14 @@ set(testfiles
     Tape_test.cpp
     Expressions_test.cpp
     ExpressionsConversion_test.cpp
-    # ExpressionMath1_test.cpp
-    # ExpressionMath2_test.cpp
-    # ExpressionMath3_test.cpp
+    ExpressionMath1_test.cpp
+    ExpressionMath2_test.cpp
+    ExpressionMath3_test.cpp
     Checkpointing_test.cpp
     ExternalFunc_test.cpp
     Exceptions_test.cpp
     HigherOrder_test.cpp
-    # Complex_test.cpp
+    Complex_test.cpp
     ComplexAD_test.cpp
     ExpressionMeta_test.cpp
     Tbr_test.cpp
