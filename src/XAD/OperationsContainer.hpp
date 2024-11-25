@@ -134,7 +134,7 @@ class OperationsContainer
 
     XAD_FORCE_INLINE void push_back_unsafe(T multiplier, S slot)
     {
-        if (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
+        if (XAD_VERY_UNLIKELY(idx_ == chunk_size))
         {
             ++chunk_;
             idx_ = 0;
@@ -147,7 +147,7 @@ class OperationsContainer
     template <class MulIt, class SlotIt>
     XAD_FORCE_INLINE void append_n(MulIt muls, SlotIt slots, size_type n)
     {
-        auto items = (std::min)(chunk_size - idx_, n);
+        auto items = (std::min)(ChunkSize - idx_, n);
         std::uninitialized_copy_n(detail::make_checked(muls, items), items,
                                   detail::make_checked(mul_chunk(chunk_), ChunkSize) + idx_);
         std::uninitialized_copy_n(detail::make_checked(slots, items), items,

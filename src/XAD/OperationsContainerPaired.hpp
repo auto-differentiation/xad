@@ -57,8 +57,8 @@ class OperationsContainerPaired
     ~OperationsContainerPaired() { destruct_elements(0); }
 
     bool empty() const { return chunk_ == 0 && idx_ == 0; }
-    size_type size() const { return chunk_ * ChunkSize + idx_; }
-    size_type capacity() const { return chunks_.size() * ChunkSize; }
+    size_type size() const { return chunk_ * chunk_size + idx_; }
+    size_type capacity() const { return chunks_.size() * chunk_size; }
     size_type chunks() const { return chunks_.size(); }
 
     void reserve(size_type s)
