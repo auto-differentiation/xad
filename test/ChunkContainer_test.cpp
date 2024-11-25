@@ -85,6 +85,13 @@ TEST(ChunkContainer, uninitialized_extend)
         EXPECT_EQ(int(j), chk[j]);
 }
 
+#if defined(__GNUC__) && !defined(__clang__)
+// we're only comparing pointer addresses in the tests below to verify move
+// behaviour, but GCC 12 sees this as use-after-free and flags warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
+
 TEST(ChunkContainer, move_construct)
 {
     ChunkContainer<int> chk;
@@ -114,6 +121,10 @@ TEST(ChunkContainer, move_assign)
     EXPECT_THAT(addr, Eq(&chk2[0]));
     EXPECT_THAT(addr, Ne(addr2));
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 TEST(ChunkContainer, multichunk)
 {
@@ -196,4 +207,16 @@ TEST(ChunkContainer, append)
     EXPECT_THAT(chk.size(), Eq(18u));
 
     for (int i = 0; i < 18; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+}
+
+TEST(ChunkContainer, push_back_no_check)
+{
+    ChunkContainer<int, 8> chk;
+    // note: push_back_no_check expects space to be reserved beforehand
+    chk.reserve(17);
+    for (int i = 0; i < 17; ++i) chk.push_back_no_check(i);
+
+    EXPECT_THAT(chk.size(), Eq(17u));
+
+    for (int i = 0; i < 17; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
 }

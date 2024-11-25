@@ -31,8 +31,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <vector>
 #include <memory>
+#include <vector>
 
 // cross-platform aligned (de-)allocation
 
@@ -227,10 +227,24 @@ class ChunkContainer
         }
     }
 
-    void push_back(const_reference v)
+    XAD_FORCE_INLINE void push_back(const_reference v)
     {
-        check_space();
+        if (XAD_VERY_UNLIKELY(idx_ == chunk_size))
+        {
+            check_space();
+        }
 
+        ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+        ++idx_;
+    }
+
+    void push_back_no_check(const_reference v)
+    {
+        if (XAD_VERY_UNLIKELY(idx_ == chunk_size))
+        {
+            ++chunk_;
+            idx_ = 0;
+        }
         ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
         ++idx_;
     }
@@ -238,7 +252,11 @@ class ChunkContainer
     template <class... Args>
     void emplace_back(Args&&... args)
     {
-        check_space();
+        if (XAD_VERY_UNLIKELY(idx_ == chunk_size))
+        {
+            check_space();
+        }
+
         ::new (chunkList_[chunk_] + idx_ * sizeof(value_type))
             value_type(std::forward<Args>(args)...);
         ++idx_;
@@ -283,11 +301,7 @@ class ChunkContainer
     {
         auto n = static_cast<size_type>(std::distance(first, last));
         assert(n <= chunk_size);
-#if defined(_MSC_VER)
-        if (idx_ + n <= chunk_size)
-#else
-        if (__builtin_expect(idx_ + n <= chunk_size, 1))
-#endif
+        if (XAD_LIKELY(idx_ + n <= chunk_size))
         {
             auto dst = reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_;
             for (size_type i = 0; i < n; ++i) ::new (dst++) value_type(*first++);
@@ -305,6 +319,25 @@ class ChunkContainer
             dst = reinterpret_cast<value_type*>(chunkList_[chunk_]);
             for (size_type i = 0; i < endn; ++i) ::new (dst++) value_type(*first++);
             idx_ += endn;
+        }
+    }
+
+    template <class It>
+    void append_unsafe_n(It first, unsigned n)
+    {
+        // TODO: make this work across multiple chunks
+        assert(n <= chunk_size);
+        auto n_first = (std::min<std::size_t>)(chunk_size - idx_, n);
+        std::uninitialized_copy_n(first, n_first,
+                                  reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_);
+        idx_ += n_first;
+        if (n != n_first)
+        {
+            auto n_second = n - n_first;
+            ++chunk_;
+            std::uninitialized_copy_n(first + n_first, n_second,
+                                      reinterpret_cast<value_type*>(chunkList_[chunk_]));
+            idx_ = n_second;
         }
     }
 
@@ -430,21 +463,21 @@ class ChunkContainer
     static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
 
   private:
+    std::vector<char*> chunkList_;
+    size_type chunk_, idx_;
+
     void check_space()
     {
-        if (idx_ == chunk_size)
+        if (XAD_VERY_LIKELY(chunk_ == chunkList_.size() - 1))
         {
-            if (chunk_ == chunkList_.size() - 1)
-            {
-                char* chunk = reinterpret_cast<char*>(
-                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-                if (chunk == NULL)
-                    throw std::bad_alloc();
-                chunkList_.push_back(chunk);
-            }
-            ++chunk_;
-            idx_ = 0;
+            char* chunk = reinterpret_cast<char*>(
+                detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+            if (chunk == NULL)
+                throw std::bad_alloc();
+            chunkList_.push_back(chunk);
         }
+        ++chunk_;
+        idx_ = 0;
     }
 
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
@@ -457,8 +490,5 @@ class ChunkContainer
             detail::aligned_free(c);
         }
     }
-
-    std::vector<char*> chunkList_;
-    size_type chunk_, idx_;
 };
 }  // namespace xad

@@ -12,13 +12,16 @@ jobs:
         compiler: [msvc, clang]
         config: [Release, Debug]
         standard: ["11", "17"]
+        memory: ["default", "lowmem"]
         include:
           - config: Debug
             sccache: "false"
             cmake_extra: ""
           - config: Release
             sccache: "true"
-            cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache  
+            cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          - memory: "lowmem"
+            cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
           - compiler: clang
             cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
             cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
@@ -47,6 +50,12 @@ jobs:
             toolset: "14.2"
           - compiler: clang
             toolset: "14.0"
+          - config: Release
+            memory: lowmem
+          - compiler: clang
+            memory: lowmem
+          - compiler: clang
+            config: Debug
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -57,7 +66,7 @@ jobs:
         if: ${{ matrix.sccache == 'true' }}
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
+          key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}
           variant: sccache
       - name: configure
         shell: cmd
@@ -71,6 +80,7 @@ jobs:
              -DCMAKE_C_COMPILER="${{ matrix.cc }}" ^
              -DCMAKE_CXX_STANDARD="${{ matrix.standard }}" ^
              ${{ matrix.cmake_extra }} ^
+             ${{ matrix.cmake_mem_flag }} ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} 
       - name: build
         shell: cmd
@@ -88,7 +98,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }})
+          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }})
           path: build/test_results.xml
       - name: install
         shell: cmd
@@ -125,6 +135,7 @@ jobs:
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
         standard: ["11", "17"]
+        memory: ["default", "lowmem"]
         include:
           - compiler: clang-11
             cxx: clang++-11
@@ -146,9 +157,21 @@ jobs:
             cxx: clang++-15
             cc: clang-15
             os: ubuntu-22.04
+          - memory: lowmem
+            cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
         exclude:
           - config: Debug
             reuse_slots: ON
+          - config: Release
+            memory: lowmem
+          - standard: "17"
+            memory: lowmem
+          - compiler: clang-11
+            config: Debug
+          - compiler: clang-12
+            config: Debug
+          - compiler: clang-13
+            config: Debug
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -163,7 +186,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
+          key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
       - name: configure
         run: |
           mkdir build
@@ -175,6 +198,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
+            ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
       - name: build
         run: |
@@ -188,7 +212,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }})
+          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }})
           path: build/test_results.xml
       - name: install
         run: |
@@ -223,6 +247,7 @@ jobs:
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
         standard: [c++11, c++17]
+        memory: ["default", "lowmem"]
         exclude:
           - config: Debug
             reuse_slots: ON
@@ -232,7 +257,23 @@ jobs:
             standard: c++17
           - compiler: gcc7
             standard: c++17
+          - config: Release
+            memory: lowmem
+          - standard: c++17
+            config: lowmem
+          - compiler: gcc5
+            config: Debug
+          - compiler: gcc6
+            config: Debug
+          - compiler: gcc7
+            config: Debug
+          - compiler: gcc8
+            config: Debug
+          - compiler: gcc9
+            config: Debug
         include:
+          - memory: lowmem
+            cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
           - config: Debug
             compiler: gcc11
             coverage: true
@@ -277,7 +318,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}
+          key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
       - name: configure
         run: |
           mkdir build
@@ -290,6 +331,7 @@ jobs:
             -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
+            ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install
       - name: build
         run: |
@@ -309,7 +351,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }})
+          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }})
           path: ${{ env.GITHUB_WORKSPACE }}/build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
@@ -323,7 +365,7 @@ jobs:
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: linux-${{ matrix.compiler }}-${{ matrix.reuse_slots }}
+          flag-name: linux-${{ matrix.compiler }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
           path-to-lcov: ${{env.GITHUB_WORKSPACE }}/build/coverage/lcov.info
           parallel: true
       - name: install
@@ -354,7 +396,10 @@ jobs:
         os: [macos-13, macos-latest]
         compiler: [default, clang15]
         standard: [c++11, c++17]
+        memory: ["default", "lowmem"]
         include:
+          - memory: lowmem
+            cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
           - config: Release
             os: macos-13
             compiler: default
@@ -382,6 +427,10 @@ jobs:
             compiler: clang15
           - os: macos-latest
             compiler: default
+          - config: Release
+            memory: lowmem
+          - standard: "c++17"
+            config: lowmem
     runs-on: ${{ matrix.os }}
     steps:
       - name: setup
@@ -399,7 +448,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: macos-${{ matrix.config }}
+          key: macos-${{ matrix.config }}-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}
       - name: configure
         run: |
           mkdir build
@@ -408,6 +457,7 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_FLAGS="-std=${{matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
+            ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }}
@@ -429,7 +479,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: Test Results (macos ${{ matrix.config }})
+          name: Test Results (macos ${{ matrix.config }}-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }})
           path: build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
@@ -443,7 +493,7 @@ jobs:
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: macos
+          flag-name: macos-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}
           path-to-lcov: build/coverage/lcov.info
           parallel: true
       - name: install

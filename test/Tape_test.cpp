@@ -220,9 +220,9 @@ TEST(Tape, canDeriveStatements)
     s.newRecording();
     // auto z = x1*x1 + std::sin(x1);
     auto zs = s.registerVariable();
-    s.pushRhs(std::cos(x1), x1s);
-    s.pushRhs(x2, x1s);
-    s.pushRhs(x1, x2s);
+    auto muls = {std::cos(x1), x2, x1};
+    auto slots = {x1s, x1s, x2s};
+    s.pushAll(muls.begin(), slots.begin(), 3);
     s.pushLhs(zs);
 
     EXPECT_EQ(3U, s.getNumVariables());
@@ -257,9 +257,9 @@ TEST(Tape, canRestartRecording)
 
     s.newRecording();
     auto zs = s.registerVariable();
-    s.pushRhs(std::cos(x1), x1s);
-    s.pushRhs(x2, x1s);
-    s.pushRhs(x1, x2s);
+    auto muls = {std::cos(x1), x2, x1};
+    auto slots = {x1s, x1s, x2s};
+    s.pushAll(muls.begin(), slots.begin(), 3);
     s.pushLhs(zs);
     s.setDerivative(zs, 1.0);
     // compute the other derivatives (adjoints)
@@ -281,9 +281,9 @@ TEST(Tape, canRestartRecording)
 
     // now putting y = exp(x1) + x1 / x2;
     auto ys = s.registerVariable();
-    s.pushRhs(std::exp(x1), x1s);
-    s.pushRhs(1.0 / x2, x1s);
-    s.pushRhs(-x1 / (x2 * x2), x2s);
+    auto muls2 = {std::exp(x1), 1.0 / x2, -x1 / (x2 * x2)};
+    auto slots2 = {x1s, x1s, x2s};
+    s.pushAll(muls2.begin(), slots2.begin(), 3);
     s.pushLhs(ys);
     s.setDerivative(ys, 1.0);
     s.computeAdjoints();
@@ -309,7 +309,8 @@ TEST(Tape, canPushCombined)
     auto zs = s.registerVariable();
     std::array<double, 3> mul = {{std::cos(x1), x2, x1}};
     std::array<xad::Tape<double>::slot_type, 3> sl = {{x1s, x1s, x2s}};
-    s.pushAll(zs, mul.data(), sl.data(), 3);
+    s.pushAll(mul.data(), sl.data(), 3);
+    s.pushLhs(zs);
     s.setDerivative(zs, 1.0);
     s.computeAdjoints();
     EXPECT_DOUBLE_EQ(1.0, s.getDerivative(x1s));

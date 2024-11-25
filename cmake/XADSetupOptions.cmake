@@ -70,3 +70,8 @@ else()
     set(XAD_USE_STRONG_INLINE ON CACHE BOOL "Use forced inlining for higher preformance, at a higher compile time cost" FORCE)
 endif()
 option(XAD_ALLOW_INT_CONVERSION "Add real->int conversion operator, potentially missing to track dependencies" ON)
+option(XAD_REDUCED_MEMORY "Reduce memory required for tape, at a slight performance cost" OFF)
+
+if(XAD_REDUCED_MEMORY)
+    message(STATUS "Using reduced memory for tape storage at a slight performance cost")
+endif()

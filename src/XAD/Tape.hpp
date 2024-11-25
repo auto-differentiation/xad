@@ -221,10 +221,18 @@ class Tape
         unregisterVariableReuseSlots(slot);
 #endif
     }
-    void pushRhs(const Real& multiplier, slot_type slot);
-    void pushRhs(Real&& multiplier, slot_type slot);
-    void pushLhs(slot_type slot);
-    void pushAll(slot_type lhs, Real* multipliers, slot_type* slots, unsigned n);
+
+    XAD_INLINE void pushLhs(slot_type slot)
+    {
+        assert(slot != INVALID_SLOT);
+        statement_.emplace_back(size_type(operations_.size()), slot);
+    }
+
+    template <class MulIt, class SlotIt>
+    XAD_FORCE_INLINE void pushAll(MulIt multipliers, SlotIt slots, unsigned n)
+    {
+        operations_.append_n(multipliers, slots, n);
+    }
 
     // capacity
     size_type getNumVariables() const;
@@ -256,9 +264,8 @@ class Tape
     }
 
     static XAD_THREAD_LOCAL Tape* active_tape_;
-    typename TapeContainerTraits<Real>::type multiplier_;
-    TapeContainerTraits<slot_type>::type slot_;
-    TapeContainerTraits<std::pair<slot_type, slot_type> >::type statement_;
+    typename TapeContainerTraits<Real, slot_type>::operations_type operations_;
+    typename TapeContainerTraits<Real, slot_type>::statements_type statement_;
     std::vector<Real> derivatives_;
     typedef std::pair<position_type, CheckpointCallback<Tape>*> chkpt_type;
     std::vector<chkpt_type> checkpoints_;
@@ -308,37 +315,6 @@ class Tape
     std::stack<SubRecording> nestedRecordings_;
     SubRecording* currentRec_;
 };
-
-template <class T>
-XAD_INLINE void Tape<T>::pushRhs(const T& multiplier, slot_type slot)
-{
-    assert(slot != INVALID_SLOT);
-    multiplier_.push_back(multiplier);
-    slot_.push_back(slot);
-}
-
-template <class T>
-XAD_INLINE void Tape<T>::pushRhs(T&& multiplier, slot_type slot)
-{
-    assert(slot != INVALID_SLOT);
-    multiplier_.push_back(std::move(multiplier));
-    slot_.push_back(slot);
-}
-
-template <class T>
-XAD_INLINE void Tape<T>::pushLhs(slot_type slot)
-{
-    assert(slot != INVALID_SLOT);
-    statement_.push_back(std::make_pair(size_type(slot_.size()), slot));
-}
-
-template <class T>
-XAD_INLINE void Tape<T>::pushAll(slot_type lhs, T* multipliers, slot_type* slots, unsigned n)
-{
-    multiplier_.append(multipliers, multipliers + n);
-    slot_.append(slots, slots + n);
-    pushLhs(lhs);
-}
 
 // declare external explicit instantiations
 #define XAD_DECLARE_EXTERN_TAPE(type) extern template class Tape<type>;
