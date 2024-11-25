@@ -174,6 +174,16 @@ TEST(ChunkContainer, non_pod_type)
     EXPECT_THAT(NonPodTester::copies + NonPodTester::constructions, Eq(NonPodTester::destructions));
 }
 
+TEST(ChunkContainer, non_pod_type_single_chunk_destruct)
+{
+    {
+        NonPodTester::reset();
+        ChunkContainer<NonPodTester, 8> chk;
+        for (int i = 0; i < 4; ++i) chk.push_back({});
+    }
+    EXPECT_THAT(NonPodTester::copies + NonPodTester::constructions, Eq(NonPodTester::destructions));
+}
+
 TEST(ChunkContainer, resize)
 {
     ChunkContainer<int, 8> chk;
