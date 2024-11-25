@@ -236,14 +236,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: 
-          - gcc5
-          - gcc6 
-          - gcc7
-          - gcc8
-          - gcc9
-          - gcc10
-          - gcc11
+        version: ["7", "8", "9", "10", "11", "12", "13", "14"]
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
         standard: [c++11, c++17]
@@ -251,36 +244,34 @@ jobs:
         exclude:
           - config: Debug
             reuse_slots: ON
-          - compiler: gcc5
-            standard: c++17
-          - compiler: gcc6
-            standard: c++17
-          - compiler: gcc7
+          - version: "7"
             standard: c++17
           - config: Release
             memory: lowmem
           - standard: c++17
             config: lowmem
-          - compiler: gcc5
+          - version: "7"
             config: Debug
-          - compiler: gcc6
+          - version: "8"
             config: Debug
-          - compiler: gcc7
+          - version: "9"
             config: Debug
-          - compiler: gcc8
+          - version: "10"
             config: Debug
-          - compiler: gcc9
+          - version: "12"
+            config: Debug
+          - version: "13"
             config: Debug
         include:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
           - config: Debug
-            compiler: gcc11
+            version: "11"
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
             coverage_ld_flags: "-lgcov"
             standard: c++11
-          - compiler: gcc11
+          - version: "11"
             config: Debug    # also with reusing slots, for coverage
             reuse_slots: ON
             coverage: true
@@ -289,36 +280,22 @@ jobs:
             standard: c++11
     runs-on: ubuntu-latest
     container: 
-      image: conanio/${{ matrix.compiler }}
-      options: --user root
-    env:
-      ACTIONS_RUNNER_FORCED_INTERNAL_NODE_VERSION: node16
-      ACTIONS_RUNNER_FORCE_ACTIONS_NODE_VERSION: node16
+      image: ghcr.io/foonathan/gcc:${{ matrix.version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup tools
         run: |
-          cat /etc/lsb-release
-          /lib/x86_64-linux-gnu/libc.so.6
-          sudo rm -f /etc/apt/sources.list.d/git-core-ubuntu-ppa-artful.list || true
-          sudo rm -f /etc/apt/sources.list.d/git-core-ubuntu-ppa-xenial.list || true
-          sudo apt-get update
-          sudo apt-get install -y ccache ninja-build lcov
+          apt-get update
+          apt-get install -y ccache ninja-build lcov
       - name: GitHub WS Tmp
         # there is an issue with workspace locations in github inside containers, which this works around
         # see: https://github.com/actions/runner/issues/2058
         run: |
            echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
-      - name: Setup cmake
-        run: |
-          wget https://github.com/Kitware/CMake/releases/download/v3.29.0/cmake-3.29.0-linux-x86_64.tar.gz
-          tar -xzf cmake-3.29.0-linux-x86_64.tar.gz 
-          sudo rm /usr/bin/cmake /usr/share/cmake-* -rf
-          echo $(pwd)/cmake-3.29.0-linux-x86_64/bin >> $GITHUB_PATH
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: linux-${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
+          key: linux-gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
       - name: configure
         run: |
           mkdir build
@@ -326,8 +303,6 @@ jobs:
           cmake .. -GNinja \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-            -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
@@ -382,8 +357,6 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_PREFIX_PATH="${{ env.GITHUB_WORKSPACE }}/install"  \
             -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard}}"  \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-            -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}"
           cmake --build .
 
