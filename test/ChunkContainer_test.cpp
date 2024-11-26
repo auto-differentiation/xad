@@ -230,3 +230,16 @@ TEST(ChunkContainer, push_back_no_check)
 
     for (int i = 0; i < 17; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
 }
+
+TEST(ChunkContainer, emplace_back)
+{
+    ChunkContainer<std::pair<int, int>, 8> chk;
+    for (int i = 0; i < 17; ++i) chk.emplace_back(i, i);
+
+    EXPECT_THAT(chk.size(), Eq(17u));
+
+    for (int i = 0; i < 17; ++i) 
+    {
+        EXPECT_THAT(chk[size_t(i)], Pair(i, i)) << "at " << i;
+    }
+}

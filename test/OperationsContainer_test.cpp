@@ -120,11 +120,11 @@ TYPED_TEST(OperationsContainerTest, canResizeExtendingSize)
 {
     auto c = TypeParam();
     c.push_back(42.0, 123);
-    c.resize(8);
+    c.resize(9);
 
-    EXPECT_THAT(c.size(), Eq(8));
+    EXPECT_THAT(c.size(), Eq(9));
     EXPECT_THAT(c[0], Pair(42.0, 123));
-    for (unsigned i = 1; i < 8; ++i)
+    for (unsigned i = 1; i < 9; ++i)
     {
         EXPECT_THAT(c[i], Pair(0.0, 0)) << "for i=" << i;
     }
@@ -198,10 +198,12 @@ TYPED_TEST(OperationsContainerTest2, callsDestructOnDisposal)
     TestStruct::items = 0;
     {
         auto c = TypeParam();
-        c.push_back(TestStruct(), 1);
-        c.push_back(TestStruct(), 2);
-        EXPECT_THAT(c[1], Pair(_, 2));
-        EXPECT_THAT(TestStruct::items, Eq(2));
+        for (int i = 0; i < 13; ++i)
+        {
+            c.push_back(TestStruct(), i);
+        }
+        EXPECT_THAT(c[1], Pair(_, 1));
+        EXPECT_THAT(TestStruct::items, Eq(13));
     }
     EXPECT_THAT(TestStruct::items, Eq(0));
 }
