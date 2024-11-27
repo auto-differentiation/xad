@@ -396,54 +396,6 @@ class ChunkContainer
                         reinterpret_cast<value_type*>(*(&chunkList_[nc] + 1)));
     }
 
-    void assign(size_type s, const_reference v = value_type())
-    {
-        if (s == 0)
-        {
-            clear();
-            return;
-        }
-
-        check_space(s);
-        size_type nc = getHighPart(s);
-        size_type lc = getLowPart(s);
-
-        if (s <= size())
-        {
-            if (s < size())
-                destructAllImpl<std::is_trivially_destructible<value_type>::value>::make(this, s,
-                                                                                         size());
-            // all assignments
-            for (size_type i = 0; i < nc; ++i)
-                std::fill(reinterpret_cast<value_type*>(chunkList_[i]),
-                          reinterpret_cast<value_type*>(chunkList_[i]) + chunk_size, v);
-            std::fill(reinterpret_cast<value_type*>(chunkList_[chunk_]),
-                      reinterpret_cast<value_type*>(chunkList_[chunk_]) + lc, v);
-            chunk_ = nc;
-            idx_ = lc;
-
-            return;
-        }
-
-        // here we have something bigger than it was - assign existing and fill rest
-        for (int i = 0; i < chunk_; ++i)
-            std::fill(reinterpret_cast<value_type*>(chunkList_[i]),
-                      reinterpret_cast<value_type*>(chunkList_[i]) + chunk_size, v);
-        std::fill(reinterpret_cast<value_type*>(chunkList_[chunk_]),
-                  reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_, v);
-
-        size_type fillsize = nc > chunk_ ? chunk_size : lc;
-        std::uninitialized_fill(reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_,
-                                reinterpret_cast<value_type*>(chunkList_[chunk_]) + fillsize, v);
-        for (size_type i = chunk_ + 1; i < nc; ++i)
-            std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[i]), chunk_size, v);
-        if (nc > chunk_)
-            std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[nc]), lc, v);
-        chunk_ = nc;
-        idx_ = lc;
-        return;
-    }
-
     reference operator[](size_type i)
     {
         return reinterpret_cast<pointer>(chunkList_[getHighPart(i)])[getLowPart(i)];

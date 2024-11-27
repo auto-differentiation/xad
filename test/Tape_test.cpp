@@ -229,10 +229,14 @@ TEST(Tape, canDeriveStatements)
     EXPECT_EQ(3U, s.getNumOperations());
     EXPECT_EQ(1U, s.getNumStatements());
 
-    // set the derivative for output
-    s.setDerivative(zs, 1.0);
+    // set the derivative for output (both from rvalue and lvalue)
+    s.setDerivative(zs, 1.5);
     EXPECT_DOUBLE_EQ(0.0, s.getDerivative(x1s));
     EXPECT_DOUBLE_EQ(0.0, s.getDerivative(x2s));
+    EXPECT_DOUBLE_EQ(1.5, s.getDerivative(zs));
+
+    auto outDerive = 1.0;
+    s.setDerivative(zs, outDerive);
     EXPECT_DOUBLE_EQ(1.0, s.getDerivative(zs));
 
     // s.printStatus();

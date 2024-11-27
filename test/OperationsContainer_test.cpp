@@ -28,6 +28,26 @@
 
 using namespace testing;
 
+TEST(OperationsContainerTestHuge, throwsBadAlloc)
+{
+    auto construct_huge = [&]
+    {
+        auto c = xad::OperationsContainer<double, int, static_cast<std::size_t>(-1)>();
+        XAD_UNUSED_VARIABLE(c);
+    };
+    EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());
+}
+
+TEST(OperationsContainerPairedTestHuge, throwsBadAlloc)
+{
+    auto construct_huge = [&]
+    {
+        auto c = xad::OperationsContainerPaired<double, int, static_cast<std::size_t>(-1)>();
+        XAD_UNUSED_VARIABLE(c);
+    };
+    EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());
+}
+
 template <typename C>
 class OperationsContainerTest : public Test
 {
@@ -216,6 +236,19 @@ TYPED_TEST(OperationsContainerTest2, callsDestructOnResize)
     c.push_back(TestStruct(), 1);
     c.resize(1);
     EXPECT_THAT(TestStruct::items, Eq(1));
+}
+
+TYPED_TEST(OperationsContainerTest2, callsDestructOnResize_MatchesChunkEnd)
+{
+    TestStruct::items = 0;
+    auto c = TypeParam();
+    for (unsigned i = 0; i < TypeParam::chunk_size; ++i)
+    {
+        c.push_back(TestStruct(), static_cast<int>(i));
+    }
+
+    c.resize(2);
+    EXPECT_THAT(TestStruct::items, Eq(2));
 }
 
 TYPED_TEST(OperationsContainerTest2, callsDestructOnClear)
