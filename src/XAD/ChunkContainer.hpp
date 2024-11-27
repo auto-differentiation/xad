@@ -325,24 +325,27 @@ class ChunkContainer
 
     struct iterator
     {
-        pointer point_;
-        pointer next_chunk_;
-        int space_left_;
+         pointer point_;
+        pointer chunk_base_;
+        size_type chunk_index_;
+        size_type remaining_in_chunk_;
         explicit iterator(pointer point = nullptr, int space_left = 0, pointer next = NULL)
             : point_(point), next_chunk_(next), space_left_(space_left)
         {
         }
-
-        iterator& operator++()
-        {
+        iterator& operator++() {
             ++point_;
-            if (--space_left_ == 0)
-            {
-                point_ = next_chunk_;
-                space_left_ = chunk_size;
+            --remaining_in_chunk_;
+            if (remaining_in_chunk_ == 0) {
+                // Move to next chunk more efficiently
+                chunk_index_++;
+                chunk_base_ = reinterpret_cast<pointer>(chunkList_[chunk_index_]);
+                point_ = chunk_base_;
+                remaining_in_chunk_ = chunk_size;
             }
             return *this;
         }
+       
         iterator operator++(int)
         {
             iterator r(*this);
