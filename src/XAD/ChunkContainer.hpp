@@ -279,21 +279,42 @@ class ChunkContainer
 
         // now we have something bigger
         reserve(s);
-        size_type nc_new = getHighPart(s);
-        size_type nc_old = chunk_;
-        size_type ix = idx_;
-        for (size_type i = nc_old; i < nc_new; ++i)
+        auto start_chunk = chunk_;
+        auto end_chunk = getHighPart(s);
+        auto start_idx = idx_;
+        auto end_idx = getLowPart(s);
+
+        if (start_chunk == end_chunk)
         {
-            std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[i]) + ix,
-                                      chunk_size - ix, v);
-            ix = 0;
+            std::uninitialized_fill_n(
+                reinterpret_cast<value_type*>(chunkList_[start_chunk]) + start_idx,
+                end_idx - start_idx, v);
+            idx_ = end_idx;
+            return;
         }
 
-        size_type lc = getLowPart(s);  // maybe 0
-        std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[nc_new]) + ix, lc - ix,
-                                  v);
-        idx_ = lc;
-        chunk_ = nc_new;
+        // otherwise fill rest of start chunk
+        std::uninitialized_fill_n(
+            reinterpret_cast<value_type*>(chunkList_[start_chunk]) + start_idx,
+            chunk_size - start_idx, v);
+
+        // then fully fill all chunks between
+        for (size_type c = start_chunk + 1; c < end_chunk; ++c)
+        {
+            std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[c]), chunk_size, v);
+        }
+
+        if (end_idx == 0)
+        {
+            idx_ = chunk_size;
+            chunk_ = end_chunk - 1;
+            return;
+        }
+
+        // otherwise fill the last chunk
+        std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[end_chunk]), end_idx, v);
+        chunk_ = end_chunk;
+        idx_ = end_idx;
     }
 
     template <class It>
