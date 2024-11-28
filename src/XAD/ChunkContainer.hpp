@@ -133,24 +133,27 @@ class ChunkContainer
     }
 
     ChunkContainer(ChunkContainer&& o) noexcept
-        : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_)
-    {
+        : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_) {
+        o.chunk_ = 0;
+        o.idx_ = 0;
     }
 
-    ChunkContainer& operator=(ChunkContainer&& o)
-    {
-        _free_memory();
-        chunkList_ = std::move(o.chunkList_);
-        chunk_ = o.chunk_;
-        idx_ = o.idx_;
+    ChunkContainer& operator=(ChunkContainer&& o) noexcept {
+        if (this != &o) {
+            _free_memory();
+            chunkList_ = std::move(o.chunkList_);
+            chunk_ = o.chunk_;
+            idx_ = o.idx_;
+            o.chunk_ = 0;
+            o.idx_ = 0;
+        }
         return *this;
     }
-
     ChunkContainer(const ChunkContainer&) = delete;
     ChunkContainer& operator=(const ChunkContainer&) = delete;
 
     ~ChunkContainer() { _free_memory(); }
-
+    
     void reserve(size_type s)
     {
         size_type nc = getNumChunks(s);
@@ -430,16 +433,15 @@ class ChunkContainer
     static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
 
   private:
-    void check_space()
-    {
-        if (idx_ == chunk_size)
-        {
-            if (chunk_ == chunkList_.size() - 1)
-            {
+    
+    void check_space() {
+        if (__builtin_expect(idx_ == chunk_size, 0)) {
+            if (__builtin_expect(chunk_ == chunkList_.size() - 1, 0)) {
                 char* chunk = reinterpret_cast<char*>(
                     detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-                if (chunk == NULL)
+                if (chunk == nullptr) {
                     throw std::bad_alloc();
+                }
                 chunkList_.push_back(chunk);
             }
             ++chunk_;
