@@ -64,7 +64,7 @@ endif()
 option(XAD_TAPE_REUSE_SLOTS "Reuse slots in tape that have become free (slower, less memory)" OFF)
 option(XAD_NO_THREADLOCAL "Disable thread-local tape - only for single-threaded tape use" OFF)
 if (MSVC AND MSVC_VERSION GREATER_EQUAL 1910)
-    option(XAD_USE_STRONG_INLINE "Use forced inlining for higher preformance, at a higher compile time cost" OFF)
+    option(XAD_USE_STRONG_INLINE "Use forced inlining for higher performance, at a higher compile time cost" OFF)
 else()
     # in VS 2015, without strong inlining, some long expressions in release mode get miscompiled
     set(XAD_USE_STRONG_INLINE ON CACHE BOOL "Use forced inlining for higher preformance, at a higher compile time cost" FORCE)

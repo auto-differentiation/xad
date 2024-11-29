@@ -96,9 +96,9 @@ jobs:
           ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }})
+          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }})
           path: build/test_results.xml
       - name: install
         shell: cmd
@@ -210,9 +210,9 @@ jobs:
           ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2)) --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }})
+          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }})
           path: build/test_results.xml
       - name: install
         run: |
@@ -295,7 +295,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: linux-gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
+          key: linux-gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}
       - name: configure
         run: |
           mkdir build
@@ -324,9 +324,9 @@ jobs:
           ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2)) --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }})
+          name: Test Results (linux ${{ matrix.compiler }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }})
           path: ${{ env.GITHUB_WORKSPACE }}/build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
@@ -450,9 +450,9 @@ jobs:
           ctest --no-compress-output --output-on-failure -j$(sysctl -n hw.ncpu) --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Test Results (macos ${{ matrix.config }}-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }})
+          name: Test Results (macos ${{ matrix.config }}-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}-${{ matrix.standard }})
           path: build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
@@ -506,7 +506,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Event File
           path: ${{ github.event_path }}
