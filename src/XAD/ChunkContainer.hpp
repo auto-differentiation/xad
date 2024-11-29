@@ -443,17 +443,17 @@ class ChunkContainer
     void check_space()
     {
         if (XAD_VERY_LIKELY(chunk_ == chunkList_.size() - 1))
-    {
-        char* chunk = reinterpret_cast<char*>(
-            detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-        if (chunk == nullptr) {
-            throw std::bad_alloc();
+        {
+            char* chunk = reinterpret_cast<char*>(
+                detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+            if (chunk == nullptr) {
+                throw std::bad_alloc();
         }
-        chunkList_.push_back(chunk);
+            chunkList_.push_back(chunk);
     }
-    ++chunk_;
-    idx_ = 0;
-}
+        ++chunk_;
+        idx_ = 0;
+    }
    
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
 
