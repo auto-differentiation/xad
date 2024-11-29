@@ -149,10 +149,12 @@ class ChunkContainer
         }
         return *this;
     }
+
     ChunkContainer(const ChunkContainer&) = delete;
     ChunkContainer& operator=(const ChunkContainer&) = delete;
 
     ~ChunkContainer() { _free_memory(); }
+
     void reserve(size_type s)
     {
         size_type nc = getNumChunks(s);
@@ -440,6 +442,7 @@ class ChunkContainer
   private:
     std::vector<char*> chunkList_;
     size_type chunk_, idx_;
+
     void check_space()
     {
         if (XAD_VERY_LIKELY(chunk_ == chunkList_.size() - 1))
