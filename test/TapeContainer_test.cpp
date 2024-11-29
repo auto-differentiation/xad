@@ -24,12 +24,14 @@
 
 #include "XAD/TapeContainer.hpp"
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-TEST(TapeContainer, basic)
+using namespace testing;
+
+TEST(TapeContainer, statements)
 {
     // currently, it's a redefine of ChunkContainer, which we have a test for already
-    typedef xad::TapeContainerTraits<int>::type container;
+    typedef typename xad::TapeContainerTraits<int, int>::statements_type container;
 
     container sc;
 
@@ -39,10 +41,31 @@ TEST(TapeContainer, basic)
     // we only require push_backs to be successful after reserving
     sc.reserve(2);
 
-    sc.push_back(2);
-    sc.push_back(3);
-    EXPECT_EQ(2U, sc.size());
-    EXPECT_FALSE(sc.empty());
-    EXPECT_EQ(2, sc[0]);
-    EXPECT_EQ(3, sc[1]);
+    sc.emplace_back(2, 0);
+    sc.emplace_back(3, 1);
+    EXPECT_THAT(sc.size(), Eq(2));
+    EXPECT_THAT(sc.empty(), IsFalse());
+    EXPECT_THAT(sc[0], Pair(2, 0));
+    EXPECT_THAT(sc[1], Pair(3, 1));
+}
+
+TEST(TapeContainer, operations)
+{
+    // currently, it's a redefine of ChunkContainer, which we have a test for already
+    typedef typename xad::TapeContainerTraits<int, int>::operations_type container;
+
+    container sc;
+
+    EXPECT_EQ(0U, sc.size());
+    EXPECT_TRUE(sc.empty());
+
+    // we only require push_backs to be successful after reserving
+    sc.reserve(2);
+
+    sc.push_back(2, 0);
+    sc.push_back(3, 1);
+    EXPECT_THAT(sc.size(), Eq(2));
+    EXPECT_THAT(sc.empty(), IsFalse());
+    EXPECT_THAT(sc[0], Pair(2, 0));
+    EXPECT_THAT(sc[1], Pair(3, 1));
 }
