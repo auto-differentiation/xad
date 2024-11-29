@@ -454,6 +454,7 @@ class ChunkContainer
         ++chunk_;
         idx_ = 0;
     }
+
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
 
     void _free_memory()
