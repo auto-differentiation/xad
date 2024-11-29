@@ -439,11 +439,11 @@ class ChunkContainer
     static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
 
   private:
-  std::vector<char*> chunkList_;
-  size_type chunk_, idx_;
-  void check_space()
-{
-    if (XAD_VERY_LIKELY(chunk_ == chunkList_.size() - 1))
+    std::vector<char*> chunkList_;
+    size_type chunk_, idx_;
+    void check_space()
+    {
+        if (XAD_VERY_LIKELY(chunk_ == chunkList_.size() - 1))
     {
         char* chunk = reinterpret_cast<char*>(
             detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
