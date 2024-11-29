@@ -153,7 +153,6 @@ class ChunkContainer
     ChunkContainer& operator=(const ChunkContainer&) = delete;
 
     ~ChunkContainer() { _free_memory(); }
-    
     void reserve(size_type s)
     {
         size_type nc = getNumChunks(s);
