@@ -158,6 +158,11 @@ function(xad_add_library name type)
         set_target_properties(${name} PROPERTIES 
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
+    if(MSVC)
+        # in MSVC/Debug, we used checked iterators, and MSVC displays a deprecation warning
+        # without this flag
+        target_compile_definitions(${name} PUBLIC "$<$<CONFIG:DEBUG>:_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING>")
+    endif()
 endfunction()
 
 

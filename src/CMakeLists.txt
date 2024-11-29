@@ -47,6 +47,8 @@ set(public_headers
     XAD/Literals.hpp
     XAD/Macros.hpp
     XAD/MathFunctions.hpp
+    XAD/OperationsContainer.hpp
+    XAD/OperationsContainerPaired.hpp
     XAD/ReusableRange.hpp
     XAD/StdCompatibility.hpp
     XAD/Tape.hpp

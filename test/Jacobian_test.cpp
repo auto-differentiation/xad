@@ -192,8 +192,9 @@ TEST(JacobianTest, DomainLargerThanCodomainForward)
     // f(x) = [ x[0] + x[1], x[2] * x[3] ]
     auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0] + x[1], x[2] * x[3]}; };
 
-    std::vector<std::vector<double>> expected_jacobian = {{1.0, 1.0, 0.0, 0.0},  //
-                                                          {0.0, 0.0, value(input[3]), value(input[2])}};
+    std::vector<std::vector<double>> expected_jacobian = {
+        {1.0, 1.0, 0.0, 0.0},  //
+        {0.0, 0.0, value(input[3]), value(input[2])}};
 
     std::vector<std::vector<double>> computed_jacobian = xad::computeJacobian<double>(input, foo);
 
@@ -211,8 +212,9 @@ TEST(JacobianTest, DomainLargerThanCodomainAdjoint)
     // f(x) = [ x[0] + x[1], x[2] * x[3] ]
     auto foo = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0] + x[1], x[2] * x[3]}; };
 
-    std::vector<std::vector<double>> expected_jacobian = {{1.0, 1.0, 0.0, 0.0},  //
-                                                          {0.0, 0.0, value(input[3]), value(input[2])}};
+    std::vector<std::vector<double>> expected_jacobian = {
+        {1.0, 1.0, 0.0, 0.0},  //
+        {0.0, 0.0, value(input[3]), value(input[2])}};
 
     std::vector<std::vector<double>> computed_jacobian = xad::computeJacobian<double>(input, foo);
 

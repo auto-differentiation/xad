@@ -27,6 +27,17 @@
 
 namespace xad
 {
+
+// keeps information about multipliers and slots for an expression
+// locally on stack
+template <typename TapeType, int N>
+struct DerivInfo
+{
+    unsigned index = 0;
+    typename TapeType::value_type multipliers[N];
+    typename TapeType::slot_type slots[N];
+};
+
 /// Represents a generic expression, for the Scalar base type.
 ///
 /// It uses the CTRP pattern, where derived classes register themselves with
@@ -78,29 +89,18 @@ struct Expression
     XAD_INLINE explicit operator bool() const { return value() != Scalar(0); }
 
     /// calculate the derivatives, given a tape object
-    template <class Tape>
-    XAD_INLINE void calc_derivatives(Tape& s) const
+    template <class Tape, int Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s) const
     {
-        derived().calc_derivatives(s, Scalar(1));
+        derived().calc_derivatives(info, s, Scalar(1));
     }
 
     /// calculate the derivatives, given tape and multiplier
-    template <class Tape>
-    XAD_INLINE void calc_derivatives(Tape& s, const Scalar& multiplier) const
+    template <class Tape, int Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s,
+                                     const Scalar& multiplier) const
     {
-        derived().calc_derivatives(s, multiplier);
-    }
-
-    template <typename Slot>
-    XAD_INLINE void calc_derivatives(Slot* slot, Scalar* muls, int& n, const Scalar& mul) const
-    {
-        derived().calc_derivatives(slot, muls, n, mul);
-    }
-
-    template <typename It1, typename It2>
-    XAD_INLINE void calc_derivatives(It1& sit, It2& mit, const Scalar& mul) const
-    {
-        derived().calc_derivatives(sit, mit, mul);
+        derived().calc_derivatives(info, s, multiplier);
     }
 
     XAD_INLINE bool shouldRecord() const { return derived().shouldRecord(); }

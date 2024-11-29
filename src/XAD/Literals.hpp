@@ -183,11 +183,11 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 
     XAD_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
     {
-        if (o.shouldRecord())
+        auto s = tape_type::getActive();
+        if (s && o.shouldRecord())
         {
-            auto s = tape_type::getActive();
             slot_ = s->registerVariable();
-            o.calc_derivatives(*s);
+            pushAll<1>(s, o);
             s->pushLhs(slot_);
         }
         this->a_ = o.getValue();
@@ -213,8 +213,8 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 
     XAD_INLINE ~AReal()
     {
-        if (slot_ != INVALID_SLOT)
-            if (auto tape = tape_type::getActive())
+        if (auto tape = tape_type::getActive())
+            if (slot_ != INVALID_SLOT)
                 tape->unregisterVariable(slot_);
     }
 
@@ -223,8 +223,9 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     XAD_INLINE AReal& operator=(nested_type x)
     {
         this->a_ = x;
-        if (slot_ != INVALID_SLOT)
-            tape_type::getActive()->pushLhs(slot_);
+        auto tape = tape_type::getActive();
+        if (tape && slot_ != INVALID_SLOT)
+            tape->pushLhs(slot_);
         return *this;
     }
 
@@ -239,35 +240,27 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     XAD_INLINE void setAdjoint(Scalar a) { setDerivative(a); }
     XAD_INLINE Scalar getAdjoint() const { return getDerivative(); }
 
-    XAD_INLINE void calc_derivatives(tape_type& s, const Scalar& mul) const
+    template <int Size>
+    XAD_FORCE_INLINE void pushRhs(DerivInfo<tape_type, Size>& info, const Scalar& mul,
+                                  slot_type slot) const
+    {
+        info.multipliers[info.index] = mul;
+        info.slots[info.index++] = slot;
+    }
+
+    template <int Size>
+    XAD_FORCE_INLINE void calc_derivatives(DerivInfo<tape_type, Size>& info, tape_type&,
+                                           const Scalar& mul) const
     {
         if (slot_ != INVALID_SLOT)
-            s.pushRhs(mul, slot_);
+            pushRhs(info, mul, slot_);
     }
 
-    XAD_INLINE void calc_derivatives(tape_type& s) const
+    template <int Size>
+    XAD_FORCE_INLINE void calc_derivatives(DerivInfo<tape_type, Size>& info, tape_type&) const
     {
         if (slot_ != INVALID_SLOT)
-            s.pushRhs(Scalar(1), slot_);
-    }
-
-    template <typename Slot>
-    XAD_INLINE void calc_derivatives(Slot* slot, Scalar* muls, int& n, const Scalar& mul) const
-    {
-        assert(false);
-        slot[n] = slot_;
-        muls[n] = mul;
-        ++n;
-    }
-
-    template <typename It1, typename It2>
-    XAD_INLINE void calc_derivatives(It1& sit, It2& mit, const Scalar& mul) const
-    {
-        assert(false);
-        ::new (&*sit) slot_type(slot_);
-        ::new (&*mit) Scalar(mul);
-        ++sit;
-        ++mit;
+            pushRhs(info, Scalar(1), slot_);
     }
 
     XAD_INLINE Scalar getDerivative() const { return derivative(); }
@@ -302,6 +295,16 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     XAD_INLINE bool shouldRecord() const { return slot_ != INVALID_SLOT; }
 
   private:
+    template <int Size, typename Expr>
+    XAD_FORCE_INLINE void pushAll(tape_type* t, const Expr& expr) const
+    {
+        DerivInfo<tape_type, Size> info;
+
+        expr.calc_derivatives(info, *t);
+
+        t->pushAll(info.multipliers, info.slots, info.index);
+    }
+
     template <class T>
     friend class Tape;
     typename tape_type::slot_type slot_;
@@ -323,21 +326,17 @@ struct ADVar : public Expression<Scalar, ADVar<Scalar>>
 
     XAD_INLINE const Scalar& value() const { return ar_.value(); }
 
-    XAD_INLINE void calc_derivatives(tape_type& s, const Scalar& mul) const
+    template <int Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<tape_type, Size>& info, tape_type& s,
+                                     const Scalar& mul) const
     {
-        ar_.calc_derivatives(s, mul);
-    }
-    XAD_INLINE void calc_derivatives(tape_type& s) const { ar_.calc_derivative(s); }
-    template <typename Slot>
-    XAD_INLINE void calc_derivatives(Slot* slot, Scalar* muls, int& n, const Scalar& mul) const
-    {
-        ar_.calc_derivatives(slot, muls, n, mul);
+        ar_.calc_derivatives(info, s, mul);
     }
 
-    template <typename It1, typename It2>
-    XAD_INLINE void calc_derivatives(It1& sit, It2& mit, const Scalar& mul) const
+    template <int Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<tape_type, Size>& info, tape_type& s) const
     {
-        ar_.calc_derivatives(sit, mit, mul);
+        ar_.calc_derivative(info, s);
     }
 
     XAD_INLINE const Scalar& derivative() const { return ar_.derivative(); }
@@ -352,12 +351,12 @@ struct ADVar : public Expression<Scalar, ADVar<Scalar>>
 template <class Scalar>
 XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const AReal& o)
 {
-    if (o.shouldRecord() || this->shouldRecord())
+    tape_type* s = tape_type::getActive();
+    if (s && (o.shouldRecord() || this->shouldRecord()))
     {
-        tape_type* s = tape_type::getActive();
         if (slot_ == INVALID_SLOT)
             slot_ = s->registerVariable();
-        o.calc_derivatives(*s);
+        pushAll<1>(s, o);
         s->pushLhs(slot_);
     }
     this->a_ = o.getValue();
@@ -369,11 +368,11 @@ template <class Expr>
 XAD_INLINE AReal<Scalar>::AReal(Expression<Scalar, Expr> const& expr)
     : base_type(expr.getValue()), slot_(INVALID_SLOT)
 {
-    if (expr.shouldRecord())
+    tape_type* s = tape_type::getActive();
+    if (s && expr.shouldRecord())
     {
-        tape_type* s = tape_type::getActive();
         slot_ = s->registerVariable();
-        expr.calc_derivatives(*s);
+        pushAll<ExprTraits<Expr>::numVariables>(s, expr);
         s->pushLhs(slot_);
     }
 }
@@ -382,10 +381,10 @@ template <class Scalar>
 template <class Expr>
 XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const Expression<Scalar, Expr>& expr)
 {
-    if (expr.shouldRecord() || this->shouldRecord())
+    tape_type* s = tape_type::getActive();
+    if (s && (expr.shouldRecord() || this->shouldRecord()))
     {
-        tape_type* s = tape_type::getActive();
-        expr.calc_derivatives(*s);
+        pushAll<ExprTraits<Expr>::numVariables>(s, expr);
         // only register this variable after evaluating the expression, as this
         // variable might appear on the rhs of the equation too and if not yet
         // registered, it doesn't need recording of derivatives
