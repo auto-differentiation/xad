@@ -448,13 +448,12 @@ class ChunkContainer
                 detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
             if (chunk == nullptr) {
                 throw std::bad_alloc();
-        }
+            }
             chunkList_.push_back(chunk);
-    }
+        }
         ++chunk_;
         idx_ = 0;
     }
-   
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
 
     void _free_memory()
