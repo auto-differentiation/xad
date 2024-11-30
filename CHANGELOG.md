@@ -5,17 +5,34 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [1.7.0] - 2024-11-30
+
+This release features extensive performance improvements.
 
 ### Added
 
+-   **Template Variables**: Added support for C++17 type traits such as `std::is_floating_point_v` ([#127](https://github.com/auto-differentiation/xad/pull/127)).
+-   **CI/CD Workflows**: Updated workflows to target the C++17 standard ([#127](https://github.com/auto-differentiation/xad/pull/127)).
+-   **New Sample**: Introduced a Monte-Carlo swaption portfolio pricer, including path-wise derivative calculations ([#126](https://github.com/auto-differentiation/xad/pull/126)).
+
 ### Changed
 
-### Deprecated
+-   **Performance Improvements** ([#150](https://github.com/auto-differentiation/xad/pull/150)):
 
-### Removed
+    -   Optimised `OperationsContainer` for handling slots and multipliers.
+    -   Enhanced iteration efficiency in `computeAdjoints` by avoiding redundant operations.
+    -   Implemented joint tape appending for multipliers and slots in a single operation.
+    -   Removed the overhead of `std::fma` calls, relying on compiler-level optimisations.
+    -   Added pre-checks to skip derivative calculations when tape is not required.
+    -   Provided branch prediction hints using `XAD_LIKELY` and `XAD_UNLIKELY`.
+    -   Introduced a paired operations container variant for improved performance at a slight memory cost, with a `XAD_REDUCED_MEMORY` CMake option to toggle memory usage.
+
+-   **Documentation Updates**: Improved and expanded documentation ([#125](https://github.com/auto-differentiation/xad/pull/125)).
+-   **CMake Module Renaming**: Renamed helper modules to avoid name clashes (by @raneamri, [#123](https://github.com/auto-differentiation/xad/pull/123)).
 
 ### Fixed
+
+-   **Move Behaviour of ChunkContainer** Fixed move behaviour of `ChunkContainer` (by @rghouzra, [#152](https://github.com/auto-differentiation/xad/pull/152))
 
 
 ## [1.6.0] - 2024-07-17
@@ -145,7 +162,7 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/xad/compare/v1.6.0...HEAD
+[1.7.0]: https://github.com/auto-differentiation/xad/compare/v1.6.0...v1.7.0
 
 [1.6.0]: https://github.com/auto-differentiation/xad/compare/v1.5.2...v1.6.0
 
