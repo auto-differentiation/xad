@@ -133,16 +133,20 @@ class ChunkContainer
     }
 
     ChunkContainer(ChunkContainer&& o) noexcept
-        : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_)
-    {
+        : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_) {
+        o.chunk_ = 0;
+        o.idx_ = 0;
     }
 
-    ChunkContainer& operator=(ChunkContainer&& o)
-    {
-        _free_memory();
-        chunkList_ = std::move(o.chunkList_);
-        chunk_ = o.chunk_;
-        idx_ = o.idx_;
+    ChunkContainer& operator=(ChunkContainer&& o) noexcept {
+        if (this != &o) {
+            _free_memory();
+            chunkList_ = std::move(o.chunkList_);
+            chunk_ = o.chunk_;
+            idx_ = o.idx_;
+            o.chunk_ = 0;
+            o.idx_ = 0;
+        }
         return *this;
     }
 
@@ -445,8 +449,9 @@ class ChunkContainer
         {
             char* chunk = reinterpret_cast<char*>(
                 detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-            if (chunk == NULL)
+            if (chunk == nullptr) {
                 throw std::bad_alloc();
+            }
             chunkList_.push_back(chunk);
         }
         ++chunk_;
