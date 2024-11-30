@@ -605,10 +605,9 @@ void Tape<T>::clearDerivatives()
 }
 
 template <class T>
-void Tape<T>::insertCallback(CheckpointCallback<Tape<T> >* cb)
-{
-    checkpoints_.push_back(std::make_pair(position_type(statement_.size()), cb));
-    statement_.push_back(std::make_pair(size_type(operations_.size()), slot_type(INVALID_SLOT)));
+void Tape<T>::insertCallback(CheckpointCallback<Tape<T> >* cb) {
+    checkpoints_.emplace_back(position_type(statement_.size()), cb);  
+    statement_.emplace_back(size_type(operations_.size()), slot_type(INVALID_SLOT));
 }
 
 template <class T>
@@ -670,7 +669,7 @@ void Tape<T>::resetTo(position_type pos)
 }
 
 template <class T>
-void Tape<T>::pushCallback(callback_type cb)
+void Tape<T>::pushCallback(const callback_type &cb)
 {
     callbacks_.push_back(cb);
 }
@@ -712,13 +711,13 @@ void Tape<T>::clearDerivativesAfter(position_type pos)
 }
 
 template <class T>
-T Tape<T>::getAndResetOutputAdjoint(slot_type slot)
-{
-    if (slot >= slot_type(derivatives_.size()))
+T Tape<T>::getAndResetOutputAdjoint(slot_type slot) {
+    const auto derivatives_size = derivatives_.size();
+    if (slot >= slot_type(derivatives_size))
         throw OutOfRange("Requested output slot does not exist");
 
-    T ret = derivatives_[slot];
-    derivatives_[slot] = 0.0;
+    T ret = std::move(derivatives_[slot]);  // use move semantics
+    derivatives_[slot] = T();  // more efficient
     return ret;
 }
 
