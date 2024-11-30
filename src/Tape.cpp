@@ -669,7 +669,7 @@ void Tape<T>::resetTo(position_type pos)
 }
 
 template <class T>
-void Tape<T>::pushCallback(const callback_type &cb)
+void Tape<T>::pushCallback(callback_type cb)
 {
     callbacks_.push_back(cb);
 }
