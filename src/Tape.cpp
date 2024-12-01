@@ -717,7 +717,7 @@ T Tape<T>::getAndResetOutputAdjoint(slot_type slot) {
         throw OutOfRange("Requested output slot does not exist");
 
     T ret = std::move(derivatives_[slot]);  // use move semantics
-    derivatives_[slot] = T();  // more efficient
+    derivatives_[slot] = T();  // more generic
     return ret;
 }
 
