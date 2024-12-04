@@ -240,34 +240,25 @@ TEST(ChunkContainer, resize)
     }
 }
 
+
 TEST(ChunkContainer, clear_method)
 {
     ChunkContainer<int, 8> chk;
-    
+   
     // populate the ct
-    for (int i = 0; i < 20; ++i)
-    {   
-       chk.push_back(i);
-    }
-    // verify init state
+    chk.resize(20, 42);
+
     EXPECT_THAT(chk.size(), Eq(20u));
-    
+    EXPECT_THAT(chk, Each(Eq(42)));
+
     // clear the ct
     chk.clear();
     
-    // check size is reseted 
     EXPECT_THAT(chk.size(), Eq(0u));
-    
-    // check if we can still add elements after clear
-    for (int i = 0; i < 10; ++i) 
-    {
-       chk.push_back(i);
-    }
+
+    chk.resize(10, -42);
     EXPECT_THAT(chk.size(), Eq(10u));
-    for (int i = 0; i < 10; ++i) 
-    {
-        EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
-    }
+    EXPECT_THAT(chk, Each(Eq(-42)));
 }
 
 TEST(ChunkContainer, resize_fills_with_values)
