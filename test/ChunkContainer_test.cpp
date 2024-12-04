@@ -244,7 +244,8 @@ TEST(ChunkContainer, resize)
 TEST(ChunkContainer, clear_method)
 {
     ChunkContainer<int, 8> chk;
-   
+    auto init_cp = chk.capacity();
+
     // populate the ct
     chk.resize(20, 42);
 
@@ -255,7 +256,9 @@ TEST(ChunkContainer, clear_method)
     chk.clear();
     
     EXPECT_THAT(chk.size(), Eq(0u));
-
+    // check capacity still the same
+    EXPECT_THAT(chk.capacity(), Eq(init_cp));
+    
     chk.resize(10, -42);
     EXPECT_THAT(chk.size(), Eq(10u));
     EXPECT_THAT(chk, Each(Eq(-42)));
