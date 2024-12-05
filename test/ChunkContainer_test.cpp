@@ -243,15 +243,14 @@ TEST(ChunkContainer, resize)
 TEST(ChunkContainer, clear_method)
 {
     ChunkContainer<int, 8> chk;
-    auto init_cp = chk.capacity();
-
     chk.resize(20, 42);
 
     EXPECT_THAT(chk.size(), Eq(20u));
-    EXPECT_THAT(chk.capacity(), Ge(init_cp));
+    auto cp = chk.capacity();
 
     chk.clear();
     EXPECT_THAT(chk.size(), Eq(0u));
+    EXPECT_THAT(chk.capacity(), Eq(cp));
 
     chk.resize(10, -42);
     EXPECT_THAT(chk.size(), Eq(10u));
