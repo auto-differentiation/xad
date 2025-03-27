@@ -488,7 +488,7 @@ jobs:
 
   trigger_quantlib_risks_cpp:
     name: Trigger QuantLib-Risks-Cpp CI
-    needs: [build_and_test_windows, build_and_test_gcc, build_and_test_macos]
+    #needs: [build_and_test_windows, build_and_test_gcc, build_and_test_macos]
     runs-on: ubuntu-latest
     steps:
       - name: Trigger QuantLib-Risks-Cpp Workflow
