@@ -495,7 +495,7 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
           repository: raneamri/QuantLib-Risks-Cpp # auto-differentiation/QuantLib-Risks-Cpp
-          event-type: xad-ci-trigger
+          event-type: ql-risks-ci-trigger
           client-payload: >
             {
               "xad_repo": "${{ github.repository }}",
