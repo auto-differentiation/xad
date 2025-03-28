@@ -488,13 +488,12 @@ jobs:
 
   trigger_quantlib_risks_cpp:
     name: Trigger QuantLib-Risks-Cpp CI
-    #needs: [build_and_test_windows, build_and_test_gcc, build_and_test_macos]
     runs-on: ubuntu-latest
     steps:
       - name: Trigger QuantLib-Risks-Cpp Workflow
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
           repository: raneamri/QuantLib-Risks-Cpp # auto-differentiation/QuantLib-Risks-Cpp
           event-type: xad-ci-trigger
           client-payload: >
