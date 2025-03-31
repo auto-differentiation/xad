@@ -205,7 +205,7 @@ struct is_compound<xad::FReal<T>> : std::true_type
 {
 };
 
-#if (((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L) && false)
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
 
 // For some reason, in VS 2022, a generic template for is_floating_point_v is not used
 // in overload resolution. We need to fully specialise the template for common types
