@@ -287,6 +287,9 @@ jobs:
           - version: "18"
             cxx: clang++
             cc: clang
+          - version: "19"
+            cxx: clang++
+            cc: clang
         exclude:
           - config: Debug
             reuse_slots: ON
