@@ -264,29 +264,29 @@ jobs:
         memory: ["default", "lowmem"]
         include:
           - version: "11"
-            cxx: clang++-11
-            cc: clang-11
+            cxx: clang++
+            cc: clang
           - version: "12"
-            cxx: clang++-12
-            cc: clang-12
+            cxx: clang++
+            cc: clang
           - version: "13"
-            cxx: clang++-13
-            cc: clang-13
+            cxx: clang++
+            cc: clang
           - version: "14"
-            cxx: clang++-14
-            cc: clang-14
+            cxx: clang++
+            cc: clang
           - version: "15"
-            cxx: clang++-15
-            cc: clang-15
+            cxx: clang++
+            cc: clang
           - version: "16"
-            cxx: clang++-16
-            cc: clang-16
+            cxx: clang++
+            cc: clang
           - version: "17"
-            cxx: clang++-17
-            cc: clang-17
+            cxx: clang++
+            cc: clang
           - version: "18"
-            cxx: clang++-18
-            cc: clang-18
+            cxx: clang++
+            cc: clang
         exclude:
           - config: Debug
             reuse_slots: ON
@@ -301,7 +301,7 @@ jobs:
           - version: "13"
             config: Debug
     container:
-      image: ghcr.io/foonathan/clang:18
+      image: ghcr.io/foonathan/clang:${{ matrix.version }}
     steps:
       - uses: actions/checkout@v3
       - name: setup
@@ -425,7 +425,7 @@ jobs:
           cmake .. -GNinja \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-            -DCMAKE_CXX_FLAGS="-std:${{matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
+            -DCMAKE_CXX_FLAGS="-std=${{matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
@@ -477,7 +477,7 @@ jobs:
           cmake ../samples -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_FLAGS="-std:${{ matrix.standard }}" \
+            -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }}" \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install" \
             ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }}
           cmake --build .
