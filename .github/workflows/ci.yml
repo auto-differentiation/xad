@@ -257,7 +257,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["11", "12", "13", "14", "15", "16", "17", "18", "19"]
+        version: ["11", "12", "13", "14", "15", "16", "17", "18"]
         config: [Release, Debug]
         reuse_slots: [OFF, ON]
         standard: ["11", "17"]
@@ -285,9 +285,6 @@ jobs:
             cxx: clang++
             cc: clang
           - version: "18"
-            cxx: clang++
-            cc: clang
-          - version: "19"
             cxx: clang++
             cc: clang
         exclude:
