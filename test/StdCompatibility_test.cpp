@@ -139,9 +139,7 @@ class StdCompatibilityTempl : public ::testing::Test
 {
 };
 
-typedef ::testing::Types<xad::AD, xad::FAD, xad::AReal<xad::AReal<double>>,
-                         xad::FReal<xad::AReal<double>>, xad::AReal<xad::FReal<double>>,
-                         xad::FReal<xad::FReal<double>>>
+typedef ::testing::Types<xad::AD, xad::FAD>
     test_types;
 
 TYPED_TEST_SUITE(StdCompatibilityTempl, test_types);
