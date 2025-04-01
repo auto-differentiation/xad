@@ -494,7 +494,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.PAT }}
-          repository: raneamri/QuantLib-Risks-Cpp # auto-differentiation/QuantLib-Risks-Cpp
+          repository: auto-differentiation/QuantLib-Risks-Cpp
           event-type: xad-ci-trigger
           client-payload: >
             {
