@@ -49,18 +49,18 @@ struct BinaryExpr : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2> >
     {
         using xad::value;
         a_.calc_derivatives(info, s,
-                            mul * der_impl::template derivative_a(op_, value(a_), value(b_), v_));
+                            mul * der_impl::template derivative_a<>(op_, value(a_), value(b_), v_));
         b_.calc_derivatives(info, s,
-                            mul * der_impl::template derivative_b(op_, value(a_), value(b_), v_));
+                            mul * der_impl::template derivative_b<>(op_, value(a_), value(b_), v_));
     }
     template <class Tape, int Size>
     XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s) const
     {
         using xad::value;
         a_.calc_derivatives(info, s,
-                            der_impl::template derivative_a(op_, value(a_), value(b_), v_));
+                            der_impl::template derivative_a<>(op_, value(a_), value(b_), v_));
         b_.calc_derivatives(info, s,
-                            der_impl::template derivative_b(op_, value(a_), value(b_), v_));
+                            der_impl::template derivative_b<>(op_, value(a_), value(b_), v_));
     }
 
     XAD_INLINE Scalar derivative() const
