@@ -67,8 +67,8 @@ struct BinaryExpr : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2> >
     {
         using xad::derivative;
         using xad::value;
-        return der_impl::template derivative_a(op_, value(a_), value(b_), v_) * derivative(a_) +
-               der_impl::template derivative_b(op_, value(a_), value(b_), v_) * derivative(b_);
+        return der_impl::template derivative_a<>(op_, value(a_), value(b_), v_) * derivative(a_) +
+               der_impl::template derivative_b<>(op_, value(a_), value(b_), v_) * derivative(b_);
     }
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord() || b_.shouldRecord(); }
