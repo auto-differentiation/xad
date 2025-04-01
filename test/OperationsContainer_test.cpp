@@ -28,12 +28,41 @@
 
 using namespace testing;
 
+#if defined(__linux__)
+TEST(OperationsContainerTestHuge, throwsBadAllocLinux)
+{
+    try
+    {
+        auto c = xad::OperationsContainer<double, int, static_cast<std::size_t>(-1)>();
+        auto t = c.size();
+
+        std::cout << "Container size: " << t << std::endl;
+        XAD_UNUSED_VARIABLE(c);
+
+        FAIL() << "Expected std::bad_alloc but no exception was thrown.";
+    }
+    catch (const std::bad_alloc& e)
+    {
+        std::cout << "Caught exception: std::bad_alloc - " << e.what() << std::endl;
+    }
+    catch (const std::exception& e)
+    {
+        FAIL() << "Caught unexpected exception: " << typeid(e).name() << " - " << e.what();
+    }
+    catch (...)
+    {
+        FAIL() << "Caught unknown exception.";
+    }
+}
+#endif
+
 TEST(OperationsContainerTestHuge, throwsBadAlloc)
 {
     auto construct_huge = [&]
     {
         auto c = xad::OperationsContainer<double, int, static_cast<std::size_t>(-1)>();
         auto t = c.size();
+        EXPECT_THAT(t, Gt(1)) << t.to_string();
         XAD_UNUSED_VARIABLE(c);
     };
     EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());
