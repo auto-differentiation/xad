@@ -33,6 +33,7 @@ TEST(OperationsContainerTestHuge, throwsBadAlloc)
     auto construct_huge = [&]
     {
         auto c = xad::OperationsContainer<double, int, static_cast<std::size_t>(-1)>();
+        auto t = c.size();
         XAD_UNUSED_VARIABLE(c);
     };
     EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());
