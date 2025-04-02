@@ -292,7 +292,7 @@ inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FReal<long double>
 //
 // (In GCC, std::is_floating_point is used instead, where traits above work)
 
-#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L || defined(__clang__))
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L) // || defined(__clang__))
 #define _XAD_INLINE_VAR inline
 #else
 #define _XAD_INLINE_VAR
