@@ -34,6 +34,7 @@ find_package(Threads REQUIRED)  # needed for thread-local
 # set global compiler flag variables, that we'll use when building things
 if(MSVC)
     set(xad_cxx_flags -nologo -utf-8 -D_UNICODE -DUNICODE -DWIN32_LEAN_AND_MEAN -DWIN32 -D_WIN32)
+    list(APPEND xad_cxx_flags /Zc:twoPhase) # enable C++11 two-phase name lookup
     # flag warnings as errors
     set(xad_cxx_flags_warnings -W4 -WX)
     if(XAD_USE_STRONG_INLINE)

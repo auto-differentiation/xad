@@ -237,6 +237,8 @@ TYPED_TEST(StdCompatibilityTempl, Hashing)
     EXPECT_THAT(hash, Eq(hash_base));
 }
 
+static_assert(std::is_arithmetic<xad::AReal<double>>::value, "Sanity check"); // force MSVC wake up
+
 TYPED_TEST(StdCompatibilityTempl, Traits)
 {
     static_assert(std::is_floating_point<TypeParam>::value, "active real should be floating point");
