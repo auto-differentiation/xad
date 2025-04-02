@@ -141,6 +141,7 @@ struct hash<xad::FReal<T>>
     }
 };
 
+#if !defined(_MSC_VER)
 // type traits
 template <class T>
 struct is_floating_point<xad::AReal<T>> : std::is_floating_point<T>
@@ -204,6 +205,8 @@ template <class T>
 struct is_compound<xad::FReal<T>> : std::true_type
 {
 };
+
+#endif
 
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
 
