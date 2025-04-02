@@ -80,7 +80,6 @@ jobs:
              -DCMAKE_CXX_COMPILER="${{ matrix.cxx }}" ^
              -DCMAKE_C_COMPILER="${{ matrix.cc }}" ^
              -DCMAKE_CXX_STANDARD="${{ matrix.standard }}" ^
-             -DCMAKE_CXX_FLAGS="/Zc:twoPhase" ^
              ${{ matrix.cmake_extra }} ^
              ${{ matrix.cmake_mem_flag }} ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} 
