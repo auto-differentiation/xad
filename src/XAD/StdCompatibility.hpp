@@ -33,9 +33,6 @@ expressions to work, as well as specialising numeric_limits.
 #include <functional>
 #include <limits>
 #include <string>
-#if defined(_MSVC_LANG)
-#include <boost/type_traits.hpp>
-#endif
 #include <type_traits>
 
 namespace std
