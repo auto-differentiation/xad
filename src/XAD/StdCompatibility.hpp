@@ -298,12 +298,6 @@ inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FReal<long double>
 #define _XAD_INLINE_VAR
 #endif
 
-#if __cplusplus >= 201703L && defined(__clang__)
-#define _XAD_INLINE_VAR inline
-#else
-#define _XAD_INLINE_VAR
-#endif
-
 template <>
 _XAD_INLINE_VAR constexpr bool _Is_any_of_v<xad::AReal<double>, float, double, long double> = true;
 template <>
