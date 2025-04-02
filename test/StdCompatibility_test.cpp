@@ -5,7 +5,6 @@
 #include <complex>
 #include <limits>
 #include <random>
-#include <type_traits>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
