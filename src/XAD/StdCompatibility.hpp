@@ -25,6 +25,10 @@ expressions to work, as well as specialising numeric_limits.
 
 #pragma once
 
+#if defined(_MSVC_LANG) && (_MSVC_LANG < 201703L) && !defined(__clang__)
+#undef _LIBCPP_TYPE_TRAITS
+#endif
+
 #include <XAD/BinaryOperators.hpp>
 #include <XAD/Literals.hpp>
 #include <XAD/MathFunctions.hpp>
