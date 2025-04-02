@@ -74,8 +74,7 @@ inline void* aligned_alloc(size_t alignment, size_t size)
     if (posix_memalign(&pointer, alignment, size) == 0)
         return pointer;
 
-    throw std::bad_alloc();
-    // return nullptr;
+    return nullptr;
 }
 inline void aligned_free(void* p) { free(p); }
 
