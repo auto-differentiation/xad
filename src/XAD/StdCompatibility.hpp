@@ -376,12 +376,4 @@ struct _Is_RealType<xad::FReal<T>> : public _Is_RealType<T>
 #endif
 
 #endif
-
-// MSVC Toolset 14.4.x (1934) fails to pick up std::type_traits in some SFINAE contexts
-// these force the compiler to instantiate the specializations early
-static_assert(std::is_arithmetic<xad::AReal<double>>::value, "AReal should be arithmetic");
-static_assert(std::is_floating_point<xad::AReal<double>>::value, "AReal should be floating point");
-static_assert(std::is_arithmetic<xad::FReal<double>>::value, "FReal should be arithmetic");
-static_assert(std::is_floating_point<xad::FReal<double>>::value, "FReal should be floating point");
-
 }  // namespace std
