@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <XAD/AlignedAllocator.hpp>
 #include <XAD/OperationsContainer.hpp>
 
 #include <memory>
@@ -34,7 +35,7 @@
 namespace xad
 {
 
-template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocHelper>
+template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocator>
 class OperationsContainerPaired
 {
   public:
@@ -309,7 +310,7 @@ class OperationsContainerPaired
         }
     }
 
-    std::vector<std::unique_ptr<char, detail::AlignedDeleter>> chunks_;
+    std::vector<std::unique_ptr<char, AllocHelper>> chunks_;
     size_type idx_ = 0;
     size_type chunk_ = 0;
 };

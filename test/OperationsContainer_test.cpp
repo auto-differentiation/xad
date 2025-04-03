@@ -28,11 +28,19 @@
 
 using namespace testing;
 
+struct NullAlignedAllocator {
+    static void* aligned_alloc(std::size_t, std::size_t) {
+        return nullptr; // simulate failure
+    }
+
+    void operator()(void* ptr) const { xad::detail::aligned_free(ptr); }
+};
+
 TEST(OperationsContainerTestHuge, throwsBadAlloc)
 {
     auto construct_huge = [&]
     {
-        auto c = xad::OperationsContainer<double, int, static_cast<std::size_t>(-1), xad::detail::NullAlignedAllocHelper>();
+        auto c = xad::OperationsContainer<double, int, static_cast<std::size_t>(-1), NullAlignedAllocator>();
         XAD_UNUSED_VARIABLE(c);
     };
     EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());
@@ -42,7 +50,7 @@ TEST(OperationsContainerPairedTestHuge, throwsBadAlloc)
 {
     auto construct_huge = [&]
     {
-        auto c = xad::OperationsContainerPaired<double, int, static_cast<std::size_t>(-1), xad::detail::NullAlignedAllocHelper>();
+        auto c = xad::OperationsContainerPaired<double, int, static_cast<std::size_t>(-1), NullAlignedAllocator>();
         XAD_UNUSED_VARIABLE(c);
     };
     EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());

@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <XAD/AlignedAllocator.hpp>
 #include <XAD/ChunkContainer.hpp>
 
 #include <iterator>
@@ -36,22 +37,6 @@ namespace xad
 
 namespace detail
 {
-struct AlignedDeleter
-{
-    void operator()(void* ptr) const { aligned_free(ptr); }
-};
-
-struct AlignedAllocHelper {
-    static void* aligned_alloc(std::size_t alignment, std::size_t size) {
-        return detail::aligned_alloc(alignment, size);
-    }
-};
-
-struct NullAlignedAllocHelper {
-    static void* aligned_alloc(std::size_t, std::size_t) {
-        return nullptr; // simulate failure
-    }
-};
 
 
 #if defined(_ITERATOR_DEBUG_LEVEL) && _ITERATOR_DEBUG_LEVEL
@@ -75,7 +60,7 @@ inline T* make_checked(T* p, size_t)
 
 }  // namespace detail
 
-template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocHelper>
+template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocator>
 class OperationsContainer
 {
   public:
@@ -373,7 +358,7 @@ class OperationsContainer
         }
     }
 
-    std::vector<std::unique_ptr<char, detail::AlignedDeleter>> chunks_;
+    std::vector<std::unique_ptr<char, AllocHelper>> chunks_;
     size_type idx_ = 0;
     size_type chunk_ = 0;
 };
