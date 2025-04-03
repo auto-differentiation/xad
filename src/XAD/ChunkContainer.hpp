@@ -31,8 +31,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <vector>
 #include <memory>
+#include <vector>
 
 // cross-platform aligned (de-)allocation
 
@@ -133,16 +133,20 @@ class ChunkContainer
     }
 
     ChunkContainer(ChunkContainer&& o) noexcept
-        : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_)
-    {
+        : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_) {
+        o.chunk_ = 0;
+        o.idx_ = 0;
     }
 
-    ChunkContainer& operator=(ChunkContainer&& o)
-    {
-        _free_memory();
-        chunkList_ = std::move(o.chunkList_);
-        chunk_ = o.chunk_;
-        idx_ = o.idx_;
+    ChunkContainer& operator=(ChunkContainer&& o) noexcept {
+        if (this != &o) {
+            _free_memory();
+            chunkList_ = std::move(o.chunkList_);
+            chunk_ = o.chunk_;
+            idx_ = o.idx_;
+            o.chunk_ = 0;
+            o.idx_ = 0;
+        }
         return *this;
     }
 
@@ -227,10 +231,24 @@ class ChunkContainer
         }
     }
 
-    void push_back(const_reference v)
+    XAD_FORCE_INLINE void push_back(const_reference v)
     {
-        check_space();
+        if (XAD_VERY_UNLIKELY(idx_ == chunk_size))
+        {
+            check_space();
+        }
 
+        ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
+        ++idx_;
+    }
+
+    void push_back_no_check(const_reference v)
+    {
+        if (XAD_VERY_UNLIKELY(idx_ == chunk_size))
+        {
+            ++chunk_;
+            idx_ = 0;
+        }
         ::new (reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_) value_type(v);
         ++idx_;
     }
@@ -238,7 +256,11 @@ class ChunkContainer
     template <class... Args>
     void emplace_back(Args&&... args)
     {
-        check_space();
+        if (XAD_VERY_UNLIKELY(idx_ == chunk_size))
+        {
+            check_space();
+        }
+
         ::new (chunkList_[chunk_] + idx_ * sizeof(value_type))
             value_type(std::forward<Args>(args)...);
         ++idx_;
@@ -261,21 +283,42 @@ class ChunkContainer
 
         // now we have something bigger
         reserve(s);
-        size_type nc_new = getHighPart(s);
-        size_type nc_old = chunk_;
-        size_type ix = idx_;
-        for (size_type i = nc_old; i < nc_new; ++i)
+        auto start_chunk = chunk_;
+        auto end_chunk = getHighPart(s);
+        auto start_idx = idx_;
+        auto end_idx = getLowPart(s);
+
+        if (start_chunk == end_chunk)
         {
-            std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[i]) + ix,
-                                      chunk_size - ix, v);
-            ix = 0;
+            std::uninitialized_fill_n(
+                reinterpret_cast<value_type*>(chunkList_[start_chunk]) + start_idx,
+                end_idx - start_idx, v);
+            idx_ = end_idx;
+            return;
         }
 
-        size_type lc = getLowPart(s);  // maybe 0
-        std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[nc_new]) + ix, lc - ix,
-                                  v);
-        idx_ = lc;
-        chunk_ = nc_new;
+        // otherwise fill rest of start chunk
+        std::uninitialized_fill_n(
+            reinterpret_cast<value_type*>(chunkList_[start_chunk]) + start_idx,
+            chunk_size - start_idx, v);
+
+        // then fully fill all chunks between
+        for (size_type c = start_chunk + 1; c < end_chunk; ++c)
+        {
+            std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[c]), chunk_size, v);
+        }
+
+        if (end_idx == 0)
+        {
+            idx_ = chunk_size;
+            chunk_ = end_chunk - 1;
+            return;
+        }
+
+        // otherwise fill the last chunk
+        std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[end_chunk]), end_idx, v);
+        chunk_ = end_chunk;
+        idx_ = end_idx;
     }
 
     template <class It>
@@ -283,11 +326,7 @@ class ChunkContainer
     {
         auto n = static_cast<size_type>(std::distance(first, last));
         assert(n <= chunk_size);
-#if defined(_MSC_VER)
-        if (idx_ + n <= chunk_size)
-#else
-        if (__builtin_expect(idx_ + n <= chunk_size, 1))
-#endif
+        if (XAD_LIKELY(idx_ + n <= chunk_size))
         {
             auto dst = reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_;
             for (size_type i = 0; i < n; ++i) ::new (dst++) value_type(*first++);
@@ -305,6 +344,25 @@ class ChunkContainer
             dst = reinterpret_cast<value_type*>(chunkList_[chunk_]);
             for (size_type i = 0; i < endn; ++i) ::new (dst++) value_type(*first++);
             idx_ += endn;
+        }
+    }
+
+    template <class It>
+    void append_unsafe_n(It first, unsigned n)
+    {
+        // TODO: make this work across multiple chunks
+        assert(n <= chunk_size);
+        auto n_first = (std::min<std::size_t>)(chunk_size - idx_, n);
+        std::uninitialized_copy_n(first, n_first,
+                                  reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_);
+        idx_ += n_first;
+        if (n != n_first)
+        {
+            auto n_second = n - n_first;
+            ++chunk_;
+            std::uninitialized_copy_n(first + n_first, n_second,
+                                      reinterpret_cast<value_type*>(chunkList_[chunk_]));
+            idx_ = n_second;
         }
     }
 
@@ -363,54 +421,6 @@ class ChunkContainer
                         reinterpret_cast<value_type*>(*(&chunkList_[nc] + 1)));
     }
 
-    void assign(size_type s, const_reference v = value_type())
-    {
-        if (s == 0)
-        {
-            clear();
-            return;
-        }
-
-        check_space(s);
-        size_type nc = getHighPart(s);
-        size_type lc = getLowPart(s);
-
-        if (s <= size())
-        {
-            if (s < size())
-                destructAllImpl<std::is_trivially_destructible<value_type>::value>::make(this, s,
-                                                                                         size());
-            // all assignments
-            for (size_type i = 0; i < nc; ++i)
-                std::fill(reinterpret_cast<value_type*>(chunkList_[i]),
-                          reinterpret_cast<value_type*>(chunkList_[i]) + chunk_size, v);
-            std::fill(reinterpret_cast<value_type*>(chunkList_[chunk_]),
-                      reinterpret_cast<value_type*>(chunkList_[chunk_]) + lc, v);
-            chunk_ = nc;
-            idx_ = lc;
-
-            return;
-        }
-
-        // here we have something bigger than it was - assign existing and fill rest
-        for (int i = 0; i < chunk_; ++i)
-            std::fill(reinterpret_cast<value_type*>(chunkList_[i]),
-                      reinterpret_cast<value_type*>(chunkList_[i]) + chunk_size, v);
-        std::fill(reinterpret_cast<value_type*>(chunkList_[chunk_]),
-                  reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_, v);
-
-        size_type fillsize = nc > chunk_ ? chunk_size : lc;
-        std::uninitialized_fill(reinterpret_cast<value_type*>(chunkList_[chunk_]) + idx_,
-                                reinterpret_cast<value_type*>(chunkList_[chunk_]) + fillsize, v);
-        for (size_type i = chunk_ + 1; i < nc; ++i)
-            std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[i]), chunk_size, v);
-        if (nc > chunk_)
-            std::uninitialized_fill_n(reinterpret_cast<value_type*>(chunkList_[nc]), lc, v);
-        chunk_ = nc;
-        idx_ = lc;
-        return;
-    }
-
     reference operator[](size_type i)
     {
         return reinterpret_cast<pointer>(chunkList_[getHighPart(i)])[getLowPart(i)];
@@ -430,21 +440,22 @@ class ChunkContainer
     static size_type getNumElements(size_type chunks) { return chunks * chunk_size; }
 
   private:
+    std::vector<char*> chunkList_;
+    size_type chunk_, idx_;
+
     void check_space()
     {
-        if (idx_ == chunk_size)
+        if (XAD_VERY_LIKELY(chunk_ == chunkList_.size() - 1))
         {
-            if (chunk_ == chunkList_.size() - 1)
-            {
-                char* chunk = reinterpret_cast<char*>(
-                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-                if (chunk == NULL)
-                    throw std::bad_alloc();
-                chunkList_.push_back(chunk);
+            char* chunk = reinterpret_cast<char*>(
+                detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+            if (chunk == nullptr) {
+                throw std::bad_alloc();
             }
-            ++chunk_;
-            idx_ = 0;
+            chunkList_.push_back(chunk);
         }
+        ++chunk_;
+        idx_ = 0;
     }
 
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
@@ -457,8 +468,5 @@ class ChunkContainer
             detail::aligned_free(c);
         }
     }
-
-    std::vector<char*> chunkList_;
-    size_type chunk_, idx_;
 };
 }  // namespace xad
