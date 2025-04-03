@@ -54,10 +54,10 @@ void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
                     RowIterator first, RowIterator last,
                     Tape<FReal<T>> *tape = Tape<FReal<T>>::getActive())
 {
-    unsigned int domain(static_cast<unsigned int>(vec.size()));
+    std::size_t domain = vec.size();
 
-    if (std::distance(first, last) != domain ||
-        std::distance(first->cbegin(), first->cend()) != domain)
+    if (static_cast<std::size_t>(std::distance(first, last)) != domain ||
+        static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != domain)
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
@@ -72,7 +72,7 @@ void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
     tape->registerInputs(v);
 
     auto row = first;
-    for (unsigned int i = 0; i < domain; i++, row++)
+    for (std::size_t i = 0; i < domain; i++, row++)
     {
         derivative(value(v[i])) = 1.0;
         tape->newRecording();
@@ -82,7 +82,7 @@ void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
         tape->computeAdjoints();
 
         auto col = row->begin();
-        for (unsigned int j = 0; j < domain; j++, col++)
+        for (std::size_t j = 0; j < domain; j++, col++)
         {
             *col = derivative(derivative(v[j]));
         }
@@ -107,10 +107,10 @@ void computeHessian(const std::vector<FReal<FReal<T>>> &vec,
                     std::function<FReal<FReal<T>>(std::vector<FReal<FReal<T>>> &)> foo,
                     RowIterator first, RowIterator last)
 {
-    unsigned int domain(static_cast<unsigned int>(vec.size()));
+    std::size_t domain = vec.size();
 
-    if (std::distance(first, last) != domain ||
-        std::distance(first->cbegin(), first->cend()) != domain)
+    if (static_cast<std::size_t>(std::distance(first, last)) != domain ||
+        static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != domain)
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
@@ -118,11 +118,11 @@ void computeHessian(const std::vector<FReal<FReal<T>>> &vec,
     auto v(vec);
 
     auto row = first;
-    for (unsigned int i = 0; i < domain; i++, row++)
+    for (std::size_t i = 0; i < domain; i++, row++)
     {
         value(derivative(v[i])) = 1.0;
         auto col = row->begin();
-        for (unsigned int j = 0; j < domain; j++, col++)
+        for (std::size_t j = 0; j < domain; j++, col++)
         {
             derivative(value(v[j])) = 1.0;
             FReal<FReal<T>> y = foo(v);

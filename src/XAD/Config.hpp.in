@@ -46,4 +46,5 @@
 // Disable thread-local tape usage
 #cmakedefine XAD_NO_THREADLOCAL
 
-
+// Reduce memory usage in the tape, at a slight performance cost
+#cmakedefine XAD_REDUCED_MEMORY

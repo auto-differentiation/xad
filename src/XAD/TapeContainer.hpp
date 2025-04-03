@@ -25,14 +25,26 @@
 #pragma once
 
 #include <XAD/ChunkContainer.hpp>
+#ifdef XAD_REDUCED_MEMORY
+#include <XAD/OperationsContainer.hpp>
+#else
+#include <XAD/OperationsContainerPaired.hpp>
+#endif
+
+#include <utility>
 
 namespace xad
 {
 
-template <class T>
+template <class T, class S = unsigned>
 struct TapeContainerTraits
 {
-    typedef ChunkContainer<T> type;
+    using statements_type = ChunkContainer<std::pair<S, S>>;
+#ifdef XAD_REDUCED_MEMORY
+    using operations_type = OperationsContainer<T, S>;
+#else
+    using operations_type = OperationsContainerPaired<T, S>;
+#endif
 };
 
 }  // namespace xad

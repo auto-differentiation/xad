@@ -38,18 +38,14 @@ if (NOT TARGET GTest::gmock_main)
     if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
         set(_gtest_tag release-1.10.0)
     else()
-        set(_gtest_tag release-1.11.0)
+        set(_gtest_tag v1.15.2)
     endif()
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(googletest
                      GIT_REPOSITORY      https://github.com/google/googletest.git
                      GIT_TAG             ${_gtest_tag}
     )
-    FetchContent_GetProperties(googletest)
-    if(NOT googletest_POPULATED)
-        FetchContent_Populate(googletest)
-        add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
-    endif()
+    FetchContent_MakeAvailable(googletest)
 
     set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES 
         FOLDER "test/gtest")

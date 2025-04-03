@@ -36,6 +36,16 @@ TEST(ChunkContainer, alloc_less_than_alignment)
     EXPECT_THAT(p1, NotNull());
 }
 
+TEST(ChunkContainer, too_large_throws_bad_alloc)
+{
+    auto construct_huge = [&]
+    {
+        auto c = ChunkContainer<int, static_cast<std::size_t>(-1)>();
+        XAD_UNUSED_VARIABLE(c);
+    };
+    EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());
+}
+
 TEST(ChunkContainer, iterator)
 {
     ChunkContainer<int> chk;
@@ -54,12 +64,13 @@ TEST(ChunkContainer, iterator)
 
 TEST(ChunkContainer, iterator_over_end)
 {
-    ChunkContainer<int> chk;
-    for (int i = 0; i < int(ChunkContainer<int>::chunk_size + 5); ++i) chk.push_back(i);
+    using container = ChunkContainer<int, 16>;
+    container chk;
+    for (int i = 0; i < int(container::chunk_size + 5); ++i) chk.push_back(i);
 
-    auto it = chk.iterator_at(ChunkContainer<int>::chunk_size - 4);
-    auto itend = chk.iterator_at(ChunkContainer<int>::chunk_size + 5);
-    int i = int(ChunkContainer<int>::chunk_size - 4);
+    auto it = chk.iterator_at(container::chunk_size - 4);
+    auto itend = chk.iterator_at(container::chunk_size + 5);
+    int i = int(container::chunk_size - 4);
     while (it != itend)
     {
         EXPECT_EQ(i, *it);
@@ -70,20 +81,27 @@ TEST(ChunkContainer, iterator_over_end)
 
 TEST(ChunkContainer, uninitialized_extend)
 {
-    ChunkContainer<int> chk;
+    using container = ChunkContainer<int, 16>;
+    container chk;
     std::size_t i = 0;
-    for (; i < ChunkContainer<int>::chunk_size - 4; ++i) chk.push_back(int(i));
+    for (; i < container::chunk_size - 4; ++i) chk.push_back(int(i));
     chk.uninitialized_extend(10);
-    EXPECT_EQ(ChunkContainer<int>::chunk_size - 4 + 10, chk.size());
+    EXPECT_EQ(container::chunk_size - 4 + 10, chk.size());
     auto it = chk.iterator_at(i);
     for (std::size_t j = i + 10; i < j; ++i)
     {
         ::new (&*it++) int(static_cast<int>(i));
     }
 
-    for (std::size_t j = 0; j < ChunkContainer<int>::chunk_size - 4 + 10; ++j)
-        EXPECT_EQ(int(j), chk[j]);
+    for (std::size_t j = 0; j < container::chunk_size - 4 + 10; ++j) EXPECT_EQ(int(j), chk[j]);
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+// we're only comparing pointer addresses in the tests below to verify move
+// behaviour, but GCC 12 sees this as use-after-free and flags warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
 
 TEST(ChunkContainer, move_construct)
 {
@@ -114,6 +132,10 @@ TEST(ChunkContainer, move_assign)
     EXPECT_THAT(addr, Eq(&chk2[0]));
     EXPECT_THAT(addr, Ne(addr2));
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 TEST(ChunkContainer, multichunk)
 {
@@ -163,6 +185,40 @@ TEST(ChunkContainer, non_pod_type)
     EXPECT_THAT(NonPodTester::copies + NonPodTester::constructions, Eq(NonPodTester::destructions));
 }
 
+TEST(ChunkContainer, non_pod_type_single_chunk_destruct)
+{
+    {
+        NonPodTester::reset();
+        ChunkContainer<NonPodTester, 8> chk;
+        for (int i = 0; i < 4; ++i) chk.push_back({});
+    }
+    EXPECT_THAT(NonPodTester::copies + NonPodTester::constructions, Eq(NonPodTester::destructions));
+}
+
+TEST(ChunkContainer, non_pod_type_full_chunk_destruct)
+{
+    {
+        NonPodTester::reset();
+        ChunkContainer<NonPodTester, 8> chk;
+        for (int i = 0; i < 8; ++i) chk.push_back({});
+    }
+    EXPECT_THAT(NonPodTester::copies + NonPodTester::constructions, Eq(NonPodTester::destructions));
+}
+
+TEST(ChunkContainer, resize_with_same_size_has_no_effect)
+{
+    ChunkContainer<int, 8> chk;
+    chk.push_back(0);
+    chk.push_back(1);
+
+    auto cap_before = chk.capacity();
+    chk.resize(2);
+    EXPECT_THAT(chk.size(), Eq(2u));
+    EXPECT_THAT(chk[0], Eq(0));
+    EXPECT_THAT(chk[1], Eq(1));
+    EXPECT_THAT(chk.capacity(), Eq(cap_before));
+}
+
 TEST(ChunkContainer, resize)
 {
     ChunkContainer<int, 8> chk;
@@ -184,6 +240,43 @@ TEST(ChunkContainer, resize)
     }
 }
 
+TEST(ChunkContainer, clear_method)
+{
+    ChunkContainer<int, 8> chk;
+    chk.resize(20, 42);
+
+    EXPECT_THAT(chk.size(), Eq(20u));
+    auto cp = chk.capacity();
+
+    chk.clear();
+    EXPECT_THAT(chk.size(), Eq(0u));
+    EXPECT_THAT(chk.capacity(), Eq(cp));
+
+    chk.resize(10, -42);
+    EXPECT_THAT(chk.size(), Eq(10u));
+}
+
+
+TEST(ChunkContainer, resize_fills_with_values)
+{
+    ChunkContainer<int, 8> chk;
+    chk.push_back(42);
+    chk.resize(12, 10);
+
+    EXPECT_THAT(chk.size(), Eq(12u));
+    for (unsigned i = 1; i < 12; ++i) EXPECT_THAT(chk[i], Eq(10));
+}
+
+TEST(ChunkContainer, resize_fills_with_values_full_chunk)
+{
+    ChunkContainer<int, 8> chk;
+    chk.push_back(42);
+    chk.resize(8, 10);
+
+    EXPECT_THAT(chk.size(), Eq(8u));
+    for (unsigned i = 1; i < 8; ++i) EXPECT_THAT(chk[i], Eq(10));
+}
+
 TEST(ChunkContainer, append)
 {
     ChunkContainer<int, 8> chk;
@@ -196,4 +289,43 @@ TEST(ChunkContainer, append)
     EXPECT_THAT(chk.size(), Eq(18u));
 
     for (int i = 0; i < 18; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+}
+
+TEST(ChunkContainer, append_without_new_chunk)
+{
+    ChunkContainer<int, 8> chk;
+    for (int i = 0; i < 2; ++i) chk.push_back(i);
+
+    std::vector<int> newvals = {2, 3, 4, 5};
+    // note: we can only append sizes less than chunk size (8)
+    chk.append(newvals.begin(), newvals.end());
+
+    EXPECT_THAT(chk.size(), Eq(6U));
+
+    for (int i = 0; i < 6; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+}
+
+TEST(ChunkContainer, push_back_no_check)
+{
+    ChunkContainer<int, 8> chk;
+    // note: push_back_no_check expects space to be reserved beforehand
+    chk.reserve(17);
+    for (int i = 0; i < 17; ++i) chk.push_back_no_check(i);
+
+    EXPECT_THAT(chk.size(), Eq(17u));
+
+    for (int i = 0; i < 17; ++i) EXPECT_THAT(chk[size_t(i)], Eq(i)) << "at " << i;
+}
+
+TEST(ChunkContainer, emplace_back)
+{
+    ChunkContainer<std::pair<int, int>, 8> chk;
+    for (int i = 0; i < 17; ++i) chk.emplace_back(i, i);
+
+    EXPECT_THAT(chk.size(), Eq(17u));
+
+    for (int i = 0; i < 17; ++i)
+    {
+        EXPECT_THAT(chk[size_t(i)], Pair(i, i)) << "at " << i;
+    }
 }
