@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include <XAD/AlignedAllocator.hpp>
 #include <XAD/OperationsContainer.hpp>
 
 #include <memory>
