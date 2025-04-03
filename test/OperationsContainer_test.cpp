@@ -33,7 +33,7 @@ struct NullAlignedAllocator {
         return nullptr; // simulate failure
     }
 
-    void operator()(void* ptr) const { xad::detail::aligned_free(ptr); }
+    void operator()(void* ptr) const { xad::detail::AlignedAllocator::aligned_free(ptr); }
 };
 
 TEST(OperationsContainerTestHuge, throwsBadAlloc)

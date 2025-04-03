@@ -35,12 +35,10 @@
 #include <memory>
 #include <vector>
 
-// cross-platform aligned (de-)allocation
-
 namespace xad
 {
 
-template <class T, std::size_t ChunkSize = 1024U * 1024U * 8U>
+template <class T, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocator>
 class ChunkContainer
 {
   public:
@@ -92,7 +90,7 @@ class ChunkContainer
             for (size_type i = 0; i < d; ++i)
             {
                 char* chunk = reinterpret_cast<char*>(
-                    detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+                    AllocHelper::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
                 if (chunk == NULL)
                     throw std::bad_alloc();
                 chunkList_.push_back(chunk);
@@ -376,7 +374,7 @@ class ChunkContainer
         if (XAD_VERY_LIKELY(chunk_ == chunkList_.size() - 1))
         {
             char* chunk = reinterpret_cast<char*>(
-                detail::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
+                AllocHelper::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
             if (chunk == nullptr) {
                 throw std::bad_alloc();
             }
@@ -393,7 +391,7 @@ class ChunkContainer
         clear();
         for (auto& c : chunkList_)
         {
-            detail::aligned_free(c);
+            AllocHelper::aligned_free(c);
         }
     }
 };
