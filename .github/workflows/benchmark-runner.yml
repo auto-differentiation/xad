@@ -33,7 +33,7 @@ jobs:
           done
 
       - name: Upload Benchmark
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: libor-benchmark
           path: build/samples/LiborSwaptionPricer/output.log
