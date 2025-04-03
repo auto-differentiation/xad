@@ -482,22 +482,6 @@ jobs:
             ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }}
           cmake --build .
 
-  trigger_quantlib_risks_cpp:
-    name: Trigger QuantLib-Risks-Cpp CI
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger QuantLib-Risks-Cpp Workflow
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          token: ${{ secrets.PAT }}
-          repository: raneamri/QuantLib-Risks-Cpp # auto-differentiation/QuantLib-Risks-Cpp
-          event-type: xad-ci-trigger
-          client-payload: >
-            {
-              "xad_repo": "${{ github.repository }}",
-              "xad_branch": "${{ github.ref_name }}"
-            }
-
   coverage_finish:
     name: Coverage Collect
     needs: [ build_and_test_gcc, build_and_test_macos ]
