@@ -24,6 +24,12 @@
 
 #pragma once
 
+#include <algorithm>
+#include <iterator>
+#include <memory>
+#include <type_traits>
+#include <vector>
+
 namespace xad {
 namespace detail {
 
