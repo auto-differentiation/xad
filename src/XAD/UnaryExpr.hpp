@@ -70,13 +70,13 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr> >
     XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s, const Scalar& mul) const
     {
         using xad::value;
-        a_.calc_derivatives(info, s, mul * der_impl::template derivative(op_, value(a_), v_));
+        a_.calc_derivatives(info, s, mul * der_impl::template derivative<>(op_, value(a_), v_));
     }
     template <class Tape, int Size>
     XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s) const
     {
         using xad::value;
-        a_.calc_derivatives(info, s, der_impl::template derivative(op_, value(a_), v_));
+        a_.calc_derivatives(info, s, der_impl::template derivative<>(op_, value(a_), v_));
     }
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord(); }
@@ -85,7 +85,7 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr> >
     {
         using xad::derivative;
         using xad::value;
-        return der_impl::template derivative(op_, value(a_), v_) * derivative(a_);
+        return der_impl::template derivative<>(op_, value(a_), v_) * derivative(a_);
     }
 
   private:

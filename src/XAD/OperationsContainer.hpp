@@ -36,10 +36,7 @@ namespace xad
 
 namespace detail
 {
-struct AlignedDeleter
-{
-    void operator()(void* ptr) const { aligned_free(ptr); }
-};
+
 
 #if defined(_ITERATOR_DEBUG_LEVEL) && _ITERATOR_DEBUG_LEVEL
 // Make a checked iterator to avoid MSVC warnings.
@@ -62,7 +59,7 @@ inline T* make_checked(T* p, size_t)
 
 }  // namespace detail
 
-template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U>
+template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocator>
 class OperationsContainer
 {
   public:
@@ -245,7 +242,7 @@ class OperationsContainer
 
         for (size_type i = 0; i < newChunks; ++i)
         {
-            auto chunk = detail::aligned_alloc(ALIGNMENT, CHUNK_BYTES);
+            auto chunk = AllocHelper::aligned_alloc(ALIGNMENT, CHUNK_BYTES);
             if (chunk == nullptr)
                 throw std::bad_alloc();
             chunks_.emplace_back(reinterpret_cast<char*>(chunk));
@@ -360,7 +357,7 @@ class OperationsContainer
         }
     }
 
-    std::vector<std::unique_ptr<char, detail::AlignedDeleter>> chunks_;
+    std::vector<std::unique_ptr<char, AllocHelper>> chunks_;
     size_type idx_ = 0;
     size_type chunk_ = 0;
 };

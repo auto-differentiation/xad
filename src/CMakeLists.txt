@@ -30,6 +30,7 @@ configure_file(XAD/Config.hpp.in
                @ONLY)
 
 set(public_headers
+    XAD/AlignedAllocator.hpp
     XAD/BinaryDerivativeImpl.hpp
     XAD/BinaryExpr.hpp
     XAD/BinaryFunctors.hpp
