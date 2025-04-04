@@ -1,7 +1,10 @@
 /*******************************************************************************
 
    Placing XAD math functions into the std namespace for std::log type
-expressions to work, as well as specialising numeric_limits.
+   expressions to work, as well as specialising numeric_limits.
+
+   This partially violates the C++ standard's "don't specialize std templates"
+   rule but is necessary for integration with other libraries.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -24,6 +27,7 @@ expressions to work, as well as specialising numeric_limits.
 ******************************************************************************/
 
 #pragma once
+
 
 #include <XAD/BinaryOperators.hpp>
 #include <XAD/Literals.hpp>
@@ -372,5 +376,4 @@ struct _Is_RealType<xad::FReal<T>> : public _Is_RealType<T>
 #endif
 
 #endif
-
 }  // namespace std
