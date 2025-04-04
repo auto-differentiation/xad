@@ -22,7 +22,7 @@ jobs:
           lsmem
       - uses: actions/checkout@v4
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: benchmark-libor
       - name: configure
@@ -139,7 +139,7 @@ jobs:
           repository: auto-differentiation/QuantLib-Risks-Cpp
           ref: a1fcf4f0fab0a464710c249aa76871421675babd
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: benchmark-quantlib
       - name: Setup
