@@ -332,7 +332,7 @@ jobs:
           gh variable set REFERENCE_RUN_ID --body "${{ github.run_id }}"
           gh variable list
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_READ_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT }}
 
 
   collect:
