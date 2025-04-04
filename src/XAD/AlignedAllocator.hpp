@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   TODO
+   Cross platform helpers for aligned memory allocations.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
