@@ -3,7 +3,7 @@
    Placing XAD math functions into the std namespace for std::log type
    expressions to work, as well as specialising numeric_limits.
 
-   This paritally violates the C++ standard's "don't specialize std templates"
+   This partially violates the C++ standard's "don't specialize std templates"
    rule but is necessary for integration with other libraries.
 
    This file is part of XAD, a comprehensive C++ library for
