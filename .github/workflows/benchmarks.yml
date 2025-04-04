@@ -1,13 +1,12 @@
 name: Benchmarks
 on: 
-  #pull_request:
-    # types: [opened, reopened, synchronize, labeled, unlabeled ]
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled ]
   workflow_dispatch: 
 
 jobs:
   libor:
     # if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
-    if: false
     name: Libor Swaption Sample
     runs-on: ubuntu-latest
     container: 
@@ -23,7 +22,7 @@ jobs:
           lsmem
       - uses: actions/checkout@v4
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: benchmark-libor
       - name: configure
@@ -113,7 +112,6 @@ jobs:
           echo "result=| ${REF_TIME}s | ${OUT_TIME}s | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
       
   quantlib:
-    if: false
     name: QuantLib Samples
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
@@ -141,7 +139,7 @@ jobs:
           repository: auto-differentiation/QuantLib-Risks-Cpp
           ref: a1fcf4f0fab0a464710c249aa76871421675babd
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1.2.10
         with:
           key: benchmark-quantlib
       - name: Setup
@@ -320,7 +318,6 @@ jobs:
           echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
 
   update-runid:
-    if: false
     name: Update Run-id
     runs-on: ubuntu-latest
     # if: github.event_name == 'workflow_dispatch'
@@ -335,11 +332,10 @@ jobs:
           gh variable set REFERENCE_RUN_ID --body "${{ github.run_id }}"
           gh variable list
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_READ_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT }}
 
 
   collect:
-    if: false
     name: Collect Results
     runs-on: ubuntu-latest
     # if: github.event_name == 'pull_request'
