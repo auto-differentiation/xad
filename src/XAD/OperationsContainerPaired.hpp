@@ -34,7 +34,7 @@
 namespace xad
 {
 
-template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U>
+template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocator>
 class OperationsContainerPaired
 {
   public:
@@ -201,7 +201,7 @@ class OperationsContainerPaired
     {
         for (size_type i = 0; i < newChunks; ++i)
         {
-            auto chunk = detail::aligned_alloc(ALIGNMENT,
+            auto chunk = AllocHelper::aligned_alloc(ALIGNMENT,
                                                ChunkSize * sizeof(std::pair<mul_type, slot_type>));
             if (chunk == nullptr)
                 throw std::bad_alloc();
@@ -309,7 +309,7 @@ class OperationsContainerPaired
         }
     }
 
-    std::vector<std::unique_ptr<char, detail::AlignedDeleter>> chunks_;
+    std::vector<std::unique_ptr<char, AllocHelper>> chunks_;
     size_type idx_ = 0;
     size_type chunk_ = 0;
 };

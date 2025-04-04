@@ -5,7 +5,6 @@
 #include <complex>
 #include <limits>
 #include <random>
-#include <type_traits>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -238,6 +237,8 @@ TYPED_TEST(StdCompatibilityTempl, Hashing)
     EXPECT_THAT(hash, Eq(hash_base));
 }
 
+// https://github.com/auto-differentiation/xad/pull/164#issuecomment-2775730529
+#if !defined(_MSC_VER ) || _MSC_VER < 1941
 TYPED_TEST(StdCompatibilityTempl, Traits)
 {
     static_assert(std::is_floating_point<TypeParam>::value, "active real should be floating point");
@@ -269,6 +270,7 @@ TYPED_TEST(StdCompatibilityTempl, Traits)
     static_assert(std::is_trivially_destructible<TypeParam>::value == fwd,
                   "trivially destructable for fwd mode");
 }
+#endif
 
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
 TYPED_TEST(StdCompatibilityTempl, TraitsTemplateVars)
