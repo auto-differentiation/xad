@@ -24,19 +24,15 @@
 
 #pragma once
 
+#if defined(__APPLE__)
+#include <AvailabilityMacros.h>
+#endif
+
 #include <algorithm>
 #include <iterator>
 #include <memory>
 #include <type_traits>
 #include <vector>
-
-namespace xad {
-namespace detail {
-
-
-}  // namespace detail
-}  // namespace xad
-
 
 namespace xad
 {
@@ -91,6 +87,8 @@ struct AlignedAllocator {
     #endif
     }
 
+    // The () operator is defined such that AlignedAllocator can be
+    // used as a deleter for std:: smart pointers.
     void operator()(void* ptr) const { this->aligned_free(ptr); }
 };
 
