@@ -17,6 +17,8 @@ There are four additional headers provided that can be included on demand:
   It enables using constructs like [`#!c++ std::sin(x)`](https://en.cppreference.com/w/cpp/numeric/math/sin) where `x` is an XAD type.
   Additionally, it also specialises [`#!c++ std::numeric_limits`](https://en.cppreference.com/w/cpp/types/numeric_limits) for the XAD data types,
   so that it provides traits similar to the standard floating point types.
+  This partially violates the C++ standard's "don't specialize std templates"
+  rule but is necessary for integration with other libraries.
 * `XAD/Hessian.hpp` - Imports methods for computing the Hessian matrix of a
   single output function into the `xad` namespace.
 * `XAD/Jacobian.hpp` - Imports methods for computing the Jacobian matrix of a
