@@ -9,10 +9,15 @@ Users must include it as needed.
 
 Jacobians can be computed in `adj` or `fwd` mode.
 
-The `computeJacobian()` method takes a set of variables packaged in a
+The `computeJacobian()` function takes a set of variables packaged in a
 `std::vector<T>` and a function with signature
 `std::vector<T> foo(std::vector<T>)`, where `T` is either a forward-mode
 or adjoint-mode active type (`FReal` or `AReal`).
+
+Optionally, the function also takes the codomain of the input function as an
+`unsigned int` and/or the active `Tape` to be used if `adj` mode is specified.
+
+If the codomain is not passed, an extra function evaluation will be required.
 
 ## Return Types
 
@@ -31,6 +36,7 @@ void computeJacobian(
     const std::vector<AReal<T>> &vec,
     std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
     RowIterator first, RowIterator last,
+    std::size_t codomain = 0U,
     Tape<T> *tape = Tape<T>::getActive())
 ```
 
@@ -45,7 +51,8 @@ template <typename RowIterator, typename T>
 void computeJacobian(
     const std::vector<FReal<T>> &vec,
     std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo,
-    RowIterator first, RowIterator last)
+    RowIterator first, RowIterator last,
+    std::size_t codomain = 0U)
 ```
 
 This mode does not require a Tape and can help reduce the overhead that
@@ -54,7 +61,7 @@ of outputs than inputs.
 
 ## Example Use
 
-Given $f(x, y, z, w) = [sin(x + y) sin(y + z) cos(z + w) cos(w + x)]$, or
+Given $f(x, y, z, w) = [sin(x + y), sin(y + z), cos(z + w), cos(w + x)]$, or
 
 ```c++
 std::function<std::vector<AD>(std::vector<AD>&)> foo =
@@ -110,11 +117,13 @@ Note that if no tape is setup, one will be created when computing the Jacobian.
 define our input values and our function, then call `computeJacobian()`:
 
 ```c++
-    std::function<std::vector<AD>(std::vector<AD>&)> foo = [](std::vector<AD>& x) -> std::vector<AD>
-    { return {sin(x[0] + x[1]),
-              sin(x[1] + x[2]),
-              cos(x[2] + x[3]),
-              cos(x[3] + x[0])}; };
+    auto foo = [](std::vector<AD>& x) -> std::vector<AD>
+    {
+        return {sin(x[0] + x[1]),
+                sin(x[1] + x[2]),
+                cos(x[2] + x[3]),
+                cos(x[3] + x[0])};
+    };
 
     auto jacobian = computeJacobian(x_ad, foo);
 ```
