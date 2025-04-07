@@ -491,23 +491,18 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
     return copysign(x, value(y));
 }
 
+#if defined(_WIN32)
+template <class _Ty1, class _Ty2, int I>
+XAD_INLINE double copysign(_Ty1 x, _Ty2 y) noexcept {
+    using std::copysign;
+    return copysign(value(x), value(y));
+}
+#endif
+
 #undef XAD_UNARY_BINSCAL
 #undef XAD_UNARY_BINSCAL1
 #undef XAD_UNARY_BINSCAL2
 #undef XAD_MAKE_UNARY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC_RET
-
-#if defined(_WIN32)
-template <>
-XAD_INLINE double copysign<xad::AReal<double>, xad::AReal<double>, 0>(xad::AReal<double> x, xad::AReal<double> y) { 
-   return ::xad::copysign(x, y);
-}
-
-template <>
-XAD_INLINE double copysign<xad::FReal<double>, xad::FReal<double>, 0>(xad::FReal<double> x, xad::FReal<double> y) { 
-   return ::xad::copysign(x, y);
-}
-
-#endif
 } // namespace xad
