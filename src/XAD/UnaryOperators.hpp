@@ -455,6 +455,7 @@ XAD_INLINE typename ExprTraits<Derived>::value_type scalbn(const Expression<Scal
     return T(x * scalbn(1.0, exp));
 }
 
+#ifndef _WIN32
 template <class Scalar, class Derived, class T2>
 XAD_INLINE typename ExprTraits<Derived>::value_type copysign(const Expression<Scalar, Derived>& x,
                                                              const T2& y)
@@ -490,14 +491,8 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
     using std::copysign;
     return copysign(x, value(y));
 }
+#endif
 
-//#if defined(_WIN32)
-//template <class _Ty1, class _Ty2, int I>
-///XAD_INLINE double copysign(_Ty1 x, _Ty2 y) noexcept {
-//    using std::copysign;
-//    return copysign(value(x), value(y));
-//}
-//#endif
 
 #undef XAD_UNARY_BINSCAL
 #undef XAD_UNARY_BINSCAL1
@@ -507,7 +502,7 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
 #undef XAD_MAKE_FPCLASSIFY_FUNC_RET
 } // namespace xad
 
-#if 1
+#ifdef _WIN32
 
 #include <cmath>
 
@@ -517,9 +512,30 @@ namespace std {
         return copysign(value(x), value(y));
     }
 
+    inline double copysign(double x, const xad::AReal<double>& y) noexcept {
+        using std::copysign;
+        return copysign(x, value(y));
+    }
+
+    inline double copysign(const xad::AReal<double>& x, double y) noexcept {
+        using std::copysign;
+        return copysign(x, y);
+    }
+
+
     inline double copysign(const xad::FReal<double>& x, const xad::FReal<double>& y) noexcept {
         using std::copysign;
         return copysign(value(x), value(y));
+    }
+
+    inline double copysign(double x, const xad::FReal<double>& y) noexcept {
+        using std::copysign;
+        return copysign(x, value(y));
+    }
+
+    inline double copysign(const xad::FReal<double>& x, double y) noexcept {
+        using std::copysign;
+        return copysign(x, y);
     }
 }
 #endif
