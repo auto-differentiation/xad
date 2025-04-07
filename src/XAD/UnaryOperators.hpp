@@ -507,23 +507,19 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
 #undef XAD_MAKE_FPCLASSIFY_FUNC_RET
 } // namespace xad
 
-#if defined(_MSVC_VER)
+#if 1
 
 #include <cmath>
 
 namespace std {
     inline double copysign(const xad::AReal<double>& x, const xad::AReal<double>& y) noexcept {
-        return ::xad::value(::xad::copysign(x, y));
+        using std::copysign;
+        return copysign(value(x), value(y));
     }
 
     inline double copysign(const xad::FReal<double>& x, const xad::FReal<double>& y) noexcept {
-        return ::xad::value(::xad::copysign(x, y));
-    }
-
-    template <class Scalar, class Derived>
-    inline double copysign(const xad::Expression<Scalar, Derived>& x,
-                           const xad::Expression<Scalar, Derived>& y) noexcept {
-        return ::xad::value(::xad::copysign(x, y));
+        using std::copysign;
+        return copysign(value(x), value(y));
     }
 }
 #endif
