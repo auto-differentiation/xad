@@ -497,10 +497,7 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
 #undef XAD_MAKE_UNARY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC_RET
-}  // namespace xad
 
-namespace std
-{
 #if defined(_WIN32)
 template <>
 XAD_INLINE double copysign<xad::AReal<double>, xad::AReal<double>, 0>(xad::AReal<double> x, xad::AReal<double> y) { 
@@ -513,4 +510,4 @@ XAD_INLINE double copysign<xad::FReal<double>, xad::FReal<double>, 0>(xad::FReal
 }
 
 #endif
-} // namespace std
+} // namespace xad
