@@ -677,3 +677,12 @@ struct testFunctor_copysignExprExpr
 } copysignExprExpr;
 
 TEST(ExpressionsMath, copysignExprExpr) { mathTest_all(1.2, -1.2, -1.0, 0.0, copysignExprExpr); }
+
+TEST(ExpressionsMath, copysignADQuantLibReal) {
+    xad::AD x(1.2);
+    xad::AD y(-0.5);
+
+    auto result = copysign(x, y);
+
+    EXPECT_EQ(xad::value(result), -1.2);
+}
