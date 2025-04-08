@@ -477,6 +477,7 @@ XAD_INLINE typename ExprTraits<Derived>::value_type copysign(const Expression<Sc
     }
 }
 
+#ifndef _WIN32
 template <class Scalar, class Derived>
 XAD_INLINE double copysign(double x, const Expression<Scalar, Derived>& y)
 {
@@ -490,6 +491,7 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
     using std::copysign;
     return copysign(x, value(y));
 }
+#endif
 
 
 #undef XAD_UNARY_BINSCAL
