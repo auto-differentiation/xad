@@ -100,23 +100,8 @@ using xad::trunc;
 #include <cmath>
 
 template <>
-inline double copysign(const xad::AReal<double>& x, const xad::AReal<double>& y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
-}
-
-template <>
-inline double copysign(const xad::FReal<double>& x, const xad::FReal<double>& y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
-}
-
-template <>
-inline double copysign(const xad::AReal<double>& x, double y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
-}
-
-template <>
-inline double copysign(double x, const xad::FReal<double>& y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
+double copysign<AReal, AReal, 0>(::xad::AReal<double> x, ::xad::AReal<double> y) { 
+   return ::xad::copysign(x, y);
 }
 
 #endif
