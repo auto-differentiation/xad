@@ -96,6 +96,28 @@ using xad::tan;
 using xad::tanh;
 using xad::trunc;
 
+#if defined(_MSC_VER)
+
+#include <cmath>
+
+inline double copysign(const xad::AReal<double>& x, const xad::AReal<double>& y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+inline double copysign(const xad::FReal<double>& x, const xad::FReal<double>& y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+inline double copysign(const xad::AReal<double>& x, double y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+inline double copysign(double x, const xad::FReal<double>& y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+#endif
+
 template <class Scalar, class Derived>
 inline std::string to_string(const xad::Expression<Scalar, Derived>& _Val)
 {
