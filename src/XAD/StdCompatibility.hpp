@@ -97,23 +97,31 @@ using xad::tanh;
 using xad::trunc;
 
 #if defined(_MSC_VER)
-
 #include <cmath>
 
-inline double copysign(const xad::AReal<double>& x, const xad::AReal<double>& y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
+// xad xad
+template <class Scalar, class D1, class D2>
+inline typename xad::ExprTraits<D1>::value_type
+copysign(const xad::Expression<Scalar, D1>& x, const xad::Expression<Scalar, D2>& y) noexcept {
+    return ::xad::copysign(x, y);
 }
 
-inline double copysign(const xad::FReal<double>& x, const xad::FReal<double>& y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
+// double/float/long double xad
+template <class Scalar, class Derived,
+          typename T,
+          typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
+inline typename xad::ExprTraits<Derived>::value_type
+copysign(T x, const xad::Expression<Scalar, Derived>& y) noexcept {
+    return ::xad::copysign(x, y);
 }
 
-inline double copysign(const xad::AReal<double>& x, double y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
-}
-
-inline double copysign(double x, const xad::FReal<double>& y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
+// xad double/float/long double
+template <class Scalar, class Derived,
+          typename T,
+          typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
+inline typename xad::ExprTraits<Derived>::value_type
+copysign(const xad::Expression<Scalar, Derived>& x, T y) noexcept {
+    return ::xad::copysign(x, y);
 }
 
 #endif
