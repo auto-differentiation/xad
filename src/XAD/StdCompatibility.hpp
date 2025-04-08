@@ -113,6 +113,34 @@ inline double copysign(double x, const xad::AReal<double>& y) noexcept {
     return ::xad::value(::xad::copysign(x, y));
 }
 
+inline double copysign(const xad::FReal<double>& x, const xad::FReal<double>& y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+inline double copysign(const xad::FReal<double>& x, double y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+inline double copysign(double x, const xad::FReal<double>& y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+template <class Scalar, class Derived>
+inline double copysign(double x, const xad::Expression<Scalar, Derived>& y) noexcept {
+    return std::copysign(x, xad::value(y));
+}
+
+template <class Scalar, class Derived>
+inline double copysign(const xad::Expression<Scalar, Derived>& x, double y) noexcept {
+    return std::copysign(xad::value(x), y);
+}
+
+template <class Scalar1, class Derived1, class Scalar2, class Derived2>
+inline double copysign(const xad::Expression<Scalar1, Derived1>& x,
+                       const xad::Expression<Scalar2, Derived2>& y) noexcept {
+    return std::copysign(xad::value(x), xad::value(y));
+}
+
 #endif
 
 template <class Scalar, class Derived>
