@@ -507,35 +507,8 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
 #include <cmath>
 
 namespace std {
-    inline double copysign(const xad::AReal<double>& x, const xad::AReal<double>& y) noexcept {
-        using std::copysign;
-        return copysign(value(x), value(y));
-    }
-
-    inline double copysign(double x, const xad::AReal<double>& y) noexcept {
-        using std::copysign;
-        return copysign(x, value(y));
-    }
-
-    inline double copysign(const xad::AReal<double>& x, double y) noexcept {
-        using std::copysign;
-        return copysign(x, y);
-    }
-
-
-    inline double copysign(const xad::FReal<double>& x, const xad::FReal<double>& y) noexcept {
-        using std::copysign;
-        return copysign(value(x), value(y));
-    }
-
-    inline double copysign(double x, const xad::FReal<double>& y) noexcept {
-        using std::copysign;
-        return copysign(x, value(y));
-    }
-
-    inline double copysign(const xad::FReal<double>& x, double y) noexcept {
-        using std::copysign;
-        return copysign(x, y);
+    inline xad::AReal<double> copysign(const xad::AReal<double>& x, const xad::AReal<double>& y) noexcept {
+        return ::xad::copysign(x, y);
     }
 }
 #endif
