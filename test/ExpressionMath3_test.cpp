@@ -679,13 +679,16 @@ struct testFunctor_copysignExprExpr
 TEST(ExpressionsMath, copysignExprExpr) { mathTest_all(1.2, -1.2, -1.0, 0.0, copysignExprExpr); }
 
 #ifdef _WIN32
+#include <XAD/StdCompatibility.hpp>
 // https://github.com/auto-differentiation/xad/issues/158
 TEST(ExpressionsMath, copysignWindows) {
     xad::AD x(1.2);
     xad::AD y(-0.5);
 
-    auto result = std::copysign(x, y);
+    double r1 = std::copysign(x, y); // std injection
+    double r2 = copysign(x, y); // unqualified/ADL
 
-    EXPECT_EQ(xad::value(result), -1.2);
+    EXPECT_EQ(xad::value(r1), -1.2);
+    EXPECT_EQ(xad::value(r2), -1.2);
 }
 #endif
