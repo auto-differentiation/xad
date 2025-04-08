@@ -685,8 +685,8 @@ TEST(ExpressionsMath, copysignWindows) {
     xad::AD x(1.2);
     xad::AD y(-0.5);
 
-    double r1 = std::copysign(x, y); // std injection
-    double r2 = copysign(x, y); // unqualified/ADL
+    auto r1 = std::copysign(x, y); // std injection
+    auto r2 = copysign(x, y); // unqualified/ADL
 
     EXPECT_EQ(xad::value(r1), -1.2);
     EXPECT_EQ(xad::value(r2), -1.2);
