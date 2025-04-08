@@ -97,11 +97,20 @@ using xad::tanh;
 using xad::trunc;
 
 #if defined(_MSC_VER)
-#include <cmath>
 
-template <>
-double copysign<AReal, AReal, 0>(::xad::AReal<double> x, ::xad::AReal<double> y) { 
-   return ::xad::copysign(x, y);
+#include <cmath> // must come first to prevent ODR issues
+// already included but there for clarity for now
+
+inline double copysign(const xad::AReal<double>& x, const xad::AReal<double>& y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+inline double copysign(const xad::AReal<double>& x, double y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
+}
+
+inline double copysign(double x, const xad::AReal<double>& y) noexcept {
+    return ::xad::value(::xad::copysign(x, y));
 }
 
 #endif
