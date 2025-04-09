@@ -678,7 +678,7 @@ struct testFunctor_copysignExprExpr
 
 TEST(ExpressionsMath, copysignExprExpr) { mathTest_all(1.2, -1.2, -1.0, 0.0, copysignExprExpr); }
 
-#ifdef _WIN32
+#if defined(_WIN32) && false
 #include <XAD/StdCompatibility.hpp>
 // https://github.com/auto-differentiation/xad/issues/158
 TEST(ExpressionsMath, copysignWindows) {

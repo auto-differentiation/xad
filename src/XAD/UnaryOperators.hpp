@@ -491,7 +491,6 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
     return copysign(x, value(y));
 }
 
-
 #undef XAD_UNARY_BINSCAL
 #undef XAD_UNARY_BINSCAL1
 #undef XAD_UNARY_BINSCAL2
