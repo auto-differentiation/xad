@@ -374,17 +374,54 @@ TEST(StdCompatibility, UseInVectorAndFill)
 }
 
 // https://github.com/auto-differentiation/xad/issues/158
-TEST(ExpressionsMath, CopysignWindows) {
+TEST(StdCompatibility, CopysignWindowsAReal)
+{
     xad::AD x(1.2);
     xad::AD y(-0.5);
+    xad::AD one(1.);
 
-    auto r4 = copysign(1.2, y);
-    auto r3 = copysign(x, -0.5);
-    auto r2 = copysign(x, y); // unqualified/ADL
-    auto r1 = std::copysign(x, y); // std injection, as per #158
+    auto r1 = std::copysign(1.2, y);
+    auto r2 = std::copysign(x, -0.5);
+    auto r3 = std::copysign(x, y);
+    // with expressions
+    auto r4 = std::copysign(1.2, y * one);
+    auto r5 = std::copysign(x * one, -0.5);
+    auto r6 = std::copysign(x * one, y);
+    auto r7 = std::copysign(x * one, y * one);
+    auto r8 = std::copysign(x, y * one);
 
     EXPECT_EQ(xad::value(r1), -1.2);
     EXPECT_EQ(xad::value(r2), -1.2);
     EXPECT_EQ(xad::value(r3), -1.2);
     EXPECT_EQ(xad::value(r4), -1.2);
+    EXPECT_EQ(xad::value(r5), -1.2);
+    EXPECT_EQ(xad::value(r6), -1.2);
+    EXPECT_EQ(xad::value(r7), -1.2);
+    EXPECT_EQ(xad::value(r8), -1.2);
+}
+
+TEST(StdCompatibility, CopysignWindowsFReal)
+{
+    xad::FAD x(1.2);
+    xad::FAD y(-0.5);
+    xad::FAD one(1.);
+
+    auto r1 = std::copysign(1.2, y);
+    auto r2 = std::copysign(x, -0.5);
+    auto r3 = std::copysign(x, y);
+    // with expressions
+    auto r4 = std::copysign(1.2, y * one);
+    auto r5 = std::copysign(x * one, -0.5);
+    auto r6 = std::copysign(x * one, y);
+    auto r7 = std::copysign(x * one, y * one);
+    auto r8 = std::copysign(x, y * one);
+
+    EXPECT_EQ(xad::value(r1), -1.2);
+    EXPECT_EQ(xad::value(r2), -1.2);
+    EXPECT_EQ(xad::value(r3), -1.2);
+    EXPECT_EQ(xad::value(r4), -1.2);
+    EXPECT_EQ(xad::value(r5), -1.2);
+    EXPECT_EQ(xad::value(r6), -1.2);
+    EXPECT_EQ(xad::value(r7), -1.2);
+    EXPECT_EQ(xad::value(r8), -1.2);
 }
