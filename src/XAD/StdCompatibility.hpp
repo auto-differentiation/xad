@@ -96,13 +96,14 @@ using xad::tan;
 using xad::tanh;
 using xad::trunc;
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && false
 
 #include <cmath> // must come first to prevent ODR issues
 // already included but there for clarity for now
 
 inline double copysign(const xad::AReal<double>& x, const xad::AReal<double>& y) noexcept {
-    return ::xad::value(::xad::copysign(x, y));
+    using T = typename ExprTraits<Derived>::value_type;
+    return ::xad::copysign(x, y);
 }
 
 inline double copysign(const xad::AReal<double>& x, double y) noexcept {
