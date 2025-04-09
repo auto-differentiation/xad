@@ -372,3 +372,19 @@ TEST(StdCompatibility, UseInVectorAndFill)
 
     EXPECT_THAT(v, ElementsAre(1., 1., 1.));
 }
+
+// https://github.com/auto-differentiation/xad/issues/158
+TEST(ExpressionsMath, CopysignWindows) {
+    xad::AD x(1.2);
+    xad::AD y(-0.5);
+
+    auto r4 = copysign(1.2, y);
+    auto r3 = copysign(x, -0.5);
+    auto r2 = copysign(x, y); // unqualified/ADL
+    auto r1 = std::copysign(x, y); // std injection, as per #158
+
+    EXPECT_EQ(xad::value(r1), -1.2);
+    EXPECT_EQ(xad::value(r2), -1.2);
+    EXPECT_EQ(xad::value(r3), -1.2);
+    EXPECT_EQ(xad::value(r4), -1.2);
+}
