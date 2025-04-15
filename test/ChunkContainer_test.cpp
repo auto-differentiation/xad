@@ -31,7 +31,7 @@ using xad::ChunkContainer;
 
 TEST(ChunkContainer, alloc_less_than_alignment)
 {
-    void* p1 = ::xad::detail::aligned_alloc(128, 32);
+    void* p1 = xad::detail::AlignedAllocator::aligned_alloc(128, 32);
 
     EXPECT_THAT(p1, NotNull());
 }
