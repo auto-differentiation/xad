@@ -57,7 +57,7 @@ jobs:
       # pr: pull reference artifact then run benchmark
       - name: Pull Reference
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: reference
           path: xad/build/benchmarks
@@ -66,7 +66,7 @@ jobs:
         run: |
           ./scripts/benchmark.sh benchmark 1 Hessian Jacobian
       - name: Upload Benchmark Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: xad/build/benchmarks/benchmark_results.md
@@ -104,7 +104,7 @@ jobs:
           comment-author: 'github-actions[bot]'
           body-includes: Performance Results
       - name: Download Benchmark Results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: benchmark-results
           path: .
