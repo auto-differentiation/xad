@@ -3,6 +3,7 @@
 #include <XAD/XAD.hpp>
 #include <XAD/Jacobian.hpp>
 
+
 static void JacobianAdj(benchmark::State &state)
 {
     typedef xad::adj<double> mode;
