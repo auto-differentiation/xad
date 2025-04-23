@@ -1,0 +1,56 @@
+name: Benchmark Results
+
+on:
+  workflow_run:
+    workflows: [ "Benchmarks" ]
+    types:
+      - completed
+
+permissions:
+  checks: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  benchmark-results:
+    name: Benchmark Results
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion != 'skipped'
+
+    steps:
+      - name: Get PR Number
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: Benchmarks
+          name: pull_request_number
+          path: artifacts/pull_request_number.txt
+
+      - name: Download Libor Benchmark Results
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: Benchmarks
+          name: libor-benchmark-results
+          path: artifacts/libor_benchmark_results.md
+
+      - name: Download QuantLib Benchmark Results
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: Benchmarks
+          name: ql-benchmark-results
+          path: artifacts/ql_benchmark_results.md
+
+      - name: Extract PR Number
+        id: extract-pr
+        run: |
+          PR_NUMBER=$(cat artifacts/pull_request_number.txt)
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+      - name: Merge Benchmark Results
+        run: |
+          OUTPUT_FILE="artifacts/benchmark_results.md"
+          cat artifacts/libor_benchmark_results.md >> $OUTPUT_FILE
+          cat artifacts/ql_benchmark_results.md >> $OUTPUT_FILE
+      - name: Comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ steps.extract-pr.outputs.PR_NUMBER }}
+          body-path: artifacts/benchmark_results.md
