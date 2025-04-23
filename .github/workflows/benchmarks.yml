@@ -7,7 +7,6 @@ on:
 jobs:
   benchmark:
     # if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
-    if: false
     name: Benchmark
     runs-on: ubuntu-latest
     container: 
@@ -73,7 +72,6 @@ jobs:
           path: xad/build/benchmarks/benchmark_results.md
       
   update-runid:
-    if: false
     name: Update Run-id
     runs-on: ubuntu-latest
     # if: github.event_name == 'workflow_dispatch'
@@ -91,7 +89,6 @@ jobs:
 
 
   collect:
-    if: false
     name: Collect Results
     runs-on: ubuntu-latest
 # if: github.event_name == 'pull_request'
