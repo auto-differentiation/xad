@@ -12,7 +12,7 @@ jobs:
     container: 
       image: ghcr.io/foonathan/gcc:12
     outputs:
-      results: ${{ steps.libor-results.outputs.result }}
+      results: ${{ steps.benchmark.outputs.result }}
     steps:
       - name: Hardware characteristics
         run: |
@@ -44,6 +44,7 @@ jobs:
       - name: Run Reference
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
+          chmod +x ./scripts/benchmark.sh
           ./scripts/benchmark.sh reference 1 Hessian Jacobian
       - name: Push Reference
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -64,6 +65,7 @@ jobs:
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
+          chmod +x ./scripts/benchmark.sh
           ./scripts/benchmark.sh benchmark 1 Hessian Jacobian
       - name: Upload Benchmark Results
         uses: actions/upload-artifact@v4
