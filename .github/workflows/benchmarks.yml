@@ -49,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: reference
-          path: $(pwd)/xad/build/benchmarks/reference.json
+          path: /__w/xad/xad/build/benchmarks/reference.json
           if-no-files-found: error
           retention-days: 90
           overwrite: true
@@ -59,7 +59,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: reference
-          path: $(pwd)/xad/build/benchmarks
+          path: /__w/xad/xad/build/benchmarks
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |

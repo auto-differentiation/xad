@@ -16,7 +16,7 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-BASE_DIR="$(pwd)/build/benchmarks"
+BASE_DIR="$(pwd)/xad/build/benchmarks"
 if [ "$RUN_TYPE" == "reference" ]; then
   DIR="$BASE_DIR"
 elif [ "$RUN_TYPE" == "benchmark" ]; then
@@ -62,7 +62,7 @@ done
 echo "]" >> "$COMBINED_FILE"
 
 echo "Completed $RUN_TYPE runs for tests/examples: ${tests[*]}"
-echo "Results saved in $DIR/${RUN_TYPE}_${BIN_NAME}.${FORMAT}"
+echo "Results saved in $DIR/$RUN_TYPE.json"
 
 if [ "$RUN_TYPE" != "reference" ]; then
   echo "Collecting benchmark JSON logs..."
