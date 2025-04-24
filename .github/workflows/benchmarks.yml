@@ -66,10 +66,11 @@ jobs:
           chmod +x ./scripts/benchmark.sh
           ./scripts/benchmark.sh benchmark 1 Hessian Jacobian
       - name: Upload Benchmark Results
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: xad/build/benchmarks/benchmark_results.md
+          path: /__w/xad/xad/build/benchmarksbenchmark_results.md
       
   update-runid:
     name: Update Run-id
