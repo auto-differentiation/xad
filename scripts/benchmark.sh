@@ -16,7 +16,7 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-BASE_DIR="$(pwd)/xad/build/benchmarks"
+BASE_DIR="$(pwd)/build/benchmarks"
 if [ "$RUN_TYPE" == "reference" ]; then
   DIR="$BASE_DIR"
 elif [ "$RUN_TYPE" == "benchmark" ]; then
