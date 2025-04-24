@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     container: 
       image: ghcr.io/foonathan/gcc:12
-    outputs:
-      results: ${{ steps.benchmark.outputs.result }}
     steps:
       - name: Hardware characteristics
         run: |
@@ -51,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: reference
-          path: $(pwd)
+          path: $(pwd)/build/benchmarks
           if-no-files-found: error
           retention-days: 90
           overwrite: true
@@ -61,7 +59,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: reference
-          path: xad/build/benchmarks
+          path: build/benchmarks
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
