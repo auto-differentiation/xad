@@ -58,7 +58,6 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/download-artifact@v4
         with:
-          name: reference
           path: /__w/xad/xad/build/benchmarks
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
