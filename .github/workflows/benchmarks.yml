@@ -2,11 +2,12 @@ name: Benchmarks
 on: [push, pull_request]
   #pull_request:
     # types: [opened, reopened, synchronize, labeled, unlabeled ]
+env:
+  BENCHMARKS: 'Hessian Jacobian'
 
 
 jobs:
   benchmark:
-    # if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: Benchmark
     runs-on: ubuntu-latest
     container: 
@@ -43,7 +44,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh reference 1 Hessian Jacobian
+          ./scripts/benchmark.sh reference $BENCHMARKS
       - name: Push Reference
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/upload-artifact@v4
@@ -75,7 +76,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh benchmark 1 Hessian Jacobian
+          ./scripts/benchmark.sh benchmark $BENCHMARKS
       - name: Upload Benchmark Results
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
@@ -86,7 +87,7 @@ jobs:
   collect:
     name: Collect Results
     runs-on: ubuntu-latest
-# if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request'
     needs:
       - benchmark
     steps:

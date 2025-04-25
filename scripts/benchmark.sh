@@ -1,14 +1,13 @@
 #!/bin/bash
 
 if [ "$#" -lt 3 ]; then
-  echo "Usage: $0 <run_type> <repetitions> <test1> [<test2> ... <testN>]"
+  echo "Usage: $0 <run_type> <test1> [<test2> ... <testN>]"
   echo "run_type: 'reference' or 'benchmark'"
   exit 1
 fi
 
 RUN_TYPE=$1
-REPETITIONS=$2
-shift 2
+shift 1
 tests=("$@")
 
 if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
