@@ -96,6 +96,75 @@ using xad::tan;
 using xad::tanh;
 using xad::trunc;
 
+#ifdef _MSC_VER
+// we need these explicit instantiation to disambiguate templates in MSVC
+
+template <class T>
+XAD_INLINE T copysign(const T& x, const xad::AReal<T>& y)
+{
+    using std::copysign;
+    return copysign(x, value(y));
+}
+
+template <class T, class T2>
+XAD_INLINE xad::AReal<T> copysign(const T2& x, const xad::AReal<T>& y)
+{
+    using std::copysign;
+    return copysign(x, value(y));
+}
+
+template <class T>
+XAD_INLINE xad::AReal<T> copysign(const xad::AReal<T> x, const T& y)
+{
+    return ::xad::copysign(x, xad::value(y));
+}
+
+template <class T, class T2>
+XAD_INLINE xad::AReal<T> copysign(const xad::AReal<T> x, const T2& y)
+{
+    return ::xad::copysign(x, xad::value(y));
+}
+
+template <class T>
+XAD_INLINE xad::AReal<T> copysign(const xad::AReal<T> x, const xad::AReal<T>& y)
+{
+    return ::xad::copysign(x, xad::value(y));
+}
+
+template <class T>
+XAD_INLINE T copysign(const T& x, const xad::FReal<T>& y)
+{
+    using std::copysign;
+    return copysign(x, value(y));
+}
+
+template <class T, class T2>
+XAD_INLINE xad::FReal<T> copysign(const T2& x, const xad::FReal<T>& y)
+{
+    using std::copysign;
+    return copysign(x, value(y));
+}
+
+template <class T>
+XAD_INLINE xad::FReal<T> copysign(const xad::FReal<T> x, const T& y)
+{
+    return ::xad::copysign(x, xad::value(y));
+}
+
+template <class T, class T2>
+XAD_INLINE xad::FReal<T> copysign(const xad::FReal<T> x, const T2& y)
+{
+    return ::xad::copysign(x, xad::value(y));
+}
+
+template <class T>
+XAD_INLINE xad::FReal<T> copysign(const xad::FReal<T> x, const xad::FReal<T>& y)
+{
+    return ::xad::copysign(x, xad::value(y));
+}
+
+#endif
+
 template <class Scalar, class Derived>
 inline std::string to_string(const xad::Expression<Scalar, Derived>& _Val)
 {
