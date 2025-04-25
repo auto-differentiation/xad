@@ -65,6 +65,7 @@ jobs:
       - name: Pull Reference
         if: ${{ github.event_name == 'pull_request' }}
         run: |
+          git config --global --add safe.directory /__w/xad/xad
           gh run list --branch=main --workflow="Benchmarks" --limit=1 --json databaseId > run.json
           RUN_ID=$(jq -r '[0].databaseId' run.json)
           gh run download "$RUN_ID" -n reference -D /__w/xad/xad/build/benchmarks
