@@ -53,11 +53,18 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           overwrite: true
+      - name: Install gh and jq
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          apt-get update && apt-get install -y curl jq
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
+          chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list && \
+          apt-get update && apt-get install -y gh
       # pr: pull reference artifact then run benchmark
       - name: Pull Reference
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          sudo apt-get update && sudo apt-get install -y gh jq
           gh run list --branch=main --workflow="Benchmarks" --limit=1 --json databaseId > run.json
           RUN_ID=$(jq -r '[0].databaseId' run.json)
           gh run download "$RUN_ID" -n reference -D /__w/xad/xad/build/benchmarks
