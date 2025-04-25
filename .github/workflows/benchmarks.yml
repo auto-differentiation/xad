@@ -2,11 +2,12 @@ name: Benchmarks
 on: [push, pull_request]
   #pull_request:
     # types: [opened, reopened, synchronize, labeled, unlabeled ]
+env:
+  BENCHMARKS: 'Hessian Jacobian'
 
 
 jobs:
   benchmark:
-    # if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: Benchmark
     runs-on: ubuntu-latest
     container: 
@@ -43,7 +44,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh reference 1 Hessian Jacobian
+          ./scripts/benchmark.sh reference $BENCHMARKS
       - name: Push Reference
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/upload-artifact@v4
@@ -53,45 +54,40 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           overwrite: true
-      # pr: pull reference artifact then run benchmark
+      - name: Install gh and jq
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          apt-get update && apt-get install -y curl jq
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
+          chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list && \
+          apt-get update && apt-get install -y gh
+      # pr: pull reference artifact then run benchmark 
       - name: Pull Reference
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/download-artifact@v4
-        with:
-          name: reference
-          path: /__w/xad/xad/build/benchmarks
+        run: |
+          git config --global --add safe.directory /__w/xad/xad
+          gh run list --branch=main --workflow="Benchmarks" --limit=1 --json databaseId > run.json
+          RUN_ID=$(jq -r '.[0].databaseId' run.json)
+          gh run download "$RUN_ID" -n reference -D /__w/xad/xad/build/benchmarks
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh benchmark 1 Hessian Jacobian
+          ./scripts/benchmark.sh benchmark $BENCHMARKS
       - name: Upload Benchmark Results
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: xad/build/benchmarks/benchmark_results.md
+          path: /__w/xad/xad/build/benchmarks/benchmark_results.md
       
-  update-runid:
-    name: Update Run-id
-    runs-on: ubuntu-latest
-    # if: github.event_name == 'workflow_dispatch'
-    needs:
-      - benchmark
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set runid variable
-        run: |
-          gh variable list
-          gh variable set REFERENCE_RUN_ID --body "${{ github.run_id }}"
-          gh variable list
-        env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_READ_TOKEN }}
-
-
   collect:
     name: Collect Results
     runs-on: ubuntu-latest
-# if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request'
     needs:
       - benchmark
     steps:
@@ -104,7 +100,7 @@ jobs:
           comment-author: 'github-actions[bot]'
           body-includes: Performance Results
       - name: Download Benchmark Results
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: benchmark-results
           path: .

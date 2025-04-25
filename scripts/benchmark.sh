@@ -1,14 +1,13 @@
 #!/bin/bash
 
 if [ "$#" -lt 3 ]; then
-  echo "Usage: $0 <run_type> <repetitions> <test1> [<test2> ... <testN>]"
+  echo "Usage: $0 <run_type> <test1> [<test2> ... <testN>]"
   echo "run_type: 'reference' or 'benchmark'"
   exit 1
 fi
 
 RUN_TYPE=$1
-REPETITIONS=$2
-shift 2
+shift 1
 tests=("$@")
 
 if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
@@ -81,8 +80,8 @@ if [ "$RUN_TYPE" != "reference" ]; then
               pct="N/A"
           else
               bench_time=$(awk "BEGIN {printf \"%f\", $raw_bench_time}")
-              diff=$(echo "$ref_time - $bench_time" | bc -l)
-              pct=$(echo "scale=3; ($diff / $ref_time) * 100" | bc -l)
+              diff=$(awk "BEGIN { print $ref_time - $bench_time }")
+              pct=$(awk "BEGIN { print ($diff / $ref_time) * 100 }")
               ref_time=$(awk "BEGIN {printf \"%.2f\", $ref_time}")
               bench_time=$(awk "BEGIN {printf \"%.2f\", $bench_time}")
               diff=$(awk "BEGIN {printf \"%.2f\", $diff}")
