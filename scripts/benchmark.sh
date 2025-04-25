@@ -81,8 +81,8 @@ if [ "$RUN_TYPE" != "reference" ]; then
               pct="N/A"
           else
               bench_time=$(awk "BEGIN {printf \"%f\", $raw_bench_time}")
-              diff=$(echo "$ref_time - $bench_time" | bc -l)
-              pct=$(echo "scale=3; ($diff / $ref_time) * 100" | bc -l)
+              diff=$(awk "BEGIN { print $ref_time - $bench_time }")
+              pct=$(awk "BEGIN { print ($diff / $ref_time) * 100 }")
               ref_time=$(awk "BEGIN {printf \"%.2f\", $ref_time}")
               bench_time=$(awk "BEGIN {printf \"%.2f\", $bench_time}")
               diff=$(awk "BEGIN {printf \"%.2f\", $diff}")

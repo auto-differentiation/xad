@@ -83,23 +83,6 @@ jobs:
           name: benchmark-results
           path: /__w/xad/xad/build/benchmarks/benchmark_results.md
       
-  update-runid:
-    name: Update Run-id
-    runs-on: ubuntu-latest
-    # if: github.event_name == 'workflow_dispatch'
-    needs:
-      - benchmark
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set runid variable
-        run: |
-          gh variable list
-          gh variable set REFERENCE_RUN_ID --body "${{ github.run_id }}"
-          gh variable list
-        env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_READ_TOKEN }}
-
-
   collect:
     name: Collect Results
     runs-on: ubuntu-latest
@@ -116,7 +99,7 @@ jobs:
           comment-author: 'github-actions[bot]'
           body-includes: Performance Results
       - name: Download Benchmark Results
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: benchmark-results
           path: .
