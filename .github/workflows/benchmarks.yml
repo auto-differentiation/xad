@@ -67,7 +67,7 @@ jobs:
         run: |
           git config --global --add safe.directory /__w/xad/xad
           gh run list --branch=main --workflow="Benchmarks" --limit=1 --json databaseId > run.json
-          RUN_ID=$(jq -r '[0].databaseId' run.json)
+          RUN_ID=$(jq -r '.[0].databaseId' run.json)
           gh run download "$RUN_ID" -n reference -D /__w/xad/xad/build/benchmarks
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
