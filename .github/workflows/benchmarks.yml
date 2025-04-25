@@ -56,9 +56,13 @@ jobs:
       # pr: pull reference artifact then run benchmark
       - name: Pull Reference
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/download-artifact@v4
-        with:
-          path: /__w/xad/xad/build/benchmarks
+        run: |
+          sudo apt-get update && sudo apt-get install -y gh jq
+          gh run list --branch=main --workflow="Benchmarks" --limit=1 --json databaseId > run.json
+          RUN_ID=$(jq -r '[0].databaseId' run.json)
+          gh run download "$RUN_ID" -n reference -D /__w/xad/xad/build/benchmarks
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
@@ -69,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: /__w/xad/xad/build/benchmarksbenchmark_results.md
+          path: /__w/xad/xad/build/benchmarks/benchmark_results.md
       
   update-runid:
     name: Update Run-id
