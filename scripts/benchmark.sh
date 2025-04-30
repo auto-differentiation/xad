@@ -15,12 +15,8 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-BASE_DIR="$(pwd)/build/benchmarks"
-if [ "$RUN_TYPE" == "reference" ]; then
-  DIR="$BASE_DIR"
-elif [ "$RUN_TYPE" == "benchmark" ]; then
-  DIR="$BASE_DIR"
-fi
+DIR="$(pwd)/../build/benchmarks"
+MAIN_DIR="$(pwd)/../../main/build/benchmarks"
 
 echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
 
@@ -69,7 +65,7 @@ if [ "$RUN_TYPE" != "reference" ]; then
   {
     echo "| Test Name | Reference (ns) | Benchmark (ns) | Difference (ns) | % Change |"
     echo "| --------- | --------------:| -------------: | ---------------:| -------: |"
-    for benchmark in $(jq -c '.[] | .benchmarks[]' "$DIR/reference.json"); do
+    for benchmark in $(jq -c '.[] | .benchmarks[]' "$MAIN_DIR/reference.json"); do
           bm_name=$(echo "$benchmark" | jq -r '.name')
           raw_ref_time=$(echo "$benchmark" | jq '.real_time')
           ref_time=$(awk "BEGIN {printf \"%f\", $raw_ref_time}")
