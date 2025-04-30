@@ -1,0 +1,1 @@
+xad_add_benchmark(montecarlo_benchmark SOURCES main.cpp)
