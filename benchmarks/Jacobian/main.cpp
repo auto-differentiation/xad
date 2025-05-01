@@ -1,7 +1,6 @@
 #include <benchmark/benchmark.h>
 
-#include <XAD/XAD.hpp>
-#include <XAD/Jacobian.hpp>
+#include "jacobian.hpp"
 
 
 static void JacobianAdj(benchmark::State &state)
