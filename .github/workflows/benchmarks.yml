@@ -1,7 +1,7 @@
 name: Benchmarks
-on: [push, pull_request]
-  #pull_request:
-    # types: [opened, reopened, synchronize, labeled, unlabeled ]
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
 env:
   BENCHMARKS: 'Hessian Jacobian'
 
@@ -19,41 +19,14 @@ jobs:
           lscpu
           echo "------------------ Mem ---------------"
           lsmem
-      - uses: actions/checkout@v4
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          path: xad
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: benchmark
-      - name: configure
-        run: |
-          mkdir build
-          cd build
-          cmake .. -GNinja \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DXAD_NO_THREADLOCAL=ON \
-            -DXAD_SIMD_OPTION=AVX2 \
-            -DXAD_USE_STRONG_INLINE=ON          
-      - name: build
-        run: |
-          cd build
-          cmake --build .
-      # main branch: run reference benchmark and upload artifact
-      - name: Run Reference
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: |
-          chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh reference $BENCHMARKS
-      - name: Push Reference
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: reference
-          path: /__w/xad/xad/build/benchmarks/reference.json
-          if-no-files-found: error
-          retention-days: 90
-          overwrite: true
       - name: Install gh and jq
         if: ${{ github.event_name == 'pull_request' }}
         run: |
@@ -62,16 +35,48 @@ jobs:
           chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list && \
           apt-get update && apt-get install -y gh
-      # pr: pull reference artifact then run benchmark 
-      - name: Pull Reference
-        if: ${{ github.event_name == 'pull_request' }}
+      - name: Configure PR Branch
         run: |
-          git config --global --add safe.directory /__w/xad/xad
-          gh run list --branch=main --workflow="Benchmarks" --limit=1 --json databaseId > run.json
-          RUN_ID=$(jq -r '.[0].databaseId' run.json)
-          gh run download "$RUN_ID" -n reference -D /__w/xad/xad/build/benchmarks
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          mkdir xad/build
+          cd xad/build
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            -DXAD_USE_STRONG_INLINE=ON          
+      - name: Build PR Branch
+        run: |
+          cd xad/build
+          cmake --build .
+      - name: Checkout Main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          repository: raneamri/xad # auto-differentiation/xad
+          path: main
+      - name: Configure Main Branch
+        run: |
+          mkdir main/build
+          cd main/build
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            -DXAD_USE_STRONG_INLINE=ON          
+      - name: Build Main Branch
+        run: |
+          cd main/build
+          cmake --build .
+      - name: Run Reference
+        run: |
+          ls
+          cd main
+          chmod +x ./scripts/benchmark.sh
+          ./scripts/benchmark.sh reference $BENCHMARKS
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
@@ -115,3 +120,4 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-path: results.md
           edit-mode: replace
+

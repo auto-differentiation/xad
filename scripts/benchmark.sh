@@ -15,14 +15,19 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-DIR="$(pwd)/../build/benchmarks"
-MAIN_DIR="$(pwd)/../../main/build/benchmarks"
+# GHA absolute paths
+DIR="/__w/xad/xad/build/benchmarks"
+MAIN_DIR="/__w/xad/main/build/benchmarks"
+
+#DIR="$(pwd)/build/benchmarks" # "$(pwd)/../build/benchmarks"
+#MAIN_DIR="$(pwd)/build/benchmarks" # "$(pwd)/../../main/build/benchmarks"
+
+echo "$(pwd) is current directory"
 
 echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
 
 FORMAT="json"
 
-# Initialize combined JSON file for each run type
 if [ "$RUN_TYPE" == "reference" ]; then
     COMBINED_FILE="$DIR/reference.json"
     rm -f "$COMBINED_FILE"
