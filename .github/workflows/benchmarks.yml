@@ -48,7 +48,7 @@ jobs:
             -DXAD_USE_STRONG_INLINE=ON          
       - name: Build PR Branch
         run: |
-          cd build
+          cd xad/build
           cmake --build .
       - name: Checkout Main
         uses: actions/checkout@v4
