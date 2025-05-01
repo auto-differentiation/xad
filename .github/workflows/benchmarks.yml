@@ -24,6 +24,14 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: benchmark
+      - name: Install gh and jq
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          apt-get update && apt-get install -y curl jq
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
+          chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list && \
+          apt-get update && apt-get install -y gh
       - name: Configure PR Branch
         run: |
           mkdir build
