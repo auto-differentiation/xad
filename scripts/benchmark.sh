@@ -15,8 +15,8 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-DIR="$(pwd)/../build/benchmarks"
-MAIN_DIR="$(pwd)/../../main/build/benchmarks"
+DIR="$(pwd)/build/benchmarks"
+MAIN_DIR="$(pwd)/../main/build/benchmarks"
 
 echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
 
