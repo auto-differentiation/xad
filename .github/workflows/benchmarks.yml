@@ -19,7 +19,10 @@ jobs:
           lscpu
           echo "------------------ Mem ---------------"
           lsmem
-      - uses: actions/checkout@v4
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          path: xad
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
