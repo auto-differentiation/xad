@@ -37,8 +37,8 @@ jobs:
           apt-get update && apt-get install -y gh
       - name: Configure PR Branch
         run: |
-          mkdir build
-          cd build
+          mkdir xad/build
+          cd xad/build
           cmake .. -GNinja \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=Release \
