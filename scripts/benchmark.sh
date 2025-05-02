@@ -7,8 +7,8 @@ if [ "$#" -lt 3 ]; then
 fi
 
 RUN_TYPE=$1
-LOCAL=false
-shift 1
+LOCAL=$2
+shift 2
 tests=("$@")
 
 if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then

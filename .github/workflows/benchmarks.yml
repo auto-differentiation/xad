@@ -75,13 +75,13 @@ jobs:
         run: |
           cd ./main
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh reference $BENCHMARKS
+          ./scripts/benchmark.sh reference false $BENCHMARKS
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           cd ./xad
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh benchmark $BENCHMARKS
+          ./scripts/benchmark.sh benchmark false $BENCHMARKS
       - name: Upload Benchmark Results
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
