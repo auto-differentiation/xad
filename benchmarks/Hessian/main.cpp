@@ -1,6 +1,7 @@
 #include <benchmark/benchmark.h>
 
 #include "hessian.hpp"
+#include "../util.hpp"
 
 static void HessianFwdAdj(benchmark::State &state)
 {
