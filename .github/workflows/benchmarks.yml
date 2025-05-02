@@ -73,10 +73,8 @@ jobs:
           cmake --build .
       - name: Run Reference
         run: |
-          ls
-          cd main
-          chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh reference $BENCHMARKS
+          chmod +x ./main/scripts/benchmark.sh
+          ./main/scripts/benchmark.sh reference $BENCHMARKS
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
