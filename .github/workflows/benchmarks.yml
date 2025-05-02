@@ -54,7 +54,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          repository: raneamri/xad # auto-differentiation/xad 
+          repository: raneamri/xad # auto-differentiation/xad (origin doesn't have scripts yet)
           path: main
       - name: Configure Main Branch
         run: |
@@ -75,22 +75,22 @@ jobs:
         run: |
           cd ./main
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh reference $BENCHMARKS
+          ./scripts/benchmark.sh reference false $BENCHMARKS
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           cd ./xad
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh benchmark $BENCHMARKS
+          ./scripts/benchmark.sh benchmark false $BENCHMARKS
       - name: Upload Benchmark Results
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: /__w/xad/xad/build/benchmarks/benchmark_results.md
+          path: /__w/xad/xad/xad/build/benchmarks/benchmark_results.md
       
   collect:
-    name: Collect Results
+    name: Collect Benchmark
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     needs:
