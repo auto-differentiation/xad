@@ -15,9 +15,8 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-# GHA absolute paths
-DIR="/__w/xad/xad/build/benchmarks"
-MAIN_DIR="/__w/xad/main/build/benchmarks"
+DIR="/__w/xad/xad/xad/build/benchmarks/"
+MAIN_DIR="/__w/xad/xad/main/build/benchmarks/"
 
 #DIR="$(pwd)/build/benchmarks" # "$(pwd)/../build/benchmarks"
 #MAIN_DIR="$(pwd)/build/benchmarks" # "$(pwd)/../../main/build/benchmarks"
@@ -30,12 +29,16 @@ FORMAT="json"
 
 if [ "$RUN_TYPE" == "reference" ]; then
     COMBINED_FILE="$DIR/reference.json"
-    rm -f "$COMBINED_FILE"
+    if [ -f "$COMBINED_FILE" ]; then
+        rm -f "$COMBINED_FILE"
+    fi
     echo "[" > "$COMBINED_FILE"
     COMMA_NEEDED=0
 elif [ "$RUN_TYPE" == "benchmark" ]; then
     COMBINED_FILE="$DIR/benchmark.json"
-    rm -f "$COMBINED_FILE"
+    if [ -f "$COMBINED_FILE" ]; then
+        rm -f "$COMBINED_FILE"
+    fi
     echo "[" > "$COMBINED_FILE"
     COMMA_NEEDED=0
 fi

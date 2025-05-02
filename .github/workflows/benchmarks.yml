@@ -54,7 +54,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          repository: raneamri/xad # auto-differentiation/xad
+          repository: raneamri/xad # auto-differentiation/xad 
           path: main
       - name: Configure Main Branch
         run: |
@@ -74,7 +74,8 @@ jobs:
       - name: Run Reference
         run: |
           ls
-          cd main
+          cd ./main
+          ls
           chmod +x ./scripts/benchmark.sh
           ./scripts/benchmark.sh reference $BENCHMARKS
       - name: Run Benchmark
