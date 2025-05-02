@@ -1,0 +1,38 @@
+name: Benchmark Results
+on:
+    pull_request:
+      types: [opened, reopened, synchronize, labeled, unlabeled]
+
+
+jobs:
+    collect:
+      name: Collect Benchmark
+      runs-on: ubuntu-latest
+      if: github.event_name == 'pull_request'
+      steps:
+        - name: Find Comment
+          uses: peter-evans/find-comment@v3
+          if: github.event_name == 'pull_request'
+          id: fc
+          with:
+            issue-number: ${{ github.event.pull_request.number }}
+            comment-author: 'github-actions[bot]'
+            body-includes: Performance Results
+        - name: Download Benchmark Results
+          uses: actions/download-artifact@v4
+          with:
+            name: benchmark-results
+            path: .
+        - name: Rename Benchmark Results
+          run: mv benchmark_results.md results.md
+        - name: Post or update PR comment
+          id: pr-comment
+          if: github.event_name == 'pull_request'
+          uses: peter-evans/create-or-update-comment@v4
+          with:
+            comment-id: ${{ steps.fc.outputs.comment-id }}
+            issue-number: ${{ github.event.pull_request.number }}
+            body-path: results.md
+            edit-mode: replace
+  
+  
