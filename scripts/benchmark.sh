@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$#" -lt 3 ]; then
-  echo "Usage: $0 <run_type> <test1> [<test2> ... <testN>]"
+  echo "Usage: $0 <run_type: 'benchmark' | 'reference'> [<local: bool>] <test1> [<test2> ... <testN>]"
   echo "run_type: 'reference' or 'benchmark'"
   exit 1
 fi
@@ -15,8 +15,16 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-DIR="/__w/xad/xad/xad/build/benchmarks"
-MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
+#
+# Run reference from main repo
+# - Generates reference.json at main/build/benchmarks
+#
+# Run benchmark from pr repo
+# - Generates benchmark.json at xad/build/benchmarks
+# - Compares with reference.json
+# - Generates benchmark_results.md at xad/build/benchmarks
+#
+
 
 #DIR="$(pwd)/build/benchmarks" # "$(pwd)/../build/benchmarks"
 #MAIN_DIR="$(pwd)/build/benchmarks" # "$(pwd)/../../main/build/benchmarks" 
@@ -28,13 +36,19 @@ echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
 FORMAT="json"
 
 if [ "$RUN_TYPE" == "reference" ]; then
-    COMBINED_FILE="$DIR/reference.json"
+    DIR="/__w/xad/xad/main/build/benchmarks"
+    MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
+
+    COMBINED_FILE="$MAIN_DIR/reference.json"
     if [ -f "$COMBINED_FILE" ]; then
         rm -f "$COMBINED_FILE"
     fi
     echo "[" > "$COMBINED_FILE"
     COMMA_NEEDED=0
 elif [ "$RUN_TYPE" == "benchmark" ]; then
+    DIR="/__w/xad/xad/xad/build/benchmarks"
+    MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
+
     COMBINED_FILE="$DIR/benchmark.json"
     if [ -f "$COMBINED_FILE" ]; then
         rm -f "$COMBINED_FILE"
