@@ -15,12 +15,8 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-# GHA absolute paths
-DIR="/__w/xad/xad/build/benchmarks"
-MAIN_DIR="/__w/xad/main/build/benchmarks"
-
-#DIR="$(pwd)/build/benchmarks" # "$(pwd)/../build/benchmarks"
-#MAIN_DIR="$(pwd)/build/benchmarks" # "$(pwd)/../../main/build/benchmarks"
+DIR="$(pwd)/build/benchmarks" # "$(pwd)/../build/benchmarks"
+MAIN_DIR="$(pwd)/build/benchmarks" # "$(pwd)/../../main/build/benchmarks"
 
 echo "$(pwd) is current directory"
 
