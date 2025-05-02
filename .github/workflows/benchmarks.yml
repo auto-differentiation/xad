@@ -87,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: /__w/xad/xad/build/benchmarks/benchmark_results.md
+          path: /__w/xad/xad/xad/build/benchmarks/benchmark_results.md
       
   collect:
     name: Collect Results

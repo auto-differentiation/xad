@@ -1,12 +1,13 @@
 #!/bin/bash
 
 if [ "$#" -lt 3 ]; then
-  echo "Usage: $0 <run_type: 'benchmark' | 'reference'> [<local: bool>] <test1> [<test2> ... <testN>]"
+  echo "Usage: $0 <run_type: 'benchmark' | 'reference'> [<local: bool=false>] <test1> [<test2> ... <testN>]"
   echo "run_type: 'reference' or 'benchmark'"
   exit 1
 fi
 
 RUN_TYPE=$1
+LOCAL=false
 shift 1
 tests=("$@")
 
@@ -24,18 +25,25 @@ fi
 # - Generates benchmark_results.md at xad/build/benchmarks
 
 
-#DIR="$(pwd)/build/benchmarks" # "$(pwd)/../build/benchmarks"
-#MAIN_DIR="$(pwd)/build/benchmarks" # "$(pwd)/../../main/build/benchmarks" 
-
 echo "$(pwd) is current directory"
+
+if [ ! -d "../main" ]; then
+    echo "Reference repo not found. You must have the main repo checked out at ../main to run the benchmarks locally."
+    exit 0
+fi
 
 echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
 
 FORMAT="json"
 
 if [ "$RUN_TYPE" == "reference" ]; then
-    DIR="/__w/xad/xad/main/build/benchmarks"
-    MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
+    if [ "$LOCAL" == "true" ]; then
+        DIR="$(pwd)/build/benchmarks"
+        MAIN_DIR="$(pwd)/build/benchmarks"
+    else
+        DIR="/__w/xad/xad/main/build/benchmarks"
+        MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
+    fi
 
     COMBINED_FILE="$MAIN_DIR/reference.json"
     if [ -f "$COMBINED_FILE" ]; then
@@ -44,8 +52,14 @@ if [ "$RUN_TYPE" == "reference" ]; then
     echo "[" > "$COMBINED_FILE"
     COMMA_NEEDED=0
 elif [ "$RUN_TYPE" == "benchmark" ]; then
-    DIR="/__w/xad/xad/xad/build/benchmarks"
-    MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
+    if [ "$LOCAL" == "true" ]; then
+        DIR="$(pwd)/build/benchmarks"
+        MAIN_DIR="$(pwd)/../main/build/benchmarks"
+    else
+        DIR="/__w/xad/xad/xad/build/benchmarks"
+        MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
+    fi
+
 
     COMBINED_FILE="$DIR/benchmark.json"
     if [ -f "$COMBINED_FILE" ]; then
