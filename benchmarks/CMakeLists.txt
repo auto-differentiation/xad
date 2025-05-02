@@ -52,4 +52,3 @@ endfunction()
 
 add_subdirectory(Hessian)
 add_subdirectory(Jacobian)
-add_subdirectory(Math)
