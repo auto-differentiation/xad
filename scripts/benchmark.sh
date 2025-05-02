@@ -26,12 +26,16 @@ FORMAT="json"
 
 if [ "$RUN_TYPE" == "reference" ]; then
     COMBINED_FILE="$DIR/reference.json"
-    rm -f "$COMBINED_FILE"
+    if [ -f "$COMBINED_FILE" ]; then
+        rm -f "$COMBINED_FILE"
+    fi
     echo "[" > "$COMBINED_FILE"
     COMMA_NEEDED=0
 elif [ "$RUN_TYPE" == "benchmark" ]; then
     COMBINED_FILE="$DIR/benchmark.json"
-    rm -f "$COMBINED_FILE"
+    if [ -f "$COMBINED_FILE" ]; then
+        rm -f "$COMBINED_FILE"
+    fi
     echo "[" > "$COMBINED_FILE"
     COMMA_NEEDED=0
 fi
