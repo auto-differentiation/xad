@@ -15,7 +15,6 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   exit 1
 fi
 
-#
 # Run reference from main repo
 # - Generates reference.json at main/build/benchmarks
 #
@@ -23,7 +22,6 @@ fi
 # - Generates benchmark.json at xad/build/benchmarks
 # - Compares with reference.json
 # - Generates benchmark_results.md at xad/build/benchmarks
-#
 
 
 #DIR="$(pwd)/build/benchmarks" # "$(pwd)/../build/benchmarks"
