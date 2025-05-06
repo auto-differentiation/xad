@@ -62,3 +62,4 @@ jobs:
           issue-number: ${{ steps.pr.outputs.number }}
           body-path: benchmark-results/benchmark_results.md
           edit-mode: replace
+          
