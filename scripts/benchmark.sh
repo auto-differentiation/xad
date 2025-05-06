@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Run reference from main repo
+# - Generates reference.json at main/build/benchmarks
+#
+# Run benchmark from pr repo
+# - Generates benchmark.json at xad/build/benchmarks
+# - Compares with reference.json
+# - Generates benchmark_results.md at xad/build/benchmarks
+
 if [ "$#" -lt 3 ]; then
   echo "Usage: $0 <run_type: 'benchmark' | 'reference'> [<local: bool=false>] <test1> [<test2> ... <testN>]"
   echo "run_type: 'reference' or 'benchmark'"
@@ -15,15 +23,6 @@ if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
   echo "Error: run_type must be either 'reference' or 'benchmark'."
   exit 1
 fi
-
-# Run reference from main repo
-# - Generates reference.json at main/build/benchmarks
-#
-# Run benchmark from pr repo
-# - Generates benchmark.json at xad/build/benchmarks
-# - Compares with reference.json
-# - Generates benchmark_results.md at xad/build/benchmarks
-
 
 echo "$(pwd) is current directory"
 

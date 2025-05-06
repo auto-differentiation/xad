@@ -5,7 +5,6 @@ on:
 env:
   BENCHMARKS: 'Hessian Jacobian'
 
-
 jobs:
   benchmark:
     name: Benchmark
@@ -82,42 +81,18 @@ jobs:
           cd ./xad
           chmod +x ./scripts/benchmark.sh
           ./scripts/benchmark.sh benchmark false $BENCHMARKS
+      - name: Save PR Number
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "${{ github.event.pull_request.number }}" > pr_number.txt    
+      - name: Upload PR Number
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-number
+          path: pr_number.txt
       - name: Upload Benchmark Results
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: /__w/xad/xad/xad/build/benchmarks/benchmark_results.md
-      
-  collect:
-    name: Collect Benchmark
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    needs:
-      - benchmark
-    steps:
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        if: github.event_name == 'pull_request'
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: Performance Results
-      - name: Download Benchmark Results
-        uses: actions/download-artifact@v4
-        with:
-          name: benchmark-results
-          path: .
-      - name: Rename Benchmark Results
-        run: mv benchmark_results.md results.md
-      - name: Post or update PR comment
-        id: pr-comment
-        if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body-path: results.md
-          edit-mode: replace
-
