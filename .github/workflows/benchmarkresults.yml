@@ -2,7 +2,7 @@ name: Post Benchmark Results
 
 on:
   workflow_run:
-    workflows: ["Benchmarks"]  # Must match name of your PR workflow
+    workflows: ["Benchmarks"]
     types:
       - completed
 
@@ -15,38 +15,48 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Download all artifacts
+      - name: Get Artifact IDs
+        id: artifacts
         uses: actions/github-script@v7
         with:
           script: |
             const run_id = ${{ github.event.workflow_run.id }};
-            const run = await github.rest.actions.listWorkflowRunArtifacts({
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              run_id: run_id
+              run_id
             });
-
-            const fs = require('fs');
-            const path = require('path');
-            const unzipper = require('unzipper');
-
-            for (const artifact of run.data.artifacts) {
-              const download = await github.rest.actions.downloadArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: artifact.id,
-                archive_format: 'zip'
-              });
-              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
-              await fs.createReadStream(`${artifact.name}.zip`).pipe(unzipper.Extract({ path: artifact.name })).promise();
+      
+            const result = {};
+            for (const artifact of artifacts.data.artifacts) {
+              result[artifact.name] = artifact.id;
             }
+      
+            return result;
+      - name: Download and unzip benchmark results
+        run: |
+          ARTIFACT_ID=$(echo '${{ steps.artifacts.outputs.result }}' | jq -r '.["benchmark-results"]')
+          curl -sL \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip \
+            -o benchmark-results.zip
+          unzip -o benchmark-results.zip -d benchmark-results
+      - name: Download and unzip PR number
+        run: |
+          ARTIFACT_ID=$(echo '${{ steps.artifacts.outputs.result }}' | jq -r '.["pr-number"]')
+          curl -sL \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip \
+            -o pr-number.zip
+          unzip -o pr-number.zip -d pr-number
       - name: Read PR number
         id: pr
         run: |
-          pr=$(cat pr-number/pr_number.txt)
-          echo "PR number is $pr"
-          echo "number=$pr" >> $GITHUB_OUTPUT
-      - name: Post comment
+          PR=$(cat pr-number/pr_number.txt)
+          echo "number=$PR" >> $GITHUB_OUTPUT
+      - name: Post Benchmark Comment
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ steps.pr.outputs.number }}

@@ -96,29 +96,31 @@ if [ "$RUN_TYPE" != "reference" ]; then
   echo "Collecting benchmark JSON logs..."
   RESULTS_MD="$DIR/benchmark_results.md"
   {
+    echo "# Benchmark Comparison Report"
+    echo ""
+    FULL_DATE=$(jq -r '.[0].context.date' "$DIR/benchmark.json")
+    RUN_DATE=$(echo "$FULL_DATE" | cut -d'T' -f1)
+    echo "**Run Date:** $RUN_DATE"
+    echo ""
     echo "| Test Name | Reference (ns) | Benchmark (ns) | Difference (ns) | % Change |"
-    echo "| --------- | --------------:| -------------: | ---------------:| -------: |"
+    echo "| --------- | --------------:| --------------:| ---------------:| --------:|"
     for benchmark in $(jq -c '.[] | .benchmarks[]' "$MAIN_DIR/reference.json"); do
-          bm_name=$(echo "$benchmark" | jq -r '.name')
-          raw_ref_time=$(echo "$benchmark" | jq '.real_time')
-          ref_time=$(awk "BEGIN {printf \"%f\", $raw_ref_time}")
-          raw_bench_time=$(jq -r --arg name "$bm_name" '.[] | .benchmarks[] | select(.name==$name) | .real_time' "$DIR/benchmark.json")
-          if [ -z "$raw_bench_time" ]; then
-              bench_time="N/A"
-              diff="N/A"
-              pct="N/A"
-          else
-              bench_time=$(awk "BEGIN {printf \"%f\", $raw_bench_time}")
-              diff=$(awk "BEGIN { print $ref_time - $bench_time }")
-              pct=$(awk "BEGIN { print ($diff / $ref_time) * 100 }")
-              ref_time=$(awk "BEGIN {printf \"%.2f\", $ref_time}")
-              bench_time=$(awk "BEGIN {printf \"%.2f\", $bench_time}")
-              diff=$(awk "BEGIN {printf \"%.2f\", $diff}")
-          fi
-          echo "| $bm_name | $ref_time | $bench_time | $diff | ${pct}% |"
+      bm_name=$(echo "$benchmark" | jq -r '.name')
+      ref_time=$(echo "$benchmark" | jq '.real_time')
+      ref_time_fmt=$(awk "BEGIN {printf \"%.2f\", $ref_time}")
+
+      raw_bench=$(jq -r --arg name "$bm_name" '.[] | .benchmarks[] | select(.name==$name) | .real_time' "$DIR/benchmark.json")
+
+      if [ -z "$raw_bench" ] || [ "$raw_bench" = "null" ]; then
+        echo "| $bm_name | $ref_time_fmt | N/A | N/A | N/A |"
+      else
+        bench_time_fmt=$(awk "BEGIN {printf \"%.2f\", $raw_bench}")
+        diff=$(awk "BEGIN {printf \"%.2f\", $ref_time - $raw_bench}")
+        pct=$(awk "BEGIN {printf \"%.2f\", (($ref_time - $raw_bench) / $ref_time) * 100}")
+        echo "| $bm_name | $ref_time_fmt | $bench_time_fmt | $diff | ${pct}% |"
+      fi
     done
   } > "$RESULTS_MD"
   echo "Benchmark comparisons saved in $RESULTS_MD"
-  
   cp "$RESULTS_MD" "$(pwd)/results.md" # for workflow
 fi
