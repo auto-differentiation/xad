@@ -40,14 +40,12 @@ jobs:
               fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
               await fs.createReadStream(`${artifact.name}.zip`).pipe(unzipper.Extract({ path: artifact.name })).promise();
             }
-
       - name: Read PR number
         id: pr
         run: |
           pr=$(cat pr-number/pr_number.txt)
           echo "PR number is $pr"
           echo "number=$pr" >> $GITHUB_OUTPUT
-
       - name: Post comment
         uses: peter-evans/create-or-update-comment@v4
         with:
