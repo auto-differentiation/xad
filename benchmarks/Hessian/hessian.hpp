@@ -27,6 +27,10 @@
 
 #include <functional>
 #include <vector>
+#ifdef _WIN32
+#define _USE_MATH_DEFINES
+#endif
+#include <cmath>
 
 #include <XAD/XAD.hpp>
 #include <XAD/Hessian.hpp>
