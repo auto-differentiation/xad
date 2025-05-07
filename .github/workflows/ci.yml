@@ -489,7 +489,7 @@ jobs:
       - name: Trigger QuantLib-Risks-Cpp Workflow
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           repository: auto-differentiation/QuantLib-Risks-Cpp
           event-type: xad-ci-trigger
           client-payload: >
