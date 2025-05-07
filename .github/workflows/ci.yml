@@ -485,6 +485,10 @@ jobs:
   trigger_quantlib_risks_cpp:
     name: Trigger QuantLib-Risks-Cpp CI
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      repository-projects: write
     steps:
       - name: Trigger QuantLib-Risks-Cpp Workflow
         uses: peter-evans/repository-dispatch@v2
