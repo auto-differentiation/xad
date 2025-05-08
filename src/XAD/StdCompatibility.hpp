@@ -445,4 +445,16 @@ struct _Is_RealType<xad::FReal<T>> : public _Is_RealType<T>
 #endif
 
 #endif
+
+// https://github.com/auto-differentiation/xad/issues/169
+#if __clang_major__ >= 16
+
+template <typename T>
+struct __libcpp_random_is_valid_realtype<xad::AReal<T>> : true_type {};
+
+template <typename T>
+struct __libcpp_random_is_valid_realtype<xad::FReal<T>> : true_type {};
+
+#endif
+
 }  // namespace std
