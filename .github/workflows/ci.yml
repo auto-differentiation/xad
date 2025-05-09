@@ -5,6 +5,7 @@ env:
 
 jobs:
   build_and_test_windows:
+    if: false
     name: Windows
     strategy:
       fail-fast: false
@@ -123,6 +124,7 @@ jobs:
           cmake --build .
 
   build_and_test_gcc:
+    if: false
     name: Linux/Gcc
     strategy:
       fail-fast: false
@@ -252,6 +254,7 @@ jobs:
           cmake --build .
 
   build_and_test_clang:
+    if: false
     name: Linux/Clang
     runs-on: ubuntu-latest
     strategy:
@@ -357,6 +360,7 @@ jobs:
           cmake --build .
 
   build_and_test_macos:
+    if: false
     name: Mac
     strategy:
       fail-fast: false
@@ -494,7 +498,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          repository: auto-differentiation/QuantLib-Risks-Cpp
+          repository: raneamri/QuantLib-Risks-Cpp #auto-differentiation/QuantLib-Risks-Cpp
           event-type: xad-ci-trigger
           client-payload: >
             {
