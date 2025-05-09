@@ -54,6 +54,7 @@ if(NOT XAD_DOCS_ONLY)
     if(XAD_ENABLE_TESTS)
         add_subdirectory(test)
         add_subdirectory(samples)
+        add_subdirectory(benchmarks)
     endif()
 endif()
 
