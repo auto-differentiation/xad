@@ -51,6 +51,7 @@ if [ "$RUN_TYPE" == "reference" ]; then
     fi
 
     COMBINED_FILE="$MAIN_DIR/reference.json"
+    mkdir -p "$(dirname "$COMBINED_FILE")"
     if [ -f "$COMBINED_FILE" ]; then
         rm -f "$COMBINED_FILE"
     fi
