@@ -3,7 +3,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, labeled, unlabeled]
 env:
+  # the benchmarks to run
+  # these are the names of the directories in the benchmarks folder
   BENCHMARKS: 'Hessian Jacobian'
+  MAIN_REPO: 'raneamri/xad' # auto-differentiation/xad (origin doesn't have scripts yet)
 
 jobs:
   benchmark:
@@ -26,6 +29,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: benchmark
+      # used for data manipulation in the script
       - name: Install gh and jq
         if: ${{ github.event_name == 'pull_request' }}
         run: |
@@ -44,7 +48,8 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++ \
             -DXAD_NO_THREADLOCAL=ON \
             -DXAD_SIMD_OPTION=AVX2 \
-            -DXAD_USE_STRONG_INLINE=ON          
+            -DXAD_USE_STRONG_INLINE=ON \
+            -DXAD_ENABLE_BENCHMARK=ON      
       - name: Build PR Branch
         run: |
           cd xad/build
@@ -53,7 +58,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          repository: raneamri/xad # auto-differentiation/xad (origin doesn't have scripts yet)
+          repository: ${{ env.MAIN_REPO }}
           path: main
       - name: Configure Main Branch
         run: |
@@ -65,7 +70,8 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++ \
             -DXAD_NO_THREADLOCAL=ON \
             -DXAD_SIMD_OPTION=AVX2 \
-            -DXAD_USE_STRONG_INLINE=ON          
+            -DXAD_USE_STRONG_INLINE=ON \
+            -DXAD_ENABLE_BENCHMARK=ON           
       - name: Build Main Branch
         run: |
           cd main/build
@@ -95,5 +101,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: /__w/xad/xad/xad/build/benchmarks/benchmark_results.md
+          path: $(pwd)/xad/build/benchmarks/benchmark_results.md
           

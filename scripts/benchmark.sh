@@ -1,12 +1,18 @@
 #!/bin/bash
 
-# Run reference from main repo
-# - Generates reference.json at main/build/benchmarks
+# this script requires the following directory structure:
+# - $(pwd)
+#   - xad
+#     - scripts
+#   - main
+#     - scripts
 #
-# Run benchmark from pr repo
-# - Generates benchmark.json at xad/build/benchmarks
-# - Compares with reference.json
-# - Generates benchmark_results.md at xad/build/benchmarks
+# First, ./scripts/benchmark.sh reference <...> should be run from the _main_ repo to generate
+# the reference.json file.
+# Then, ./scripts/benchmark.sh benchmark <...> should be run from the _xad_ repo to generate
+# the benchmark.json file. This will also generate:
+# - benchmark_results.md, a table of the results
+# - benchmark.json, the benchmark results as JSON, useful for plotting
 
 if [ "$#" -lt 3 ]; then
   echo "Usage: $0 <run_type: 'benchmark' | 'reference'> [<local: bool=false>] <test1> [<test2> ... <testN>]"

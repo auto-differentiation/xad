@@ -29,7 +29,7 @@
 
 
 template <typename T>
-std::vector<T (*)(T)> &make_unary_functions()
+std::vector<T (*)(T)> make_unary_functions()
 {
     return std::vector<T (*)(T)>({
             *abs,
@@ -75,7 +75,7 @@ std::vector<T (*)(T)> &make_unary_functions()
 }
 
 template <typename T>
-std::vector<void (*)> &make_binary_functions()
+std::vector<void (*)> make_binary_functions()
 {
     return std::vector<void (*)>({
             *copysign, 
@@ -96,7 +96,7 @@ std::vector<void (*)> &make_binary_functions()
 }
 
 template <typename T>
-std::vector<void (*)> &make_ternary_functions()
+std::vector<void (*)> make_ternary_functions()
 {
     return std::vector<void (*)>({
         *remquo,  
@@ -104,7 +104,7 @@ std::vector<void (*)> &make_ternary_functions()
 }
 
 template <typename T>
-std::vector<void (*)> &make_functions()
+std::vector<void (*)> make_functions()
 {
     return std::vector<void (*)>({
         *abs,
