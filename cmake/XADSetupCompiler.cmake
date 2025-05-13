@@ -163,6 +163,12 @@ function(xad_add_library name type)
         # without this flag
         target_compile_definitions(${name} PUBLIC "$<$<CONFIG:DEBUG>:_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING>")
     endif()
+
+    if(${name} STREQUAL "XAD/EigenCompatibility.hpp")
+        find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+        target_link_libraries(${name} PRIVATE Eigen3::Eigen)
+        target_include_directories(${name} PRIVATE ../../../eigen)
+    endif()
 endfunction()
 
 

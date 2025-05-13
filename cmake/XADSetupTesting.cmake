@@ -61,8 +61,6 @@ include(GoogleTest)
 
 enable_testing()
 
-find_package (Eigen3 3.3 REQUIRED NO_MODULE)
-
 # Adds a Google test executable
 # Note that it auto-links with gmock_main, which includes gtest as well
 function(xad_add_test name)
@@ -72,9 +70,15 @@ function(xad_add_test name)
         set(_gmock_target GTest::gmock_main)
     endif()
     xad_add_executable(${name} ${ARGN})
-    target_link_libraries(${name} PRIVATE xad ${_gmock_target} Eigen3::Eigen)
-    target_include_directories(${name} PRIVATE ../../../eigen)
+    target_link_libraries(${name} PRIVATE xad ${_gmock_target})
     set_property(TARGET ${name} PROPERTY FOLDER test)
     gtest_discover_tests(${name} DISCOVERY_TIMEOUT 30)
+
+    list(FIND ARGN "Eigen_test.cpp" eigen_index)
+    if(eigen_index GREATER -1)
+        find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+        target_link_libraries(${name} PRIVATE Eigen3::Eigen)
+        target_include_directories(${name} PRIVATE ../../../eigen)
+    endif()
 endfunction()
 
