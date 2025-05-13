@@ -44,6 +44,10 @@ set(testfiles
     StdCompatibility_test.cpp 
     ReusableRange_test.cpp
     PartialRollback_test.cpp
+    Hessian_test.cpp
+    Jacobian_test.cpp
+    TypeTraits_test.cpp
+    OperationsContainer_test.cpp
 )
   
 if (CMAKE_COMPILER_IS_GNUCC)

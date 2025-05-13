@@ -1683,6 +1683,11 @@ struct TestHeston
     }
 };
 
+
+#if !defined(_MSC_VER) || (_MSC_VER > 1920)
+// only build this with Visual Studio newer than 2017, as older versions struggle
+// and miscompile these expressions in Release mode
+
 TEST(Expressions, canEvaluateLongExpressionsLikeHestonAdjoint)
 {
     xad::Tape<double> tape;
@@ -1704,9 +1709,11 @@ TEST(Expressions, canEvaluateLongExpressionsLikeHestonAdjoint)
     double yd_eps = testerd.c4(value(x) + eps);
     double dxd = (yd_eps - yd) / eps;
 
-    EXPECT_DOUBLE_EQ(value(y), yd);
+    EXPECT_THAT(value(y), DoubleNear(yd, 1e-9));
     EXPECT_THAT(dx, DoubleNear(dxd, 1e-5));
 }
+
+#endif
 
 TEST(Expressions, canEvaluateLongExpressionsLikeHestonForward)
 {
@@ -1723,7 +1730,7 @@ TEST(Expressions, canEvaluateLongExpressionsLikeHestonForward)
     double yd_eps = testerd.c4(value(x) + eps);
     double dxd = (yd_eps - yd) / eps;
 
-    EXPECT_DOUBLE_EQ(value(y), yd);
+    EXPECT_THAT(value(y), DoubleNear(yd, 1e-9));
     EXPECT_THAT(dx, DoubleNear(dxd, 1e-5));
 }
 

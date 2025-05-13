@@ -33,11 +33,15 @@ T priceSwap(const T* discRates, bool isFixedPay, int n, const double* mat, const
     using std::pow;
 
     T Bfix = 0.0;
-    for (int t = 0; t < n; ++t) Bfix += fixedRate / pow(1.0 + discRates[t], mat[t]);
+    for (int t = 0; t < n; ++t) {
+        Bfix += faceValue * fixedRate / pow(1.0 + discRates[t], mat[t]);
+    }
     Bfix += faceValue / pow(1.0 + discRates[n - 1], mat[n - 1]);
 
     T Bflt = 0.0;
-    for (int t = 0; t < n; ++t) Bflt += floatRates[t] / pow(1.0 + discRates[t], mat[t]);
+    for (int t = 0; t < n; ++t) {
+        Bflt += faceValue * floatRates[t] / pow(1.0 + discRates[t], mat[t]);
+    }
     Bflt += faceValue / pow(1.0 + discRates[n - 1], mat[n - 1]);
 
     return isFixedPay ? Bflt - Bfix : Bfix - Bflt;

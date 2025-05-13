@@ -30,6 +30,7 @@ configure_file(XAD/Config.hpp.in
                @ONLY)
 
 set(public_headers
+    XAD/AlignedAllocator.hpp
     XAD/BinaryDerivativeImpl.hpp
     XAD/BinaryExpr.hpp
     XAD/BinaryFunctors.hpp
@@ -41,15 +42,20 @@ set(public_headers
     XAD/Complex.hpp
     XAD/Exceptions.hpp
     XAD/Expression.hpp
+    XAD/Hessian.hpp	
     XAD/Interface.hpp	
+    XAD/Jacobian.hpp
     XAD/Literals.hpp
     XAD/Macros.hpp
     XAD/MathFunctions.hpp
+    XAD/OperationsContainer.hpp
+    XAD/OperationsContainerPaired.hpp
     XAD/ReusableRange.hpp
     XAD/StdCompatibility.hpp
     XAD/Tape.hpp
     XAD/TapeContainer.hpp
     XAD/Traits.hpp
+    XAD/TypeTraits.hpp
     XAD/UnaryExpr.hpp
     XAD/UnaryFunctors.hpp
     XAD/UnaryMathFunctors.hpp
@@ -129,7 +135,7 @@ install(EXPORT XADTargets
     DESTINATION ${config_install_dir}
 )
 configure_package_config_file(
-    "${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
+    "${PROJECT_SOURCE_DIR}/cmake/XADConfig.cmake.in"
     "${generated_dir}/XADConfig.cmake" 
     INSTALL_DESTINATION ${config_install_dir}
 )

@@ -1,8 +1,3 @@
----
-description: >
-  Overview of all math functions supported for XAD active data types.
----
-
 # Mathematical Operations
 
 In the following, the data type `T`

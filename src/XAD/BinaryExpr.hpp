@@ -44,49 +44,31 @@ struct BinaryExpr : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2> >
     }
     XAD_INLINE Scalar value() const { return v_; }
 
-    template <class Tape>
-    XAD_INLINE void calc_derivatives(Tape& s, const Scalar& mul) const
+    template <class Tape, int Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s, const Scalar& mul) const
     {
         using xad::value;
-        a_.calc_derivatives(s,
-                            mul * der_impl::template derivative_a(op_, value(a_), value(b_), v_));
-        b_.calc_derivatives(s,
-                            mul * der_impl::template derivative_b(op_, value(a_), value(b_), v_));
+        a_.calc_derivatives(info, s,
+                            mul * der_impl::template derivative_a<>(op_, value(a_), value(b_), v_));
+        b_.calc_derivatives(info, s,
+                            mul * der_impl::template derivative_b<>(op_, value(a_), value(b_), v_));
     }
-    template <class Tape>
-    XAD_INLINE void calc_derivatives(Tape& s) const
+    template <class Tape, int Size>
+    XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s) const
     {
         using xad::value;
-        a_.calc_derivatives(s, der_impl::template derivative_a(op_, value(a_), value(b_), v_));
-        b_.calc_derivatives(s, der_impl::template derivative_b(op_, value(a_), value(b_), v_));
-    }
-
-    template <typename Slot>
-    XAD_INLINE void calc_derivatives(Slot* slot, Scalar* muls, int& n, const Scalar& mul) const
-    {
-        using xad::value;
-        a_.calc_derivatives(slot, muls, n,
-                            mul * der_impl::template derivative_a(op_, value(a_), value(b_), v_));
-        b_.calc_derivatives(slot, muls, n,
-                            mul * der_impl::template derivative_b(op_, value(a_), value(b_), v_));
-    }
-
-    template <typename It1, typename It2>
-    XAD_INLINE void calc_derivatives(It1& sit, It2& mit, const Scalar& mul) const
-    {
-        using xad::value;
-        a_.calc_derivatives(sit, mit,
-                            mul * der_impl::template derivative_a(op_, value(a_), value(b_), v_));
-        b_.calc_derivatives(sit, mit,
-                            mul * der_impl::template derivative_b(op_, value(a_), value(b_), v_));
+        a_.calc_derivatives(info, s,
+                            der_impl::template derivative_a<>(op_, value(a_), value(b_), v_));
+        b_.calc_derivatives(info, s,
+                            der_impl::template derivative_b<>(op_, value(a_), value(b_), v_));
     }
 
     XAD_INLINE Scalar derivative() const
     {
         using xad::derivative;
         using xad::value;
-        return der_impl::template derivative_a(op_, value(a_), value(b_), v_) * derivative(a_) +
-               der_impl::template derivative_b(op_, value(a_), value(b_), v_) * derivative(b_);
+        return der_impl::template derivative_a<>(op_, value(a_), value(b_), v_) * derivative(a_) +
+               der_impl::template derivative_b<>(op_, value(a_), value(b_), v_) * derivative(b_);
     }
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord() || b_.shouldRecord(); }

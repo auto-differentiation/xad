@@ -62,6 +62,33 @@ TEST(Tape, canInitializeDeactivated)
     EXPECT_NE(nullptr, Tape<float>::getActive());
 }
 
+TEST(Tape, canActivateStatically)
+{
+    using xad::Tape;
+    Tape<float> s(false);
+
+    EXPECT_FALSE(s.isActive());
+    EXPECT_EQ(nullptr, Tape<float>::getActive());
+
+    xad::Tape<float>::setActive(&s);
+
+    EXPECT_TRUE(s.isActive());
+    EXPECT_NE(nullptr, Tape<float>::getActive());
+}
+
+TEST(Tape, canDeactivateGlobally)
+{
+    using xad::Tape;
+
+    EXPECT_EQ(nullptr, Tape<double>::getActive());
+
+    Tape<double> s;
+
+    EXPECT_TRUE(s.isActive());
+    Tape<double>::deactivateAll();
+    EXPECT_FALSE(s.isActive());
+}
+
 TEST(Tape, isMovable)
 {
     xad::Tape<double> s(false);
@@ -193,19 +220,23 @@ TEST(Tape, canDeriveStatements)
     s.newRecording();
     // auto z = x1*x1 + std::sin(x1);
     auto zs = s.registerVariable();
-    s.pushRhs(std::cos(x1), x1s);
-    s.pushRhs(x2, x1s);
-    s.pushRhs(x1, x2s);
+    auto muls = {std::cos(x1), x2, x1};
+    auto slots = {x1s, x1s, x2s};
+    s.pushAll(muls.begin(), slots.begin(), 3);
     s.pushLhs(zs);
 
     EXPECT_EQ(3U, s.getNumVariables());
     EXPECT_EQ(3U, s.getNumOperations());
     EXPECT_EQ(1U, s.getNumStatements());
 
-    // set the derivative for output
-    s.setDerivative(zs, 1.0);
+    // set the derivative for output (both from rvalue and lvalue)
+    s.setDerivative(zs, 1.5);
     EXPECT_DOUBLE_EQ(0.0, s.getDerivative(x1s));
     EXPECT_DOUBLE_EQ(0.0, s.getDerivative(x2s));
+    EXPECT_DOUBLE_EQ(1.5, s.getDerivative(zs));
+
+    auto outDerive = 1.0;
+    s.setDerivative(zs, outDerive);
     EXPECT_DOUBLE_EQ(1.0, s.getDerivative(zs));
 
     // s.printStatus();
@@ -230,9 +261,9 @@ TEST(Tape, canRestartRecording)
 
     s.newRecording();
     auto zs = s.registerVariable();
-    s.pushRhs(std::cos(x1), x1s);
-    s.pushRhs(x2, x1s);
-    s.pushRhs(x1, x2s);
+    auto muls = {std::cos(x1), x2, x1};
+    auto slots = {x1s, x1s, x2s};
+    s.pushAll(muls.begin(), slots.begin(), 3);
     s.pushLhs(zs);
     s.setDerivative(zs, 1.0);
     // compute the other derivatives (adjoints)
@@ -254,9 +285,9 @@ TEST(Tape, canRestartRecording)
 
     // now putting y = exp(x1) + x1 / x2;
     auto ys = s.registerVariable();
-    s.pushRhs(std::exp(x1), x1s);
-    s.pushRhs(1.0 / x2, x1s);
-    s.pushRhs(-x1 / (x2 * x2), x2s);
+    auto muls2 = {std::exp(x1), 1.0 / x2, -x1 / (x2 * x2)};
+    auto slots2 = {x1s, x1s, x2s};
+    s.pushAll(muls2.begin(), slots2.begin(), 3);
     s.pushLhs(ys);
     s.setDerivative(ys, 1.0);
     s.computeAdjoints();
@@ -282,7 +313,8 @@ TEST(Tape, canPushCombined)
     auto zs = s.registerVariable();
     std::array<double, 3> mul = {{std::cos(x1), x2, x1}};
     std::array<xad::Tape<double>::slot_type, 3> sl = {{x1s, x1s, x2s}};
-    s.pushAll(zs, mul.data(), sl.data(), 3);
+    s.pushAll(mul.data(), sl.data(), 3);
+    s.pushLhs(zs);
     s.setDerivative(zs, 1.0);
     s.computeAdjoints();
     EXPECT_DOUBLE_EQ(1.0, s.getDerivative(x1s));

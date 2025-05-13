@@ -1,9 +1,3 @@
----
-description: >
-  The class AReal defines an active data type for adjoint mode in XAD, 
-  which tracks derivative information on a tape.
----
-
 # Adjoint Mode Type `AReal`
 
 ## Overview
@@ -123,6 +117,10 @@ This can be used to assign a value to the variable without tape recording, as `#
 This can be used to assign a value to the adjoint, as `#!c++ x.derivative() = 1.0`,
 which is equivalent to `setDerivative`.
 It can also be used as a replacement for `getDerivative`.
+
+#### `getSlot`
+
+`#!c++ slot_type getSlot() const` returns the slot of the variable on the tape.
 
 #### `shouldRecord`
 

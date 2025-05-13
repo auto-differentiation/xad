@@ -1,11 +1,3 @@
----
-description: >
-  The CheckpointCallback class is the base class of any checkpoints associated
-  with a given tape, used for managing the tape memory.
-hide:
-  - toc
----
-
 # CheckpointCallback
 
 ```c++

@@ -1,8 +1,3 @@
----
-description: >
-  Reference for the XAD Tape type, used to record operations in adjoint mode automatic differentiation.
----
-
 # Tape
 
 ## `Tape`
@@ -115,6 +110,19 @@ or `!c++ nullptr` if no active tape has been set.
 
 Note that this is a thread-local pointer - calling this function in different
 threads gives different results.
+
+#### `setActive`
+
+`#!c++ static void setActive(Tape* t)` static function that sets the given tape as the
+globally active one. This is equivalent to `t.activate()`. 
+
+It may throw [`TapeAlreadyActive`](exceptions.md) if another tape is
+already active for the current thread.
+
+#### `deactivateAll`
+
+`#!c++ static void deactivateAll()` deactivates any currently active tapes. 
+Equivalent to `auto t = Tape::getActive(); if (t) t->deactivate();`.
 
 #### `registerInput`
 

@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for enhanced debugger visualisations in Visual Studio (@dholden3)
-
 ### Changed
 
 ### Deprecated
@@ -18,6 +16,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+
+
+## [1.7.0] - 2024-11-30
+
+This release features extensive performance improvements.
+
+### Added
+
+-   **Template Variables**: Added support for C++17 type traits such as `std::is_floating_point_v` ([#127](https://github.com/auto-differentiation/xad/pull/127)).
+-   **CI/CD Workflows**: Updated workflows to target the C++17 standard ([#127](https://github.com/auto-differentiation/xad/pull/127)).
+-   **New Sample**: Introduced a Monte-Carlo swaption portfolio pricer, including path-wise derivative calculations ([#126](https://github.com/auto-differentiation/xad/pull/126)).
+
+### Changed
+
+-   **Performance Improvements** ([#150](https://github.com/auto-differentiation/xad/pull/150)):
+
+    -   Optimised `OperationsContainer` for handling slots and multipliers.
+    -   Enhanced iteration efficiency in `computeAdjoints` by avoiding redundant operations.
+    -   Implemented joint tape appending for multipliers and slots in a single operation.
+    -   Removed the overhead of `std::fma` calls, relying on compiler-level optimisations.
+    -   Added pre-checks to skip derivative calculations when tape is not required.
+    -   Provided branch prediction hints using `XAD_LIKELY` and `XAD_UNLIKELY`.
+    -   Introduced a paired operations container variant for improved performance at a slight memory cost, with a `XAD_REDUCED_MEMORY` CMake option to toggle memory usage.
+
+-   **Documentation Updates**: Improved and expanded documentation ([#125](https://github.com/auto-differentiation/xad/pull/125)).
+-   **CMake Module Renaming**: Renamed helper modules to avoid name clashes (by @raneamri, [#123](https://github.com/auto-differentiation/xad/pull/123)).
+
+### Fixed
+
+-   **Move Behaviour of ChunkContainer** Fixed move behaviour of `ChunkContainer` (by @rghouzra, [#152](https://github.com/auto-differentiation/xad/pull/152))
+
+
+## [1.6.0] - 2024-07-17
+
+This release mainly adds support for more architectures and compilers and provides higher level derivative functions as well as examples.
+
+### Added
+
+- Support for Mac M1+ architecture (ARM) as well as AppleClang 15 support (by @raneamri [#116](https://github.com/auto-differentiation/xad/pull/116))
+- High level functions to compute Jacobian and Hessian matrices (by @raneamri [#117](https://github.com/auto-differentiation/xad/pull/117))
+
+### Removed
+
+- Moved website to its own repository and keeping only the reference manual [#112](https://github.com/auto-differentiation/xad/pull/112)
+
+## [1.5.2] - 2024-04-04
+
+This patch release is for matching versions with 
+[xad-py](https://github.com/auto-differentiation/xad-py).
+
+### Changed
+
+- Moved Python bindings into its [own repository](https://github.com/auto-differentiation/xad-py)
+  (new Python package name is [xad](https://pypi.org/project/xad))
+- Reorganised website
+- Upgraded CI/CD actions
+
+## [1.5.1] - 2024-03-28
+
+This is a patch release to allow interoperability with the QuantLib-Risks
+Python package.
+
+### Added
+
+-   added static functions to `Tape` to activate and deactivate a specific
+    tape instance
+
+
+## [1.5.0] - 2024-03-25
+
+### Added
+
+-   Python bindings as [xad-autodiff](https://pypi.org/project/xad-autodiff/)
+-   Added `std::is_signed` trait to `StdCompatibility.hpp` header for consistency
+-   Support for enhanced debugger visualisations in Visual Studio (@dholden3)
+
+### Changed
+
+-   Improved documentation for QuantLib-Risks build
+-   Cleaned up output of Swap Pricer example
 
 ## [1.4.1] - 2024-01-10
 
@@ -61,12 +139,12 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 ### Added
 
 -   More CI/CD workflows for all supported compiler versions
--   Added math function `copysign` 
+-   Added math function `copysign`
 
 ### Changed
 
 -   Revamped documentation site using mkdocs
--   Improved tests and testing infrastructure 
+-   Improved tests and testing infrastructure
 
 ### Fixed
 
@@ -77,10 +155,13 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 ### Added
 
--   QuantLib integration by means of the [quantlib-xad](https://github.com/auto-differentiation/quantlib-xad) integration module
+-   QuantLib integration by means of the
+    [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp)
+    integration module
 -   Full MacOS support
 -   Better CI pipeline with more platforms and compilers tested
--   Code coverage and quality measured on pull requests and reported in [README.md](README.md)
+-   Code coverage and quality measured on pull requests and reported
+    in [README.md](README.md)
 -   More tests to improve code coverage
 -   Status badges in [README.md](README.md)
 -   Documentation updates
@@ -94,16 +175,26 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/XAD/compare/v1.4.1...HEAD
+[unreleased]: https://github.com/auto-differentiation/xad/compare/v1.7.0...HEAD
 
-[1.4.1]: https://github.com/auto-differentiation/XAD/compare/v1.4.0...v1.4.1
+[1.7.0]: https://github.com/auto-differentiation/xad/compare/v1.6.0...v1.7.0
 
-[1.4.0]: https://github.com/auto-differentiation/XAD/compare/v1.3.0...v1.4.0
+[1.6.0]: https://github.com/auto-differentiation/xad/compare/v1.5.2...v1.6.0
 
-[1.3.0]: https://github.com/auto-differentiation/XAD/compare/v1.2.0...v1.3.0
+[1.5.2]: https://github.com/auto-differentiation/xad/compare/v1.5.1...v1.5.2
 
-[1.2.0]: https://github.com/auto-differentiation/XAD/compare/v1.1.0...v1.2.0
+[1.5.1]: https://github.com/auto-differentiation/xad/compare/v1.5.0...v1.5.1
 
-[1.1.0]: https://github.com/auto-differentiation/XAD/compare/v1.0.0...v1.1.0
+[1.5.0]: https://github.com/auto-differentiation/xad/compare/v1.4.1...v1.5.0
 
-[1.0.0]: https://github.com/auto-differentiation/XAD/releases/tag/v1.0.0
+[1.4.1]: https://github.com/auto-differentiation/xad/compare/v1.4.0...v1.4.1
+
+[1.4.0]: https://github.com/auto-differentiation/xad/compare/v1.3.0...v1.4.0
+
+[1.3.0]: https://github.com/auto-differentiation/xad/compare/v1.2.0...v1.3.0
+
+[1.2.0]: https://github.com/auto-differentiation/xad/compare/v1.1.0...v1.2.0
+
+[1.1.0]: https://github.com/auto-differentiation/xad/compare/v1.0.0...v1.1.0
+
+[1.0.0]: https://github.com/auto-differentiation/xad/releases/tag/v1.0.0

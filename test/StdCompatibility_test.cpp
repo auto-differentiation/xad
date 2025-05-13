@@ -5,7 +5,6 @@
 #include <complex>
 #include <limits>
 #include <random>
-#include <type_traits>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -238,6 +237,8 @@ TYPED_TEST(StdCompatibilityTempl, Hashing)
     EXPECT_THAT(hash, Eq(hash_base));
 }
 
+// https://github.com/auto-differentiation/xad/pull/164#issuecomment-2775730529
+#if !defined(_MSC_VER ) || _MSC_VER < 1941
 TYPED_TEST(StdCompatibilityTempl, Traits)
 {
     static_assert(std::is_floating_point<TypeParam>::value, "active real should be floating point");
@@ -269,6 +270,40 @@ TYPED_TEST(StdCompatibilityTempl, Traits)
     static_assert(std::is_trivially_destructible<TypeParam>::value == fwd,
                   "trivially destructable for fwd mode");
 }
+#endif
+
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+TYPED_TEST(StdCompatibilityTempl, TraitsTemplateVars)
+{
+    static_assert(std::is_floating_point_v<TypeParam>, "active real should be floating point");
+    static_assert(std::is_arithmetic_v<TypeParam>, "active real should be arithmetic");
+    static_assert(!std::is_pod_v<TypeParam>, "active type is not POD");
+    static_assert(std::is_convertible_v<TypeParam, TypeParam>, "convertible to itself");
+    static_assert(std::is_convertible_v<double, TypeParam>, "doubles are convertible");
+    static_assert(std::is_convertible_v<int, TypeParam>, "integers are convertible");
+    static_assert(!std::is_convertible_v<TypeParam, int>, "not implicitly convertible to int");
+    static_assert(!std::is_convertible_v<TypeParam, long long>,
+                  "not implicitly convertible to long long");
+    static_assert(!std::is_convertible_v<TypeParam, char>, "not implicitly convertible to char");
+    static_assert(std::is_integral_v<TypeParam> == false, "not an integral type");
+    static_assert(std::is_fundamental_v<TypeParam> == false, "not fundamental");
+    static_assert(!std::is_scalar_v<TypeParam>,
+                  "it's not a scalar type - would cause issues with constexpr etc");
+    static_assert(std::is_object_v<TypeParam>, "it's an object type");
+    static_assert(std::is_compound_v<TypeParam>, "it's compound");
+    static_assert(!std::is_trivial_v<TypeParam>, "it's not a trivial type");
+    // forward or forward over forward is trivally copyable
+    constexpr bool fwd =
+        xad::ExprTraits<TypeParam>::isForward &&
+        (xad::ExprTraits<typename xad::ExprTraits<TypeParam>::scalar_type>::isForward ||
+         !xad::ExprTraits<typename xad::ExprTraits<TypeParam>::scalar_type>::isExpr);
+#if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
+    static_assert(std::is_trivially_copyable_v<TypeParam> == fwd, "trivially copyable");
+#endif
+    static_assert(std::is_trivially_destructible_v<TypeParam> == fwd,
+                  "trivially destructable for fwd mode");
+}
+#endif
 
 template <class T>
 class StdCompatibilityConstexprTempl : public ::testing::Test
@@ -336,4 +371,57 @@ TEST(StdCompatibility, UseInVectorAndFill)
     std::fill(v.begin(), v.end(), xad::AReal<double>(1.));
 
     EXPECT_THAT(v, ElementsAre(1., 1., 1.));
+}
+
+// https://github.com/auto-differentiation/xad/issues/158
+TEST(StdCompatibility, CopysignWindowsAReal)
+{
+    xad::AD x(1.2);
+    xad::AD y(-0.5);
+    xad::AD one(1.);
+
+    auto r1 = std::copysign(1.2, y);
+    auto r2 = std::copysign(x, -0.5);
+    auto r3 = std::copysign(x, y);
+    // with expressions
+    auto r4 = std::copysign(1.2, y * one);
+    auto r5 = std::copysign(x * one, -0.5);
+    auto r6 = std::copysign(x * one, y);
+    auto r7 = std::copysign(x * one, y * one);
+    auto r8 = std::copysign(x, y * one);
+
+    EXPECT_EQ(xad::value(r1), -1.2);
+    EXPECT_EQ(xad::value(r2), -1.2);
+    EXPECT_EQ(xad::value(r3), -1.2);
+    EXPECT_EQ(xad::value(r4), -1.2);
+    EXPECT_EQ(xad::value(r5), -1.2);
+    EXPECT_EQ(xad::value(r6), -1.2);
+    EXPECT_EQ(xad::value(r7), -1.2);
+    EXPECT_EQ(xad::value(r8), -1.2);
+}
+
+TEST(StdCompatibility, CopysignWindowsFReal)
+{
+    xad::FAD x(1.2);
+    xad::FAD y(-0.5);
+    xad::FAD one(1.);
+
+    auto r1 = std::copysign(1.2, y);
+    auto r2 = std::copysign(x, -0.5);
+    auto r3 = std::copysign(x, y);
+    // with expressions
+    auto r4 = std::copysign(1.2, y * one);
+    auto r5 = std::copysign(x * one, -0.5);
+    auto r6 = std::copysign(x * one, y);
+    auto r7 = std::copysign(x * one, y * one);
+    auto r8 = std::copysign(x, y * one);
+
+    EXPECT_EQ(xad::value(r1), -1.2);
+    EXPECT_EQ(xad::value(r2), -1.2);
+    EXPECT_EQ(xad::value(r3), -1.2);
+    EXPECT_EQ(xad::value(r4), -1.2);
+    EXPECT_EQ(xad::value(r5), -1.2);
+    EXPECT_EQ(xad::value(r6), -1.2);
+    EXPECT_EQ(xad::value(r7), -1.2);
+    EXPECT_EQ(xad::value(r8), -1.2);
 }

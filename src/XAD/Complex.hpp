@@ -1375,6 +1375,16 @@ XAD_INLINE xad::FReal<T> norm(const complex<xad::FReal<T>>& x)
     return ::xad::detail::norm_impl(x);
 }
 
+// appleclang15 needs this overload for type paramed norm
+#if defined(__APPLE__) && defined(__clang__) && defined(__apple_build_version__) &&                \
+    (__apple_build_version__ >= 15000000)
+template <class T>
+XAD_INLINE typename std::enable_if<xad::ExprTraits<T>::isExpr, T>::type norm(complex<T>& x)
+{
+    return ::xad::detail::norm_impl(x);
+}
+#endif
+
 // return the expression type from multiplying x*x without actually evaluating it
 template <class Scalar, class Derived>
 XAD_INLINE auto norm(const xad::Expression<Scalar, Derived>& x) -> decltype(x * x)
@@ -1481,13 +1491,15 @@ XAD_INLINE auto proj(const xad::FReal<T>& x) -> decltype(::xad::detail::proj_imp
 // different expr (derived1, derived2 - returns scalar)
 
 template <class T>
-XAD_INLINE complex<xad::AReal<T>> polar(const xad::AReal<T>& r, const xad::AReal<T>& theta)
+XAD_INLINE complex<xad::AReal<T>> polar(const xad::AReal<T>& r,
+                                        const xad::AReal<T>& theta = xad::AReal<T>())
 {
     return xad::detail::polar_impl(r, theta);
 }
 
 template <class T>
-XAD_INLINE complex<xad::FReal<T>> polar(const xad::FReal<T>& r, const xad::FReal<T>& theta)
+XAD_INLINE complex<xad::FReal<T>> polar(const xad::FReal<T>& r,
+                                        const xad::FReal<T>& theta = xad::FReal<T>())
 {
     return xad::detail::polar_impl(r, theta);
 }
@@ -1660,7 +1672,7 @@ template <class Scalar, class Expr1, class Expr2>
 XAD_INLINE typename std::enable_if<std::is_same<typename xad::ExprTraits<Expr1>::value_type,
                                                 typename xad::ExprTraits<Expr2>::value_type>::value,
                                    complex<typename xad::ExprTraits<Expr1>::value_type>>::type
-polar(const xad::Expression<Scalar, Expr1>& r, const xad::Expression<Scalar, Expr2>& theta)
+polar(const xad::Expression<Scalar, Expr1>& r, const xad::Expression<Scalar, Expr2>& theta = 0)
 {
     typedef typename xad::ExprTraits<Expr1>::value_type type;
     return xad::detail::polar_impl(type(r), type(theta));
@@ -1669,7 +1681,7 @@ polar(const xad::Expression<Scalar, Expr1>& r, const xad::Expression<Scalar, Exp
 // T, expr - only enabled if T is scalar
 template <class Scalar, class Expr>
 XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> polar(
-    Scalar r, const xad::Expression<Scalar, Expr>& theta)
+    Scalar r, const xad::Expression<Scalar, Expr>& theta = 0)
 {
     return xad::detail::polar_impl(typename xad::ExprTraits<Expr>::value_type(r), theta.derived());
 }
@@ -1677,7 +1689,7 @@ XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> polar(
 // expr, T - only enabled if T is scalar
 template <class Scalar, class Expr>
 XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> polar(
-    const xad::Expression<Scalar, Expr>& r, Scalar theta)
+    const xad::Expression<Scalar, Expr>& r, Scalar theta = Scalar())
 {
     return xad::detail::polar_impl(r.derived(), typename xad::ExprTraits<Expr>::value_type(theta));
 }

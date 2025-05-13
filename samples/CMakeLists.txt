@@ -26,7 +26,7 @@
 # version of XAD as well
 cmake_minimum_required(VERSION 3.15.2)
 cmake_policy(SET CMP0092 NEW)   # avoid setting warning flags by default in Windows
-project(XAD_Samples
+project(xad_samples
     LANGUAGES CXX
 )
 
@@ -37,7 +37,7 @@ if(NOT TARGET XAD::xad)
 endif()
 
 # These commands only run if this is the main project
-if(CMAKE_PROJECT_NAME STREQUAL "XAD_Samples")
+if(CMAKE_PROJECT_NAME STREQUAL "xad_samples")
     message(STATUS "XAD Samples as main project")
     set(XAD_SAMPLES_MAIN TRUE)
 else()
@@ -47,7 +47,13 @@ endif()
 
 # add a sample - link to XAD and add common to include path
 function(xad_add_sample name)
-    add_executable(${name} ${ARGN})
+    cmake_parse_arguments(ARGS "" "" "SOURCES;TEST_ARGS" ${ARGN})
+
+    if(NOT ARGS_SOURCES)
+        message(FATAL_ERROR "The SOURCES argument must be given for samples")
+    endif()
+
+    add_executable(${name} ${ARGS_SOURCES})
     target_link_libraries(${name} PRIVATE XAD::xad)
     target_include_directories(${name} PRIVATE ../common)
     get_target_property(msvcrt XAD::xad MSVC_RUNTIME_LIBRARY)
@@ -55,7 +61,7 @@ function(xad_add_sample name)
         set_target_properties(${name} PROPERTIES MSVC_RUNTIME_LIBRARY "${msvcrt}")
     endif()
     if(NOT XAD_SAMPLES_MAIN)
-        add_test(NAME sample_${name} COMMAND ${name})
+        add_test(NAME sample_${name} COMMAND ${name} ${ARGS_TEST_ARGS})
         set_target_properties(${name} PROPERTIES FOLDER "samples")
         if(XAD_ENABLE_ADDRESS_SANITIZER)
             target_compile_options(${name} PRIVATE ${xad_cxx_asan_flags})
@@ -70,5 +76,8 @@ add_subdirectory(checkpointing)
 add_subdirectory(external_function)
 add_subdirectory(SwapPricer)
 add_subdirectory(fwd_adj_2nd)
+add_subdirectory(Hessian)
+add_subdirectory(Jacobian)
+add_subdirectory(LiborSwaptionPricer)
 
 

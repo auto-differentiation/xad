@@ -1,8 +1,3 @@
----
-description: >
-  Specialisation of the std::complex type for XAD active data types.
----
-
 # Complex
 
 ## Overview
@@ -32,7 +27,7 @@ using the placeholder `#!c++ XReal<T>` as a placeholder inner type, which can be
 #### `real`
 
 `#!c++ XReal<T>& complex::real()` returns a reference rather than a copy of the real part,
-to allow for easy access and adjusting of derivatives using [`derivative()`](XXX).
+to allow for easy access and adjusting of derivatives using [`derivative()`](#derivative).
 This applies to both the modifyable and the `#!c++ const` versions.
 
 #### `imag`

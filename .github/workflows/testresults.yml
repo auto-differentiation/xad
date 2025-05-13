@@ -27,7 +27,7 @@ jobs:
 
            artifacts_url=${{ github.event.workflow_run.artifacts_url }}
 
-           gh api "$artifacts_url" -q '.artifacts[] | [.name, .archive_download_url] | @tsv' | while read artifact
+           gh api "${artifacts_url}?per_page=200" -q '.artifacts[] | [.name, .archive_download_url] | @tsv' | while read artifact
            do
              IFS=$'\t' read name url <<< "$artifact"
              gh api $url > "$name.zip"
@@ -59,7 +59,7 @@ jobs:
           esac
 
       - name: Create badge
-        uses: emibcn/badge-action@v2.0.2
+        uses: emibcn/badge-action@v2.0.3
         with:
           label: Tests
           status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
@@ -70,7 +70,7 @@ jobs:
         if: >
           github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' ||
           github.event_name != 'workflow_run' && github.ref == 'refs/heads/main'
-        uses: andymckay/append-gist-action@0.2
+        uses: andymckay/append-gist-action@0.3
         with:
           token: ${{ secrets.GIST_TOKEN }}
           gistURL: https://gist.githubusercontent.com/auto-differentiation-dev/e0eab86863fac6da5e44d20df215f836

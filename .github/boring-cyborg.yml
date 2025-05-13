@@ -11,10 +11,12 @@ labelPRBasedOnFilePath:
     - test/**/*
   workflow:
     - .github/workflows/*
+  benchmarks:
+    - src/**/*
 
 ##### Greetings ########################################################################################################
 firstPRWelcomeComment: >
-  Thanks for opening this pull request. Please check out our [contributing guidelines](https://github.com/auto-differentiation/XAD/CONTRIBUTING.md).
+  Thanks for opening this pull request. Please check out our [contributing guidelines](https://github.com/auto-differentiation/xad/CONTRIBUTING.md).
 firstPRMergeComment: >
   Awesome work, congrats on your first merged pull request!
 firstIssueWelcomeComment: >

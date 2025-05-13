@@ -1,0 +1,382 @@
+name: Benchmarks
+on: 
+  #pull_request:
+    # types: [opened, reopened, synchronize, labeled, unlabeled ]
+  workflow_dispatch: 
+
+jobs:
+  libor:
+    # if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
+    if: false
+    name: Libor Swaption Sample
+    runs-on: ubuntu-latest
+    container: 
+      image: ghcr.io/foonathan/gcc:12
+    outputs:
+      libor: ${{ steps.libor-results.outputs.result }}
+    steps:
+      - name: Hardware characteristics
+        run: |
+          echo "----------------- CPU ----------------"
+          lscpu
+          echo "------------------ Mem ---------------"
+          lsmem
+      - uses: actions/checkout@v4
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: benchmark-libor
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            -DXAD_USE_STRONG_INLINE=ON
+      - name: build
+        run: |
+          cd build
+          cmake --build .
+      - name: Run Test
+        run: |
+          cd build
+          ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2))
+      # if we are on main branch & triggered by workflow-dispatch, push artefact
+      - name: Push Reference
+        uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: libor_exe
+          path: build/samples/LiborSwaptionPricer/LiborSwaptionPricer
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: true
+      # if we are in a pull request, pull the uploaded artifact from earlier and run
+      - name: Pull Reference
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p build/samples/LiborSwaptionPricer/ref
+          cd build/samples/LiborSwaptionPricer/ref
+          curl -L "https://xadhackathon.s3.eu-west-1.amazonaws.com/libor_exe.zip" --output artifact.zip
+          unzip artifact.zip
+          chmod +x LiborSwaptionPricer
+      - name: Run Reference
+        if: github.event_name == 'pull_request'
+        run: |
+          set -e
+          cd build/samples/LiborSwaptionPricer/ref
+          ls -l
+          file ./LiborSwaptionPricer
+          chmod +x ./LiborSwaptionPricer
+          rm -f ../reference.log || true
+          # warmup run
+          ./LiborSwaptionPricer 50000
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./LiborSwaptionPricer 50000 | tee -a ../reference.log ; \
+          done
+      - name: Run Benchmark
+        if: github.event_name == 'pull_request'
+        run: |
+          set -e
+          cd build/samples/LiborSwaptionPricer
+          rm -f output.log || true
+          # warmup run
+          ./LiborSwaptionPricer 50000
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./LiborSwaptionPricer 50000 | tee -a output.log ; \
+          done
+      - name: Prepare results
+        if: github.event_name == 'pull_request'
+        id: libor-results
+        run: |
+          set -e
+          apt-get update && apt-get install -y bc datamash
+          echo "Min   Max   Mean  StdDev  Median  TrimMean  GeoMean  HarmMean"
+          
+          echo "*Output*"
+          awk '$2 == "AAD" { print $4  }' build/samples/LiborSwaptionPricer/output.log | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+          OUT_TIME=$(awk '$2 == "AAD" { print $4  }' build/samples/LiborSwaptionPricer/output.log | datamash median 1)
+          
+          echo "*Reference*"
+          awk '$2 == "AAD" { print $4  }' build/samples/LiborSwaptionPricer/reference.log | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+          REF_TIME=$(awk '$2 == "AAD" { print $4  }' build/samples/LiborSwaptionPricer/reference.log | datamash median 1)
+
+          DIFFERENCE=$(echo "scale=9; $REF_TIME - $OUT_TIME" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Difference: $DIFFERENCE"
+          PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Percentage: $PERCENTAGE"
+          
+          echo "result=| ${REF_TIME}s | ${OUT_TIME}s | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
+      
+  quantlib:
+    if: false
+    name: QuantLib Samples
+    runs-on: ubuntu-latest
+    container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
+    outputs:
+      test: ${{ steps.test-results.outputs.result }}
+      bermudan: ${{ steps.bermudan-results.outputs.result }}
+    steps:
+      - name: Hardware characteristics
+        run: |
+          echo "----------------- CPU ----------------"
+          lscpu
+          echo "------------------ Mem ---------------"
+          lsmem
+      - uses: actions/checkout@v4
+        with:
+          path: xad
+      - uses: actions/checkout@v4
+        with:
+          repository: lballabio/QuantLib
+          ref: v1.35
+          path: QuantLib
+      - uses: actions/checkout@v4
+        with:
+          path: QuantLib-Risks-Cpp
+          repository: auto-differentiation/QuantLib-Risks-Cpp
+          ref: a1fcf4f0fab0a464710c249aa76871421675babd
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: benchmark-quantlib
+      - name: Setup
+        run: |
+          apt-get update \
+          && apt-get install -y ninja-build bc datamash unzip
+      - name: Configure
+        run: |
+          cd QuantLib
+          mkdir build
+          cd build
+          cmake -G Ninja -DBOOST_ROOT=/usr \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DQLRISKS_DISABLE_AAD=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DQL_EXTERNAL_SUBDIRECTORIES="$(pwd)/../../xad;$(pwd)/../../QuantLib-Risks-Cpp" \
+            -DQL_EXTRA_LINK_LIBRARIES=QuantLib-Risks \
+            -DQL_NULL_AS_FUNCTIONS=ON \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            ..
+      - name: Compile
+        run: |
+          cd QuantLib/build
+          cmake --build .
+      - name: Test QuantLib
+        if: github.event_name == 'pull_request'
+        run: |
+          cd QuantLib/build
+          ./test-suite/quantlib-test-suite --log_level=message    
+      - name: Test QuantLib-Risks
+        if: github.event_name == 'pull_request'
+        run: |
+          cd QuantLib/build
+          ./QuantLib-Risks-Cpp/test-suite/quantlib-risks-test-suite --log_level=message
+      # if we are on main branch & triggered by workflow-dispatch, push artefact
+      - name: Prepare Pushes
+        run: |
+          cd QuantLib/build/ql/
+          cp -a libQuantLib.so* ../test-suite/
+          cp -a libQuantLib.so* ../QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption
+      - name: Push Reference Test-suite
+        uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: ql_test_exe
+          path: QuantLib/build/test-suite/*uant*ib*
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: true
+      - name: Push Reference AdjointBermudan
+        uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: ql_bermudan_exe
+          path: QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/*
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: true
+      # if we are in a pull request, pull the uploaded artifact from earlier and run
+      - name: Pull Reference Test-suite
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p QuantLib/build/test-suite/ref
+          cd QuantLib/build/test-suite/ref
+          wget "https://xadhackathon.s3.eu-west-1.amazonaws.com/test-suite.zip" --output-document artifact.zip
+          unzip artifact.zip
+          chmod +x quantlib-test-suite
+      - name: Pull Reference AdjointBermudan
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
+          cd QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
+          wget "https://xadhackathon.s3.eu-west-1.amazonaws.com/swaption.zip" --output-document artifact.zip
+          unzip artifact.zip
+          chmod +x AdjointBermudanSwaption
+      - name: Run Reference Test-suite
+        if: github.event_name == 'pull_request'
+        run: |
+          set -e
+          cd QuantLib/build/test-suite/ref
+          ls -l
+          file ./quantlib-test-suite
+          chmod +x ./quantlib-test-suite
+          export LD_LIBRARY_PATH=.
+          # warmup run
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because"
+          rm -f ../reference.log || true
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a ../reference.log ; \
+          done
+      - name: Run Benchmark Test-suite
+        if: github.event_name == 'pull_request'
+        run: |
+          set -e
+          cd QuantLib/build/test-suite
+          rm -f output.log || true
+          # warmup run
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" 
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a output.log ; \
+          done
+      - name: Prepare results Tests-suite
+        if: github.event_name == 'pull_request'
+        id: test-results
+        run: |
+          set -e
+          ls -l QuantLib/build/test-suite/
+          echo "Min   Max   Mean  StdDev Median  TrimMean  GeoMean  HarmMean"
+
+          echo "*Output*"
+          sed -e 's/us$//g' -e 's/ms$/000/g' QuantLib/build/test-suite/output.log | awk ' $0 ~ /Leaving test case.*testPathwiseGreeks/ { print $NF }' | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+          OUT_TIME=$(sed -e 's/us$//g' -e 's/ms$/000/g' QuantLib/build/test-suite/output.log | awk ' $0 ~ /Leaving test case.*testPathwiseGreeks/ { print $NF }' | datamash median 1)
+
+          echo "*Reference*"
+          sed -e 's/us$//g' -e 's/ms$/000/g' QuantLib/build/test-suite/reference.log | awk ' $0 ~ /Leaving test case.*testPathwiseGreeks/ { print $NF }' | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+          REF_TIME=$(sed -e 's/us$//g' -e 's/ms$/000/g' QuantLib/build/test-suite/reference.log | awk ' $0 ~ /Leaving test case.*testPathwiseGreeks/ { print $NF }' | datamash median 1)
+
+          DIFFERENCE=$(echo "scale=9; $REF_TIME - $OUT_TIME" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Difference: $DIFFERENCE"
+          PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Percentage: $PERCENTAGE"
+          
+          echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
+          
+      - name: Run Reference AdjointBermudan
+        if: github.event_name == 'pull_request'
+        run: |
+          set -e
+          cd QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/ref
+          ls -l
+          file ./AdjointBermudanSwaption
+          chmod +x ./AdjointBermudanSwaption
+          rm -f ../reference.log || true
+          # warmup run
+          export LD_LIBRARY_PATH=.
+          ./AdjointBermudanSwaption 200 
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./AdjointBermudanSwaption 200 | tee -a ../reference.log ; \
+          done
+          ls -l ..
+      - name: Run Benchmark AdjointBermudan
+        if: github.event_name == 'pull_request'
+        run: |
+          set -e
+          cd QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption
+          rm -f output.log || true
+          # warmup run
+          ./AdjointBermudanSwaption 200 
+          for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
+            ./AdjointBermudanSwaption 200 | tee -a output.log ; \
+          done
+          ls -l .
+      - name: Prepare results Bermudan
+        if: github.event_name == 'pull_request'
+        id: bermudan-results
+        run: |
+          set -e
+          ls -l QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/
+          echo "Min   Max   Mean  StdDev   Median  TrimMean  GeoMean  HarmMean"
+          
+          echo "*Output*"
+          awk '$1 == "For" && $7 == "average" { print $8 }' QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/output.log | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+          OUT_TIME=$(awk '$1 == "For" && $7 == "average" { print $8 }' QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/output.log | datamash median 1)
+          
+          echo "*Reference*"
+          awk '$1 == "For" && $7 == "average" { print $8 }' QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/reference.log | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
+          REF_TIME=$(awk '$1 == "For" && $7 == "average" { print $8 }' QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/reference.log | datamash median 1)
+
+          DIFFERENCE=$(echo "scale=9; $REF_TIME - $OUT_TIME" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Difference: $DIFFERENCE"
+          PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
+          echo "Percentage: $PERCENTAGE"
+          
+          echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
+
+  update-runid:
+    if: false
+    name: Update Run-id
+    runs-on: ubuntu-latest
+    # if: github.event_name == 'workflow_dispatch'
+    needs:
+      - quantlib
+      - libor
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set runid variable
+        run: |
+          gh variable list
+          gh variable set REFERENCE_RUN_ID --body "${{ github.run_id }}"
+          gh variable list
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_READ_TOKEN }}
+
+
+  collect:
+    if: false
+    name: Collect Results
+    runs-on: ubuntu-latest
+    # if: github.event_name == 'pull_request'
+    needs:
+      - quantlib
+      - libor
+    env:
+      LIBOR: ${{ needs.libor.outputs.libor }}
+      TESTSUITE: ${{ needs.quantlib.outputs.test }}
+      BERMUDAN: ${{ needs.quantlib.outputs.bermudan }}
+    steps:
+      - name: Collect results into markdown
+        run: |
+          echo "## Performance Results" > results.md
+          echo "" >> results.md
+          echo "Median of the ${{ vars.REPETITIONS }} executions, with pre-built reference and this PR's version." >> results.md
+          echo "" >> results.md
+          echo "| Application | Reference | Result | Improvement |" >> results.md
+          echo "|-------------|----------:|-------:|------------:|" >> results.md
+          echo "| [LIBOR Swaption (50K paths)](https://github.com/auto-differentiation/xad/tree/main/samples/LiborSwaptionPricer)  $LIBOR" >> results.md
+          echo "| [Bermudan Swaption (200 repetitions)](https://github.com/auto-differentiation/QuantLib-Risks-Cpp/blob/main/Examples/AdjointBermudanSwaption/AdjointBermudanSwaptionXAD.cpp) $BERMUDAN" >> results.md
+          echo "| [testPathwiseGreeks](https://github.com/lballabio/QuantLib/blob/v1.35/test-suite/marketmodel.cpp#L2090)  $TESTSUITE" >> results.md
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        if: github.event_name == 'pull_request'
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Performance Results
+      - name: Post or update PR comment
+        id: pr-comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: results.md
+          edit-mode: replace

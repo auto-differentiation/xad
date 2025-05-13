@@ -497,4 +497,4 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived>& y)
 #undef XAD_MAKE_UNARY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC_RET
-}  // namespace xad
+} // namespace xad

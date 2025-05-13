@@ -74,7 +74,7 @@ int main()
 
     // output results
     std::cout << "v = " << value(v) << "\n";
-    std::cout << "Discount rate sensitivities:\n";
+    std::cout << "Discount rate sensitivities for 1 basispoint shift:\n";
     for (unsigned i = 0; i < unsigned(nRates); ++i)
-        std::cout << "dv/dr" << i << " = " << derivative(discRates_ad[i]) << "\n";
+        std::cout << "dv/dr" << i << " = " << derivative(discRates_ad[i]) * 0.0001 << "\n";
 }
