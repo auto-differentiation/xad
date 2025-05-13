@@ -1,1 +1,0 @@
-xad_add_benchmark(math_benchmark SOURCES main.cpp)

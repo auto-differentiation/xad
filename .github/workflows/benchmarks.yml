@@ -7,6 +7,7 @@ env:
   # these are the names of the directories in the benchmarks folder
   BENCHMARKS: 'Hessian Jacobian'
   MAIN_REPO: 'raneamri/xad' # auto-differentiation/xad (origin doesn't have scripts yet)
+  MAIN_BRANCH: 'benchmark-script'
 
 jobs:
   benchmark:
@@ -57,7 +58,7 @@ jobs:
       - name: Checkout Main
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ env.MAIN_BRANCH }}
           repository: ${{ env.MAIN_REPO }}
           path: main
       - name: Configure Main Branch

@@ -1,1 +1,0 @@
-xad_add_benchmark(hessian_benchmark SOURCES main.cpp)

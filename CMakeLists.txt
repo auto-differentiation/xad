@@ -62,5 +62,3 @@ if(NOT XAD_DOCS_ONLY)
 endif()
 
 install(FILES CHANGELOG.md LICENSE.md TYPE DOC)
-
-
