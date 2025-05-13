@@ -9,6 +9,5 @@
 #include <Eigen/Dense>
 
 
-
 #endif
 #undef XAD_EIGEN_COMPATIBILITY
