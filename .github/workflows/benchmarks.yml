@@ -49,7 +49,7 @@ jobs:
             -DXAD_NO_THREADLOCAL=ON \
             -DXAD_SIMD_OPTION=AVX2 \
             -DXAD_USE_STRONG_INLINE=ON \
-            -DXAD_ENABLE_BENCHMARK=ON      
+            -DXAD_ENABLE_BENCHMARKS=ON      
       - name: Build PR Branch
         run: |
           cd xad/build
@@ -71,7 +71,7 @@ jobs:
             -DXAD_NO_THREADLOCAL=ON \
             -DXAD_SIMD_OPTION=AVX2 \
             -DXAD_USE_STRONG_INLINE=ON \
-            -DXAD_ENABLE_BENCHMARK=ON           
+            -DXAD_ENABLE_BENCHMARKS=ON           
       - name: Build Main Branch
         run: |
           cd main/build
@@ -101,5 +101,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: $(pwd)/xad/build/benchmarks/benchmark_results.md
+          path: ${{ github.workspace }}/xad/build/benchmarks/benchmark_results.md
           
