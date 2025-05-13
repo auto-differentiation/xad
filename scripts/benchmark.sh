@@ -86,10 +86,10 @@ for TEST_NAME in "${tests[@]}"; do
     BIN_NAME="$(echo "$TEST_NAME" | tr '[:upper:]' '[:lower:]')_benchmark"
     FILE_OUT_NAME="${RUN_TYPE}_${BIN_NAME}.${FORMAT}"
 
-    ./$BIN_NAME --benchmark_out="$FILE_OUT_NAME" --benchmark_out_format=$FORMAT
+    ./$BIN_NAME --benchmark_out="$FILE_OUT_NAME" --benchmark_out_format="$FORMAT"
 
     # append to combined file and remove the individual file
-    if [ $COMMA_NEEDED -eq 1 ]; then
+    if [ "$COMMA_NEEDED" -eq 1 ]; then
         echo "," >> "$COMBINED_FILE"
     fi
     cat "$FILE_OUT_NAME" >> "$COMBINED_FILE"
