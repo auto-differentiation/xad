@@ -26,7 +26,7 @@
 cmake_minimum_required(VERSION 3.15.2)
 cmake_policy(SET CMP0092 NEW)   # avoid setting warning flags by default in Windows
 
-project(XAD 
+project(xad 
     LANGUAGES CXX
     DESCRIPTION "Comprehensive C++ library for automatic differentiation."
     HOMEPAGE_URL "https://auto-differentiation.github.io"
@@ -34,25 +34,31 @@ project(XAD
 
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-include(SetupVersion)
+include(XADSetupVersion)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)  # allow using solution folders
 include(GNUInstallDirs)   # for installation directories
 
-include(SetupOptions)
+include(XADSetupOptions)
 
 ############# build subdirectories ##########
 
 if(NOT XAD_DOCS_ONLY)
-    include(SetupCompiler)
-    add_subdirectory(src)
+    include(XADSetupCompiler)
     if(XAD_ENABLE_TESTS)
-        include(SetupTesting)
+        include(XADSetupTesting)
+    endif()
+
+    add_subdirectory(src)
+    
+    if(XAD_ENABLE_TESTS)
         add_subdirectory(test)
         add_subdirectory(samples)
+    endif()
+
+    if(XAD_ENABLE_BENCHMARKS)
+        add_subdirectory(benchmarks)
     endif()
 endif()
 
 install(FILES CHANGELOG.md LICENSE.md TYPE DOC)
-
-
