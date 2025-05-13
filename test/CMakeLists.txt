@@ -48,6 +48,7 @@ set(testfiles
     Jacobian_test.cpp
     TypeTraits_test.cpp
     OperationsContainer_test.cpp
+    Eigen_test.cpp
 )
   
 if (CMAKE_COMPILER_IS_GNUCC)
