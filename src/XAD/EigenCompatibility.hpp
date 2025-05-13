@@ -8,6 +8,12 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+namespace xad
+{
+
+}
+
+
 
 #endif
 #undef XAD_EIGEN_COMPATIBILITY

@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(Eigen, MatrixInverse)
+TEST(Eigen, MatrixInverseAdj)
 {
     typedef xad::adj<double> mode;
     typedef mode::tape_type tape_type;
@@ -56,6 +56,56 @@ TEST(Eigen, MatrixInverse)
         for (int j = 0; j < 2; ++j)
         {
             double ad = derivative(A(i, j));
+            double fd = numerical_grad(i, j);
+            EXPECT_NEAR(ad, fd, 1e-5) << "Mismatch at (" << i << ", " << j << ")";
+        }
+    }
+}
+
+TEST(Eigen, MatrixInverseFwd)
+{
+    typedef xad::fwd<double> mode;
+    typedef mode::active_type AD;
+
+    constexpr double eps = 1e-6;
+    Eigen::Matrix<double, 2, 2> A0;
+    A0 << 2.0, 1.0,
+          1.0, 3.0;
+
+    Eigen::Matrix<double, 2, 2> numerical_grad;
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            Eigen::Matrix<double, 2, 2> A_plus = A0;
+            Eigen::Matrix<double, 2, 2> A_minus = A0;
+            A_plus(i, j) += eps;
+            A_minus(i, j) -= eps;
+
+            double f_plus = A_plus.inverse().sum();
+            double f_minus = A_minus.inverse().sum();
+
+            numerical_grad(i, j) = (f_plus - f_minus) / (2 * eps);
+        }
+    }
+
+    Eigen::Matrix<AD, 2, 2> A;
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j)
+            A(i, j) = A0(i, j);
+
+    for (AD &Ai : A.reshaped())
+    {
+        derivative(Ai) = 1.0;
+    }
+
+    Eigen::Matrix<AD, 2, 2> B = A.inverse();
+
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            double ad = derivative(B(i, j));
             double fd = numerical_grad(i, j);
             EXPECT_NEAR(ad, fd, 1e-5) << "Mismatch at (" << i << ", " << j << ")";
         }
