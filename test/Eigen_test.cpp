@@ -236,3 +236,58 @@ TEST(Eigen, MatrixDeterminant)
         }
     }
 }
+
+TEST(Eigen, MatrixNorm)
+{
+    using mode = xad::adj<double>;
+    using tape_type = mode::tape_type;
+    using AD = mode::active_type;
+
+    constexpr double eps = 1e-6;
+    Eigen::Matrix<double, 2, 2> A0;
+    A0 << 1.0, 5.6,
+          3.1, 4.0;
+
+    Eigen::Matrix<double, 2, 2> numerical_grad;
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            Eigen::Matrix<double, 2, 2> A_plus = A0;
+            Eigen::Matrix<double, 2, 2> A_minus = A0;
+            A_plus(i, j) += eps;
+            A_minus(i, j) -= eps;
+
+            double f_plus = A_plus.norm();
+            double f_minus = A_minus.norm();
+
+            numerical_grad(i, j) = (f_plus - f_minus) / (2 * eps);
+        }
+    }
+
+    Eigen::Matrix<AD, 2, 2> A;
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j)
+            A(i, j) = A0(i, j);
+
+    tape_type tape;
+    tape.registerInputs(A.reshaped().begin(), A.reshaped().end());
+    tape.newRecording();
+
+    AD norm = A.norm();
+
+    tape.registerOutput(norm);
+    derivative(norm) = 1.0;
+
+    tape.computeAdjoints();
+
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            double ad = derivative(A(i, j));
+            double fd = numerical_grad(i, j);
+            EXPECT_NEAR(ad, fd, 1e-7) << "Mismatch at A(" << i << ", " << j << ")";
+        }
+    }
+}
