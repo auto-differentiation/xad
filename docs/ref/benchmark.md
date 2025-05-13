@@ -48,3 +48,16 @@ Then, a run of the script in `benchmark` mode from the `xad` repository. This wi
 `benchmark.json` report. In the same run, it will use the report from the other run to make a table,
 `benchmark_results.md`. For tabulation and further analysis, it will also create a 
 report, `benchmark_results.json`. These files can be found in `.../build/benchmarks`.
+
+## Example Report
+
+A report may look like:
+
+**Run Date:** 2025-05-13
+
+| Test Name | Reference (ns) | Benchmark (ns) | Difference (ns) | % Change |
+| --------- | --------------:| --------------:| ---------------:| --------:|
+| HessianFwdAdj | 13058.95 | 13148.58 | -89.63 | -0.69% |
+| HessianFwdFwd | 36307.19 | 36136.78 | 170.41 | 0.47% |
+| JacobianAdj | 359026.90 | 364655.53 | -5628.63 | -1.57% |
+| JacobianFwd | 5626.40 | 5696.64 | -70.24 | -1.25% |
