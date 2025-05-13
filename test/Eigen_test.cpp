@@ -1,5 +1,6 @@
-#include <XAD/XAD.hpp>
-#include <Eigen/Dense>
+#define XAD_EIGEN_COMPATIBILITY
+#include <XAD/EigenCompatibility.hpp>
+
 #include <gtest/gtest.h>
 
 TEST(Eigen, MatrixInverse)
