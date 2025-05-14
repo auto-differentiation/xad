@@ -36,6 +36,7 @@ function(xad_add_benchmark name)
     get_target_property(msvcrt XAD::xad MSVC_RUNTIME_LIBRARY)
     if(MSVC AND msvcrt)
         set_target_properties(${name} PROPERTIES MSVC_RUNTIME_LIBRARY "${msvcrt}")
+        target_compile_options(${name} PRIVE _USE_MATH_DEFINES)
     endif()
 endfunction()
 
