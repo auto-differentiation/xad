@@ -81,13 +81,13 @@ jobs:
         run: |
           cd ./main
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh reference false $BENCHMARKS
+          ./scripts/benchmark.sh reference ${{ github.workspace }}/main/build/benchmarks ${{ github.workspace }}/main/build/benchmarks $BENCHMARKS
       - name: Run Benchmark
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           cd ./xad
           chmod +x ./scripts/benchmark.sh
-          ./scripts/benchmark.sh benchmark false $BENCHMARKS
+          ./scripts/benchmark.sh benchmark ${{ github.workspace }}/xad/build/benchmarks ${{ github.workspace }}/main/build/benchmarks $BENCHMARKS
       - name: Save PR Number
         if: ${{ github.event_name == 'pull_request' }}
         run: echo "${{ github.event.pull_request.number }}" > pr_number.txt    
@@ -97,10 +97,20 @@ jobs:
         with:
           name: pr-number
           path: pr_number.txt
+      - name: Add Specs
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          RESULT_FILE="${{ github.workspace }}/xad/build/benchmarks/benchmark_results.md"
+          {
+            echo "CPU:"; lscpu;
+            echo "Memory:"; lsmem;
+            echo "OS: ${{ runner.os }}";
+            echo "Compiler: $(gcc --version | head -n1)";
+            echo "Platform:"; uname -a;
+          } >> "$RESULT_FILE"
       - name: Upload Benchmark Results
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: ${{ github.workspace }}/xad/build/benchmarks/benchmark_results.md
-          
