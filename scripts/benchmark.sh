@@ -15,29 +15,48 @@
 # - benchmark.json, the benchmark results as JSON, useful for plotting
 
 
-if [ "$#" -lt 3 ]; then
-  echo "Usage: $0 <run_type: 'benchmark' | 'reference'> [<local: bool=false>] <test1> [<test2> ... <testN>]"
-  echo "run_type: 'reference' or 'benchmark'"
+if [ "$#" -lt 2 ]; then
+  echo "Usage: $0 <run_type: 'benchmark' | 'reference'> [<DIR>] [<MAIN_DIR>] <test1> [<test2> ...]"
   exit 1
 fi
 
-RUN_TYPE=$1
-LOCAL=$2
-shift 2
+RUN_TYPE=$1; shift
+
+# check if first argument is a directory override for benchmarks directory:
+if [ -n "$1" ] && [ -d "$1" ]; then
+  DIR="$1"
+  shift
+else
+  DIR="$(pwd)/build/benchmarks"
+fi
+
+# check if next argument is a directory override for main/build directory:
+if [ -n "$1" ] && [ -d "$1" ]; then
+  MAIN_DIR="$1"
+  shift
+else
+  if [ "$RUN_TYPE" == "reference" ]; then
+    MAIN_DIR="$(pwd)/build/benchmarks"
+  else
+    MAIN_DIR="$(pwd)/../main/build/benchmarks"
+  fi
+fi
+
 tests=("$@")
-
-# validate mode
-if [ "$RUN_TYPE" != "reference" ] && [ "$RUN_TYPE" != "benchmark" ]; then
-  echo "Error: run_type must be either 'reference' or 'benchmark'."
-  exit 1
-fi
 
 echo "$(pwd) is current directory"
 
-# make sure directory structure is correct
-if [ ! -d "../main" ]; then
-    echo "Reference repo not found. You must have the main repo checked out at ../main to run the benchmarks locally."
-    exit 0
+# ensure required directories exist based on run type
+if [ "$RUN_TYPE" == "reference" ]; then
+    if [ ! -d "$MAIN_DIR" ]; then
+        echo "Reference repo not found at $MAIN_DIR."
+        exit 1
+    fi
+else
+    if [ ! -d "$MAIN_DIR" ]; then
+        echo "Main repo not found at $MAIN_DIR."
+        exit 1
+    fi
 fi
 
 echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
@@ -45,35 +64,14 @@ echo "Running $RUN_TYPE runs for tests/examples: ${tests[*]}"
 FORMAT="json"
 
 if [ "$RUN_TYPE" == "reference" ]; then
-    if [ "$LOCAL" == "true" ]; then
-        DIR="$(pwd)/build/benchmarks"
-        MAIN_DIR="$(pwd)/build/benchmarks"
-    else
-        DIR="/__w/xad/xad/main/build/benchmarks"
-        MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
-    fi
-
     COMBINED_FILE="$MAIN_DIR/reference.json"
     mkdir -p "$(dirname "$COMBINED_FILE")"
-    if [ -f "$COMBINED_FILE" ]; then
-        rm -f "$COMBINED_FILE"
-    fi
+    [ -f "$COMBINED_FILE" ] && rm -f "$COMBINED_FILE"
     echo "[" > "$COMBINED_FILE"
     COMMA_NEEDED=0
 elif [ "$RUN_TYPE" == "benchmark" ]; then
-    if [ "$LOCAL" == "true" ]; then
-        DIR="$(pwd)/build/benchmarks"
-        MAIN_DIR="$(pwd)/../main/build/benchmarks"
-    else
-        DIR="/__w/xad/xad/xad/build/benchmarks"
-        MAIN_DIR="/__w/xad/xad/main/build/benchmarks"
-    fi
-
-
     COMBINED_FILE="$DIR/benchmark.json"
-    if [ -f "$COMBINED_FILE" ]; then
-        rm -f "$COMBINED_FILE"
-    fi
+    [ -f "$COMBINED_FILE" ] && rm -f "$COMBINED_FILE"
     echo "[" > "$COMBINED_FILE"
     COMMA_NEEDED=0
 fi
