@@ -1,3 +1,4 @@
+
 # Benchmarks
 
 The benchmark files are defined at `xad/benchmarks` and the benchmarking script
