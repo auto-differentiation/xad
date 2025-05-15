@@ -30,9 +30,15 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+#include <type_traits>
+
 namespace xad
 {
-
+template<typename T> 
+struct result_of {
+   typedef typename std::result_of<T>::type type1;
+   typedef typename remove_all<type1>::type type;
+};
 }
 
 #undef XAD_EIGEN_COMPATIBILITY
