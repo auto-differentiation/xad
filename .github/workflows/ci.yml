@@ -171,7 +171,16 @@ jobs:
       - name: Setup tools
         run: |
           apt-get update
-          apt-get install -y ccache ninja-build lcov libeigen3-dev
+          apt-get install -y ccache ninja-build lcov wget build-essential cmake
+      - name: Install latest Eigen
+        run: |
+          wget -O eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+          tar xzf eigen.tar.gz
+          cd eigen-3.4.0
+          mkdir build && cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+          make -j$(nproc)
+          make install
       - name: GitHub WS Tmp
         # there is an issue with workspace locations in github inside containers, which this works around
         # see: https://github.com/actions/runner/issues/2058
@@ -301,7 +310,16 @@ jobs:
       - name: setup
         run: |
           apt-get update
-          apt-get install -y ccache ninja-build libeigen3-dev
+          apt-get install -y ccache ninja-build wget build-essential cmake
+      - name: Install latest Eigen
+        run: |
+          wget -O eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+          tar xzf eigen.tar.gz
+          cd eigen-3.4.0
+          mkdir build && cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+          make -j$(nproc)
+          make install
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
