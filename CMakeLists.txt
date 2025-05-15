@@ -55,8 +55,10 @@ if(NOT XAD_DOCS_ONLY)
         add_subdirectory(test)
         add_subdirectory(samples)
     endif()
+
+    if(XAD_ENABLE_BENCHMARKS)
+        add_subdirectory(benchmarks)
+    endif()
 endif()
 
 install(FILES CHANGELOG.md LICENSE.md TYPE DOC)
-
-
