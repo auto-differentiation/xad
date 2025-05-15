@@ -29,6 +29,7 @@
 #include <XAD/XAD.hpp>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+
 #include <type_traits>
 
 namespace Eigen {
