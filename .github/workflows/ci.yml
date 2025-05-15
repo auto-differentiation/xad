@@ -179,8 +179,8 @@ jobs:
           cd eigen-3.4.0
           mkdir build && cd build
           cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
-          make -j$(nproc)
-          make install
+          cmake --build . --parallel $(nproc)
+          cmake --build . --target install
       - name: GitHub WS Tmp
         # there is an issue with workspace locations in github inside containers, which this works around
         # see: https://github.com/actions/runner/issues/2058
