@@ -131,4 +131,47 @@ if [ "$RUN_TYPE" != "reference" ]; then
   } > "$RESULTS_MD"
   echo "Benchmark comparisons saved in $RESULTS_MD"
   cp "$RESULTS_MD" "$(pwd)/results.md" # for workflow
+
+  RESULTS_JSON="$DIR/results.json"
+  {
+    echo "{"
+    echo "  \"run_date\": \"$(echo "$FULL_DATE" | cut -d'T' -f1)\","
+    echo "  \"results\": ["
+    comma_needed=0
+    for benchmark in $(jq -c '.[] | .benchmarks[]' "$MAIN_DIR/reference.json"); do
+      bm_name=$(echo "$benchmark" | jq -r '.name')
+      ref_time=$(echo "$benchmark" | jq '.real_time')
+      raw_bench=$(jq -r --arg name "$bm_name" '.[] | .benchmarks[] | select(.name==$name) | .real_time' "$DIR/benchmark.json")
+      if [ -z "$raw_bench" ] || [ "$raw_bench" = "null" ]; then
+        bench_val="null"
+        diff_val="null"
+        pct_val="null"
+      else
+        bench_val=$raw_bench
+        diff_val=$(awk "BEGIN {printf \"%.6f\", $ref_time - $raw_bench}")
+        pct_val=$(awk "BEGIN {printf \"%.6f\", (($ref_time - $raw_bench)/$ref_time)*100}")
+      fi
+
+      if [ $comma_needed -eq 1 ]; then
+          echo "    ,"
+      fi
+      echo "    {"
+      echo "      \"test_name\": \"$bm_name\","
+      echo "      \"reference_time_ns\": $ref_time,"
+      if [ "$bench_val" = "null" ]; then
+        echo "      \"benchmark_time_ns\": null,"
+        echo "      \"difference_ns\": null,"
+        echo "      \"percent_change\": null"
+      else
+        echo "      \"benchmark_time_ns\": $bench_val,"
+        echo "      \"difference_ns\": $diff_val,"
+        echo "      \"percent_change\": $pct_val"
+      fi
+      echo "    }"
+      comma_needed=1
+    done
+    echo "  ]"
+    echo "}"
+  } > "$RESULTS_JSON"
+  echo "Results JSON saved in $RESULTS_JSON"
 fi
