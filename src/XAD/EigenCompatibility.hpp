@@ -27,7 +27,7 @@
 #ifdef XAD_EIGEN_COMPATIBILITY
 
 #ifdef _MSC_VER
-#undef EIGEN_HAS_STD_RESULT_OF
+#define EIGEN_HAS_STD_RESULT_OF 0
 #endif
 
 #include <XAD/XAD.hpp>
