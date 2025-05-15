@@ -48,7 +48,6 @@ template<typename T> struct result_of {
 #else
   typedef typename std::result_of<T>::type type1;
 #endif
-  typedef typename xad::remove_all<type1>::type type;
 };
 
 #endif
