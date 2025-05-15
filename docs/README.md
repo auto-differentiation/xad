@@ -18,3 +18,4 @@ which is imported to the website at [auto-differentiation.github.io](https://aut
 * [Hessian](ref/hessian.md)
 * [Jacobian](ref/jacobian.md)
 * [Version Information](ref/version.md)
+* [Benchmarks](ref/benchmark.md)
