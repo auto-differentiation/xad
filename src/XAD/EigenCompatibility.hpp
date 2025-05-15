@@ -34,10 +34,14 @@
 
 namespace xad
 {
-template<typename T> 
-struct result_of {
-   typedef typename std::result_of<T>::type type1;
-   typedef typename remove_all<type1>::type type;
+// https://gitlab.com/libeigen/eigen/-/issues/1894
+template<typename T> struct result_of {
+#if defined(__cplusplus) && __cplusplus >= 201703L
+  typedef typename std::invoke_result<T>::type type1;
+#else
+  typedef typename std::result_of<T>::type type1;
+#endif
+  typedef typename remove_all<type1>::type type;
 };
 }
 
