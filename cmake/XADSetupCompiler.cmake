@@ -166,6 +166,16 @@ function(xad_add_library name type)
 
     list(FIND ARGN "XAD/EigenCompatibility.hpp" eigen_index)
     if(eigen_index GREATER -1)
+        if(NOT DEFINED FetchContent_MakeAvailable)
+            include(FetchContent)
+        endif()
+        FetchContent_Declare(
+            Eigen3
+            GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+            GIT_TAG 3.4.0
+        )
+        FetchContent_MakeAvailable(Eigen3)
+
         find_package(Eigen3 3.3 REQUIRED NO_MODULE)
         target_link_libraries(${name} PRIVATE Eigen3::Eigen)
         target_include_directories(${name} PRIVATE ../../../eigen)
