@@ -79,10 +79,12 @@ function(xad_add_test name)
         if(NOT DEFINED FetchContent_MakeAvailable)
             include(FetchContent)
         endif()
+        set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Disable Eigen tests" FORCE)
         FetchContent_Declare(
             Eigen3
             GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
             GIT_TAG 3.4.0
+            SOURCE_SUBDIR cmake # no CMakeLists.txt in cmake, so this turns off configure
         )
         FetchContent_MakeAvailable(Eigen3)
 
