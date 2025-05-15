@@ -73,5 +73,24 @@ function(xad_add_test name)
     target_link_libraries(${name} PRIVATE xad ${_gmock_target})
     set_property(TARGET ${name} PROPERTY FOLDER test)
     gtest_discover_tests(${name} DISCOVERY_TIMEOUT 30)
+
+    list(FIND ARGN "Eigen_test.cpp" eigen_index)
+    if(eigen_index GREATER -1)
+        if(NOT DEFINED FetchContent_MakeAvailable)
+            include(FetchContent)
+        endif()
+        set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Disable Eigen tests" FORCE)
+        FetchContent_Declare(
+            Eigen3
+            GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+            GIT_TAG 3.4.0
+            SOURCE_SUBDIR cmake # no CMakeLists.txt in cmake, so this turns off configure
+        )
+        FetchContent_MakeAvailable(Eigen3)
+
+        find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+        target_link_libraries(${name} PRIVATE Eigen3::Eigen)
+        target_include_directories(${name} PRIVATE ../../../eigen)
+    endif()
 endfunction()
 
