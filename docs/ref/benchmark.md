@@ -13,8 +13,8 @@ This section will be updated as benchmark suites are added.
 The benchmark script has arguments:
 
 ```bash
-./scripts/benchmark.sh <run_type: 'benchmark' | 'reference'>
-[<local: bool=false>] <test1> [<test2> ... <testN>]"
+./scripts/benchmark.sh <run_type: 'benchmark' | 'reference'> [<DIR>]
+[<MAIN_DIR>] <test1> [<test2> ...]"
 ```
 
 The `run_type` tells the script whether we're running for the reference (from main)
