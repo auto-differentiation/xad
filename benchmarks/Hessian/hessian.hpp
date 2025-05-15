@@ -68,7 +68,7 @@ std::function<T(std::vector<T> &)> make_neuralLoss() {
             a += x[i] * static_cast<T>(i);
         }
 
-        return log(1 + exp(a + b));
+        return log1p(exp(a + b));
     };
 }
 
