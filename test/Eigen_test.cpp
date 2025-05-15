@@ -181,7 +181,7 @@ TEST(Eigen, MatrixMultiplicationAdj)
     tape.registerInputs(B.reshaped().begin(), B.reshaped().end());
     tape.newRecording();
 
-    C = (A * B).eval();
+    C = A * B;
 
     for (AD &Ci : C.reshaped()) {
         tape.registerOutput(Ci);
