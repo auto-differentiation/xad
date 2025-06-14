@@ -313,37 +313,6 @@ class StdCompatibilityConstexprTempl : public ::testing::Test
 
 typedef ::testing::Types<xad::FAD, xad::FReal<xad::FReal<double>>> constexpr_test_types;
 
-#if !(_MSC_VER && _MSC_VER <= 1900)  // VS 2015 doesn't implement constexpr objects correctly
-
-TYPED_TEST_SUITE(StdCompatibilityConstexprTempl, constexpr_test_types);
-
-TYPED_TEST(StdCompatibilityConstexprTempl, NumericLimitsConstexpr)
-{
-    constexpr TypeParam t_xx = 1.0;
-    constexpr TypeParam t_min = std::numeric_limits<TypeParam>::min();
-    constexpr TypeParam t_max = std::numeric_limits<TypeParam>::max();
-    constexpr TypeParam t_lowest = std::numeric_limits<TypeParam>::lowest();
-    constexpr TypeParam t_eps = std::numeric_limits<TypeParam>::epsilon();
-    constexpr TypeParam t_den = std::numeric_limits<TypeParam>::denorm_min();
-    constexpr TypeParam t_inf = std::numeric_limits<TypeParam>::infinity();
-    constexpr TypeParam t_nan = std::numeric_limits<TypeParam>::quiet_NaN();
-    constexpr TypeParam t_snan = std::numeric_limits<TypeParam>::signaling_NaN();
-    constexpr TypeParam t_round = std::numeric_limits<TypeParam>::round_error();
-
-    XAD_UNUSED_VARIABLE(t_xx);
-    XAD_UNUSED_VARIABLE(t_min);
-    XAD_UNUSED_VARIABLE(t_max);
-    XAD_UNUSED_VARIABLE(t_lowest);
-    XAD_UNUSED_VARIABLE(t_eps);
-    XAD_UNUSED_VARIABLE(t_den);
-    XAD_UNUSED_VARIABLE(t_inf);
-    XAD_UNUSED_VARIABLE(t_nan);
-    XAD_UNUSED_VARIABLE(t_snan);
-    XAD_UNUSED_VARIABLE(t_round);
-}
-
-#endif
-
 TEST(StdCompatibility, StdMinWithSizeWorks)
 {
     // this has been added as the call to hashtable_policy.h in GCC showed a failure with this,

@@ -358,7 +358,7 @@ inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FReal<long double>
 
 // for MSVC, we need this workaround so that the safety checks in their STL
 // for floating point types are also passing for the XAD types
-#if (_MSC_VER > 1900)
+
 // VS 2017+, when the STL checks if a type is in the list of built-in floating point types,
 // this should forward the check to the wrapped type by AReal or FReal.
 //
@@ -425,24 +425,7 @@ _XAD_INLINE_VAR constexpr bool
 
 #undef _XAD_INLINE_VAR
 
-#else
-}
-#include <random>
-namespace std
-{
 
-// prior versions of MSVC (2015) use a different check
-template <class T>
-struct _Is_RealType<xad::AReal<T>> : public _Is_RealType<T>
-{
-};
-
-template <class T>
-struct _Is_RealType<xad::FReal<T>> : public _Is_RealType<T>
-{
-};
-
-#endif
 
 #endif
 
