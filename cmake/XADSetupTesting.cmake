@@ -61,6 +61,23 @@ include(GoogleTest)
 
 enable_testing()
 
+
+if (XAD_ENABLE_EIGEN_TESTS)
+    include(FetchContent)
+    FetchContent_Declare(
+        Eigen3
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_TAG 3.4.0
+        SOURCE_SUBDIR cmake # no CMakeLists.txt in cmake, so this turns off configure
+    )
+    FetchContent_MakeAvailable(Eigen3)
+    
+    # add dependency ourselves - their CMake files seem broken
+    add_library(Eigen INTERFACE)
+    target_include_directories(Eigen INTERFACE ${eigen3_SOURCE_DIR})
+    add_library(Eigen3::Eigen ALIAS Eigen)
+endif()
+
 # Adds a Google test executable
 # Note that it auto-links with gmock_main, which includes gtest as well
 function(xad_add_test name)
@@ -74,23 +91,8 @@ function(xad_add_test name)
     set_property(TARGET ${name} PROPERTY FOLDER test)
     gtest_discover_tests(${name} DISCOVERY_TIMEOUT 30)
 
-    list(FIND ARGN "Eigen_test.cpp" eigen_index)
-    if(eigen_index GREATER -1)
-        if(NOT DEFINED FetchContent_MakeAvailable)
-            include(FetchContent)
-        endif()
-        set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Disable Eigen tests" FORCE)
-        FetchContent_Declare(
-            Eigen3
-            GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-            GIT_TAG 3.4.0
-            SOURCE_SUBDIR cmake # no CMakeLists.txt in cmake, so this turns off configure
-        )
-        FetchContent_MakeAvailable(Eigen3)
-
-        find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+    if (XAD_ENABLE_EIGEN_TESTS)
         target_link_libraries(${name} PRIVATE Eigen3::Eigen)
-        target_include_directories(${name} PRIVATE ../../../eigen)
     endif()
 endfunction()
 

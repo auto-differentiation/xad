@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#define XAD_EIGEN_COMPATIBILITY
+#include <XAD/XAD.hpp>
 #include <XAD/EigenCompatibility.hpp>
 
 #include <gtest/gtest.h>

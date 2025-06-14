@@ -56,7 +56,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup
         run: |
-          choco install -y ninja sccache eigen
+          choco install -y ninja sccache
       - name: ccache
         if: ${{ matrix.sccache == 'true' }}
         uses: hendrikmuhs/ccache-action@v1.2.10
@@ -76,7 +76,8 @@ jobs:
              -DCMAKE_CXX_STANDARD="${{ matrix.standard }}" ^
              ${{ matrix.cmake_extra }} ^
              ${{ matrix.cmake_mem_flag }} ^
-             -DCMAKE_BUILD_TYPE=${{ matrix.config }} 
+             -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
+             -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         shell: cmd
         run: |
@@ -172,15 +173,6 @@ jobs:
         run: |
           apt-get update
           apt-get install -y ccache ninja-build lcov wget build-essential cmake
-      - name: Install latest Eigen
-        run: |
-          wget -O eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-          tar xzf eigen.tar.gz
-          cd eigen-3.4.0
-          mkdir build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
-          cmake --build . --parallel $(nproc)
-          cmake --build . --target install
       - name: GitHub WS Tmp
         # there is an issue with workspace locations in github inside containers, which this works around
         # see: https://github.com/actions/runner/issues/2058
@@ -201,7 +193,8 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             ${{ matrix.cmake_mem_flag }} \
-            -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install
+            -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
           cd build
@@ -311,15 +304,6 @@ jobs:
         run: |
           apt-get update
           apt-get install -y ccache ninja-build wget build-essential cmake
-      - name: Install latest Eigen
-        run: |
-          wget -O eigen.tar.gz https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-          tar xzf eigen.tar.gz
-          cd eigen-3.4.0
-          mkdir build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
-          cmake --build . --parallel $(nproc)
-          cmake --build . --target install
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
@@ -336,7 +320,8 @@ jobs:
             -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             ${{ matrix.memory == 'lowmem' && ' -DXAD_REDUCED_MEMORY=ON' || '' }} \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
           cd build
@@ -417,7 +402,7 @@ jobs:
       - name: setup
         run: |
           brew update
-          brew install ninja ccache eigen
+          brew install ninja ccache
       - name: setup coverage
         if: ${{ matrix.coverage }}
         # needs to be lcov1.14 specifically and brew no longer supports version selection
@@ -441,7 +426,8 @@ jobs:
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
-            ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }}
+            ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }} \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
           cd build

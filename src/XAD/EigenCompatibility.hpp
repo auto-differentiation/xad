@@ -24,13 +24,10 @@
 
 #pragma once
 
-#ifdef XAD_EIGEN_COMPATIBILITY
-
 #ifdef _MSC_VER
 #define EIGEN_HAS_STD_RESULT_OF 0
 #endif
 
-#include <XAD/XAD.hpp>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
@@ -55,5 +52,4 @@ template<typename T> struct result_of {
 } // namespace internal
 } // namespace Eigen
 
-#undef XAD_EIGEN_COMPATIBILITY
 #endif

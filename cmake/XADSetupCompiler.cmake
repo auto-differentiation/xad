@@ -57,9 +57,9 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL 
     if(XAD_SIMD_OPTION STREQUAL SSE2)
         set(xad_cxx_extra -msse2)
     elseif(XAD_SIMD_OPTION STREQUAL AVX)
-        set(xad_cxx_extra )#-mavx)
+        set(xad_cxx_extra -mavx)
     elseif(XAD_SIMD_OPTION STREQUAL AVX2)
-        set(xad_cxx_extra )#-mavx2)
+        set(xad_cxx_extra -mavx2)
     elseif(XAD_SIMD_OPTION STREQUAL AVX512)
         set(xad_cxx_extra -march=cascadelake)
     elseif(XAD_SIMD_OPTION STREQUAL NATIVE)
@@ -75,9 +75,9 @@ elseif(CMAKE_COMPILER_IS_GNUCXX)
     if(XAD_SIMD_OPTION STREQUAL SSE2)
         set(xad_cxx_extra -msse2)
     elseif(XAD_SIMD_OPTION STREQUAL AVX)
-        set(xad_cxx_extra )#-mavx)
+        set(xad_cxx_extra -mavx)
     elseif(XAD_SIMD_OPTION STREQUAL AVX2)
-        set(xad_cxx_extra )#-mavx2)
+        set(xad_cxx_extra -mavx2)
     elseif(XAD_SIMD_OPTION STREQUAL AVX512)
         set(xad_cxx_extra  -march=cascadelake)
     elseif(XAD_SIMD_OPTION STREQUAL NATIVE)
@@ -164,24 +164,6 @@ function(xad_add_library name type)
         target_compile_definitions(${name} PUBLIC "$<$<CONFIG:DEBUG>:_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING>")
     endif()
 
-    list(FIND ARGN "XAD/EigenCompatibility.hpp" eigen_index)
-    if(eigen_index GREATER -1)
-        if(NOT DEFINED FetchContent_MakeAvailable)
-            include(FetchContent)
-        endif()
-        set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Disable Eigen tests" FORCE)
-        FetchContent_Declare(
-            Eigen3
-            GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-            GIT_TAG 3.4.0
-            SOURCE_SUBDIR cmake # no CMakeLists.txt in cmake, so this turns off configure
-        )
-        FetchContent_MakeAvailable(Eigen3)
-
-        find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-        target_link_libraries(${name} PRIVATE Eigen3::Eigen)
-        target_include_directories(${name} PRIVATE ../../../eigen)
-    endif()
 endfunction()
 
 
