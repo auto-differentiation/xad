@@ -33,23 +33,25 @@
 
 #include <type_traits>
 
-namespace Eigen {
-namespace internal {
+namespace Eigen
+{
+namespace internal
+{
 
 #ifdef _MSC_VER
 
 // https://gitlab.com/libeigen/eigen/-/issues/1894
-template<typename T> struct result_of {
+template <typename T>
+struct result_of
+{
 #if defined(__cplusplus) && __cplusplus >= 201703L
-  typedef typename std::invoke_result<T>::type type1;
+    typedef typename std::invoke_result<T>::type type1;
 #else
-  typedef typename std::result_of<T>::type type1;
+    typedef typename std::result_of<T>::type type1;
 #endif
 };
 
 #endif
 
-} // namespace internal
-} // namespace Eigen
-
-#endif
+}  // namespace internal
+}  // namespace Eigen
