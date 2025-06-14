@@ -24,9 +24,9 @@
 
 #pragma once
 
-#ifdef _MSC_VER
-#define EIGEN_HAS_STD_RESULT_OF 0
-#endif
+// #ifdef _MSC_VER
+// #define EIGEN_HAS_STD_RESULT_OF 0
+// #endif
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -38,20 +38,20 @@ namespace Eigen
 namespace internal
 {
 
-#ifdef _MSC_VER
+// #ifdef _MSC_VER
 
-// https://gitlab.com/libeigen/eigen/-/issues/1894
-template <typename T>
-struct result_of
-{
-#if defined(__cplusplus) && __cplusplus >= 201703L
-    typedef typename std::invoke_result<T>::type type1;
-#else
-    typedef typename std::result_of<T>::type type1;
-#endif
-};
+// // https://gitlab.com/libeigen/eigen/-/issues/1894
+// template <typename T>
+// struct result_of
+// {
+// #if defined(__cplusplus) && __cplusplus >= 201703L
+//     typedef typename std::invoke_result<T>::type type1;
+// #else
+//     typedef typename std::result_of<T>::type type1;
+// #endif
+// };
 
-#endif
+// #endif
 
 }  // namespace internal
 }  // namespace Eigen
