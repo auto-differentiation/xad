@@ -49,6 +49,10 @@ Note that for well-defined second order derivative, this is implemented as
 
 `#!c++ T ceil(T x)` rounds towards positive infinity.
 
+#### `fma`
+
+`#!c++ T fma(T x, T y, T z)` computes `x * y + z` as if to infinite precision and rounded only once to fit the result type.
+
 #### `trunc`
 
 `#!c++ T trunc(T x)` rounds towards 0.

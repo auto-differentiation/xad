@@ -1827,3 +1827,74 @@ TEST(Expressions, notWarningAboutSizetToDouble)
 
     EXPECT_THAT(value(x), DoubleEq(2.0));
 }
+
+TEST(Expressions, FmaFunctionTest)
+{
+    xad::FReal<double> a(1, 1), b(2, 2), c(3, 3), d(1, 1), f(1, 1), r(1, 1);
+    f = fma(a, r, b);
+    xad::FReal<double> s = a * r + b;
+    EXPECT_THAT(value(f), value(s));
+    EXPECT_THAT(derivative(f), derivative(s));
+    f = fma(f, r, c);
+    s = s * r + c;
+    EXPECT_THAT(value(f), value(s));
+    EXPECT_THAT(derivative(f), derivative(s));
+    f = fma(f, r, d);
+    s = s * r + d;
+    EXPECT_THAT(value(f), value(s));
+    EXPECT_THAT(derivative(f), derivative(s));
+    xad::FReal<double> df = fma(3 * a, r, 2 * b);
+    s = ((3 * a) * r + (2 * b));
+    EXPECT_THAT(value(df), value(s));
+    EXPECT_THAT(derivative(df), derivative(s));
+    auto df2 = fma(3 * a, r * 3, b);
+    auto df3 = fma(3., r * 3., 2 * b);
+    df = fma(df, df2, df3);
+    auto df4 = fma(a, r * 3, b);
+    auto df5 = fma(a, r, 2 * b);
+    auto df6 = fma(a * 2, r, b);
+    auto df7 = fma(df4, df5, df6);
+    auto df8 = fma(a * 2, r * 2, b * 2);
+    df = fma(df8, df7, df6);
+    s = df8 * df7 + df6;
+    EXPECT_THAT(value(df), value(s));
+    EXPECT_THAT(derivative(df), derivative(s));
+}
+
+TEST(Expressions, FmaFunctionTestWithAReal)
+{
+    xad::Tape<double> tape;
+    xad::AReal<double> a = 1, b = 2, c = 3;
+    tape.registerInput(a);
+    tape.registerInput(b);
+    tape.registerInput(c);
+    tape.newRecording();
+    xad::AReal<double> y = fma(a, b, c);
+    tape.registerOutput(y);
+    derivative(y) = 1.0;
+    tape.computeAdjoints();
+    EXPECT_THAT(derivative(a), DoubleEq(value(b)));
+    EXPECT_THAT(derivative(b), DoubleEq(value(a)));
+    EXPECT_THAT(derivative(c), DoubleEq(1.0));
+}
+
+TEST(Expressions, FmaFunctionTestWithFwd_Adj)
+{
+    xad::Tape<double> tape;
+    xad::FReal<xad::AReal<double>> a = 1, b = 2, c = 3;
+    tape.registerInput(value(a));
+    tape.registerInput(derivative(a));
+    tape.registerInput(value(b));
+    tape.registerInput(derivative(b));
+    tape.registerInput(value(c));
+    tape.registerInput(derivative(c));
+    tape.newRecording();
+    xad::FReal<xad::AReal<double>> y = fma(a, b, c);
+    tape.registerOutput(derivative(y));
+    auto yv = derivative(y);
+    derivative(yv) = 1.0;
+    tape.computeAdjoints();
+    EXPECT_THAT(derivative(derivative(a)), value(b));
+    EXPECT_THAT(derivative(derivative(b)), value(a));
+    EXPECT_THAT(derivative(derivative(c)), DoubleEq(1.0));
+}

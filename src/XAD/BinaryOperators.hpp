@@ -73,6 +73,21 @@ XAD_INLINE auto smooth_min(const T1& x, const T2& y) -> decltype(0.5 * (x + y - 
     return 0.5 * (x + y - smooth_abs(x - y));
 }
 
+template <class T, class = typename std::enable_if<xad::ExprTraits<T>::isExpr>>
+XAD_INLINE auto fma(const T& a, const T& b, const T& c) -> decltype(a * b + c)
+{
+    return a * b + c;
+}
+
+template <
+    class T1, class T2, class T3,
+    class = typename std::enable_if<(xad::ExprTraits<T1>::isExpr || xad::ExprTraits<T2>::isExpr ||
+                                     xad::ExprTraits<T3>::isExpr)>>
+XAD_INLINE auto fma(const T1& a, const T2& b, const T3& c) -> decltype(a * b + c)
+{
+    return a * b + c;
+}
+
 /////////// comparisons - they just return bool
 
 #define XAD_COMPARE_OPERATOR(op)                                                                   \

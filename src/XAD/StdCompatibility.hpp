@@ -28,7 +28,6 @@
 
 #pragma once
 
-
 #include <XAD/BinaryOperators.hpp>
 #include <XAD/Literals.hpp>
 #include <XAD/MathFunctions.hpp>
@@ -95,6 +94,7 @@ using xad::sqrt;
 using xad::tan;
 using xad::tanh;
 using xad::trunc;
+using xad::fma;
 
 #ifdef _MSC_VER
 // we need these explicit instantiation to disambiguate templates in MSVC

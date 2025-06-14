@@ -430,7 +430,6 @@ struct scalar_remquo2_op
 
 /*
  * TODO:
-fma
 logb
 tgamma
 lgamma
