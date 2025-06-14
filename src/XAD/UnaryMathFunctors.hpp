@@ -54,10 +54,7 @@ struct radians_op : scalar_prod_op<Scalar, Scalar>
     template <class Scalar>                                                                        \
     struct func##_op                                                                               \
     {                                                                                              \
-        XAD_INLINE Scalar operator()(const Scalar& a) const                                        \
-        {                                                                                          \
-            return func(a);                                                                        \
-        }                                                                                          \
+        XAD_INLINE Scalar operator()(const Scalar& a) const { return func(a); }                    \
         XAD_INLINE Scalar derivative(const Scalar& a) const                                        \
         {                                                                                          \
             XAD_UNUSED_VARIABLE(a);                                                                \
@@ -95,10 +92,7 @@ XAD_MAKE_UNARY_FUNCTOR(round, Scalar())
     template <class Scalar>                                                                        \
     struct func##_op                                                                               \
     {                                                                                              \
-        XAD_INLINE Scalar operator()(const Scalar& a) const                                        \
-        {                                                                                          \
-            return func(a);                                                                        \
-        }                                                                                          \
+        XAD_INLINE Scalar operator()(const Scalar& a) const { return func(a); }                    \
         XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const                       \
         {                                                                                          \
             XAD_UNUSED_VARIABLE(a);                                                                \
@@ -120,6 +114,7 @@ XAD_MAKE_UNARY_FUNCTOR_RES(sqrt, Scalar(0.5) / v)
 XAD_MAKE_UNARY_FUNCTOR_RES(cbrt, Scalar(1) / Scalar(3) / (v * v))
 
 // tangent
+
 template <class Scalar>
 struct tan_op
 {
@@ -141,13 +136,8 @@ struct fabs_op : abs_op<Scalar>
     template <class Scalar, class T2>                                                              \
     struct scalar_##func##2_op                                                                     \
     {                                                                                              \
-        XAD_INLINE explicit scalar_##func##2_op(const T2& b_t) : b(b_t)                            \
-        {                                                                                          \
-        }                                                                                          \
-        XAD_INLINE Scalar operator()(const Scalar& a) const                                        \
-        {                                                                                          \
-            return func(a, b);                                                                     \
-        }                                                                                          \
+        XAD_INLINE explicit scalar_##func##2_op(const T2& b_t) : b(b_t) {}                         \
+        XAD_INLINE Scalar operator()(const Scalar& a) const { return func(a, b); }                 \
         XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const                       \
         {                                                                                          \
             XAD_UNUSED_VARIABLE(a);                                                                \
@@ -159,13 +149,8 @@ struct fabs_op : abs_op<Scalar>
     template <class Scalar, class T2>                                                              \
     struct scalar_##func##1_op                                                                     \
     {                                                                                              \
-        XAD_INLINE explicit scalar_##func##1_op(const T2& b_t) : b(b_t)                            \
-        {                                                                                          \
-        }                                                                                          \
-        XAD_INLINE Scalar operator()(const Scalar& a) const                                        \
-        {                                                                                          \
-            return func(b, a);                                                                     \
-        }                                                                                          \
+        XAD_INLINE explicit scalar_##func##1_op(const T2& b_t) : b(b_t) {}                         \
+        XAD_INLINE Scalar operator()(const Scalar& a) const { return func(b, a); }                 \
         XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const                       \
         {                                                                                          \
             XAD_UNUSED_VARIABLE(a);                                                                \
@@ -430,7 +415,6 @@ struct scalar_remquo2_op
 
 /*
  * TODO:
-fma
 logb
 tgamma
 lgamma

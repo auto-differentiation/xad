@@ -37,7 +37,6 @@ namespace xad
 namespace detail
 {
 
-
 #if defined(_ITERATOR_DEBUG_LEVEL) && _ITERATOR_DEBUG_LEVEL
 // Make a checked iterator to avoid MSVC warnings.
 template <typename T>
@@ -59,7 +58,8 @@ inline T* make_checked(T* p, size_t)
 
 }  // namespace detail
 
-template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocator>
+template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U,
+          class AllocHelper = detail::AlignedAllocator>
 class OperationsContainer
 {
   public:
@@ -284,7 +284,8 @@ class OperationsContainer
                 }
             }
 
-            if (end_idx == 0) {
+            if (end_idx == 0)
+            {
                 return;
             }
 
@@ -345,7 +346,8 @@ class OperationsContainer
             }
         }
 
-        if (end_idx == 0) {
+        if (end_idx == 0)
+        {
             return;
         }
         chk = mul_chunk(end_chunk);
