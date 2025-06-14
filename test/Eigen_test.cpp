@@ -367,3 +367,131 @@ TEST(Eigen, MatrixNormAdj)
         }
     }
 }
+
+template <class T>
+Eigen::Matrix<T, 2, 2> svd_decomposition(const Eigen::Matrix<T, 2, 2>& A)
+{
+    Eigen::JacobiSVD<Eigen::Matrix<T, 2, 2>> svd (A, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix<T, 2, 2> U = svd.matrixU(); // Left Singular Vectors
+    Eigen::Matrix<T, 2, 2> V = svd.matrixV().transpose(); // Right Singular Vectors
+    Eigen::Matrix<T, 2, 2> sigma = svd.singularValues().asDiagonal().toDenseMatrix(); // Singular Values
+    return U * sigma * V;
+}
+
+TEST(Eigen, MatrixSvdAdj)
+{
+    using mode = xad::adj<double>;
+    using tape_type = mode::tape_type;
+    using AD = mode::active_type;
+
+    constexpr double eps = 1e-6;
+    Eigen::Matrix<double, 2, 2> A0;
+    A0 << 12, 25.5,
+          3, 40;
+
+    Eigen::Matrix<double, 2, 2> numerical_grad;
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            Eigen::Matrix<double, 2, 2> A_plus = A0;
+            Eigen::Matrix<double, 2, 2> A_minus = A0;
+            A_plus(i, j) += eps;
+            A_minus(i, j) -= eps;
+
+            double f_plus = svd_decomposition(A_plus).sum();
+            double f_minus = svd_decomposition(A_minus).sum();
+
+            numerical_grad(i, j) = (f_plus - f_minus) / (2 * eps);
+        }
+    }
+
+    Eigen::Matrix<AD, 2, 2> A;
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j)
+            A(i, j) = A0(i, j);
+
+    tape_type tape;
+    tape.registerInputs(A.reshaped().begin(), A.reshaped().end());
+    tape.newRecording();
+
+    Eigen::Matrix<AD, 2, 2> B = svd_decomposition(A);
+    AD s = B.sum();
+    tape.registerOutput(s);
+    derivative(s) = 1.0;
+    
+    tape.computeAdjoints();
+
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            double ad = derivative(A(i, j));
+            double fd = numerical_grad(i, j);
+            EXPECT_NEAR(ad, fd, 1e-7) << "Mismatch at A(" << i << ", " << j << ")";
+        }
+    }
+}
+
+template <class T>
+Eigen::Matrix<T, 2, 2> Cholesky_decomposition(const Eigen::Matrix<T, 2, 2>& A)
+{
+    Eigen::Matrix<T, 2, 2> L( A.llt().matrixL() ); // lower triangular matrix 
+    Eigen::Matrix<T, 2, 2> L_T = L.adjoint(); // conjugate transpose
+    return L * L_T;
+}
+
+TEST(Eigen, MatrixCholesky_Adj)
+{
+    using mode = xad::adj<double>;
+    using tape_type = mode::tape_type;
+    using AD = mode::active_type;
+
+    constexpr double eps = 1e-6;
+    Eigen::Matrix<double, 2, 2> A0;
+    A0 << 12, 25.5,
+          3, 40;
+
+    Eigen::Matrix<double, 2, 2> numerical_grad;
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            Eigen::Matrix<double, 2, 2> A_plus = A0;
+            Eigen::Matrix<double, 2, 2> A_minus = A0;
+            A_plus(i, j) += eps;
+            A_minus(i, j) -= eps;
+
+            double f_plus = Cholesky_decomposition(A_plus).sum();
+            double f_minus = Cholesky_decomposition(A_minus).sum();
+
+            numerical_grad(i, j) = (f_plus - f_minus) / (2 * eps);
+        }
+    }
+
+    Eigen::Matrix<AD, 2, 2> A;
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j)
+            A(i, j) = A0(i, j);
+
+    tape_type tape;
+    tape.registerInputs(A.reshaped().begin(), A.reshaped().end());
+    tape.newRecording();
+
+    Eigen::Matrix<AD, 2, 2> B = Cholesky_decomposition(A);
+    AD s = B.sum();
+    tape.registerOutput(s);
+    derivative(s) = 1.0;
+    
+    tape.computeAdjoints();
+
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            double ad = derivative(A(i, j));
+            double fd = numerical_grad(i, j);
+            EXPECT_NEAR(ad, fd, 1e-7) << "Mismatch at A(" << i << ", " << j << ")";
+        }
+    }
+}
