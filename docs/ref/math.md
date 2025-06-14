@@ -20,7 +20,8 @@ so that existing calls to `#!c++ std::sin` and similar functions are working as 
 
 #### `abs`
 
-`#!c++ T abs(T x)` computes the absolute value of `x`. Note that for defined second-order derivatives, this computes `#!c++ (x>0)-(x<0)`
+`#!c++ T abs(T x)` computes the absolute value of `x`.
+Note that for defined second-order derivatives, this computes `#!c++ (x>0)-(x<0)`
 
 #### `max`
 
@@ -35,7 +36,8 @@ Note that for well-defined second order derivative, this is implemented as
 
 #### `min`
 
-`#!c++ T min(T x, T y)` returns the minimum of `x` and `y`. Note that for well-defined second order derivative, this is implemented as `(x + y - abs(x-y)) / 2`.
+`#!c++ T min(T x, T y)` returns the minimum of `x` and `y`.
+Note that for well-defined second order derivative, this is implemented as `(x + y - abs(x-y)) / 2`.
 
 #### `fmin`
 
@@ -51,7 +53,8 @@ Note that for well-defined second order derivative, this is implemented as
 
 #### `fma`
 
-`#!c++ T fma(T x, T y, T z)` computes `x * y + z` as if to infinite precision and rounded only once to fit the result type.
+`#!c++ T fma(T x, T y, T z)` computes `x * y + z` as if to
+infinite precision and rounded only once to fit the result type.
 
 #### `trunc`
 
@@ -71,11 +74,15 @@ Note that for well-defined second order derivative, this is implemented as
 
 #### `fmod`
 
-`#!c++ T fmod(T x, T y)` returns the floating-point remainder of the division operation `x/y`, i.e.exactly the value `x - n*y`, where `n` is `x/y` with its fractional part truncated.
+`#!c++ T fmod(T x, T y)` returns the floating-point remainder of the division
+operation `x/y`, i.e.exactly the value `x - n*y`, where `n` is `x/y` with its 
+fractional part truncated.
 
 #### `remainder`
 
-`#!c++ T remainder(T x, T y)` calculates the IEEE floating-point remainder of the division operation `x/y`, i.e. exactly the value `x - n*y`, where the value `n` is the integral value nearest the exact value `x/y`.
+`#!c++ T remainder(T x, T y)` calculates the IEEE floating-point remainder of the
+division operation `x/y`, i.e. exactly the value `x - n*y`, where the value `n` 
+is the integral value nearest the exact value `x/y`.
 
 When `abs(n-x/y) = 0.5`, the value `n` is chosen to be even.
 
@@ -83,22 +90,27 @@ In contrast to `#!c++ fmod`, the returned value is not guaranteed to have the sa
 
 #### `remquo`
 
-`#!c++ T remquo(T x, T y, int* n)` is the same as `#!c++ remainder`, but returns the integer factor `n` in addition.
+`#!c++ T remquo(T x, T y, int* n)` is the same as `#!c++ remainder`, but returns 
+the integer factor `n` in addition.
 
 #### `modf`
 
-`#!c++ T modf(T x, T* iptr)` decomposes `x` into integral and fractional parts, each with the same type and sign as `x`. The integral part is stored in `iptr`.
+`#!c++ T modf(T x, T* iptr)` decomposes `x` into integral and fractional parts, 
+each with the same type and sign as `x`. The integral part is stored in `iptr`.
 
 #### `nextafter`
 
-`#!c++ T nextafter(T from, T to)` returns the next representable value of `from` in the direction of `to`.
+`#!c++ T nextafter(T from, T to)` returns the next representable value of `from` 
+in the direction of `to`.
 
 Mathmatically, the difference of `from` to the return value is very small.
 For derivatives, we therefore consider them both the same and calculate derivative accordingly.
 
 #### `copysign`
 
-`#!c++ T copysign(T x, T y)` copies the sign of the floating point value `y` to the value `x`, correctly treating positive/negative zero, NaN, and Inf values. It uses the function `signbit` internally to determine the sign of `y`.
+`#!c++ T copysign(T x, T y)` copies the sign of the floating point value `y` to 
+the value `x`, correctly treating positive/negative zero, NaN, and Inf values. 
+It uses the function `signbit` internally to determine the sign of `y`.
 
 ## Trigonometric Functions
 
@@ -136,7 +148,8 @@ For derivatives, we therefore consider them both the same and calculate derivati
 
 #### `atan2`
 
-`#!c++ T atan2(T x, T y)` computes the four-quadrant inverse tangent of a point located at `(x, y)`.
+`#!c++ T atan2(T x, T y)` computes the four-quadrant inverse tangent of 
+a point located at `(x, y)`.
 
 #### `sinh`
 
@@ -202,7 +215,7 @@ For derivatives, we therefore consider them both the same and calculate derivati
 
 #### `hypot`
 
-`#!c++ T hypot(T x, T y)` computes `sqrt(x*x + y*y)` without undue overflow or underflow at 
+`#!c++ T hypot(T x, T y)` computes `sqrt(x*x + y*y)` without undue overflow or underflow at
 intermediate stages of the computation.
 
 #### `pow`
@@ -215,7 +228,8 @@ intermediate stages of the computation.
 
 #### `frexp`
 
-`#!c++ T frexp(T arg, int* exp)` decomposes the given floating point value arg into a normalised fraction and an integral power of two.
+`#!c++ T frexp(T arg, int* exp)` decomposes the given floating point value 
+arg into a normalised fraction and an integral power of two.
 
 #### `ilogb`
 
@@ -228,7 +242,7 @@ using `FLT_RADIX` as base for the log.
 
 ## Error Functions
 
-***
+---
 
 #### `erf`
 
@@ -237,7 +251,8 @@ library.
 
 #### `erfc`
 
-`#!c++ T erfc(T x)` computes the complementary error function of `x`, if provided by the compiler's math library.
+`#!c++ T erfc(T x)` computes the complementary error function of `x`, 
+if provided by the compiler's math library.
 
 ## Floating Point Classification
 
@@ -255,8 +270,10 @@ library.
 
 #### `signbit`
 
-`#!c++ bool signbit(T x)` returns true if `x` is negative and false otherwise. Also detects sign bit of zeros.
+`#!c++ bool signbit(T x)` returns true if `x` is negative and false otherwise. 
+Also detects sign bit of zeros.
 
 #### `isnormal`
 
-`#!c++ bool isnormal(T x)` checks if the value is a normal floating point number, i.e. not zero, subnormal, infinite, or NaN.
+`#!c++ bool isnormal(T x)` checks if the value is a normal floating point 
+number, i.e. not zero, subnormal, infinite, or NaN.
