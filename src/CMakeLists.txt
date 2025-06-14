@@ -40,7 +40,6 @@ set(public_headers
     XAD/CheckpointCallback.hpp
     XAD/ChunkContainer.hpp
     XAD/Complex.hpp
-    XAD/EigenCompatibility.hpp
     XAD/Exceptions.hpp
     XAD/Expression.hpp
     XAD/Hessian.hpp	

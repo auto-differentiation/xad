@@ -23,7 +23,8 @@
 ******************************************************************************/
 
 #include <XAD/XAD.hpp>
-#include <XAD/EigenCompatibility.hpp>
+#include <Eigen/Core>
+#include <Eigen/Dense>
 
 #include <gtest/gtest.h>
 
