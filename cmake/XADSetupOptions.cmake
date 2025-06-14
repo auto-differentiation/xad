@@ -31,6 +31,7 @@ if(CMAKE_PROJECT_NAME STREQUAL "xad")
 else()
     option(XAD_ENABLE_TESTS "Enable the XAD tests" OFF)
 endif()
+option(XAD_ENABLE_EIGEN_TESTS "Enable the Eigen tests" OFF)
 option(XAD_WARNINGS_PARANOID "Use extra-paranoid warning level" ON)
 option(XAD_POSITION_INDEPENDENT_CODE "Generate PIC code, so it can be linked into a shared library" ON)
 

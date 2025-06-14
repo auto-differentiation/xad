@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Cmake file for unit tests
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,10 +19,10 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
-set(testfiles 
+set(testfiles
     TapeContainer_test.cpp
     ChunkContainer_test.cpp
     TestHelpers.hpp
@@ -41,7 +41,7 @@ set(testfiles
     ExpressionMeta_test.cpp
     Tbr_test.cpp
     StreamOps_test.cpp
-    StdCompatibility_test.cpp 
+    StdCompatibility_test.cpp
     ReusableRange_test.cpp
     PartialRollback_test.cpp
     Hessian_test.cpp
@@ -49,7 +49,11 @@ set(testfiles
     TypeTraits_test.cpp
     OperationsContainer_test.cpp
 )
-  
+
+if (XAD_ENABLE_EIGEN_TESTS)
+    list(APPEND testfiles Eigen_test.cpp)
+endif()
+
 if (CMAKE_COMPILER_IS_GNUCC)
     set_source_files_properties(ExpressionsConversion_test.cpp
         COMPILE_FLAGS "-Wno-conversion")

@@ -163,6 +163,7 @@ function(xad_add_library name type)
         # without this flag
         target_compile_definitions(${name} PUBLIC "$<$<CONFIG:DEBUG>:_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING>")
     endif()
+
 endfunction()
 
 

@@ -76,7 +76,8 @@ jobs:
              -DCMAKE_CXX_STANDARD="${{ matrix.standard }}" ^
              ${{ matrix.cmake_extra }} ^
              ${{ matrix.cmake_mem_flag }} ^
-             -DCMAKE_BUILD_TYPE=${{ matrix.config }} 
+             -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
+             -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         shell: cmd
         run: |
@@ -171,7 +172,7 @@ jobs:
       - name: Setup tools
         run: |
           apt-get update
-          apt-get install -y ccache ninja-build lcov
+          apt-get install -y ccache ninja-build lcov build-essential cmake
       - name: GitHub WS Tmp
         # there is an issue with workspace locations in github inside containers, which this works around
         # see: https://github.com/actions/runner/issues/2058
@@ -192,7 +193,8 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             ${{ matrix.cmake_mem_flag }} \
-            -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install
+            -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
           cd build
@@ -301,7 +303,7 @@ jobs:
       - name: setup
         run: |
           apt-get update
-          apt-get install -y ccache ninja-build
+          apt-get install -y ccache ninja-build build-essential cmake
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
@@ -318,7 +320,8 @@ jobs:
             -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             ${{ matrix.memory == 'lowmem' && ' -DXAD_REDUCED_MEMORY=ON' || '' }} \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
           cd build
@@ -423,7 +426,8 @@ jobs:
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
-            ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }}
+            ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }} \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
           cd build
@@ -500,3 +504,4 @@ jobs:
         with:
           name: Event File
           path: ${{ github.event_path }}
+          
