@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolset: ["14.1", "14.2", "14.4"]
+        toolset: ["14.2", "14.4"]
         compiler: [msvc, clang]
         config: [Release, Debug]
         standard: ["11", "17"]
@@ -26,7 +26,6 @@ jobs:
           - compiler: clang
             cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
             cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
-            os: windows-2022
             # disable cache in Windows with Clang, as it fails compilation with latest compilers
             sccache: "false"
             cmake_extra: ""
@@ -34,11 +33,8 @@ jobs:
           - compiler: msvc
             cxx: cl
             cc: cl
-            os: windows-2022
             vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
         exclude:
-          - compiler: clang
-            toolset: "14.1"
           - compiler: clang
             toolset: "14.2"
           - config: Release
@@ -47,7 +43,7 @@ jobs:
             memory: lowmem
           - compiler: clang
             config: Debug
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
       - name: setup

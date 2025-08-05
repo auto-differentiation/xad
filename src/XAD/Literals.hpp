@@ -644,8 +644,8 @@ XAD_INLINE std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& os,
     return os << value(x);
 }
 
-template <class C, class T, class Scalar>
-XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, AReal<Scalar>& x)
+template <class C, class T, class Scalar, std::size_t N>
+XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, AReal<Scalar, N>& x)
 {
     return is >> value(x);
 }

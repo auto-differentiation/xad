@@ -325,7 +325,7 @@ struct is_compound<xad::FReal<T, N>> : std::true_type
     inline constexpr bool name_v<xad::FReal<xad::FReal<long double, M>, N>> = value
 
 #define XAD_TEMPLATE_TRAIT_FUNC1(name_v, N, value)                                                 \
-    XAD_TEMPLATE_TRAIT_FUNC_FIRST(name_v, N value);                                                \
+    XAD_TEMPLATE_TRAIT_FUNC_FIRST(name_v, N, value);                                               \
     XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 1, value)                                            \
     XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 2, value)                                            \
     XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 4, value)
