@@ -326,13 +326,13 @@ struct is_compound<xad::FReal<T, N>> : std::true_type
 
 #define XAD_TEMPLATE_TRAIT_FUNC1(name_v, N, value)                                                 \
     XAD_TEMPLATE_TRAIT_FUNC_FIRST(name_v, N, value);                                               \
-    XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 1, value)                                            \
-    XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 2, value)                                            \
+    XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 1, value);                                           \
+    XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 2, value);                                           \
     XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 4, value)
 
-#define XAD_TEMPLATE_TRAT_FUNC(name_v, value)                                                      \
-    XAD_TEMPLATE_TRAIT_FUNC1(name_v, 1, value)                                                     \
-    XAD_TEMPLATE_TRAIT_FUNC1(name_v, 2, value)                                                     \
+#define XAD_TEMPLATE_TRAIT_FUNC(name_v, value)                                                     \
+    XAD_TEMPLATE_TRAIT_FUNC1(name_v, 1, value);                                                    \
+    XAD_TEMPLATE_TRAIT_FUNC1(name_v, 2, value);                                                    \
     XAD_TEMPLATE_TRAIT_FUNC1(name_v, 4, value)
 
 XAD_TEMPLATE_TRAIT_FUNC(is_floating_point_v, true);
