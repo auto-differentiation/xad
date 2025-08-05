@@ -5,17 +5,28 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [1.8.0] - 2025-08-05
 
 ### Added
 
-### Changed
-
-### Deprecated
+- **Vector Forward Mode**: Added support for a vector forward mode, where multiple derivatives can be calculated at once ([#177](https://github.com/auto-differentiation/xad/pull/177))
+- **Vector Adjoint Mode**: Added support for a vector adjoint mode, where derivatives w.r.t. multiple outputs can be calculated jointly with AAD ([#177](https://github.com/auto-differentiation/xad/pull/177))
+- **Direct Mode**: Added a mode for forward and reverse mode without expression templates, to ease integration and debugging ([#177](https://github.com/auto-differentiation/xad/pull/177))
+- **Added std::fma Function**: Added support for the standard math function `std::fma` ([#175](https://github.com/auto-differentiation/xad/pull/175))
+- **Eigen Compatibility**: Added support and a wide range of tests for using XAD within the Eigen Library ([#174](https://github.com/auto-differentiation/xad/pull/174))
+- **Jacobian Performance Optimisation**: Faster discovery of Jacobian co-domain ([#163](https://github.com/auto-differentiation/xad/pull/163/files) by @raneamri)
+- **Improved CI/CD Pipelines**: Modern compilers, better tests, windows fixes ([#164](https://github.com/auto-differentiation/xad/pull/164)), and further improvements ([#177](https://github.com/auto-differentiation/xad/pull/177))
 
 ### Removed
 
+- Support for Visual Studio 2015 and 2017 (toolchains 14.0 and 14.1)
+- Support for GCC 5 and 6
+
 ### Fixed
+
+- **libc++ type trait fixes**: Fixes for libc++ (MacOS) for random number type traits ([#170](https://github.com/auto-differentiation/xad/pull/170))
+- **copysign function in MSVC**: fixed issues with the `copysign` function with the latest MSVC ([#166](https://github.com/auto-differentiation/xad/pull/166) by @raneamri)
+- **Improved testing of chunk containers**: The clear is now tested better ([#157](https://github.com/auto-differentiation/xad/pull/157), by @rghouzra)
 
 
 ## [1.7.0] - 2024-11-30
@@ -175,7 +186,7 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/xad/compare/v1.7.0...HEAD
+[1.8.0]: https://github.com/auto-differentiation/xad/compare/v1.7.0...v1.8.0
 
 [1.7.0]: https://github.com/auto-differentiation/xad/compare/v1.6.0...v1.7.0
 
