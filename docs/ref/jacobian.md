@@ -40,7 +40,7 @@ void computeJacobian(
     Tape<T> *tape = Tape<T>::getActive())
 ```
 
-This mode uses a [Tape](ref/tape.md) to compute derivatives. This Tape will
+This mode uses a [Tape](tape.md) to compute derivatives. This Tape will
 be instantiated within the method or set to the current active Tape using
 `Tape::getActive()` if none is passed as argument.
 

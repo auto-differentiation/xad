@@ -32,7 +32,7 @@ void computeHessian(
     Tape<FReal<T>> *tape = Tape<FReal<T>>::getActive())
 ```
 
-This mode uses a [Tape](ref/tape.md) to compute second derivatives. This Tape
+This mode uses a [Tape](tape.md) to compute second derivatives. This Tape
 will be instantiated within the method or set to the current active Tape using
 `Tape::getActive()` if none is passed as argument.
 
