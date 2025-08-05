@@ -36,10 +36,6 @@ jobs:
             cc: cl
             os: windows-2022
             vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
-          - toolset: "14.1"
-            compiler: msvc
-            os: windows-2019
-            vsvarsall: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
         exclude:
           - compiler: clang
             toolset: "14.1"
@@ -169,6 +165,14 @@ jobs:
       image: ghcr.io/foonathan/gcc:${{ matrix.version }}
     steps:
       - uses: actions/checkout@v4
+      - name: Use debian archive repos
+        if: version == "7" || version == "8"
+        run: |
+            set -e
+            sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list
+            sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list
+            sed -i 's|http://deb.debian.org/debian buster-updates|http://archive.debian.org/debian buster-updates|g' /etc/apt/sources.list
+            echo 'Acquire::Check-Valid-Until "false";' | tee /etc/apt/apt.conf.d/99no-check-valid-until
       - name: Setup tools
         run: |
           apt-get update

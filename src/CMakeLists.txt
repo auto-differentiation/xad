@@ -96,6 +96,7 @@ set(public_headers
     XAD/MathFunctions.hpp
     XAD/OperationsContainer.hpp
     XAD/OperationsContainerPaired.hpp
+    XAD/RealDirect.hpp
     XAD/ReusableRange.hpp
     XAD/StdCompatibility.hpp
     XAD/Tape.hpp

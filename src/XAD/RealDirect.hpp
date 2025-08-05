@@ -53,7 +53,7 @@ struct RealDirect
     {
     }
 
-    constexpr XAD_INLINE BaseType &base() { return base_; }
+    XAD_INLINE BaseType &base() { return base_; }
     constexpr XAD_INLINE const BaseType &base() const { return base_; }
 
     XAD_INLINE RealDirect &operator+=(const RealDirect &x)
