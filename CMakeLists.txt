@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Main CMake file
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,14 +19,14 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 ############## setup ###################
 cmake_minimum_required(VERSION 3.15.2)
 cmake_policy(SET CMP0092 NEW)   # avoid setting warning flags by default in Windows
 
-project(xad 
+project(xad
     LANGUAGES CXX
     DESCRIPTION "Comprehensive C++ library for automatic differentiation."
     HOMEPAGE_URL "https://auto-differentiation.github.io"
@@ -50,7 +50,7 @@ if(NOT XAD_DOCS_ONLY)
     endif()
 
     add_subdirectory(src)
-    
+
     if(XAD_ENABLE_TESTS)
         add_subdirectory(test)
         add_subdirectory(samples)

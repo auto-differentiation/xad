@@ -34,7 +34,7 @@ The value-type of this class, i.e., `T`.
 
 #### `DerivativeType`
 
-The derivative type of this class, which depends on `N`. If `N == 1`, it is just `T`. 
+The derivative type of this class, which depends on `N`. If `N == 1`, it is just `T`.
 For higher values, it is `Vec<T, N>`, which allows to calculate multiple derivatives at once.
 
 ### Constructors and Destructors
@@ -102,7 +102,7 @@ This can be used to assign a value to the variable without affecting the derivat
 
 #### `derivative`
 
-`#!c++ DerivativeType& derivative()` and `#!c++ const DerivativeType& derivative() const` 
+`#!c++ DerivativeType& derivative()` and `#!c++ const DerivativeType& derivative() const`
 return a reference to the derivative value.
 This can be used to assign a value to it as well, as `#!c++ x.derivative() = 1.0`
 or `#!c++ x.derivative() = {1.0, 0.0}`,

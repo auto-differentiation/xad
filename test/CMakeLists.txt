@@ -22,7 +22,7 @@
 #
 ##############################################################################
 
-set(testfiles 
+set(testfiles
     Vec_test.cpp
     TapeContainer_test.cpp
     ChunkContainer_test.cpp

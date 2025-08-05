@@ -114,14 +114,14 @@ threads gives different results.
 #### `setActive`
 
 `#!c++ static void setActive(Tape* t)` static function that sets the given tape as the
-globally active one. This is equivalent to `t.activate()`. 
+globally active one. This is equivalent to `t.activate()`.
 
 It may throw [`TapeAlreadyActive`](exceptions.md) if another tape is
 already active for the current thread.
 
 #### `deactivateAll`
 
-`#!c++ static void deactivateAll()` deactivates any currently active tapes. 
+`#!c++ static void deactivateAll()` deactivates any currently active tapes.
 Equivalent to `auto t = Tape::getActive(); if (t) t->deactivate();`.
 
 #### `registerInput`
@@ -196,7 +196,7 @@ adjoints further.
 !!! warning
 
     If variables registered after the given postion (i.e. dependent variables computed
-    after this position) are used again after a call to `resetTo`, 
+    after this position) are used again after a call to `resetTo`,
     the behaviour is undefined, as their slot in the tape is no longer valid.
 
 #### `computeAdjointsTo`
@@ -355,7 +355,7 @@ Gives *strong exception safety guarantee* - tape state unchanged in case of exce
 ## `ScopedNestedRecording`
 
 ```c++
-template <typename TapeType> 
+template <typename TapeType>
 class ScopedNestedRecording
 ```
 

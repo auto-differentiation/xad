@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Cmake file for 1st order adjoint mode swap pricer
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 xad_add_sample(SwapPricer SOURCES main.cpp SwapPricer.hpp )

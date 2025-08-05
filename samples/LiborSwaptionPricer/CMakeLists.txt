@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Cmake file for 1st order adjoint mode for a Monte-Carlo Libor Swaption
 #  portfolio pricer.
 #
@@ -20,17 +20,17 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
-xad_add_sample(LiborSwaptionPricer 
-  SOURCES 
-    LiborData.hpp  
-    LiborFunctions.hpp 
+xad_add_sample(LiborSwaptionPricer
+  SOURCES
+    LiborData.hpp
+    LiborFunctions.hpp
     LiborPricers.hpp
-    LiborPricers.cpp 
+    LiborPricers.cpp
     main.cpp
   TEST_ARGS
-    100 
+    100
     test
 )

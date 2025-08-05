@@ -583,29 +583,29 @@ inline void mathTest_all_aad(double x, double yref, double dref, double dref2, F
     mathTest_fwd(x, yref, dref, func);
     mathTest_adjd(x, yref, dref, func);
     mathTest_fwdd(x, yref, dref, func);
-    
+
     mathTest_fwd_fwd(x, yref, dref, dref2, func);
     mathTest_fwd_adj(x, yref, dref, dref2, func);
     mathTest_adj_fwd(x, yref, dref, dref2, func);
     mathTest_adj_adj(x, yref, dref, dref2, func);
-    
+
     mathTest_fwd_fwdd(x, yref, dref, dref2, func);
     mathTest_adj_fwdd(x, yref, dref, dref2, func);
-    
+
     mathTest_fwd_adjd(x, yref, dref, dref2, func);
     mathTest_adj_adjd(x, yref, dref, dref2, func);
-    
+
     mathTest_fwdd_adj(x, yref, dref, dref2, func);
     mathTest_fwdd_fwd(x, yref, dref, dref2, func);
     mathTest_fwdd_fwdd(x, yref, dref, dref2, func);
-    
+
     mathTest_adjd_fwd(x, yref, dref, dref2, func);
     mathTest_adjd_adj(x, yref, dref, dref2, func);
     mathTest_adjd_adjd(x, yref, dref, dref2, func);
-    
+
     mathTest_adjd_fwdd(x, yref, dref, dref2, func);
     mathTest_fwdd_adjd(x, yref, dref, dref2, func);
-    
+
     mathTest_adj_vec(x, yref, dref, func);
     mathTest_adj_fwd_vec(x, yref, dref, dref2, func);
     mathTest_fwd_adj_vec(x, yref, dref, dref2, func);

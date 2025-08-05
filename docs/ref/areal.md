@@ -44,9 +44,9 @@ The value-type of this class, i.e., `T`.
 
 #### `DerivativeType`
 
-The derivative type of this class, which depends on `N`. 
-If `N == 1`, it is just `T`. 
-For higher values, it is `Vec<T, N>`, 
+The derivative type of this class, which depends on `N`.
+If `N == 1`, it is just `T`.
+For higher values, it is `Vec<T, N>`,
 which allows to propagate multiple derivatives at once.
 
 ### Constructors and Destructors
@@ -99,7 +99,7 @@ constructors above.
 
 #### `getDerivative`
 
-`#!c++ DerivativeType getDerivative() const` returns the derivative (DerivativeType) 
+`#!c++ DerivativeType getDerivative() const` returns the derivative (DerivativeType)
 as stored on the tape (typically after rolling back the operation).
 It throws an instance of [`#!c++ NoTapeException`](exceptions.md) if the variable
 has not been registered with an active tape.
@@ -122,7 +122,7 @@ This can be used to assign a value to the variable without tape recording, as `#
 
 #### `derivative`
 
-`#!c++ DerivativeType& derivative()` and `#!c++ const DerivativeType& derivative() const` return 
+`#!c++ DerivativeType& derivative()` and `#!c++ const DerivativeType& derivative() const` return
 a reference to the underlying adjoint value.
 This can be used to assign a value to the adjoint, as `#!c++ x.derivative() = 1.0`
 or `#!c++ x.derivative() = {1.0, 0.0}`,

@@ -1,7 +1,7 @@
 # CheckpointCallback
 
 ```c++
-template <typename TapeType> 
+template <typename TapeType>
 class CheckpointCallback
 ```
 

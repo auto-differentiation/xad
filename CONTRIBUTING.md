@@ -9,7 +9,7 @@ by our [code of conduct](CODE_OF_CONDUCT.md).
 git clone https://github.com/yourusername/xad.git
 ```
 
-2.  Follow the [Build Instructions](README.md) to setup the dependencies and 
+2.  Follow the [Build Instructions](README.md) to setup the dependencies and
     build the software. Make sure all tests pass.
 
 3.  Create a feature branch, typically based on master, for your change
@@ -18,18 +18,18 @@ git clone https://github.com/yourusername/xad.git
 git checkout -b feature/my-changed-main
 ```
 
-4.  Make your changes, adding tests as you go, and commit. Again, make sure all 
+4.  Make your changes, adding tests as you go, and commit. Again, make sure all
     tests pass.
 
-5.  Push your fork 
+5.  Push your fork
 
-6.  [Submit a pull request][pr]. Note that you will have to sign the [Contributor License Agreement][cla] 
+6.  [Submit a pull request][pr]. Note that you will have to sign the [Contributor License Agreement][cla]
     before the PR can be merged.
 
-At this point, you are depending on the core team to review your request. 
-We may suggest changes, improvements, or alternatives. 
-We strive to at least comment on a pull request within 3 business days. 
-After feedback has been given, we expect a response within 2 weeks, 
+At this point, you are depending on the core team to review your request.
+We may suggest changes, improvements, or alternatives.
+We strive to at least comment on a pull request within 3 business days.
+After feedback has been given, we expect a response within 2 weeks,
 after which we may close the pull request if it isn't showing activity.
 
 Some things that will highly increase the chance that your pull request gets
@@ -41,7 +41,7 @@ accepted:
 
 -   Follow our [coding style](#coding-style)
 
--   Write good commit messages (short one-liner, followed by a blank line, 
+-   Write good commit messages (short one-liner, followed by a blank line,
     followed by a more detailed explanation)
 
 ## Source Code Organisation
@@ -60,7 +60,7 @@ For convenience, there is a `.clang-format` file in the root of the project whic
     sense in the context of their use.
 
 -   General
-    -   Insert a copyright / license note, including short paragraph of the file's 
+    -   Insert a copyright / license note, including short paragraph of the file's
         purpose, into every source file (look at existing ones for an example)
 
     -   Use a maximum of 100 characters per source line
@@ -79,7 +79,7 @@ For convenience, there is a `.clang-format` file in the root of the project whic
 -   Includes
     -   Use `#pragma once` instead of include guards
 
-    -   Group includes by libraries, starting with local includes, continuing with third party libraries, 
+    -   Group includes by libraries, starting with local includes, continuing with third party libraries,
         and finishing with C++ and C standard libraries
 
     -   Use `<>` to include globally valid files (including public includes of the current project)

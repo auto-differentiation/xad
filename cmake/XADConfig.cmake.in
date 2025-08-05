@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Setup of import package for find_package(XAD) calls from clients
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 @PACKAGE_INIT@

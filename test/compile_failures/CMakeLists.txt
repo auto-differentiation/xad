@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  CMake helper to test if a compilation fails (it should)
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 
@@ -27,7 +27,7 @@
 function(compile_failure_test name)
     add_library(compile_fail_${name} OBJECT EXCLUDE_FROM_ALL ${name}.cpp)
     target_link_libraries(compile_fail_${name} PRIVATE xad)
-    set_target_properties(compile_fail_${name} PROPERTIES 
+    set_target_properties(compile_fail_${name} PROPERTIES
         FOLDER "test/must_fail"
         EXCLUDE_FROM_DEFAULT_BUILD TRUE)
     add_test(NAME compile_fail_${name}

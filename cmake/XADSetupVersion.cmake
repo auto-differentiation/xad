@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Macro for setup of versioning variables
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,13 +19,13 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 
 ######################################
 #
-#  Setup of Versioning 
+#  Setup of Versioning
 #
 #  defines:
 #  <name>_VERSION_[MAJOR/MINOR/PATCH/PATCHNUM]  Note: PATCH includes the suffix while PATCHNUM is numeric
@@ -34,7 +34,7 @@
 #  VERSION                                      Same as <name> version
 #  <name>_IS_PRERELEASE                         Boolean
 #  <name>_VERSION_NUMERIC                       10000 * major + 100 * minor + patchnum
-# 
+#
 #  CURRENT_YEAR (used in documentation generator)
 #
 #  It also defines the PROJECT_ variables of the version, to be consistent with CMake's project command

@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Setup of compiler and corresponding warning levels, and linker flags
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,17 +19,17 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
-# check if 64bit machine 
+# check if 64bit machine
 if(CMAKE_SIZEOF_VOID_P MATCHES "8")
   set(ARCH 64)
 else()
   set(ARCH 32)
 endif()
 
-find_package(Threads REQUIRED)  # needed for thread-local 
+find_package(Threads REQUIRED)  # needed for thread-local
 
 # set global compiler flag variables, that we'll use when building things
 if(MSVC)
@@ -102,7 +102,7 @@ function(xad_add_library name type)
     # setup suffix
     if(MSVC_VERSION VERSION_GREATER_EQUAL 1900)
         set(archsuff "${ARCH}")
-        string(SUBSTRING "${MSVC_VERSION}" 2 1 toolset_version)  # extract the 19?x 
+        string(SUBSTRING "${MSVC_VERSION}" 2 1 toolset_version)  # extract the 19?x
         set(comp "_vc14${toolset_version}")
         if(XAD_STATIC_MSVC_RUNTIME)
             set(rls_suffix "_mt")
@@ -152,10 +152,10 @@ function(xad_add_library name type)
     target_link_libraries(${name} PUBLIC Threads::Threads)
     target_compile_features(${name} PUBLIC cxx_std_11)
     if(XAD_STATIC_MSVC_RUNTIME)
-        set_target_properties(${name} PROPERTIES 
+        set_target_properties(${name} PROPERTIES
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
-        set_target_properties(${name} PROPERTIES 
+        set_target_properties(${name} PROPERTIES
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
     if(MSVC)
@@ -182,10 +182,10 @@ function(xad_add_executable name)
         target_link_options(${name} PRIVATE ${xad_link_asan_flags})
     endif()
     if(XAD_STATIC_MSVC_RUNTIME)
-        set_target_properties(${name} PROPERTIES 
+        set_target_properties(${name} PROPERTIES
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
-        set_target_properties(${name} PROPERTIES 
+        set_target_properties(${name} PROPERTIES
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
     set_target_properties(${name} PROPERTIES

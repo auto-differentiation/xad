@@ -57,7 +57,7 @@ and imaginary parts.
 #### `derivative`
 
 ```c++
-template <typename T> 
+template <typename T>
 std::complex<T> derivative(const std::complex<XReal<T> >& z)
 ```
 
@@ -72,7 +72,7 @@ or using the [`real`](#real) and  [`imag`](#imag) member functions instead.
 #### `value`
 
 ```c++
-template <typename T> 
+template <typename T>
 std::complex<T> value(const std::complex<XReal<T> >& z)
 ```
 
@@ -91,7 +91,7 @@ Access to the real part by reference.
 #### `imag`
 
 ```c++
-template <typename T> 
+template <typename T>
 XReal<T>& imag(std::complex<XReal<T> >& z)
 ```
 

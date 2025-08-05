@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Cmake file for 2nd order forward over adjoint mode sample
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 xad_add_sample(fwd_adj_2nd SOURCES main.cpp ../common/functions.hpp)

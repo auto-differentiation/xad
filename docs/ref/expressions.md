@@ -3,7 +3,7 @@
 ## Expression Template
 
 ```c++
-template <typename T, typename Derived> 
+template <typename T, typename Derived>
 class Expression
 ```
 
@@ -60,8 +60,8 @@ struct ExprTraits {
     static const bool isLiteral;   // true if it's an elementary XAD active type
                                    // and not an expression
     static const Direction direction;  // direction of the expression or type
-    
-    
+
+
     typedef ... nested_type; // underlying type of the expression
                              // e.g. double for AReal<double>
     typedef ... value_type;  // the base active type of a more

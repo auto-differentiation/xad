@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Cmake file for all samples
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 # This is configured as a sub-project, as it can be built against an installed

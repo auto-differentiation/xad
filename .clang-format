@@ -24,7 +24,7 @@ BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: true
 BinPackParameters: true
 BinPackArguments: true
-BraceWrapping:   
+BraceWrapping:
   AfterClass:      true
   AfterControlStatement: true
   AfterEnum:       true
@@ -77,7 +77,7 @@ CommentPragmas:  '^ IWYU pragma:'
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
 SpaceBeforeParens: ControlStatements
 DisableFormat:   false
-IncludeCategories: 
+IncludeCategories:
   - Regex:           '^<.*\.h[p]*>'
     Priority:        1
   - Regex:           '.*'

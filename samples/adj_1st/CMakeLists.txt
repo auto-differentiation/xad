@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  1st oder adjoints sample CMakefile
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 xad_add_sample(adj_1st SOURCES main.cpp ../common/functions.hpp)

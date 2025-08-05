@@ -1,5 +1,5 @@
 ##############################################################################
-#   
+#
 #  Cmake file for external function sample
 #
 #  This file is part of XAD, a comprehensive C++ library for
@@ -19,11 +19,11 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
-xad_add_sample(external_function 
-  SOURCES 
-    main.cpp 
+xad_add_sample(external_function
+  SOURCES
+    main.cpp
     external_sum_elements.hpp
     ../common/functions.hpp)

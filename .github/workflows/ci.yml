@@ -146,18 +146,18 @@ jobs:
           - config: Debug
             version: "11"
             coverage: true
-            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
+            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-lgcov"
             standard: c++11
           - version: "11"
             config: Debug    # also with reusing slots, for coverage
             reuse_slots: ON
             coverage: true
-            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage" 
+            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-lgcov"
             standard: c++11
     runs-on: ubuntu-latest
-    container: 
+    container:
       image: ghcr.io/foonathan/gcc:${{ matrix.version }}
     steps:
       - uses: actions/checkout@v4
@@ -494,7 +494,7 @@ jobs:
         # from https://github.com/lemurheavy/coveralls-public/issues/1653#issuecomment-1251587119
         run: |
           curl --location --request GET 'https://coveralls.io/rerun_build?repo_token=${{ secrets.COVERALLS_REPO_TOKEN }}&build_num=${{ github.run_id }}'
-          
+
   event_file:
     name: Event File
     runs-on: ubuntu-latest
@@ -504,4 +504,3 @@ jobs:
         with:
           name: Event File
           path: ${{ github.event_path }}
-          

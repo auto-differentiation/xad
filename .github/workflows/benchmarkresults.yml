@@ -26,12 +26,12 @@ jobs:
               repo: context.repo.repo,
               run_id
             });
-      
+
             const result = {};
             for (const artifact of artifacts.data.artifacts) {
               result[artifact.name] = artifact.id;
             }
-      
+
             return result;
       - name: Download and unzip benchmark results
         run: |
@@ -62,4 +62,3 @@ jobs:
           issue-number: ${{ steps.pr.outputs.number }}
           body-path: benchmark-results/benchmark_results.md
           edit-mode: replace
-          
