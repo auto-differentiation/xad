@@ -44,6 +44,8 @@ int main()
 
     // tape and active data type for 1st order adjoint computation
     typedef xad::fwd_adj<double> mode;
+    // Uncomment the following to disable expression templates for debugging
+    // typedef xad::fwdd_adjd<double> mode;
     typedef mode::tape_type tape_type;
     typedef mode::active_type AD;
 

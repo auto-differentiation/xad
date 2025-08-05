@@ -58,8 +58,43 @@ inline void mathTest_adj(double x, double yref, double dref, F func)
     EXPECT_EQ(2U, s.getNumVariables());
     y.setAdjoint(1.0);
     s.computeAdjoints();
-    EXPECT_DOUBLE_EQ(yref, y.getValue()) << "adj, yref";
+    EXPECT_DOUBLE_EQ(yref, y.value()) << "adj, yref";
     compareFinite(dref, x1.getAdjoint(), "adj, dx");
+}
+
+template <class F>
+inline void mathTest_adj_vec(double x, double yref, double dref, F func)
+{
+    using tape_type = xad::Tape<double, 2>;
+    tape_type s;
+    using AD = tape_type::active_type;
+    AD x1 = x;
+    s.registerInput(x1);
+    s.newRecording();
+    AD y = func(x1);
+    s.registerOutput(y);
+    EXPECT_EQ(2U, s.getNumVariables());
+    y.setAdjoint({1.0, 2.0});
+    s.computeAdjoints();
+    EXPECT_DOUBLE_EQ(yref, y.getValue()) << "adj, yref";
+    compareFinite(dref, x1.getAdjoint()[0], "adj1, dx");
+    compareFinite(dref, x1.getAdjoint()[1]/2.0, "adj2, dx");
+}
+
+template <class F>
+inline void mathTest_adjd(double x, double yref, double dref, F func)
+{
+    xad::Tape<double> s;
+    xad::ADD x1 = x;
+    s.registerInput(x1.base());
+    s.newRecording();
+    xad::ADD y = func(x1.base());
+    s.registerOutput(y.base());
+    EXPECT_EQ(2U, s.getNumVariables());
+    y.setAdjoint(1.0);
+    s.computeAdjoints();
+    EXPECT_DOUBLE_EQ(yref, y.value()) << "adj, yref";
+    compareFinite(dref, x1.base().getAdjoint(), "adj, dx");
 }
 
 template <class F>
@@ -69,6 +104,15 @@ inline void mathTest_fwd(double x, double yref, double dref, F func)
     xad::FAD y = func(x1);
     EXPECT_DOUBLE_EQ(yref, value(y)) << "fwd, y";
     compareFinite(dref, y.getDerivative(), "fwd, dx");
+}
+
+template <class F>
+inline void mathTest_fwdd(double x, double yref, double dref, F func)
+{
+    xad::FDD x1(x, 1.0);
+    xad::FDD y = func(x1.base());
+    EXPECT_DOUBLE_EQ(yref, y.value()) << "fwdd, y";
+    compareFinite(dref, y.derivative(), "fwdd, dx");
 }
 
 template <class F1, class F2>
@@ -89,6 +133,45 @@ inline void mathTest_fwd_fwd(double x, double yref, double dref1, double dref2, 
     EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwd_fwd, y";
     compareFinite(dref1, derivative(value(y)), "fwd_fwd, dx1");
     compareFinite(dref2, derivative(derivative(y)), "fwd_fwd, dx2");
+}
+
+template <class F>
+inline void mathTest_fwdd_fwdd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::FRealDirect<xad::FRealDirect<double> > AD;
+    AD x1 = x;
+    derivative(value(x1)) = 1.0;
+    value(derivative(x1)) = 1.0;
+    AD y = func(x1.base());
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwdd_fwdd, y";
+    compareFinite(dref1, derivative(value(y)), "fwdd_fwdd, dx1");
+    compareFinite(dref2, derivative(derivative(y)), "fwdd_fwdd, dx2");
+}
+
+template <class F>
+inline void mathTest_fwd_fwdd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::FRealDirect<xad::FReal<double> > AD;
+    AD x1 = x;
+    value(x1).derivative() = 1.0;
+    value(derivative(x1)) = 1.0;
+    AD y = func(x1.base());
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwd_fwdd, y";
+    compareFinite(dref1, derivative(value(y)), "fwd_fwdd, dx1");
+    compareFinite(dref2, derivative(derivative(y)), "fwd_fwdd, dx2");
+}
+
+template <class F>
+inline void mathTest_fwdd_fwd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::FReal<xad::FRealDirect<double> > AD;
+    AD x1 = x;
+    value(x1).derivative() = 1.0;
+    value(derivative(x1)) = 1.0;
+    AD y = func(x1);
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwdd_fwd, y";
+    compareFinite(dref1, derivative(value(y)), "fwdd_fwd, dx1");
+    compareFinite(dref2, derivative(derivative(y)), "fwdd_fwd, dx2");
 }
 
 template <class F>
@@ -121,6 +204,126 @@ inline void mathTest_adj_adj(double x, double yref, double dref1, double dref2, 
 }
 
 template <class F>
+inline void mathTest_adj_adj_vec(double x, double yref, double dref1, double dref2, F func)
+{
+    xad::Tape<double> si;
+    using tape_type = xad::Tape<xad::AReal<double>, 2 >;
+    tape_type so;
+    using AD = tape_type::active_type;
+
+    AD x1 = x;
+    so.registerInput(x1);
+    so.newRecording();
+    si.registerInput(value(x1));
+    si.registerInput(derivative(x1)[0]);
+    si.registerInput(derivative(x1)[1]);
+    si.newRecording();
+    AD y = func(x1);
+
+    so.registerOutput(y);
+    y.setAdjoint({1.0, 2.0});
+
+    so.computeAdjoints();
+
+    si.registerOutput(derivative(x1)[0]);
+    si.registerOutput(derivative(x1)[1]);
+    derivative(derivative(x1)[0]) = 1.0;
+    si.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "adj_adj, y";
+    compareFinite(dref1, value(derivative(x1)[0]), "adj_adj, dx1.1");
+    compareFinite(dref1, value(derivative(x1)[1])/2.0, "adj_adj, dx1.2");
+    compareFinite(dref2 , derivative(value(x1)), "adj_adj, dx2");
+}
+
+template <class F>
+inline void mathTest_adjd_adjd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::ARealDirect<xad::ARealDirect<double> > AD;
+    xad::Tape<double> si;
+    xad::Tape<xad::ARealDirect<double> > so;
+
+    AD x1 = x;
+    so.registerInput(x1.base());
+    so.newRecording();
+    si.registerInput(value(x1).base());
+    si.registerInput(derivative(x1).base());
+    si.newRecording();
+    AD y = func(x1.base());
+
+    so.registerOutput(y.base());
+    derivative(y) = 1.0;
+
+    so.computeAdjoints();
+
+    si.registerOutput(derivative(x1).base());
+    derivative(derivative(x1)) = 1.0;
+    si.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "adj_adj, y";
+    compareFinite(dref1, value(derivative(x1)), "adj_adj, dx1");
+    compareFinite(dref2, derivative(value(x1)), "adj_adj, dx2");
+}
+
+template <class F>
+inline void mathTest_adj_adjd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::ARealDirect<xad::AReal<double> > AD;
+    xad::Tape<double> si;
+    xad::Tape<xad::AReal<double> > so;
+
+    AD x1 = x;
+    so.registerInput(x1.base());
+    so.newRecording();
+    si.registerInput(value(x1));
+    si.registerInput(derivative(x1));
+    si.newRecording();
+    AD y = func(x1.base());
+
+    so.registerOutput(y.base());
+    derivative(y) = 1.0;
+
+    so.computeAdjoints();
+
+    si.registerOutput(derivative(x1));
+    derivative(derivative(x1)) = 1.0;
+    si.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "adj_adj, y";
+    compareFinite(dref1, value(derivative(x1)), "adj_adj, dx1");
+    compareFinite(dref2, derivative(value(x1)), "adj_adj, dx2");
+}
+
+template <class F>
+inline void mathTest_adjd_adj(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::AReal<xad::ARealDirect<double> > AD;
+    xad::Tape<double> si;
+    xad::Tape<xad::ARealDirect<double> > so;
+
+    AD x1 = x;
+    so.registerInput(x1);
+    so.newRecording();
+    si.registerInput(value(x1).base());
+    si.registerInput(derivative(x1).base());
+    si.newRecording();
+    AD y = func(x1);
+
+    so.registerOutput(y);
+    derivative(y) = 1.0;
+
+    so.computeAdjoints();
+
+    si.registerOutput(derivative(x1).base());
+    derivative(derivative(x1)) = 1.0;
+    si.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "adj_adj, y";
+    compareFinite(dref1, value(derivative(x1)), "adj_adj, dx1");
+    compareFinite(dref2, derivative(value(x1)), "adj_adj, dx2");
+}
+
+template <class F>
 inline void mathTest_fwd_adj(double x, double yref, double dref1, double dref2, F func)
 {
     typedef xad::AReal<xad::FReal<double> > AD;
@@ -138,6 +341,118 @@ inline void mathTest_fwd_adj(double x, double yref, double dref1, double dref2, 
     EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwd_adj, y";
     compareFinite(dref1, derivative(value(y)), "fwd_adj, dx1");
     compareFinite(dref2, derivative(derivative(x1)), "fwd_adj, dx2");
+}
+
+template <class F>
+inline void mathTest_fwd_adj_vec(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::AReal<xad::FReal<double>, 4 > AD;
+    xad::Tape<xad::FReal<double>, 4 > so;
+
+    AD x1(x);
+    derivative(value(x1)) = 1.0;
+    so.registerInput(x1);
+    so.newRecording();
+    AD y = func(x1);
+    so.registerOutput(y);
+    value(derivative(y)[0]) = 1.0;
+    value(derivative(y)[1]) = 2.0;
+    value(derivative(y)[2]) = 3.0;
+    value(derivative(y)[3]) = 4.0;
+    so.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwd_adj, y";
+    compareFinite(dref1, derivative(value(y)), "fwd_adj, dx1");
+    compareFinite(dref2, derivative(derivative(x1)[0]), "fwd_adj, dx2");
+    compareFinite(dref2, derivative(derivative(x1)[1])/2.0, "fwd_adj, dx2");
+    compareFinite(dref2, derivative(derivative(x1)[2])/3.0, "fwd_adj, dx2");
+    compareFinite(dref2, derivative(derivative(x1)[3])/4.0, "fwd_adj, dx2");
+}
+
+template <class F>
+inline void mathTest_fwd2_adj4_vec(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::AReal<xad::FReal<double, 2>, 4 > AD;
+    xad::Tape<xad::FReal<double, 2>, 4 > so;
+
+    AD x1(x);
+    derivative(value(x1)) = {1.0, 0.0};
+    so.registerInput(x1);
+    so.newRecording();
+    AD y = func(x1);
+    so.registerOutput(y);
+    value(derivative(y)[0]) = 1.0;
+    value(derivative(y)[1]) = 2.0;
+    value(derivative(y)[2]) = 3.0;
+    value(derivative(y)[3]) = 4.0;
+    so.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwd_adj, y";
+    compareFinite(dref1, derivative(value(y))[0], "fwd_adj, dx1");
+    compareFinite(dref2, derivative(derivative(x1)[0])[0], "fwd_adj, dx2");
+    compareFinite(dref2, derivative(derivative(x1)[1])[0]/2.0, "fwd_adj, dx2");
+    compareFinite(dref2, derivative(derivative(x1)[2])[0]/3.0, "fwd_adj, dx2");
+    compareFinite(dref2, derivative(derivative(x1)[3])[0]/4.0, "fwd_adj, dx2");
+}
+
+template <class F>
+inline void mathTest_fwd_adjd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::ARealDirect<xad::FReal<double> > ADD;
+    xad::Tape<xad::FReal<double> > so;
+
+    ADD x1(x);
+    derivative(value(x1)) = 1.0;
+    so.registerInput(x1.base());
+    so.newRecording();
+    ADD y = func(x1.base());
+    so.registerOutput(y.base());
+    value(derivative(y)) = 1.0;
+    so.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwd_adj, y";
+    compareFinite(dref1, derivative(value(y)), "fwd_adj, dx1");
+    compareFinite(dref2, derivative(derivative(x1)), "fwd_adj, dx2");
+}
+
+template <class F>
+inline void mathTest_fwdd_adj(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::AReal<xad::FRealDirect<double> > AD;
+    xad::Tape<xad::FRealDirect<double> > so;
+
+    AD x1(x);
+    derivative(value(x1)) = 1.0;
+    so.registerInput(x1);
+    so.newRecording();
+    AD y = func(x1);
+    so.registerOutput(y);
+    value(derivative(y)) = 1.0;
+    so.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwdd_adj, y";
+    compareFinite(dref1, derivative(value(y)), "fwdd_adj, dx1");
+    compareFinite(dref2, derivative(derivative(x1)), "fwdd_adj, dx2");
+}
+
+template <class F>
+inline void mathTest_fwdd_adjd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::ARealDirect<xad::FRealDirect<double> > AD;
+    xad::Tape<xad::FRealDirect<double> > so;
+
+    AD x1(x);
+    derivative(value(x1)) = 1.0;
+    so.registerInput(x1.base());
+    so.newRecording();
+    AD y = func(x1.base());
+    so.registerOutput(y.base());
+    value(derivative(y)) = 1.0;
+    so.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "fwdd_adj, y";
+    compareFinite(dref1, derivative(value(y)), "fwdd_adj, dx1");
+    compareFinite(dref2, derivative(derivative(x1)), "fwdd_adj, dx2");
 }
 
 template <class F>
@@ -165,14 +480,137 @@ inline void mathTest_adj_fwd(double x, double yref, double dref1, double dref2, 
 }
 
 template <class F>
+inline void mathTest_adj_fwd_vec(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::FReal<xad::AReal<double, 2> > AD;
+    xad::Tape<double, 2> si;
+
+    AD x1(x);
+    derivative(x1) = 1.0;
+    si.registerInput(value(x1));
+    si.registerInput(derivative(x1));
+    si.newRecording();
+
+    AD y = func(x1);
+    auto yv = derivative(y);
+    si.registerOutput(yv);
+    derivative(yv) = {1.0, 0.1};
+    si.printStatus();
+    si.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "adj_fwd, y";
+    compareFinite(dref1, value(yv), "adj_fwd, dx1");
+    compareFinite(dref2, derivative(value(x1))[0], "adj_fwd, dx2");
+    compareFinite(dref2, derivative(value(x1))[1]*10.0, "adj_fwd, dx2");
+}
+
+template <class F>
+inline void mathTest_adjd_fwd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::FReal<xad::ARealDirect<double> > AD;
+    xad::Tape<double> si;
+
+    AD x1(x);
+    derivative(x1) = 1.0;
+    si.registerInput(value(x1).base());
+    si.registerInput(derivative(x1).base());
+    si.newRecording();
+
+    AD y = func(x1);
+    auto yv = derivative(y);
+    si.registerOutput(yv.base());
+    derivative(yv) = 1.0;
+    si.printStatus();
+    si.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "adj_fwd, y";
+    compareFinite(dref1, value(yv), "adj_fwd, dx1");
+    compareFinite(dref2, derivative(value(x1)), "adj_fwd, dx2");
+}
+
+template <class F>
+inline void mathTest_adjd_fwdd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::FRealDirect<xad::ARealDirect<double> > AD;
+    xad::Tape<double> si;
+
+    AD x1(x);
+    derivative(x1) = 1.0;
+    si.registerInput(value(x1).base());
+    si.registerInput(derivative(x1).base());
+    si.newRecording();
+
+    AD y = func(x1.base());
+    auto yv = derivative(y);
+    si.registerOutput(yv.base());
+    derivative(yv) = 1.0;
+    si.printStatus();
+    si.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "adj_fwd, y";
+    compareFinite(dref1, value(yv), "adj_fwd, dx1");
+    compareFinite(dref2, derivative(value(x1)), "adj_fwd, dx2");
+}
+
+template <class F>
+inline void mathTest_adj_fwdd(double x, double yref, double dref1, double dref2, F func)
+{
+    typedef xad::FRealDirect<xad::AReal<double> > AD;
+    xad::Tape<double> si;
+
+    AD x1(x);
+    derivative(x1) = 1.0;
+    si.registerInput(value(x1));
+    si.registerInput(derivative(x1));
+    si.newRecording();
+
+    AD y = func(x1.base());
+    auto yv = derivative(y);
+    si.registerOutput(yv);
+    derivative(yv) = 1.0;
+    si.printStatus();
+    si.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y))) << "adj_fwd, y";
+    compareFinite(dref1, value(yv), "adj_fwd, dx1");
+    compareFinite(dref2, derivative(value(x1)), "adj_fwd, dx2");
+}
+
+template <class F>
 inline void mathTest_all_aad(double x, double yref, double dref, double dref2, F func)
 {
     mathTest_adj(x, yref, dref, func);
     mathTest_fwd(x, yref, dref, func);
+    mathTest_adjd(x, yref, dref, func);
+    mathTest_fwdd(x, yref, dref, func);
+    
     mathTest_fwd_fwd(x, yref, dref, dref2, func);
     mathTest_fwd_adj(x, yref, dref, dref2, func);
     mathTest_adj_fwd(x, yref, dref, dref2, func);
     mathTest_adj_adj(x, yref, dref, dref2, func);
+    
+    mathTest_fwd_fwdd(x, yref, dref, dref2, func);
+    mathTest_adj_fwdd(x, yref, dref, dref2, func);
+    
+    mathTest_fwd_adjd(x, yref, dref, dref2, func);
+    mathTest_adj_adjd(x, yref, dref, dref2, func);
+    
+    mathTest_fwdd_adj(x, yref, dref, dref2, func);
+    mathTest_fwdd_fwd(x, yref, dref, dref2, func);
+    mathTest_fwdd_fwdd(x, yref, dref, dref2, func);
+    
+    mathTest_adjd_fwd(x, yref, dref, dref2, func);
+    mathTest_adjd_adj(x, yref, dref, dref2, func);
+    mathTest_adjd_adjd(x, yref, dref, dref2, func);
+    
+    mathTest_adjd_fwdd(x, yref, dref, dref2, func);
+    mathTest_fwdd_adjd(x, yref, dref, dref2, func);
+    
+    mathTest_adj_vec(x, yref, dref, func);
+    mathTest_adj_fwd_vec(x, yref, dref, dref2, func);
+    mathTest_fwd_adj_vec(x, yref, dref, dref2, func);
+    mathTest_fwd2_adj4_vec(x, yref, dref, dref2, func);
+    mathTest_adj_adj_vec(x, yref, dref, dref2, func);
 }
 
 template <class F>
@@ -203,7 +641,7 @@ inline void mathTest2_adj(double x1, double x2, double yref, double d1ref, doubl
     EXPECT_EQ(3U, s.getNumVariables());
     y.setAdjoint(1.0);
     s.computeAdjoints();
-    EXPECT_DOUBLE_EQ(yref, y.getValue()) << "adj, dy";
+    EXPECT_DOUBLE_EQ(yref, y.value()) << "adj, dy";
     compareFinite(d1ref, derivative(ax1), "adj, dx1");
     compareFinite(d2ref, derivative(ax2), "adj, dx2");
 }
@@ -219,8 +657,25 @@ inline void mathTest2_fwd(double x1, double x2, double yref, double d1ref, doubl
     derivative(ax2) = 1.0;
     xad::FAD y2 = func(ax1, ax2);
 
-    EXPECT_DOUBLE_EQ(yref, y1.getValue()) << "fwd, dy(1)";
-    EXPECT_DOUBLE_EQ(yref, y2.getValue()) << "fwd, dy(2)";
+    EXPECT_DOUBLE_EQ(yref, y1.value()) << "fwd, dy(1)";
+    EXPECT_DOUBLE_EQ(yref, y2.value()) << "fwd, dy(2)";
+    compareFinite(d1ref, derivative(y1), "fwd, dx1");
+    compareFinite(d2ref, derivative(y2), "fwd, dx2");
+}
+
+template <class F>
+inline void mathTest2_fwdd(double x1, double x2, double yref, double d1ref, double d2ref, F func)
+{
+    xad::FDD ax1 = x1;
+    xad::FDD ax2 = x2;
+    derivative(ax1) = 1.0;
+    xad::FDD y1 = func(ax1.base(), ax2.base());
+    derivative(ax1) = 0.0;
+    derivative(ax2) = 1.0;
+    xad::FDD y2 = func(ax1.base(), ax2.base());
+
+    EXPECT_DOUBLE_EQ(yref, y1.value()) << "fwd, dy(1)";
+    EXPECT_DOUBLE_EQ(yref, y2.value()) << "fwd, dy(2)";
     compareFinite(d1ref, derivative(y1), "fwd, dx1");
     compareFinite(d2ref, derivative(y2), "fwd, dx2");
 }
@@ -253,6 +708,50 @@ inline void mathTest2_fwd_fwd(double x1, double x2, double yref, double d1ref, d
     derivative(value(ax2)) = 1.0;
     value(derivative(ax2)) = 0.0;
     AD y4 = func(ax1, ax2);
+
+    EXPECT_DOUBLE_EQ(yref, value(value(y1))) << "fwd_fwd, dy(1)";
+    EXPECT_DOUBLE_EQ(yref, value(value(y2))) << "fwd_fwd, dy(2)";
+    EXPECT_DOUBLE_EQ(yref, value(value(y3))) << "fwd_fwd, dy(3)";
+    EXPECT_DOUBLE_EQ(yref, value(value(y4))) << "fwd_fwd, dy(4)";
+    compareFinite(d1ref, derivative(value(y1)), "fwd_fwd, dx1(1)");
+    compareFinite(d1ref, derivative(value(y3)), "fwd_fwd, dx1(2)");
+    compareFinite(d2ref, derivative(value(y2)), "fwd_fwd, dx2(1)");
+    compareFinite(d2ref, derivative(value(y4)), "fwd_fwd, dx2(2)");
+
+    compareFinite(d11ref, derivative(derivative(y1)), "fwd_fwd, d2x1");
+    compareFinite(d22ref, derivative(derivative(y2)), "fwd_fwd, d2x2");
+    compareFinite(d12ref, derivative(derivative(y3)), "fwd_fwd, dx1dx2");
+    compareFinite(d21ref, derivative(derivative(y4)), "fwd_fwd, dx2dx1");
+}
+
+template <class F>
+inline void mathTest2_fwd_fwdd(double x1, double x2, double yref, double d1ref, double d2ref,
+                               double d11ref, double d12ref, double d21ref, double d22ref, F func)
+{
+    typedef xad::FRealDirect<xad::FReal<double> > AD;
+    AD ax1(x1);
+    AD ax2(x2);
+    derivative(value(ax1)) = 1.0;
+    value(derivative(ax1)) = 1.0;
+    AD y1 = func(ax1.base(), ax2.base());
+
+    derivative(value(ax1)) = 0.0;
+    value(derivative(ax1)) = 0.0;
+    derivative(value(ax2)) = 1.0;
+    value(derivative(ax2)) = 1.0;
+    AD y2 = func(ax1.base(), ax2.base());
+
+    derivative(value(ax1)) = 1.0;
+    value(derivative(ax1)) = 0.0;
+    derivative(value(ax2)) = 0.0;
+    value(derivative(ax2)) = 1.0;
+    AD y3 = func(ax1.base(), ax2.base());
+
+    derivative(value(ax1)) = 0.0;
+    value(derivative(ax1)) = 1.0;
+    derivative(value(ax2)) = 1.0;
+    value(derivative(ax2)) = 0.0;
+    AD y4 = func(ax1.base(), ax2.base());
 
     EXPECT_DOUBLE_EQ(yref, value(value(y1))) << "fwd_fwd, dy(1)";
     EXPECT_DOUBLE_EQ(yref, value(value(y2))) << "fwd_fwd, dy(2)";
@@ -397,6 +896,67 @@ inline void mathTest2_adj_fwd(double x1, double x2, double yref, double d1ref, d
 }
 
 template <class F>
+inline void mathTest2_adj_fwdd(double x1, double x2, double yref, double d1ref, double d2ref,
+                               double d11ref, double d12ref, double d21ref, double d22ref, F func)
+{
+    typedef xad::FRealDirect<xad::AReal<double> > AD;
+    xad::Tape<double> si;
+
+    AD ax1(x1);
+    AD ax2(x2);
+    value(derivative(ax1)) = 1.0;
+    si.registerInput(value(ax1));
+    si.registerInput(derivative(ax1));
+    si.registerInput(value(ax2));
+    si.registerInput(derivative(ax2));
+    si.newRecording();
+    AD y1 = func(ax1.base(), ax2.base());
+    si.registerOutput(derivative(y1));
+    si.registerOutput(value(y1));
+    derivative(derivative(y1)) = 1.0;
+    si.computeAdjoints();
+
+    double r_y1 = value(value(y1));
+    double d1 = derivative(derivative(ax1));
+    double d11 = derivative(value(ax1));
+    double d12 = derivative(value(ax2));
+    double d2 = derivative(derivative(ax2));
+
+    // si.printStatus();
+    // std::cout << value(derivative(y1)) << "\n";
+    // std::cout << derivative(derivative(ax1)) << "\n";
+    // std::cout << derivative(derivative(ax2)) << "\n";
+    // std::cout << derivative(derivative(ax1)) << "\n";
+    // std::cout << derivative(derivative(ax2)) << "\n";
+
+    value(derivative(ax1)) = 0.0;
+    value(derivative(ax2)) = 1.0;
+    si.newRecording();
+    AD y2 = func(ax1.base(), ax2.base());
+    si.registerOutput(derivative(y2));
+    si.registerOutput(value(y2));
+    derivative(derivative(y2)) = 1.0;
+    si.computeAdjoints();
+
+    double r_y2 = value(value(y2));
+    double d2_test = derivative(derivative(ax2));
+    double d21 = derivative(value(ax1));
+    double d22 = derivative(value(ax2));
+    double d1_test = derivative(derivative(ax1));
+
+    EXPECT_DOUBLE_EQ(r_y1, yref) << "adj_fwd, y(1)";
+    EXPECT_DOUBLE_EQ(r_y2, yref) << "adj_fwd, y(2)";
+    compareFinite(d1ref, d1, "adj_fwd, dx1");
+    compareFinite(d2ref, d2, "adj_fwd, dx2");
+    compareFinite(d11ref, d11, "adj_fwd, d2x1");
+    compareFinite(d12ref, d12, "adj_fwd, dx1dx2");
+    compareFinite(d21ref, d21, "adj_fwd, dx2dx1");
+    compareFinite(d22ref, d22, "adj_fwd, d2x2");
+    compareFinite(d1, d1_test, "adj_fwd, dx1_t");
+    compareFinite(d2, d2_test, "adj_fwd, dx2_t");
+}
+
+template <class F>
 inline void mathTest2_adj_adj(double x1, double x2, double yref, double d1ref, double d2ref,
                               double d11ref, double d12ref, double d21ref, double d22ref, F func)
 {
@@ -456,6 +1016,10 @@ inline void mathTest2_all_aad(double x1, double x2, double yref, double d1ref, d
     mathTest2_fwd_adj(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
     mathTest2_adj_fwd(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
     mathTest2_adj_adj(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
+
+    mathTest2_fwdd(x1, x2, yref, d1ref, d2ref, func);
+    mathTest2_fwd_fwdd(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
+    mathTest2_adj_fwdd(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
 }
 
 template <class F>

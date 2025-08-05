@@ -24,6 +24,9 @@
 
 #pragma once
 
+#include <XAD/Vec.hpp>
+#include <type_traits>
+
 namespace xad
 {
 
@@ -43,6 +46,7 @@ struct ExprTraits
     static const bool isReverse = false;
     static const bool isLiteral = false;
     static const Direction direction = Direction::DIR_NONE;
+    static const std::size_t vector_size = 1;
 
     typedef T nested_type;
     typedef T value_type;
@@ -70,4 +74,30 @@ struct OperatorTraits
         useResultBasedDerivatives = 0
     };
 };
+
+template <class T>
+struct float_or_double : public std::false_type
+{
+};
+template <>
+struct float_or_double<float> : public std::true_type
+{
+};
+template <>
+struct float_or_double<double> : public std::true_type
+{
+};
+
+template <class T, std::size_t N>
+struct DerivativesTraits
+{
+    using type = Vec<T, N>;
+};
+
+template <class T>
+struct DerivativesTraits<T, 1>
+{
+    using type = T;
+};
+
 }  // namespace xad

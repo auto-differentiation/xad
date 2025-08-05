@@ -1,9 +1,11 @@
 /*******************************************************************************
 
    Computes
-     y = f(x0, x1, x2, x3)
+     y1, y2 = f(x0, x1, x2, x3)
    and its first order derivatives
-     dy/dx0, dy/dx1, dy/dx2, dy/dx3
+     dy1/dx0, dy1/dx1, dy1/dx2, dy1/dx3
+   as well as
+     dy2/dx0, dy2/dx1, dy2/dx2, dy2/dx3
    using adjoint mode.
 
 
@@ -41,11 +43,10 @@ int main()
     double x2 = 1.3;
     double x3 = 1.2;
 
-    // tape and active data type for 1st order adjoint computation
-    typedef xad::adj<double> mode;
-
+    // tape and active data type for 1st order adjoint computation with 2-vector mode
+    typedef xad::adj<double, 2> mode;
     // Uncomment the following to disable expression templates for debugging
-    // typedef xad::adjd<double> mode;
+    // typedef xad::adjd<double, 2> mode;
     typedef mode::tape_type tape_type;
     typedef mode::active_type AD;
 
@@ -67,20 +68,29 @@ int main()
     // start recording derivatives
     tape.newRecording();
 
-    AD y = f(x0_ad, x1_ad, x2_ad, x3_ad);
+    std::pair<AD, AD> y = f2(x0_ad, x1_ad, x2_ad, x3_ad);
 
     // register and seed adjoint of output
-    tape.registerOutput(y);
-    derivative(y) = 1.0;
+    tape.registerOutput(y.first);
+    tape.registerOutput(y.second);
+
+    y.first.setAdjoint({1.0, 0.0});
+    y.second.setAdjoint({0.0, 1.0});
 
     // compute all other adjoints
     tape.computeAdjoints();
 
-    // output results
-    std::cout << "y = " << value(y) << "\n"
-              << "\nfirst order derivatives:\n"
-              << "dy/dx0 = " << derivative(x0_ad) << "\n"
-              << "dy/dx1 = " << derivative(x1_ad) << "\n"
-              << "dy/dx2 = " << derivative(x2_ad) << "\n"
-              << "dy/dx3 = " << derivative(x3_ad) << "\n";
+    // output resultsl
+    std::cout << "y1 = " << value(y.first) << "\n"
+              << "y2 = " << value(y.second) << "\n"
+              << "\nfirst order derivatives of y1:\n"
+              << "dy1/dx0 = " << x0_ad.getAdjoint()[0] << "\n"
+              << "dy1/dx1 = " << x1_ad.getAdjoint()[0] << "\n"
+              << "dy1/dx2 = " << x2_ad.getAdjoint()[0] << "\n"
+              << "dy1/dx3 = " << x3_ad.getAdjoint()[0] << "\n"
+              << "\nfirst order derivatives of y2:\n"
+              << "dy2/dx0 = " << x0_ad.getAdjoint()[1] << "\n"
+              << "dy2/dx1 = " << x1_ad.getAdjoint()[1] << "\n"
+              << "dy2/dx2 = " << x2_ad.getAdjoint()[1] << "\n"
+              << "dy2/dx3 = " << x3_ad.getAdjoint()[1] << "\n";
 }

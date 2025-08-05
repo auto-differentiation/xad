@@ -38,7 +38,8 @@
 namespace xad
 {
 
-template <class T, std::size_t ChunkSize = 1024U * 1024U * 8U, class AllocHelper = detail::AlignedAllocator>
+template <class T, std::size_t ChunkSize = 1024U * 1024U * 8U,
+          class AllocHelper = detail::AlignedAllocator>
 class ChunkContainer
 {
   public:
@@ -59,13 +60,16 @@ class ChunkContainer
     }
 
     ChunkContainer(ChunkContainer&& o) noexcept
-        : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_) {
+        : chunkList_(std::move(o.chunkList_)), chunk_(o.chunk_), idx_(o.idx_)
+    {
         o.chunk_ = 0;
         o.idx_ = 0;
     }
 
-    ChunkContainer& operator=(ChunkContainer&& o) noexcept {
-        if (this != &o) {
+    ChunkContainer& operator=(ChunkContainer&& o) noexcept
+    {
+        if (this != &o)
+        {
             _free_memory();
             chunkList_ = std::move(o.chunkList_);
             chunk_ = o.chunk_;
@@ -375,7 +379,8 @@ class ChunkContainer
         {
             char* chunk = reinterpret_cast<char*>(
                 AllocHelper::aligned_alloc(ALIGNMENT, sizeof(value_type) * chunk_size));
-            if (chunk == nullptr) {
+            if (chunk == nullptr)
+            {
                 throw std::bad_alloc();
             }
             chunkList_.push_back(chunk);

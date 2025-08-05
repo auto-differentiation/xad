@@ -22,7 +22,8 @@
 #
 ##############################################################################
 
-set(testfiles
+set(testfiles 
+    Vec_test.cpp
     TapeContainer_test.cpp
     ChunkContainer_test.cpp
     TestHelpers.hpp
@@ -48,6 +49,10 @@ set(testfiles
     Jacobian_test.cpp
     TypeTraits_test.cpp
     OperationsContainer_test.cpp
+    FRealDirect_test.cpp
+    FReal_test.cpp
+    ARealDirect_test.cpp
+    DirectModeBenchmark.cpp
 )
 
 if (XAD_ENABLE_EIGEN_TESTS)

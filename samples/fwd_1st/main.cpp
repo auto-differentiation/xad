@@ -45,8 +45,10 @@ int main()
     // tape and active data type for 1st order forward (tangent-linear)
     // computation
     typedef xad::fwd<double> mode;
-    typedef mode::active_type AD;
 
+    // Uncomment the following to disable expression templates for debugging
+    // typedef xad::fwdd<double> mode;
+    typedef mode::active_type AD;
     // set independent variables
     AD x0_ad = x0;
     AD x1_ad = x1;

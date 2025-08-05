@@ -27,6 +27,8 @@
 #include <gtest/gtest.h>
 #include <numeric>
 
+#include "COSHestonEngineExpr.hpp"
+
 using namespace ::testing;
 
 TEST(Expressions, basic)
@@ -1587,102 +1589,6 @@ TEST(Expressions, canDeriveLongExpressionFromLambdaReturnForward)
 
 // this is an insanely long expression taken from QuantLib's COSHestonEngine,
 // where a bug was detected with XAD in Ubuntu Groovy
-template <class T>
-struct TestHeston
-{
-    T kappa_;
-    T rho_;
-    T theta_;
-    T sigma_;
-    T v0_;
-    TestHeston() : kappa_(.4), rho_(.8), theta_(1.2), sigma_(.8), v0_(12.) {}
-
-    T c4(T t) const
-    {
-        const T sigma2 = sigma_ * sigma_;
-        const T sigma3 = sigma2 * sigma_;
-        const T sigma4 = sigma2 * sigma2;
-        const T kappa2 = kappa_ * kappa_;
-        const T kappa3 = kappa2 * kappa_;
-        const T kappa4 = kappa2 * kappa2;
-        const T kappa5 = kappa2 * kappa3;
-        const T kappa6 = kappa3 * kappa3;
-        const T kappa7 = kappa4 * kappa3;
-        const T rho2 = rho_ * rho_;
-        const T rho3 = rho2 * rho_;
-        const T t2 = t * t;
-        const T t3 = t2 * t;
-
-        return (sigma2 *
-                (3 * sigma4 * (theta_ - 4 * v0_) +
-                 3 * exp(4 * kappa_ * t) *
-                     ((-93 * sigma4 + 64 * kappa5 * (t + 4 * rho2 * t) +
-                       4 * kappa_ * sigma3 * (176 * rho_ + 5 * sigma_ * t) -
-                       32 * kappa2 * sigma2 * (11 + 50 * rho2 + 5 * rho_ * sigma_ * t) +
-                       32 * kappa3 * sigma_ *
-                           (3 * sigma_ * t + 4 * rho_ * (10 + 8 * rho2 + 3 * rho_ * sigma_ * t)) -
-                       32 * kappa4 * (5 + 4 * rho_ * (6 * rho_ + (3 + 2 * rho2) * sigma_ * t))) *
-                          theta_ +
-                      4 * (4 * kappa2 - 4 * kappa_ * rho_ * sigma_ + sigma2) *
-                          (4 * kappa2 * (1 + 4 * rho2) - 20 * kappa_ * rho_ * sigma_ + 5 * sigma2) *
-                          v0_) +
-                 24 * exp(kappa_ * t) * sigma2 *
-                     (-2 * kappa2 * (-1 + rho_ * sigma_ * t) * (theta_ - 3 * v0_) +
-                      sigma2 * (theta_ - 2 * v0_) +
-                      kappa_ * sigma_ *
-                          (-4 * rho_ * theta_ + sigma_ * t * theta_ + 10 * rho_ * v0_ -
-                           3 * sigma_ * t * v0_)) +
-                 12 * exp(2 * kappa_ * t) *
-                     (sigma4 * (7 * theta_ - 4 * v0_) +
-                      8 * kappa4 * (1 + 2 * rho_ * sigma_ * t * (-2 + rho_ * sigma_ * t)) *
-                          (theta_ - 2 * v0_) +
-                      2 * kappa_ * sigma3 *
-                          (-24 * rho_ * theta_ + 5 * sigma_ * t * theta_ + 20 * rho_ * v0_ -
-                           6 * sigma_ * t * v0_) +
-                      4 * kappa2 * sigma2 *
-                          ((6 + 20 * rho2 - 14 * rho_ * sigma_ * t + sigma2 * t2) * theta_ -
-                           2 * (3 + 12 * rho2 - 10 * rho_ * sigma_ * t + sigma2 * t2) * v0_) +
-                      8 * kappa3 * sigma_ *
-                          ((3 * sigma_ * t +
-                            2 * rho_ * (-4 + sigma_ * t * (4 * rho_ - sigma_ * t))) *
-                               theta_ +
-                           2 *
-                               (-3 * sigma_ * t +
-                                2 * rho_ * (3 + sigma_ * t * (-3 * rho_ + sigma_ * t))) *
-                               v0_)) -
-                 8 * exp(3 * kappa_ * t) *
-                     (16 * kappa6 * rho2 * t2 * (-3 + rho_ * sigma_ * t) * (theta_ - v0_) -
-                      3 * sigma4 * (7 * theta_ + 2 * v0_) +
-                      2 * kappa3 * sigma_ *
-                          ((192 * (rho_ + rho3) - 6 * (9 + 40 * rho2) * sigma_ * t +
-                            42 * rho_ * sigma2 * t2 - sigma3 * t3) *
-                               theta_ +
-                           (-48 * rho3 + 18 * (1 + 4 * rho2) * sigma_ * t -
-                            24 * rho_ * sigma2 * t2 + sigma3 * t3) *
-                               v0_) +
-                      12 * kappa4 *
-                          ((-4 - 24 * rho2 + 8 * rho_ * (4 + 3 * rho2) * sigma_ * t -
-                            (3 + 14 * rho2) * sigma2 * t2 + rho_ * sigma3 * t3) *
-                               theta_ +
-                           (8 * rho2 - 8 * rho_ * (2 + rho2) * sigma_ * t +
-                            (3 + 8 * rho2) * sigma2 * t2 - rho_ * sigma3 * t3) *
-                               v0_) -
-                      6 * kappa2 * sigma2 *
-                          ((15 + 80 * rho2 - 35 * rho_ * sigma_ * t + 2 * sigma2 * t2) * theta_ +
-                           (3 + sigma_ * t * (7 * rho_ - sigma_ * t)) * v0_) +
-                      24 * kappa5 * t *
-                          ((-2 + rho_ * (4 * sigma_ * t +
-                                         rho_ * (-8 + sigma_ * t * (4 * rho_ - sigma_ * t)))) *
-                               theta_ +
-                           (2 + rho_ * (-4 * sigma_ * t +
-                                        rho_ * (4 + sigma_ * t * (-2 * rho_ + sigma_ * t)))) *
-                               v0_) +
-                      3 * kappa_ * sigma3 *
-                          (sigma_ * t * (-9 * theta_ + v0_) + 10 * rho_ * (6 * theta_ + v0_))))) /
-               (64. * exp(4 * kappa_ * t) * kappa7);
-    }
-};
-
 
 #if !defined(_MSC_VER) || (_MSC_VER > 1920)
 // only build this with Visual Studio newer than 2017, as older versions struggle
@@ -1736,8 +1642,8 @@ TEST(Expressions, canEvaluateLongExpressionsLikeHestonForward)
 
 namespace
 {
-template <class Scalar>
-inline xad::AReal<Scalar> calc(xad::AReal<Scalar> a, xad::AReal<Scalar> b)
+template <class Scalar, std::size_t M = 1>
+inline xad::AReal<Scalar, M> calc(xad::AReal<Scalar, M> a, xad::AReal<Scalar, M> b)
 {
     return a * b;
 }
@@ -1876,6 +1782,56 @@ TEST(Expressions, FmaFunctionTestWithAReal)
     EXPECT_THAT(derivative(a), DoubleEq(value(b)));
     EXPECT_THAT(derivative(b), DoubleEq(value(a)));
     EXPECT_THAT(derivative(c), DoubleEq(1.0));
+}
+
+TEST(Expressions, FmaFunctionTestWithARealDirect)
+{
+    xad::Tape<double> tape;
+    xad::AReal<double> a = 1, b = 2, c = 3;
+    tape.registerInput(a);
+    tape.registerInput(b);
+    tape.registerInput(c);
+    tape.newRecording();
+    xad::AReal<double> y = fma(a, b, c);
+    tape.registerOutput(y);
+    derivative(y) = 1.0;
+    tape.computeAdjoints();
+    EXPECT_THAT(derivative(a), DoubleEq(value(b)));
+    EXPECT_THAT(derivative(b), DoubleEq(value(a)));
+    EXPECT_THAT(derivative(c), DoubleEq(1.0));
+}
+
+TEST(Expressions, FmaFunctionTestWithFRealDirect)
+{
+    xad::FRealDirect<double> a(1, 1), b(2, 2), c(3, 3), d(1, 1), f(1, 1), r(1, 1);
+    f = fma(a, r, b);
+    xad::FRealDirect<double> s = a * r + b;
+    EXPECT_THAT(value(f), value(s));
+    EXPECT_THAT(derivative(f), derivative(s));
+    f = fma(f, r, c);
+    s = s * r + c;
+    EXPECT_THAT(value(f), value(s));
+    EXPECT_THAT(derivative(f), derivative(s));
+    f = fma(f, r, d);
+    s = s * r + d;
+    EXPECT_THAT(value(f), value(s));
+    EXPECT_THAT(derivative(f), derivative(s));
+    xad::FRealDirect<double> df = fma(3 * a, r, 2 * b);
+    s = ((3 * a) * r + (2 * b));
+    EXPECT_THAT(value(df), value(s));
+    EXPECT_THAT(derivative(df), derivative(s));
+    auto df2 = fma(3 * a, r * 3, b);
+    auto df3 = fma(3., r * 3., 2 * b);
+    df = fma(df, df2, df3);
+    auto df4 = fma(a, r * 3, b);
+    auto df5 = fma(a, r, 2 * b);
+    auto df6 = fma(a * 2, r, b);
+    auto df7 = fma(df4, df5, df6);
+    auto df8 = fma(a * 2, r * 2, b * 2);
+    df = fma(df8, df7, df6);
+    s = df8 * df7 + df6;
+    EXPECT_THAT(value(df), value(s));
+    EXPECT_THAT(derivative(df), derivative(s));
 }
 
 TEST(Expressions, FmaFunctionTestWithFwd_Adj)

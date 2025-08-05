@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <XAD/TypeTraits.hpp>
+#include <XAD/XAD.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -57,4 +58,13 @@ TEST(TypeTraits, HasBeginNonIterable)
 {
     using It = size_t;
     EXPECT_FALSE(xad::detail::has_begin<It>::value);
+}
+TEST(Traits, test_ARealtypes )
+{
+    static_assert(std::is_same<xad::DerivativesTraits<xad::AReal<double, 2>, 1>::type,
+                               xad::AReal<double, 2>>::value,
+                  "expected trades");
+    static_assert(std::is_same<xad::Tape<xad::AReal<double, 2>, 1>::derivative_type,
+                               xad::AReal<double, 2>>::value,
+                  "expected type mismatch");
 }

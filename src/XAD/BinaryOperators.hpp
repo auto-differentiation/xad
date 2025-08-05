@@ -31,6 +31,10 @@
 #include <XAD/BinaryOperatorMacros.hpp>
 #include <XAD/Macros.hpp>
 
+// needed here as these are not expressions and we need to specialise
+#include <XAD/ARealDirect.hpp>
+#include <XAD/FRealDirect.hpp>
+
 namespace xad
 {
 
@@ -51,8 +55,8 @@ XAD_BINARY_OPERATOR(nextafter, nextafter_op)
 
 // note - this is C++11 only
 template <class T1, class T2, class T3>
-XAD_INLINE auto smooth_max(const T1& x, const T2& y, const T3& c)
-    -> decltype(0.5 * (x + y + smooth_abs(x - y, c)))
+XAD_INLINE auto smooth_max(const T1& x, const T2& y,
+                           const T3& c) -> decltype(0.5 * (x + y + smooth_abs(x - y, c)))
 {
     return 0.5 * (x + y + smooth_abs(x - y, c));
 }
@@ -62,8 +66,8 @@ XAD_INLINE auto smooth_max(const T1& x, const T2& y) -> decltype(0.5 * (x + y + 
     return 0.5 * (x + y + smooth_abs(x - y));
 }
 template <class T1, class T2, class T3>
-XAD_INLINE auto smooth_min(const T1& x, const T2& y, const T3& c)
-    -> decltype(0.5 * (x + y - smooth_abs(x - y, c)))
+XAD_INLINE auto smooth_min(const T1& x, const T2& y,
+                           const T3& c) -> decltype(0.5 * (x + y - smooth_abs(x - y, c)))
 {
     return 0.5 * (x + y - smooth_abs(x - y, c));
 }
@@ -91,42 +95,98 @@ XAD_INLINE auto fma(const T1& a, const T2& b, const T3& c) -> decltype(a * b + c
 /////////// comparisons - they just return bool
 
 #define XAD_COMPARE_OPERATOR(op)                                                                   \
-    template <class Scalar, class Expr1, class Expr2>                                              \
-    XAD_INLINE bool operator op(const Expression<Scalar, Expr1>& a,                                \
-                                const Expression<Scalar, Expr2>& b)                                \
+    template <class Scalar, class Expr1, class Expr2, class DerivativeType>                        \
+    XAD_INLINE bool operator op(const Expression<Scalar, Expr1, DerivativeType>& a,                \
+                                const Expression<Scalar, Expr2, DerivativeType>& b)                \
     {                                                                                              \
         return value(a) op value(b);                                                               \
     }                                                                                              \
-    template <class Scalar, class Expr>                                                            \
+    template <class Scalar, class Expr, class DerivativeType>                                      \
     XAD_INLINE bool operator op(const typename ExprTraits<Expr>::value_type& a,                    \
-                                const Expression<Scalar, Expr>& b)                                 \
+                                const Expression<Scalar, Expr, DerivativeType>& b)                 \
     {                                                                                              \
         return value(a) op value(b);                                                               \
     }                                                                                              \
-    template <class Scalar, class Expr>                                                            \
-    XAD_INLINE bool operator op(const Expression<Scalar, Expr>& a,                                 \
+    template <class Scalar, class Expr, class DerivativeType>                                      \
+    XAD_INLINE bool operator op(const Expression<Scalar, Expr, DerivativeType>& a,                 \
                                 const typename ExprTraits<Expr>::value_type& b)                    \
     {                                                                                              \
         return value(a) op value(b);                                                               \
     }                                                                                              \
-    template <class Scalar>                                                                        \
-    XAD_INLINE bool operator op(const AReal<Scalar>& a, const AReal<Scalar>& b)                    \
+    template <class Scalar, std::size_t M = 1>                                                     \
+    XAD_INLINE bool operator op(const AReal<Scalar, M>& a, const AReal<Scalar, M>& b)              \
     {                                                                                              \
         return value(a) op value(b);                                                               \
     }                                                                                              \
-    template <class Scalar>                                                                        \
-    XAD_INLINE bool operator op(const FReal<Scalar>& a, const FReal<Scalar>& b)                    \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE bool operator op(const FReal<Scalar, N>& a, const FReal<Scalar, N>& b)              \
     {                                                                                              \
         return value(a) op value(b);                                                               \
     }                                                                                              \
-    template <class Scalar, class Expr>                                                            \
-    XAD_INLINE bool operator op(typename ExprTraits<Expr>::nested_type a,                          \
-                                const Expression<Scalar, Expr>& b)                                 \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE bool operator op(const FRealDirect<Scalar, N>& a, const FRealDirect<Scalar, N>& b)  \
+    {                                                                                              \
+        return value(a) op value(b);                                                               \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE bool operator op(const Scalar& a, const FRealDirect<Scalar, N>& b)                  \
     {                                                                                              \
         return a op value(b);                                                                      \
     }                                                                                              \
-    template <class Scalar, class Expr>                                                            \
-    XAD_INLINE bool operator op(const Expression<Scalar, Expr>& a,                                 \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE bool operator op(const FRealDirect<Scalar, N>& a, const Scalar& b)                  \
+    {                                                                                              \
+        return value(a) op b;                                                                      \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE bool operator op(const ARealDirect<Scalar, N>& a, const ARealDirect<Scalar, N>& b)  \
+    {                                                                                              \
+        return value(a) op value(b);                                                               \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE bool operator op(const Scalar& a, const ARealDirect<Scalar, N>& b)                  \
+    {                                                                                              \
+        return a op value(b);                                                                      \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE bool operator op(const ARealDirect<Scalar, N>& a, const Scalar& b)                  \
+    {                                                                                              \
+        return value(a) op b;                                                                      \
+    }                                                                                              \
+                                                                                                   \
+    template <class Scalar, class Expr, std::size_t N>                                             \
+    XAD_INLINE bool operator op(typename ExprTraits<Scalar>::nested_type a,                        \
+                                const FRealDirect<Scalar, N>& b)                                   \
+    {                                                                                              \
+        return a op value(b);                                                                      \
+    }                                                                                              \
+    template <class Scalar, class Expr, std::size_t N>                                             \
+    XAD_INLINE bool operator op(const FRealDirect<Scalar, N>& a,                                   \
+                                typename ExprTraits<Scalar>::nested_type b)                        \
+    {                                                                                              \
+        return value(a) op b;                                                                      \
+    }                                                                                              \
+    template <class Scalar, class Expr, std::size_t N>                                             \
+    XAD_INLINE bool operator op(typename ExprTraits<Scalar>::nested_type a,                        \
+                                const ARealDirect<Scalar, N>& b)                                   \
+    {                                                                                              \
+        return a op value(b);                                                                      \
+    }                                                                                              \
+    template <class Scalar, class Expr, std::size_t N>                                             \
+    XAD_INLINE bool operator op(const ARealDirect<Scalar, N>& a,                                   \
+                                typename ExprTraits<Scalar>::nested_type b)                        \
+    {                                                                                              \
+        return value(a) op b;                                                                      \
+    }                                                                                              \
+                                                                                                   \
+    template <class Scalar, class Expr, class DerivativeType>                                      \
+    XAD_INLINE bool operator op(typename ExprTraits<Expr>::nested_type a,                          \
+                                const Expression<Scalar, Expr, DerivativeType>& b)                 \
+    {                                                                                              \
+        return a op value(b);                                                                      \
+    }                                                                                              \
+    template <class Scalar, class Expr, class DerivativeType>                                      \
+    XAD_INLINE bool operator op(const Expression<Scalar, Expr, DerivativeType>& a,                 \
                                 typename ExprTraits<Expr>::nested_type b)                          \
     {                                                                                              \
         return value(a) op b;                                                                      \
@@ -150,36 +210,122 @@ XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, Expr1, Expr2> remquo(
                                                                remquo_op<Scalar>(quo));
 }
 
-template <class Scalar>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, ADVar<Scalar>, ADVar<Scalar> > remquo(
-    const AReal<Scalar>& a, const AReal<Scalar>& b, int* quo)
+template <class Scalar, std::size_t M>
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, ADVar<Scalar, M>, ADVar<Scalar, M>> remquo(
+    const AReal<Scalar, M>& a, const AReal<Scalar, M>& b, int* quo)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, ADVar<Scalar>, ADVar<Scalar> >(
-        ADVar<Scalar>(a), ADVar<Scalar>(b), remquo_op<Scalar>(quo));
+    return BinaryExpr<Scalar, remquo_op<Scalar>, ADVar<Scalar, M>, ADVar<Scalar, M>>(
+        ADVar<Scalar, M>(a), ADVar<Scalar, M>(b), remquo_op<Scalar>(quo));
 }
 
-template <class Scalar>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar>, FReal<Scalar> > remquo(
-    const FReal<Scalar>& a, const FReal<Scalar>& b, int* quo)
+template <class Scalar, std::size_t N>
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar, N>, FReal<Scalar, N>> remquo(
+    const FReal<Scalar, N>& a, const FReal<Scalar, N>& b, int* quo)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar>, FReal<Scalar> >(
+    return BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar, N>, FReal<Scalar, N>>(
         a, b, remquo_op<Scalar>(quo));
 }
 
-template <class Scalar, class Expr>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, typename wrapper_type<Scalar, Expr>::type, Expr>
-remquo(const typename ExprTraits<Expr>::value_type& a, const Expression<Scalar, Expr>& b, int* quo)
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::FRealDirect<T, N> remquo(const xad::FRealDirect<T, N>& a,
+                                         const xad::FRealDirect<T, N>& b, int* c)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, typename wrapper_type<Scalar, Expr>::type, Expr>(
-        typename wrapper_type<Scalar, Expr>::type(a), b.derived(), remquo_op<Scalar>(quo));
+    return xad::FReal<T, N>(remquo(a.base(), b.base(), c));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::FRealDirect<T, N> remquo(const xad::FRealDirect<T, N>& a, const T& b, int* c)
+{
+    return xad::FReal<T, N>(remquo(a.base(), b, c));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::FRealDirect<T, N> remquo(const T& a, const xad::FRealDirect<T, N>& b, int* c)
+{
+    return xad::FReal<T, N>(remquo(a, b.base(), c));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::ARealDirect<T, N> remquo(const xad::ARealDirect<T, N>& a,
+                                         const xad::ARealDirect<T, N>& b, int* c)
+{
+    return xad::AReal<T, N>(remquo(a.base(), b.base(), c));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::ARealDirect<T, N> remquo(const xad::ARealDirect<T, N>& a, const T& b, int* c)
+{
+    return xad::AReal<T, N>(remquo(a.base(), b, c));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::ARealDirect<T, N> remquo(const T& a, const xad::ARealDirect<T, N>& b, int* c)
+{
+    return xad::AReal<T, N>(remquo(a, b.base(), c));
 }
 
 template <class Scalar, class Expr>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename wrapper_type<Scalar, Expr>::type>
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, typename ExprTraits<Expr>::value_type, Expr>
+remquo(const typename ExprTraits<Expr>::value_type& a, const Expression<Scalar, Expr>& b, int* quo)
+{
+    return BinaryExpr<Scalar, remquo_op<Scalar>, typename ExprTraits<Expr>::value_type, Expr>(
+        typename ExprTraits<Expr>::value_type(a), b.derived(), remquo_op<Scalar>(quo));
+}
+
+template <class Scalar, class Expr>
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename ExprTraits<Expr>::value_type>
 remquo(const Expression<Scalar, Expr>& a, const typename ExprTraits<Expr>::value_type& b, int* quo)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename wrapper_type<Scalar, Expr>::type>(
-        a.derived(), typename wrapper_type<Scalar, Expr>::type(b), remquo_op<Scalar>(quo));
+    return BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename ExprTraits<Expr>::value_type>(
+        a.derived(), typename ExprTraits<Expr>::value_type(b), remquo_op<Scalar>(quo));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::FRealDirect<T, N> frexp(const xad::FRealDirect<T, N>& a, int* exp)
+{
+    return xad::FReal<T, N>(frexp(a.base(), exp));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::FRealDirect<T, N> ldexp(const xad::FRealDirect<T, N>& a, int b)
+{
+    return xad::FReal<T, N>(ldexp(a.base(), b));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::FRealDirect<T, N> modf(const xad::FRealDirect<T, N>& a, xad::FRealDirect<T, N>* b)
+{
+    return xad::FReal<T, N>(modf(a.base(), &b->base()));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::FRealDirect<T, N> modf(const xad::FRealDirect<T, N>& a, T* b)
+{
+    return xad::FReal<T, N>(modf(a.base(), b));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::ARealDirect<T, N> frexp(const xad::ARealDirect<T, N>& a, int* exp)
+{
+    return xad::AReal<T, N>(frexp(a.base(), exp));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::ARealDirect<T, N> ldexp(const xad::ARealDirect<T, N>& a, int b)
+{
+    return xad::AReal<T, N>(ldexp(a.base(), b));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::ARealDirect<T, N> modf(const xad::ARealDirect<T, N>& a, xad::ARealDirect<T, N>* b)
+{
+    return xad::AReal<T, N>(modf(a.base(), &b->base()));
+}
+
+template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+XAD_INLINE xad::ARealDirect<T, N> modf(const xad::ARealDirect<T, N>& a, T* b)
+{
+    return xad::AReal<T, N>(modf(a.base(), b));
 }
 
 #undef XAD_BINARY_OPERATOR

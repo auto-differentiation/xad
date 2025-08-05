@@ -25,7 +25,7 @@
 #pragma once
 
 #include <cmath>
-
+#include <utility>
 /// Applies the sin function a number of times.
 template <class T>
 void repeated_sin(int n, T& x)
@@ -43,6 +43,16 @@ T f(const T& x0, const T& x1, const T& x2, const T& x3)
     T b = x2 * x3 - tan(x1 - x2);
     T c = a + 2 * b;
     return c * c;
+}
+
+/// Function with 2 outputs to demonstrate vector-mode adjoints
+template <class T>
+std::pair<T, T> f2(const T& x0, const T& x1, const T& x2, const T& x3)
+{
+    T a = sin(x0) * cos(x1);
+    T b = x2 * x3 - tan(x1 - x2);
+    T c = a + 2 * b;
+    return {c * c, 4 * c + b};
 }
 
 /// Sum all elements in an array

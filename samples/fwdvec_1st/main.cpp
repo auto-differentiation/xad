@@ -2,10 +2,11 @@
 
    Computes
      y = f(x0, x1, x2, x3)
-   and its first order derivatives
-     dy/dx0, dy/dx1, dy/dx2, dy/dx3
-   using adjoint mode.
-
+   and it's first order derivative vector w.r.t. x0 x1 x2 x3 using vector-forward mode:
+     dy/dx0
+     dy/dx1
+     dy/dx2
+     dy/dx3
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -41,46 +42,32 @@ int main()
     double x2 = 1.3;
     double x3 = 1.2;
 
-    // tape and active data type for 1st order adjoint computation
-    typedef xad::adj<double> mode;
-
+    // tape and active data type for 1st order forward (tangent-linear)
+    // computation
+    typedef xad::fwd<double, 4> mode;
     // Uncomment the following to disable expression templates for debugging
-    // typedef xad::adjd<double> mode;
-    typedef mode::tape_type tape_type;
+    // typedef xad::fwdd<double, 4> mode;
     typedef mode::active_type AD;
-
-    // initialize tape
-    tape_type tape;
-
     // set independent variables
     AD x0_ad = x0;
     AD x1_ad = x1;
     AD x2_ad = x2;
     AD x3_ad = x3;
 
-    // and register them
-    tape.registerInput(x0_ad);
-    tape.registerInput(x1_ad);
-    tape.registerInput(x2_ad);
-    tape.registerInput(x3_ad);
+    // compute derivative w.r.t. x0 x1 x2 x3
+    derivative(x0_ad) = {1, 0, 0, 0};
+    derivative(x1_ad) = {0, 1, 0, 0};
+    derivative(x2_ad) = {0, 0, 1, 0};
+    derivative(x3_ad) = {0, 0, 0, 1};
 
-    // start recording derivatives
-    tape.newRecording();
-
+    // run the algorithm with active variables
     AD y = f(x0_ad, x1_ad, x2_ad, x3_ad);
-
-    // register and seed adjoint of output
-    tape.registerOutput(y);
-    derivative(y) = 1.0;
-
-    // compute all other adjoints
-    tape.computeAdjoints();
 
     // output results
     std::cout << "y = " << value(y) << "\n"
               << "\nfirst order derivatives:\n"
-              << "dy/dx0 = " << derivative(x0_ad) << "\n"
-              << "dy/dx1 = " << derivative(x1_ad) << "\n"
-              << "dy/dx2 = " << derivative(x2_ad) << "\n"
-              << "dy/dx3 = " << derivative(x3_ad) << "\n";
+              << "dy/dx0 = " << derivative(y)[0] << "\n"
+              << "dy/dx1 = " << derivative(y)[1] << "\n"
+              << "dy/dx2 = " << derivative(y)[2] << "\n"
+              << "dy/dx3 = " << derivative(y)[3] << "\n";
 }

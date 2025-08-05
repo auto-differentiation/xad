@@ -29,6 +29,9 @@
 #include <XAD/Macros.hpp>
 #include <XAD/ReusableRange.hpp>
 #include <XAD/TapeContainer.hpp>
+#include <XAD/Traits.hpp>
+#include <XAD/TypeTraits.hpp>
+#include <XAD/Vec.hpp>
 #include <complex>
 #include <list>
 #include <stack>
@@ -38,10 +41,14 @@
 namespace xad
 {
 
-template <class Scalar>
+template <class Scalar, std::size_t M>
 struct AReal;
-template <class Scalar>
+template <class Scalar, std::size_t N>
+struct ARealDirect;
+template <class Scalar, std::size_t N>
 struct FReal;
+template <class Scalar, std::size_t N>
+struct FRealDirect;
 template <class>
 class CheckpointCallback;
 
@@ -65,7 +72,7 @@ class ScopedNestedRecording
     Tape* s_;
 };
 
-template <class Real>
+template <class Real, std::size_t N = 1>
 class Tape
 {
   public:
@@ -73,10 +80,11 @@ class Tape
     typedef unsigned int size_type;
     typedef unsigned int slot_type;
     typedef slot_type position_type;
-    typedef AReal<Real> active_type;
+    typedef AReal<Real, N> active_type;
     typedef Real value_type;
-    typedef Tape<Real> tape_type;
+    typedef Tape<Real, N> tape_type;
     typedef CheckpointCallback<tape_type>* callback_type;
+    typedef typename DerivativesTraits<Real, N>::type derivative_type;
 
     static constexpr slot_type INVALID_SLOT = slot_type(-1);
 
@@ -175,12 +183,12 @@ class Tape
 
     // derivatives
     void clearDerivatives();
-    Real& derivative(slot_type s);
-    const Real& derivative(slot_type s) const;
+    derivative_type& derivative(slot_type s);
+    const derivative_type& derivative(slot_type s) const;
 
-    Real getDerivative(slot_type s) const { return derivative(s); }
-    void setDerivative(slot_type s, const Real& d) { derivative(s) = d; }
-    void setDerivative(slot_type s, Real&& d) { derivative(s) = std::move(d); }
+    derivative_type getDerivative(slot_type s) const { return derivative(s); }
+    void setDerivative(slot_type s, const derivative_type& d) { derivative(s) = d; }
+    void setDerivative(slot_type s, derivative_type&& d) { derivative(s) = std::move(d); }
 
     // status
     void printStatus() const;
@@ -188,7 +196,7 @@ class Tape
 
     // checkpointing API
     void insertCallback(callback_type cb);
-    Real getAndResetOutputAdjoint(slot_type slot);
+    derivative_type getAndResetOutputAdjoint(slot_type slot);
     void incrementAdjoint(slot_type slot, const Real& x);
     void newNestedRecording();
     void endNestedRecording();
@@ -266,7 +274,7 @@ class Tape
     static XAD_THREAD_LOCAL Tape* active_tape_;
     typename TapeContainerTraits<Real, slot_type>::operations_type operations_;
     typename TapeContainerTraits<Real, slot_type>::statements_type statement_;
-    std::vector<Real> derivatives_;
+    std::vector<derivative_type> derivatives_;
     typedef std::pair<position_type, CheckpointCallback<Tape>*> chkpt_type;
     std::vector<chkpt_type> checkpoints_;
     std::vector<CheckpointCallback<Tape>*> callbacks_;
@@ -283,7 +291,7 @@ class Tape
 
     struct SubRecording
     {
-        explicit SubRecording(Tape<Real>* parent)
+        explicit SubRecording(Tape<Real, N>* parent)
             : numDerivatives_(),
               iDerivative_(),
               maxDerivative_(),
@@ -318,25 +326,22 @@ class Tape
 
 // declare external explicit instantiations
 #define XAD_DECLARE_EXTERN_TAPE(type) extern template class Tape<type>;
+#define XAD_SINGLE_ARG(...) __VA_ARGS__
 
 // 1st order
 XAD_DECLARE_EXTERN_TAPE(float)
 XAD_DECLARE_EXTERN_TAPE(double)
 // 2nd order
-XAD_DECLARE_EXTERN_TAPE(AReal<float>)
-XAD_DECLARE_EXTERN_TAPE(AReal<double>)
-XAD_DECLARE_EXTERN_TAPE(FReal<float>)
-XAD_DECLARE_EXTERN_TAPE(FReal<double>)
-// 3rd order
-XAD_DECLARE_EXTERN_TAPE(FReal<AReal<double> >)
-XAD_DECLARE_EXTERN_TAPE(AReal<FReal<double> >)
-XAD_DECLARE_EXTERN_TAPE(FReal<AReal<float> >)
-XAD_DECLARE_EXTERN_TAPE(AReal<FReal<float> >)
-XAD_DECLARE_EXTERN_TAPE(FReal<FReal<double> >)
-XAD_DECLARE_EXTERN_TAPE(AReal<AReal<double> >)
-XAD_DECLARE_EXTERN_TAPE(FReal<FReal<float> >)
-XAD_DECLARE_EXTERN_TAPE(AReal<AReal<float> >)
+XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(AReal<float, 1>))
+XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(AReal<double, 1>))
+XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(FReal<float, 1>))
+XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(FReal<double, 1>))
+XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(ARealDirect<float, 1>))
+XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(ARealDirect<double, 1>))
+XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(FRealDirect<double, 1>))
+XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(FRealDirect<float, 1>))
+
+#include <XAD/GenerateMode.hpp>
 
 #undef XAD_DECLARE_EXTERN_TAPE
-
 }  // namespace xad
