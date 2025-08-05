@@ -58,7 +58,7 @@ Calculate first-order derivatives of an arbitrary function with two inputs and o
 
 ```c++
 Adouble x0 = 1.3;              // initialise inputs
-Adouble x1 = 5.2;  
+Adouble x1 = 5.2;
 tape.registerInput(x0);        // register independent variables
 tape.registerInput(x1);        // with the tape
 tape.newRecording();           // start recording derivatives

@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -46,9 +46,10 @@
 using namespace ::testing;
 
 typedef xad::AReal<double> dblAD;
-typedef dblAD::tape_type tape_type;
+typedef xad::AReal<double, 2> dblAD2;
 typedef xad::FReal<double> dblFAD;
-typedef ::testing::Types<double, dblAD, dblFAD> test_types;
+typedef xad::FReal<double, 2> dblFAD2;
+typedef ::testing::Types<double, dblAD, dblFAD, dblAD2, dblFAD2> test_types;
 #ifdef _MSC_VER
 typedef ::testing::Types<dblAD, dblFAD> compliance_test_types;
 #else

@@ -63,7 +63,7 @@ This release mainly adds support for more architectures and compilers and provid
 
 ## [1.5.2] - 2024-04-04
 
-This patch release is for matching versions with 
+This patch release is for matching versions with
 [xad-py](https://github.com/auto-differentiation/xad-py).
 
 ### Changed

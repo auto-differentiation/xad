@@ -3,12 +3,14 @@
 ## Overview
 
 ```c++
-template <typename T>
-class AReal : public Expression<T, AReal<T>>
+template <typename T, std::size_t N = 1>
+class AReal : public Expression<T, AReal<T, N>>
 ```
 
 The class `AReal` defines an active data type for adjoint mode for the underlying type `T`,
 which tracks derivative information on a tape.
+This can be scalar derivatives (`N=1`, the default) or vector-valued derivatves (`N>1`)
+for computing adjoints of multiple outputs at once.
 It is designed to behave exactly like the built-in type `double`,
 with all mathematical operations defined for this custom type.
 
@@ -39,6 +41,13 @@ increment their derivatives during adjoint computation.
 #### `value_type`
 
 The value-type of this class, i.e., `T`.
+
+#### `DerivativeType`
+
+The derivative type of this class, which depends on `N`.
+If `N == 1`, it is just `T`.
+For higher values, it is `Vec<T, N>`,
+which allows to propagate multiple derivatives at once.
 
 ### Constructors and Destructors
 
@@ -90,14 +99,14 @@ constructors above.
 
 #### `getDerivative`
 
-`#!c++ T getDerivative() const` returns the derivative (adjoint) as stored on the
-tape (typically after rolling back the operation).
+`#!c++ DerivativeType getDerivative() const` returns the derivative (DerivativeType)
+as stored on the tape (typically after rolling back the operation).
 It throws an instance of [`#!c++ NoTapeException`](exceptions.md) if the variable
 has not been registered with an active tape.
 
 #### `setDerivative`
 
-`#!c++ void setDerivative(const T& a)` sets the derivative (adjoint) on the tape.
+`#!c++ void setDerivative(const DerivativeType& a)` sets the derivative (adjoint) on the tape.
 Typically this is called in the function outputs after recording the operation,
 before rolling back the tape.
 
@@ -113,8 +122,10 @@ This can be used to assign a value to the variable without tape recording, as `#
 
 #### `derivative`
 
-`#!c++ T& derivative()` and `#!c++ const T& derivative() const` return a reference to the underlying adjoint value.
-This can be used to assign a value to the adjoint, as `#!c++ x.derivative() = 1.0`,
+`#!c++ DerivativeType& derivative()` and `#!c++ const DerivativeType& derivative() const` return
+a reference to the underlying adjoint value.
+This can be used to assign a value to the adjoint, as `#!c++ x.derivative() = 1.0`
+or `#!c++ x.derivative() = {1.0, 0.0}`,
 which is equivalent to `setDerivative`.
 It can also be used as a replacement for `getDerivative`.
 

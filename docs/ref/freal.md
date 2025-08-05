@@ -3,12 +3,14 @@
 ## Overview
 
 ```c++
-template <typename T>
-class FReal : public Expression<T, FReal<T>>
+template <typename T, std::size_t N = 1>
+class FReal : public Expression<T, FReal<T, N> >
 ```
 
 The class `FReal` defines an active data type for forward mode for the underlying type `T`
 which tracks derivatives without tape.
+This can be scalar derivatives (`N=1`, the default) or vector-valued derivatves (`N>1`)
+for computing derivatives w.r.t. multiple inputs at once.
 It is designed to behave exactly like the built-in type `double`,
 with all mathematical operations defined for this custom type.
 
@@ -19,7 +21,7 @@ propagation to the outputs.
 
 !!! note "See also"
 
-    [Global Functions](global.md), [AD Mode Interface](interface.md),
+    [FRealDirect](freal_direct.md), [Global Functions](global.md), [AD Mode Interface](interface.md),
     [Mathematical Operations](math.md)
 
 ## Member Functions
@@ -30,10 +32,15 @@ propagation to the outputs.
 
 The value-type of this class, i.e., `T`.
 
+#### `DerivativeType`
+
+The derivative type of this class, which depends on `N`. If `N == 1`, it is just `T`.
+For higher values, it is `Vec<T, N>`, which allows to calculate multiple derivatives at once.
+
 ### Constructors and Destructors
 
 ```c++
-FReal(const T& val = T(), const T& der = T()) // (1) construct from value(s)
+FReal(const T& val = T(), const DerivativeType& der = DerivativeType()) // (1) construct from value(s)
 FReal(const FReal& val)                // (2) copy-constructor
 FReal(FReal&& o)                       // (3) move-constructor
 FReal(const Expression<T,Expr>& expr)  // (4) from expression
@@ -79,11 +86,11 @@ constructors above.
 
 #### `getDerivative`
 
-`#!c++ T getDerivative() const` returns the derivative.
+`#!c++ DerivativeType getDerivative() const` returns the derivative.
 
 #### `setDerivative`
 
-`#!c++ void setDerivative(const T& a)` sets the derivative in the object.
+`#!c++ void setDerivative(const DerivativeType& a)` sets the derivative in the object.
 Typically this is called on independent variables before the operation is started
 (if not already initialised using the constructor).
 
@@ -95,8 +102,10 @@ This can be used to assign a value to the variable without affecting the derivat
 
 #### `derivative`
 
-`#!c++ T& derivative()` and `#!c++ const T& derivative() const` return a reference to the derivative value.
-This can be used to assign a value to it as well, as `#!c++ x.derivative() = 1.0`,
+`#!c++ DerivativeType& derivative()` and `#!c++ const DerivativeType& derivative() const`
+return a reference to the derivative value.
+This can be used to assign a value to it as well, as `#!c++ x.derivative() = 1.0`
+or `#!c++ x.derivative() = {1.0, 0.0}`,
 which is equivalent to `setDerivative`.
 It can also be used as a replacement for `getDerivative`.
 

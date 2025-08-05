@@ -1,8 +1,8 @@
 name: Benchmarks
-on: 
+on:
   #pull_request:
     # types: [opened, reopened, synchronize, labeled, unlabeled ]
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   libor:
@@ -10,7 +10,7 @@ jobs:
     if: false
     name: Libor Swaption Sample
     runs-on: ubuntu-latest
-    container: 
+    container:
       image: ghcr.io/foonathan/gcc:12
     outputs:
       libor: ${{ steps.libor-results.outputs.result }}
@@ -96,11 +96,11 @@ jobs:
           set -e
           apt-get update && apt-get install -y bc datamash
           echo "Min   Max   Mean  StdDev  Median  TrimMean  GeoMean  HarmMean"
-          
+
           echo "*Output*"
           awk '$2 == "AAD" { print $4  }' build/samples/LiborSwaptionPricer/output.log | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
           OUT_TIME=$(awk '$2 == "AAD" { print $4  }' build/samples/LiborSwaptionPricer/output.log | datamash median 1)
-          
+
           echo "*Reference*"
           awk '$2 == "AAD" { print $4  }' build/samples/LiborSwaptionPricer/reference.log | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
           REF_TIME=$(awk '$2 == "AAD" { print $4  }' build/samples/LiborSwaptionPricer/reference.log | datamash median 1)
@@ -109,9 +109,9 @@ jobs:
           echo "Difference: $DIFFERENCE"
           PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
           echo "Percentage: $PERCENTAGE"
-          
+
           echo "result=| ${REF_TIME}s | ${OUT_TIME}s | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
-      
+
   quantlib:
     if: false
     name: QuantLib Samples
@@ -172,7 +172,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           cd QuantLib/build
-          ./test-suite/quantlib-test-suite --log_level=message    
+          ./test-suite/quantlib-test-suite --log_level=message
       - name: Test QuantLib-Risks
         if: github.event_name == 'pull_request'
         run: |
@@ -241,7 +241,7 @@ jobs:
           cd QuantLib/build/test-suite
           rm -f output.log || true
           # warmup run
-          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" 
+          ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because"
           for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
             ./quantlib-test-suite --log_level=test_suite --run_test="QuantLibTests/*/testPathwiseGreeks" | grep -v "is skipped because" | tee -a output.log ; \
           done
@@ -265,9 +265,9 @@ jobs:
           echo "Difference: $DIFFERENCE"
           PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
           echo "Percentage: $PERCENTAGE"
-          
+
           echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
-          
+
       - name: Run Reference AdjointBermudan
         if: github.event_name == 'pull_request'
         run: |
@@ -279,7 +279,7 @@ jobs:
           rm -f ../reference.log || true
           # warmup run
           export LD_LIBRARY_PATH=.
-          ./AdjointBermudanSwaption 200 
+          ./AdjointBermudanSwaption 200
           for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
             ./AdjointBermudanSwaption 200 | tee -a ../reference.log ; \
           done
@@ -291,7 +291,7 @@ jobs:
           cd QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption
           rm -f output.log || true
           # warmup run
-          ./AdjointBermudanSwaption 200 
+          ./AdjointBermudanSwaption 200
           for i in $(seq 1 ${{ vars.REPETITIONS }}) ; do \
             ./AdjointBermudanSwaption 200 | tee -a output.log ; \
           done
@@ -303,11 +303,11 @@ jobs:
           set -e
           ls -l QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/
           echo "Min   Max   Mean  StdDev   Median  TrimMean  GeoMean  HarmMean"
-          
+
           echo "*Output*"
           awk '$1 == "For" && $7 == "average" { print $8 }' QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/output.log | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
           OUT_TIME=$(awk '$1 == "For" && $7 == "average" { print $8 }' QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/output.log | datamash median 1)
-          
+
           echo "*Reference*"
           awk '$1 == "For" && $7 == "average" { print $8 }' QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/reference.log | datamash min 1 max 1 mean 1 sstdev 1 median 1 trimmean 1 geomean 1 harmmean 1
           REF_TIME=$(awk '$1 == "For" && $7 == "average" { print $8 }' QuantLib/build/QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption/reference.log | datamash median 1)
@@ -316,7 +316,7 @@ jobs:
           echo "Difference: $DIFFERENCE"
           PERCENTAGE=$(echo "scale=9; (($REF_TIME - $OUT_TIME) / $REF_TIME) * 100.0" | bc | awk '{printf "%.3f\n", $1}')
           echo "Percentage: $PERCENTAGE"
-          
+
           echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
 
   update-runid:

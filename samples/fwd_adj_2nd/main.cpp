@@ -11,7 +11,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -44,6 +44,8 @@ int main()
 
     // tape and active data type for 1st order adjoint computation
     typedef xad::fwd_adj<double> mode;
+    // Uncomment the following to disable expression templates for debugging
+    // typedef xad::fwdd_adjd<double> mode;
     typedef mode::tape_type tape_type;
     typedef mode::active_type AD;
 

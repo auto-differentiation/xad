@@ -419,7 +419,7 @@ TEST(Eigen, MatrixSvdAdj)
     AD s = B.sum();
     tape.registerOutput(s);
     derivative(s) = 1.0;
-    
+
     tape.computeAdjoints();
 
     for (int i = 0; i < 2; ++i)
@@ -436,7 +436,7 @@ TEST(Eigen, MatrixSvdAdj)
 template <class T>
 Eigen::Matrix<T, 2, 2> Cholesky_decomposition(const Eigen::Matrix<T, 2, 2>& A)
 {
-    Eigen::Matrix<T, 2, 2> L( A.llt().matrixL() ); // lower triangular matrix 
+    Eigen::Matrix<T, 2, 2> L( A.llt().matrixL() ); // lower triangular matrix
     Eigen::Matrix<T, 2, 2> L_T = L.adjoint(); // conjugate transpose
     return L * L_T;
 }
@@ -482,7 +482,7 @@ TEST(Eigen, MatrixCholesky_Adj)
     AD s = B.sum();
     tape.registerOutput(s);
     derivative(s) = 1.0;
-    
+
     tape.computeAdjoints();
 
     for (int i = 0; i < 2; ++i)

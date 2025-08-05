@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -42,10 +42,10 @@ namespace detail
 struct AlignedAllocator {
     static inline void* aligned_alloc(std::size_t alignment, std::size_t size) {
         size = std::max(size, alignment);
-    
+
     #if defined(_WIN32)
         return ::_aligned_malloc(size, alignment);
-    
+
     #elif defined(__APPLE__) && defined(MAC_OS_X_VERSION_10_16)
     #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_16
     // For C++14, usr/include/malloc/_malloc.h declares aligned_alloc()) only
@@ -59,26 +59,26 @@ struct AlignedAllocator {
         }
     #endif
         alignment = std::max(alignment, sizeof(void*));
-        
+
         void* pointer = nullptr;
         if (posix_memalign(&pointer, alignment, size) == 0) {
             return pointer;
         }
         return nullptr;
-    
+
     #elif defined(__ANDROID__) || (defined(__linux__) && defined(__GLIBCXX__) && !defined(_GLIBCXX_HAVE_ALIGNED_ALLOC))
         void* pointer = nullptr;
         if (posix_memalign(&pointer, alignment, size) == 0) {
             return pointer;
         }
         return nullptr;
-    
+
     #else
         return ::aligned_alloc(alignment, size);
-    
+
     #endif
     }
-    
+
     static inline void aligned_free(void* ptr) {
     #if defined(_WIN32)
         ::_aligned_free(ptr);

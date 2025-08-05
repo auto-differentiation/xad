@@ -5,7 +5,7 @@
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -23,6 +23,7 @@
 ##############################################################################
 
 set(testfiles
+    Vec_test.cpp
     TapeContainer_test.cpp
     ChunkContainer_test.cpp
     TestHelpers.hpp
@@ -48,6 +49,10 @@ set(testfiles
     Jacobian_test.cpp
     TypeTraits_test.cpp
     OperationsContainer_test.cpp
+    FRealDirect_test.cpp
+    FReal_test.cpp
+    ARealDirect_test.cpp
+    DirectModeBenchmark.cpp
 )
 
 if (XAD_ENABLE_EIGEN_TESTS)

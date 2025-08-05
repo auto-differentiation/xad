@@ -1,11 +1,11 @@
 ##############################################################################
-#   
+#
 #  Hessian sample CMake file
 #
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 xad_add_sample(Hessian SOURCES main.cpp)

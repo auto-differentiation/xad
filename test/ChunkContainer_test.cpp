@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -100,7 +100,10 @@ TEST(ChunkContainer, uninitialized_extend)
 // we're only comparing pointer addresses in the tests below to verify move
 // behaviour, but GCC 12 sees this as use-after-free and flags warnings
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Walloc-size-larger-than"
+#if __GNUC__ >= 12
 #pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
 #endif
 
 TEST(ChunkContainer, move_construct)
@@ -255,7 +258,6 @@ TEST(ChunkContainer, clear_method)
     chk.resize(10, -42);
     EXPECT_THAT(chk.size(), Eq(10u));
 }
-
 
 TEST(ChunkContainer, resize_fills_with_values)
 {

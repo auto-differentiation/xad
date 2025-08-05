@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -22,11 +22,14 @@
 
 ******************************************************************************/
 
+#include <XAD/ARealDirect.hpp>
 #include <XAD/BinaryOperators.hpp>
 #include <XAD/CheckpointCallback.hpp>
+#include <XAD/FRealDirect.hpp>
 #include <XAD/Literals.hpp>
 #include <XAD/Macros.hpp>
 #include <XAD/Tape.hpp>
+#include <XAD/Traits.hpp>
 #include <XAD/UnaryOperators.hpp>
 
 #include <iostream>
@@ -42,8 +45,8 @@
 namespace xad
 {
 
-template <class T>
-Tape<T>::Tape(bool activateNow)
+template <class T, std::size_t N>
+Tape<T, N>::Tape(bool activateNow)
 {
 
     nestedRecordings_.push(SubRecording(this));
@@ -53,8 +56,8 @@ Tape<T>::Tape(bool activateNow)
     statement_.push_back(std::make_pair(size_type(operations_.size()), slot_type(INVALID_SLOT)));
 }
 
-template <class T>
-Tape<T>::Tape(Tape&& o) noexcept
+template <class T, std::size_t N>
+Tape<T, N>::Tape(Tape&& o) noexcept
     : operations_(std::move(o.operations_)),
       statement_(std::move(o.statement_)),
       derivatives_(std::move(o.derivatives_)),
@@ -72,8 +75,8 @@ Tape<T>::Tape(Tape&& o) noexcept
         deactivate();
 }
 
-template <class T>
-Tape<T>& Tape<T>::operator=(Tape&& o) noexcept
+template <class T, std::size_t N>
+Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 {
     operations_ = std::move(o.operations_);
     statement_ = std::move(o.statement_);
@@ -92,15 +95,15 @@ Tape<T>& Tape<T>::operator=(Tape&& o) noexcept
     return *this;
 }
 
-template <class T>
-Tape<T>::~Tape()
+template <class T, std::size_t N>
+Tape<T, N>::~Tape()
 {
     deactivate();
     for (auto p : callbacks_) delete p;
 }
 
-template <class T>
-void Tape<T>::clearAll()
+template <class T, std::size_t N>
+void Tape<T, N>::clearAll()
 {
     operations_.clear();
     statement_.clear();
@@ -115,15 +118,15 @@ void Tape<T>::clearAll()
     currentRec_ = &nestedRecordings_.top();
 }
 
-template <class T>
-typename Tape<T>::size_type Tape<T>::getNumVariables() const
+template <class T, std::size_t N>
+typename Tape<T, N>::size_type Tape<T, N>::getNumVariables() const
 {
     return currentRec_->numDerivatives_;
 }
 
 #ifdef XAD_TAPE_REUSE_SLOTS
-template <class T>
-typename Tape<T>::slot_type Tape<T>::registerVariableReuseSlots()
+template <class T, std::size_t N>
+typename Tape<T, N>::slot_type Tape<T, N>::registerVariableReuseSlots()
 {
     // at the end
     if (currentRec_->startRange_ == reusable_ranges_.end())
@@ -145,8 +148,8 @@ typename Tape<T>::slot_type Tape<T>::registerVariableReuseSlots()
     return ret;
 }
 
-template <class T>
-void Tape<T>::unregisterVariableReuseSlots(slot_type slot)
+template <class T, std::size_t N>
+void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
 {
     --currentRec_->numDerivatives_;
     if (slot == currentRec_->iDerivative_ - 1)  // it's at the end of the tape
@@ -256,8 +259,8 @@ void Tape<T>::unregisterVariableReuseSlots(slot_type slot)
 }
 #endif
 
-template <class T>
-std::string Tape<T>::getReusableSlotsString() const
+template <class T, std::size_t N>
+std::string Tape<T, N>::getReusableSlotsString() const
 {
 #ifdef XAD_TAPE_REUSE_SLOTS
     std::stringstream sstr;
@@ -271,8 +274,8 @@ std::string Tape<T>::getReusableSlotsString() const
 #endif
 }
 
-template <class T>
-typename Tape<T>::size_type Tape<T>::getNumReusableSlotSections() const
+template <class T, std::size_t N>
+typename Tape<T, N>::size_type Tape<T, N>::getNumReusableSlotSections() const
 {
 #ifdef XAD_TAPE_REUSE_SLOTS
     return size_type(reusable_ranges_.size());
@@ -281,8 +284,8 @@ typename Tape<T>::size_type Tape<T>::getNumReusableSlotSections() const
 #endif
 }
 
-template <class T>
-typename Tape<T>::size_type Tape<T>::getNumReusableSlots() const
+template <class T, std::size_t N>
+typename Tape<T, N>::size_type Tape<T, N>::getNumReusableSlots() const
 {
 #ifdef XAD_TAPE_REUSE_SLOTS
     return std::accumulate(reusable_ranges_.begin(), reusable_ranges_.end(), size_type(),
@@ -292,8 +295,8 @@ typename Tape<T>::size_type Tape<T>::getNumReusableSlots() const
 #endif
 }
 
-template <class T>
-void Tape<T>::foldSubrecording()
+template <class T, std::size_t N>
+void Tape<T, N>::foldSubrecording()
 {
     // std::cout << "folding down from " << nestedRecordings_.size() << "\n";
     auto prev = nestedRecordings_.top();
@@ -320,8 +323,8 @@ void Tape<T>::foldSubrecording()
 #endif
 }
 
-template <class T>
-void Tape<T>::foldSubrecordings()
+template <class T, std::size_t N>
+void Tape<T, N>::foldSubrecordings()
 {
     while (nestedRecordings_.size() > 1)
     {
@@ -329,8 +332,8 @@ void Tape<T>::foldSubrecordings()
     }
 }
 
-template <class T>
-void Tape<T>::newNestedRecording()
+template <class T, std::size_t N>
+void Tape<T, N>::newNestedRecording()
 {
     SubRecording newr(*currentRec_);
 #ifdef XAD_TAPE_REUSE_SLOTS
@@ -352,8 +355,8 @@ void Tape<T>::newNestedRecording()
     //    << ", startDer: " << currentRec_->maxDerivative_ << "\n";
 }
 
-template <class T>
-void Tape<T>::endNestedRecording()
+template <class T, std::size_t N>
+void Tape<T, N>::endNestedRecording()
 {
     foldSubrecording();
 
@@ -361,8 +364,8 @@ void Tape<T>::endNestedRecording()
     // "\n";
 }
 
-template <class T>
-void Tape<T>::newRecording()
+template <class T, std::size_t N>
+void Tape<T, N>::newRecording()
 {
     operations_.clear();
     statement_.clear();
@@ -373,33 +376,34 @@ void Tape<T>::newRecording()
     currentRec_->derivativesInitialized_ = false;
 }
 
-template <class T>
-typename Tape<T>::size_type Tape<T>::getNumOperations() const
+template <class T, std::size_t N>
+typename Tape<T, N>::size_type Tape<T, N>::getNumOperations() const
 {
     return size_type(operations_.size());
 }
 
-template <class T>
-typename Tape<T>::size_type Tape<T>::getNumStatements() const
+template <class T, std::size_t N>
+typename Tape<T, N>::size_type Tape<T, N>::getNumStatements() const
 {
     // return size_type(statement_endpoint_.size()) - 1;
     return size_type(statement_.size()) - 1;
 }
 
-template <class T>
-void Tape<T>::initDerivatives()
+template <class T, std::size_t N>
+void Tape<T, N>::initDerivatives()
 {
     if (!currentRec_->derivativesInitialized_ &&
         derivatives_.size() > currentRec_->startDerivative_)
     {
         std::fill(derivatives_.begin() + currentRec_->startDerivative_, derivatives_.end(), T());
     }
-    derivatives_.resize(currentRec_->maxDerivative_, T());
+
+    derivatives_.resize(currentRec_->maxDerivative_, Tape<T, N>::derivative_type());
     currentRec_->derivativesInitialized_ = true;
 }
 
-template <class T>
-T& Tape<T>::derivative(slot_type s)
+template <class T, std::size_t N>
+typename Tape<T, N>::derivative_type& Tape<T, N>::derivative(slot_type s)
 {
     if (s >= currentRec_->maxDerivative_)
         throw OutOfRange("given derivative slot is out of range - did you register the outputs?");
@@ -408,8 +412,8 @@ T& Tape<T>::derivative(slot_type s)
     return derivatives_[s];
 }
 
-template <class T>
-const T& Tape<T>::derivative(slot_type s) const
+template <class T, std::size_t N>
+const typename Tape<T, N>::derivative_type& Tape<T, N>::derivative(slot_type s) const
 {
 #ifndef NDEBUG
     if (s >= currentRec_->maxDerivative_)
@@ -422,8 +426,8 @@ const T& Tape<T>::derivative(slot_type s) const
     return derivatives_[s];
 }
 
-template <class T>
-void Tape<T>::printStatus() const
+template <class T, std::size_t N>
+void Tape<T, N>::printStatus() const
 {
     /*
     std::cout << "**** Operations: ******\n"
@@ -475,8 +479,8 @@ void Tape<T>::printStatus() const
               << "   Gaps      : " << getReusableSlotsString() << std::endl;
 }
 
-template <class T>
-void Tape<T>::computeAdjoints()
+template <class T, std::size_t N>
+void Tape<T, N>::computeAdjoints()
 {
     if (!currentRec_->derivativesInitialized_)
         throw DerivativesNotInitialized();
@@ -486,8 +490,8 @@ void Tape<T>::computeAdjoints()
     computeAdjointsTo(currentRec_->statementStartPos_ - 1);
 }
 
-template <class T>
-void Tape<T>::computeAdjointsTo(position_type pos)
+template <class T, std::size_t N>
+void Tape<T, N>::computeAdjointsTo(position_type pos)
 {
     position_type start = position_type(statement_.size() - 1);
     LOG_DEBUG("number checkpoints: " << checkpoints_.size());
@@ -526,8 +530,8 @@ void Tape<T>::computeAdjointsTo(position_type pos)
         computeAdjointsToImpl(pos, start);
 }
 
-template <class T>
-void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
+template <class T, std::size_t N>
+void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
 {
     LOG_DEBUG("computing adj from " << start << " to " << pos);
 
@@ -557,8 +561,8 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
         {
             auto st = *it;
             auto a = derivatives_[st.second];
-            derivatives_[st.second] = T();
-            if (a != T())
+            derivatives_[st.second] = derivative_type();
+            if (a != derivative_type())
             {
                 operations_.for_each(it[-1].first, st.first, [&](const T& mul, slot_type slot)
                                      { derivatives_[slot] += mul * a; });
@@ -570,8 +574,8 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
                 endidx == 0 ? chunk_it[-1][chunksz - 1].first : chunk_it[0][endidx - 1].first;
             auto st = chunk_it[0][endidx];
             auto a = derivatives_[st.second];
-            derivatives_[st.second] = T();
-            if (a != T())
+            derivatives_[st.second] = derivative_type();
+            if (a != derivative_type())
             {
                 operations_.for_each(prevendpoint, st.first, [&](const T& mul, slot_type slot)
                                      { derivatives_[slot] += mul * a; });
@@ -582,8 +586,8 @@ void Tape<T>::computeAdjointsToImpl(position_type pos, position_type start)
     }
 }
 
-template <class T>
-std::size_t Tape<T>::getMemory() const
+template <class T, std::size_t N>
+std::size_t Tape<T, N>::getMemory() const
 {
     return sizeof(T) * (operations_.size() + derivatives_.size()) +
            sizeof(slot_type) * (operations_.size() +
@@ -598,21 +602,21 @@ std::size_t Tape<T>::getMemory() const
         ;
 }
 
-template <class T>
-void Tape<T>::clearDerivatives()
+template <class T, std::size_t N>
+void Tape<T, N>::clearDerivatives()
 {
     currentRec_->derivativesInitialized_ = false;
 }
 
-template <class T>
-void Tape<T>::insertCallback(CheckpointCallback<Tape<T> >* cb)
+template <class T, std::size_t N>
+void Tape<T, N>::insertCallback(CheckpointCallback<Tape<T, N>>* cb)
 {
     checkpoints_.push_back(std::make_pair(position_type(statement_.size()), cb));
     statement_.push_back(std::make_pair(size_type(operations_.size()), slot_type(INVALID_SLOT)));
 }
 
-template <class T>
-void Tape<T>::incrementAdjoint(slot_type slot, const T& x)
+template <class T, std::size_t N>
+void Tape<T, N>::incrementAdjoint(slot_type slot, const T& x)
 {
     if (slot >= derivatives_.size())
         throw OutOfRange("adjoint to be incremented is out of range");
@@ -620,14 +624,14 @@ void Tape<T>::incrementAdjoint(slot_type slot, const T& x)
     derivatives_[slot] += x;
 }
 
-template <class T>
-typename Tape<T>::position_type Tape<T>::getPosition() const
+template <class T, std::size_t N>
+typename Tape<T, N>::position_type Tape<T, N>::getPosition() const
 {
     return static_cast<position_type>(statement_.size() - 1);
 }
 
-template <class T>
-void Tape<T>::resetTo(position_type pos)
+template <class T, std::size_t N>
+void Tape<T, N>::resetTo(position_type pos)
 {
     LOG_DEBUG("resetting to " << pos);
     if (pos >= position_type(statement_.size() - 1))
@@ -669,87 +673,84 @@ void Tape<T>::resetTo(position_type pos)
     // std::cout << "reset to " << pos << "\n";
 }
 
-template <class T>
-void Tape<T>::pushCallback(callback_type cb)
+template <class T, std::size_t N>
+void Tape<T, N>::pushCallback(callback_type cb)
 {
     callbacks_.push_back(cb);
 }
 
-template <class T>
-typename Tape<T>::callback_type Tape<T>::getLastCallback()
+template <class T, std::size_t N>
+typename Tape<T, N>::callback_type Tape<T, N>::getLastCallback()
 {
     if (callbacks_.empty())
         throw OutOfRange("Empty callback stack");
     return callbacks_.back();
 }
 
-template <class T>
-typename Tape<T>::size_type Tape<T>::getNumCallbacks() const
+template <class T, std::size_t N>
+typename Tape<T, N>::size_type Tape<T, N>::getNumCallbacks() const
 {
-    return Tape<T>::size_type(callbacks_.size());
+    return Tape<T, N>::size_type(callbacks_.size());
 }
 
-template <class T>
-void Tape<T>::popCallback()
+template <class T, std::size_t N>
+void Tape<T, N>::popCallback()
 {
     if (callbacks_.empty())
         throw OutOfRange("Empty callback stack");
     callbacks_.pop_back();
 }
 
-template <class T>
-bool Tape<T>::haveCallbacks() const
+template <class T, std::size_t N>
+bool Tape<T, N>::haveCallbacks() const
 {
     return !callbacks_.empty();
 }
 
-template <class T>
-void Tape<T>::clearDerivativesAfter(position_type pos)
+template <class T, std::size_t N>
+void Tape<T, N>::clearDerivativesAfter(position_type pos)
 {
     auto& st = statement_[pos];
     derivatives_.resize(st.second + 1);
     currentRec_->maxDerivative_ = st.second + 1;
 }
 
-template <class T>
-T Tape<T>::getAndResetOutputAdjoint(slot_type slot)
+template <class T, std::size_t N>
+typename Tape<T, N>::derivative_type Tape<T, N>::getAndResetOutputAdjoint(slot_type slot)
 {
     if (slot >= slot_type(derivatives_.size()))
         throw OutOfRange("Requested output slot does not exist");
 
-    T ret = derivatives_[slot];
-    derivatives_[slot] = 0.0;
+    derivative_type ret = derivatives_[slot];
+    derivatives_[slot] = derivative_type();
     return ret;
 }
 
-template <class T>
-XAD_THREAD_LOCAL Tape<T>* Tape<T>::active_tape_ = nullptr;
+template <class T, std::size_t N>
+XAD_THREAD_LOCAL Tape<T, N>* Tape<T, N>::active_tape_ = nullptr;
 
 #define MAKE_TAPE_TLS(type)                                                                        \
-    template class CheckpointCallback<Tape<type> >;                                                \
+    template class CheckpointCallback<Tape<type>>;                                                 \
     template class Tape<type>;
 
 #define MAKE_TAPE_TLS_HIGHER(type)                                                                 \
     template struct type;                                                                          \
     MAKE_TAPE_TLS(type)
-
 // 1st order
 MAKE_TAPE_TLS(float)
 MAKE_TAPE_TLS(double)
 // 2nd order
 MAKE_TAPE_TLS_HIGHER(AReal<float>)
 MAKE_TAPE_TLS_HIGHER(AReal<double>)
-MAKE_TAPE_TLS_HIGHER(FReal<float>)
-MAKE_TAPE_TLS_HIGHER(FReal<double>)
-// 3rd order
-MAKE_TAPE_TLS_HIGHER(FReal<AReal<double> >)
-MAKE_TAPE_TLS_HIGHER(AReal<FReal<double> >)
-MAKE_TAPE_TLS_HIGHER(FReal<AReal<float> >)
-MAKE_TAPE_TLS_HIGHER(AReal<FReal<float> >)
-MAKE_TAPE_TLS_HIGHER(FReal<FReal<double> >)
-MAKE_TAPE_TLS_HIGHER(AReal<AReal<double> >)
-MAKE_TAPE_TLS_HIGHER(FReal<FReal<float> >)
-MAKE_TAPE_TLS_HIGHER(AReal<AReal<float> >)
+MAKE_TAPE_TLS(XAD_SINGLE_ARG(FReal<float>))
+MAKE_TAPE_TLS(XAD_SINGLE_ARG(FReal<double>))
+MAKE_TAPE_TLS_HIGHER(ARealDirect<float>)
+MAKE_TAPE_TLS_HIGHER(ARealDirect<double>)
+MAKE_TAPE_TLS_HIGHER(FRealDirect<double>)
+MAKE_TAPE_TLS_HIGHER(FRealDirect<float>)
+
+#include <XAD/Instantiations.hpp>
 
 #undef MAKE_STACK_TLS
+
 }  // namespace xad

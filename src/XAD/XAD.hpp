@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <XAD/ARealDirect.hpp>
 #include <XAD/BinaryDerivativeImpl.hpp>
 #include <XAD/BinaryExpr.hpp>
 #include <XAD/BinaryFunctors.hpp>
@@ -35,6 +36,7 @@
 #include <XAD/Config.hpp>
 #include <XAD/Exceptions.hpp>
 #include <XAD/Expression.hpp>
+#include <XAD/FRealDirect.hpp>
 #include <XAD/Interface.hpp>
 #include <XAD/Literals.hpp>
 #include <XAD/MathFunctions.hpp>
@@ -45,4 +47,5 @@
 #include <XAD/UnaryFunctors.hpp>
 #include <XAD/UnaryMathFunctors.hpp>
 #include <XAD/UnaryOperators.hpp>
+#include <XAD/Vec.hpp>
 #include <XAD/Version.hpp>

@@ -373,7 +373,7 @@ of that material) supplement the terms of this License with terms:
 
 -   e) Declining to grant rights under trademark law for use of some
     trade names, trademarks, or service marks; or
-    
+
 -   f) Requiring indemnification of licensors and authors of that
     material by anyone who conveys the material (or modified versions
     of it) with contractual assumptions of liability to the recipient,

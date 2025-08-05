@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -113,7 +113,7 @@ TEST(ExpressionMeta, DeterminesUnderlyingTypeForUnaryExpr)
 TEST(ExpressionMeta, DeterminesUnderlyingTypeForBinaryExpr)
 {
     xad::Tape<double> t;  // need this for AD instantiation
-    xad::AReal<double> a;
+    xad::AReal<double, 2> a;
     xad::FReal<double> f;
     // auto captures the expression here
     auto a_plus = a + a;
@@ -135,28 +135,28 @@ TEST(ExpressionMeta, DeterminesUnderlyingTypeForBinaryExpr)
 
     // adjoint mode
     static_assert(
-        (std::is_same<xad::ExprTraits<decltype(a_plus)>::value_type, xad::AReal<double>>::value),
+        (std::is_same<xad::ExprTraits<decltype(a_plus)>::value_type, xad::AReal<double, 2>>::value),
         "Binary expr of AReal value_type should be AReal");
     static_assert((std::is_same<xad::ExprTraits<decltype(a_plus_scalar)>::value_type,
-                                xad::AReal<double>>::value),
+                                xad::AReal<double, 2>>::value),
                   "Binary expr of AReal value_type should be AReal");
     static_assert((std::is_same<xad::ExprTraits<decltype(a_scalar_plus)>::value_type,
-                                xad::AReal<double>>::value),
+                                xad::AReal<double, 2>>::value),
                   "Binary expr of AReal value_type should be AReal");
     static_assert((std::is_same<xad::ExprTraits<decltype(a_plus_unary)>::value_type,
-                                xad::AReal<double>>::value),
+                                xad::AReal<double, 2>>::value),
                   "Binary expr of AReal value_type should be AReal");
     static_assert(
-        (std::is_same<xad::ExprTraits<decltype(a_pow)>::value_type, xad::AReal<double>>::value),
+        (std::is_same<xad::ExprTraits<decltype(a_pow)>::value_type, xad::AReal<double, 2>>::value),
         "Binary expr of AReal value_type should be AReal");
     static_assert((std::is_same<xad::ExprTraits<decltype(a_pow_scalar)>::value_type,
-                                xad::AReal<double>>::value),
+                                xad::AReal<double, 2>>::value),
                   "Binary expr of AReal value_type should be AReal");
     static_assert((std::is_same<xad::ExprTraits<decltype(a_scalar_pow)>::value_type,
-                                xad::AReal<double>>::value),
+                                xad::AReal<double, 2>>::value),
                   "Binary expr of AReal value_type should be AReal");
     static_assert((std::is_same<xad::ExprTraits<decltype(a_long_expr)>::value_type,
-                                xad::AReal<double>>::value),
+                                xad::AReal<double, 2>>::value),
                   "Binary expr of AReal value_type should be AReal");
 
     // forward mode
@@ -209,6 +209,7 @@ TEST(ExpressionMeta, plainDoubleTraits)
     static_assert(!xad::ExprTraits<double>::isLiteral, "not a literal");
     static_assert(xad::ExprTraits<double>::direction == xad::Direction::DIR_NONE,
                   "direction should be none");
+    static_assert(xad::ExprTraits<double>::vector_size == 1, "vector size for scalars should be 1");
 }
 
 TEST(ExpressionMeta, forwardLiteralTraits)
@@ -221,6 +222,7 @@ TEST(ExpressionMeta, forwardLiteralTraits)
     static_assert(xad::ExprTraits<type>::numVariables == 1, "should be one variable");
     static_assert(xad::ExprTraits<type>::direction == xad::Direction::DIR_FORWARD,
                   "should be forward");
+    static_assert(xad::ExprTraits<type>::vector_size == 1, "should be scalar");
 }
 
 TEST(ExpressionMeta, forwardExprTraits)
@@ -238,6 +240,25 @@ TEST(ExpressionMeta, forwardExprTraits)
     static_assert(xad::ExprTraits<type>::numVariables == 3, "should be 3 variables");
     static_assert(xad::ExprTraits<type>::direction == xad::Direction::DIR_FORWARD,
                   "should be forward direction");
+    static_assert(xad::ExprTraits<type>::vector_size == 1, "should be scalar");
+}
+
+TEST(ExpressionMeta, forwardExprTraitsUnary)
+{
+    xad::FReal<double> x, y;
+    auto binx = x * x;
+    auto binx2 = binx + 2. * y;
+    typedef decltype(sin(binx2)) type;
+    XAD_UNUSED_VARIABLE(binx2);
+
+    static_assert(xad::ExprTraits<type>::isExpr, "should be an expression");
+    static_assert(!xad::ExprTraits<type>::isLiteral, "is not a literal");
+    static_assert(xad::ExprTraits<type>::isForward, "should be forward");
+    static_assert(!xad::ExprTraits<type>::isReverse, "should not be reverse");
+    static_assert(xad::ExprTraits<type>::numVariables == 3, "should be 3 variables");
+    static_assert(xad::ExprTraits<type>::direction == xad::Direction::DIR_FORWARD,
+                  "should be forward direction");
+    static_assert(xad::ExprTraits<type>::vector_size == 1, "should be scalar");
 }
 
 TEST(ExpressionMeta, reverseLiteralTraits)
@@ -250,6 +271,33 @@ TEST(ExpressionMeta, reverseLiteralTraits)
     static_assert(xad::ExprTraits<type>::numVariables == 1, "should be 1 variable");
     static_assert(xad::ExprTraits<type>::direction == xad::Direction::DIR_REVERSE,
                   "should be reverse direction");
+    static_assert(xad::ExprTraits<type>::vector_size == 1, "vector_size mismatch");
+}
+
+TEST(ExpressionMeta, reverseLiteralVectorSizeTraits)
+{
+    typedef xad::AReal<double, 4> type;
+    static_assert(xad::ExprTraits<type>::vector_size == 4, "vector_size mismatch");
+}
+
+TEST(ExpressionMeta, reverseExprVectorSizeTraits)
+{
+    xad::AReal<double, 4> x = 1., y = 1.;
+    auto binx = x * x;
+    auto binx2 = binx + 2. * y;  // cppcheck-suppress unreadVariable
+    typedef decltype(binx2) type;
+
+    static_assert(xad::ExprTraits<type>::vector_size == 4, "vector_size mismatch");
+}
+
+TEST(ExpressionMeta, reverseUnaryExprVectorSizeTraits)
+{
+    xad::AReal<double, 4> x = 1., y = 1.;
+    auto binx = x * x;
+    auto binx2 = binx + 2. * y;  // cppcheck-suppress unreadVariable
+    typedef decltype(sin(binx2)) type;
+
+    static_assert(xad::ExprTraits<type>::vector_size == 4, "vector_size mismatch");
 }
 
 TEST(ExpressionMeta, reverseExprTraits)
@@ -266,6 +314,7 @@ TEST(ExpressionMeta, reverseExprTraits)
     static_assert(xad::ExprTraits<type>::numVariables == 3, "should be 3 variables");
     static_assert(xad::ExprTraits<type>::direction == xad::Direction::DIR_REVERSE,
                   "should be reverse");
+    static_assert(xad::ExprTraits<type>::vector_size == 1, "vector_size mismatch");
 }
 
 TEST(ExpressionMeta, LongExpression)
@@ -286,4 +335,5 @@ TEST(ExpressionMeta, LongExpression)
     static_assert(xad::ExprTraits<complex_expr>::numVariables == 3, "should be 3 variables");
     static_assert(xad::ExprTraits<complex_expr>::direction == xad::Direction::DIR_REVERSE,
                   "should be reverse");
+    static_assert(xad::ExprTraits<complex_expr>::vector_size == 1, "vector_size mismatch");
 }

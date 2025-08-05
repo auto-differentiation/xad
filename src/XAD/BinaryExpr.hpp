@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -33,8 +33,9 @@
 namespace xad
 {
 
-template <class Scalar, class Op, class Expr1, class Expr2>
-struct BinaryExpr : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2> >
+template <class Scalar, class Op, class Expr1, class Expr2, class DerivativeType = Scalar>
+struct BinaryExpr
+    : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>, DerivativeType>
 {
     typedef detail::BinaryDerivativeImpl<OperatorTraits<Op>::useResultBasedDerivatives == 1>
         der_impl;
@@ -63,7 +64,7 @@ struct BinaryExpr : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2> >
                             der_impl::template derivative_b<>(op_, value(a_), value(b_), v_));
     }
 
-    XAD_INLINE Scalar derivative() const
+    XAD_INLINE DerivativeType derivative() const
     {
         using xad::derivative;
         using xad::value;
@@ -80,8 +81,8 @@ struct BinaryExpr : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2> >
     Scalar v_;
 };
 
-template <class Scalar, class Op, class Expr1, class Expr2>
-struct ExprTraits<BinaryExpr<Scalar, Op, Expr1, Expr2> >
+template <class Scalar, class Op, class Expr1, class Expr2, class DerivativeType>
+struct ExprTraits<BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>>
 {
     static const bool isExpr = true;
     static const int numVariables =
@@ -91,6 +92,8 @@ struct ExprTraits<BinaryExpr<Scalar, Op, Expr1, Expr2> >
     static const bool isLiteral = false;
     static const Direction direction =
         ExprTraits<typename ExprTraits<Expr1>::value_type>::direction;
+    static const std::size_t vector_size =
+        ExprTraits<typename ExprTraits<Expr1>::value_type>::vector_size;
 
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
     typedef typename ExprTraits<Expr1>::value_type value_type;

@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -42,7 +42,7 @@ struct DerivInfo
 ///
 /// It uses the CTRP pattern, where derived classes register themselves with
 /// the base class in the second template parameter
-template <class Scalar, class Derived>
+template <class Scalar, class Derived, class DerivativeType = Scalar>
 struct Expression
 {
     /// get a reference to the derived object
@@ -105,17 +105,17 @@ struct Expression
 
     XAD_INLINE bool shouldRecord() const { return derived().shouldRecord(); }
 
-    XAD_INLINE Scalar derivative() const { return derived().derivative(); }
+    XAD_INLINE DerivativeType derivative() const { return derived().derivative(); }
 };
 
-template <class Scalar, class Expr>
-XAD_INLINE Scalar value(const Expression<Scalar, Expr>& expr)
+template <class Scalar, class Expr, class DerivativeType>
+XAD_INLINE Scalar value(const Expression<Scalar, Expr, DerivativeType>& expr)
 {
     return expr.value();
 }
 
-template <class Scalar, class Expr>
-XAD_INLINE Scalar derivative(const Expression<Scalar, Expr>& expr)
+template <class Scalar, class Expr, class DerivativeType>
+XAD_INLINE DerivativeType derivative(const Expression<Scalar, Expr, DerivativeType>& expr)
 {
     return expr.derivative();
 }

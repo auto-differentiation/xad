@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -322,11 +322,12 @@ TEST(JacobianTest, OutOfBoundsDomainSizeMismatch)
 
     std::vector<std::vector<double>> jacobian(2, std::vector<double>(3));
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::vector<std::vector<double>>::iterator first,
-           std::vector<std::vector<double>>::iterator last)
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::vector<std::vector<double>>::iterator first,
+                     std::vector<std::vector<double>>::iterator last)
     {
         using RowIterator = decltype(first);
         xad::computeJacobian<RowIterator, double>(x, foo, first, last);
@@ -346,11 +347,12 @@ TEST(JacobianTest, OutOfBoundsCodomainSizeMismatch)
 
     std::vector<std::vector<double>> jacobian(1, std::vector<double>(1));
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::vector<std::vector<double>>::iterator first,
-           std::vector<std::vector<double>>::iterator last)
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::vector<std::vector<double>>::iterator first,
+                     std::vector<std::vector<double>>::iterator last)
     {
         using RowIterator = decltype(first);
         xad::computeJacobian<RowIterator, double>(x, foo, first, last);
@@ -370,12 +372,12 @@ TEST(JacobianTest, CorrectCodomainAsArgumentWithIterator)
 
     std::vector<std::vector<double>> jacobian(2, std::vector<double>(2));
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::size_t codomain,
-           std::vector<std::vector<double>>::iterator first,
-           std::vector<std::vector<double>>::iterator last)
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::size_t codomain, std::vector<std::vector<double>>::iterator first,
+                     std::vector<std::vector<double>>::iterator last)
     {
         using RowIterator = decltype(first);
         xad::computeJacobian<RowIterator, double>(x, foo, first, last, codomain);
@@ -393,13 +395,11 @@ TEST(JacobianTest, CorrectCodomainAsArgumentWithoutIterator)
 
     auto func = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[0] + x[1]}; };
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::size_t codomain)
-    {
-        xad::computeJacobian<double>(x, foo, codomain);
-    };
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::size_t codomain) { xad::computeJacobian<double>(x, foo, codomain); };
 
     EXPECT_NO_THROW(launch(input, func, 2));
 }
@@ -415,12 +415,12 @@ TEST(JacobianTest, CodomainAsArgumentWithIteratorTooSmall)
 
     std::vector<std::vector<double>> jacobian(2, std::vector<double>(2));
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::size_t codomain,
-           std::vector<std::vector<double>>::iterator first,
-           std::vector<std::vector<double>>::iterator last)
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::size_t codomain, std::vector<std::vector<double>>::iterator first,
+                     std::vector<std::vector<double>>::iterator last)
     {
         using RowIterator = decltype(first);
         xad::computeJacobian<RowIterator, double>(x, foo, first, last, codomain);
@@ -438,13 +438,11 @@ TEST(JacobianTest, CodomainAsArgumentWithoutIteratorTooSmall)
 
     auto func = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[0] + x[1]}; };
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::size_t codomain)
-    {
-        xad::computeJacobian<double>(x, foo, codomain);
-    };
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::size_t codomain) { xad::computeJacobian<double>(x, foo, codomain); };
 
     EXPECT_THROW(launch(input, func, 1), xad::OutOfRange);
 }
@@ -460,12 +458,12 @@ TEST(JacobianTest, CodomainAsArgumentWithIteratorTooBig)
 
     std::vector<std::vector<double>> jacobian(2, std::vector<double>(2));
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::size_t codomain,
-           std::vector<std::vector<double>>::iterator first,
-           std::vector<std::vector<double>>::iterator last)
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::size_t codomain, std::vector<std::vector<double>>::iterator first,
+                     std::vector<std::vector<double>>::iterator last)
     {
         using RowIterator = decltype(first);
         xad::computeJacobian<RowIterator, double>(x, foo, first, last, codomain);
@@ -483,13 +481,11 @@ TEST(JacobianTest, CodomainAsArgumentWithoutIteratorTooBig)
 
     auto func = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[0] + x[1]}; };
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::size_t codomain)
-    {
-        xad::computeJacobian<double>(x, foo, codomain);
-    };
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::size_t codomain) { xad::computeJacobian<double>(x, foo, codomain); };
 
     EXPECT_THROW(launch(input, func, 4), xad::OutOfRange);
 }
@@ -503,13 +499,11 @@ TEST(JacobianTest, CodomainAndNoTapeAsArgumentPassed)
 
     auto func = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[0] + x[1], x[2]}; };
 
-    auto launch =
-        [](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::size_t codomain)
-    {
-        xad::computeJacobian<double>(x, foo, codomain);
-    };
+    auto launch = [](std::vector<AD> x,
+                     std::function<std::vector<xad::AReal<double>>(
+                         std::vector<xad::AReal<double>> &)>
+                         foo,
+                     std::size_t codomain) { xad::computeJacobian<double>(x, foo, codomain); };
 
     EXPECT_NO_THROW(launch(input, func, 3));
 }
@@ -526,13 +520,11 @@ TEST(JacobianTest, TapeAndNoCodomainAsArgumentPassed)
 
     auto func = [](std::vector<AD> &x) -> std::vector<AD> { return {x[0], x[0] + x[1], x[2]}; };
 
-    auto launch =
-        [&](std::vector<AD> x,
-           std::function<std::vector<xad::AReal<double>>(std::vector<xad::AReal<double>> &)> foo,
-           std::size_t codomain)
-    {
-        xad::computeJacobian<double>(x, foo, &tape);
-    };
+    auto launch = [&](std::vector<AD> x,
+                      std::function<std::vector<xad::AReal<double>>(
+                          std::vector<xad::AReal<double>> &)>
+                          foo,
+                      std::size_t codomain) { xad::computeJacobian<double>(x, foo, &tape); };
 
     EXPECT_NO_THROW(launch(input, func, 3));
 }

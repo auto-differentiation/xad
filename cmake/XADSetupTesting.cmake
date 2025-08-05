@@ -1,11 +1,11 @@
 ##############################################################################
-#   
+#
 #  Setup of unit tests, downloading Google Test on the fly
 #
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
 #
-#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+#  Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
@@ -19,7 +19,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
 
@@ -47,13 +47,13 @@ if (NOT TARGET GTest::gmock_main)
     )
     FetchContent_MakeAvailable(googletest)
 
-    set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES 
+    set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES
         FOLDER "test/gtest")
     if(XAD_STATIC_MSVC_RUNTIME)
-        set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES 
+        set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
-        set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES 
+        set_target_properties(gtest gtest_main gmock gmock_main PROPERTIES
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 endif()
@@ -71,7 +71,7 @@ if (XAD_ENABLE_EIGEN_TESTS)
         SOURCE_SUBDIR cmake # no CMakeLists.txt in cmake, so this turns off configure
     )
     FetchContent_MakeAvailable(Eigen3)
-    
+
     # add dependency ourselves - their CMake files seem broken
     add_library(Eigen INTERFACE)
     target_include_directories(Eigen INTERFACE ${eigen3_SOURCE_DIR})

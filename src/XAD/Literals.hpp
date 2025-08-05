@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
@@ -29,17 +29,34 @@
 #include <XAD/Tape.hpp>
 #include <XAD/Traits.hpp>
 
+#include <XAD/Vec.hpp>
 #include <algorithm>
 #include <iosfwd>
 #include <utility>
 
 namespace xad
 {
-template <class>
+template <class, std::size_t>
 class Tape;
+template <class, std::size_t>
+struct FReal;
 
-template <class Scalar, class Derived>
-struct ADTypeBase : public Expression<Scalar, Derived>
+template <class Scalar, std::size_t N>
+struct FRealTraits
+{
+    using type = FReal<Scalar, N>;
+    using derivative_type = Vec<Scalar, N>;
+};
+
+template <class Scalar>
+struct FRealTraits<Scalar, 1>
+{
+    using type = FReal<Scalar, 1>;
+    using derivative_type = Scalar;
+};
+
+template <class Scalar, class Derived, class DerivativeType = Scalar>
+struct ADTypeBase : public Expression<Scalar, Derived, DerivativeType>
 {
     typedef typename ExprTraits<Derived>::value_type value_type;
     typedef typename ExprTraits<Derived>::nested_type nested_type;
@@ -59,22 +76,22 @@ struct ADTypeBase : public Expression<Scalar, Derived>
     XAD_INLINE Scalar& value() { return a_; }
 
     template <class E>
-    XAD_INLINE Derived& operator+=(const Expression<Scalar, E>& x)
+    XAD_INLINE Derived& operator+=(const Expression<Scalar, E, DerivativeType>& x)
     {
         return derived() = (derived() + x);
     }
     template <class E>
-    XAD_INLINE Derived& operator-=(const Expression<Scalar, E>& x)
+    XAD_INLINE Derived& operator-=(const Expression<Scalar, E, DerivativeType>& x)
     {
         return derived() = (derived() - x);
     }
     template <class E>
-    XAD_INLINE Derived& operator*=(const Expression<Scalar, E>& x)
+    XAD_INLINE Derived& operator*=(const Expression<Scalar, E, DerivativeType>& x)
     {
         return derived() = (derived() * x);
     }
     template <class E>
-    XAD_INLINE Derived& operator/=(const Expression<Scalar, E>& x)
+    XAD_INLINE Derived& operator/=(const Expression<Scalar, E, DerivativeType>& x)
     {
         return derived() = (derived() / x);
     }
@@ -138,13 +155,13 @@ struct ADTypeBase : public Expression<Scalar, Derived>
     Scalar a_;
 };
 
-template <class>
+template <class, std::size_t>
 struct AReal;
-template <class>
+template <class, std::size_t>
 struct ADVar;
 
-template <class Scalar>
-struct ExprTraits<AReal<Scalar>>
+template <class Scalar, std::size_t M>
+struct ExprTraits<AReal<Scalar, M>>
 {
     static const bool isExpr = true;
     static const int numVariables = 1;
@@ -152,25 +169,29 @@ struct ExprTraits<AReal<Scalar>>
     static const bool isReverse = true;
     static const bool isLiteral = true;
     static const Direction direction = Direction::DIR_REVERSE;
+    static const std::size_t vector_size = M;
 
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
-    typedef AReal<Scalar> value_type;
+    typedef AReal<Scalar, M> value_type;
     typedef Scalar scalar_type;
 };
 
-template <class Scalar>
-struct ExprTraits<ADVar<Scalar>> : public ExprTraits<AReal<Scalar>>
+template <class Scalar, std::size_t M>
+struct ExprTraits<ADVar<Scalar, M>> : public ExprTraits<AReal<Scalar, M>>
 {
 };
 
-template <class Scalar>
-struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
+template <class Scalar, std::size_t N = 1>
+struct AReal
+    : public ADTypeBase<Scalar, AReal<Scalar, N>, typename DerivativesTraits<Scalar, N>::type>
 {
-    typedef Tape<Scalar> tape_type;
-    typedef ADTypeBase<Scalar, AReal<Scalar>> base_type;
+    typedef Tape<Scalar, N> tape_type;
+    typedef ADTypeBase<Scalar, AReal<Scalar, N>, typename DerivativesTraits<Scalar, N>::type>
+        base_type;
     typedef typename tape_type::slot_type slot_type;
     typedef Scalar value_type;
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
+    typedef typename DerivativesTraits<Scalar, N>::type derivative_type;
 
     XAD_INLINE AReal(nested_type val = nested_type()) : base_type(val), slot_(INVALID_SLOT) {}
 
@@ -230,15 +251,15 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
     }
 
     template <class Expr>
-    XAD_INLINE AReal(
-        const Expression<Scalar, Expr>& expr);  // cppcheck-suppress noExplicitConstructor
+    XAD_INLINE AReal(const Expression<Scalar, Expr, derivative_type>&
+                         expr);  // cppcheck-suppress noExplicitConstructor
 
     template <class Expr>
-    XAD_INLINE AReal& operator=(const Expression<Scalar, Expr>& expr);
+    XAD_INLINE AReal& operator=(const Expression<Scalar, Expr, derivative_type>& expr);
 
-    XAD_INLINE void setDerivative(Scalar a) { derivative() = a; }
-    XAD_INLINE void setAdjoint(Scalar a) { setDerivative(a); }
-    XAD_INLINE Scalar getAdjoint() const { return getDerivative(); }
+    XAD_INLINE void setDerivative(derivative_type a) { derivative() = a; }
+    XAD_INLINE void setAdjoint(derivative_type a) { setDerivative(a); }
+    XAD_INLINE derivative_type getAdjoint() const { return getDerivative(); }
 
     template <int Size>
     XAD_FORCE_INLINE void pushRhs(DerivInfo<tape_type, Size>& info, const Scalar& mul,
@@ -263,9 +284,9 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
             pushRhs(info, Scalar(1), slot_);
     }
 
-    XAD_INLINE Scalar getDerivative() const { return derivative(); }
+    XAD_INLINE derivative_type getDerivative() const { return derivative(); }
 
-    XAD_INLINE const Scalar& derivative() const
+    XAD_INLINE const derivative_type& derivative() const
     {
         auto t = tape_type::getActive();
         if (!t)
@@ -273,13 +294,13 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
         if (slot_ == INVALID_SLOT)
         {
             // we return a dummy const ref if not registered on tape - always zero
-            static const Scalar zero = Scalar();
+            static const derivative_type zero = derivative_type();
             return zero;
         }
         return t->derivative(slot_);
     }
 
-    XAD_INLINE Scalar& derivative()
+    XAD_INLINE derivative_type& derivative()
     {
         auto t = tape_type::getActive();
         if (!t)
@@ -305,7 +326,7 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
         t->pushAll(info.multipliers, info.slots, info.index);
     }
 
-    template <class T>
+    template <class T, std::size_t d__cnt>
     friend class Tape;
     typename tape_type::slot_type slot_;
 };
@@ -314,13 +335,14 @@ struct AReal : public ADTypeBase<Scalar, AReal<Scalar>>
 // the Tape
 // when this guy is copied (unlike the AReal<T> copy)
 // therefore we can use auto = ... in expressions
-template <class Scalar>
-struct ADVar : public Expression<Scalar, ADVar<Scalar>>
+template <class Scalar, std::size_t N = 1>
+struct ADVar
+    : public Expression<Scalar, ADVar<Scalar, N>, typename DerivativesTraits<Scalar, N>::type>
 {
-    typedef AReal<Scalar> areal_type;
+    typedef AReal<Scalar, N> areal_type;
     typedef typename areal_type::tape_type tape_type;
 
-    XAD_INLINE explicit ADVar(const AReal<Scalar>& a) : ar_(a), shouldRecord_(a.shouldRecord()) {}
+    XAD_INLINE explicit ADVar(const areal_type& a) : ar_(a), shouldRecord_(a.shouldRecord()) {}
 
     XAD_INLINE Scalar getValue() const { return ar_.getValue(); }
 
@@ -339,7 +361,10 @@ struct ADVar : public Expression<Scalar, ADVar<Scalar>>
         ar_.calc_derivative(info, s);
     }
 
-    XAD_INLINE const Scalar& derivative() const { return ar_.derivative(); }
+    XAD_INLINE const typename areal_type::derivative_type& derivative() const
+    {
+        return ar_.derivative();
+    }
 
     XAD_INLINE bool shouldRecord() const { return shouldRecord_; }
 
@@ -348,8 +373,8 @@ struct ADVar : public Expression<Scalar, ADVar<Scalar>>
     bool shouldRecord_;
 };
 
-template <class Scalar>
-XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const AReal& o)
+template <class Scalar, std::size_t M>
+XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
     tape_type* s = tape_type::getActive();
     if (s && (o.shouldRecord() || this->shouldRecord()))
@@ -363,9 +388,10 @@ XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const AReal& o)
     return *this;
 }
 
-template <class Scalar>
+template <class Scalar, std::size_t M>
 template <class Expr>
-XAD_INLINE AReal<Scalar>::AReal(Expression<Scalar, Expr> const& expr)
+XAD_INLINE AReal<Scalar, M>::AReal(
+    const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
     : base_type(expr.getValue()), slot_(INVALID_SLOT)
 {
     tape_type* s = tape_type::getActive();
@@ -377,9 +403,10 @@ XAD_INLINE AReal<Scalar>::AReal(Expression<Scalar, Expr> const& expr)
     }
 }
 
-template <class Scalar>
+template <class Scalar, std::size_t M>
 template <class Expr>
-XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const Expression<Scalar, Expr>& expr)
+XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
+    const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
 {
     tape_type* s = tape_type::getActive();
     if (s && (expr.shouldRecord() || this->shouldRecord()))
@@ -396,11 +423,11 @@ XAD_INLINE AReal<Scalar>& AReal<Scalar>::operator=(const Expression<Scalar, Expr
     return *this;
 }
 
-template <class>
+template <class, std::size_t>
 struct FReal;
 
-template <class Scalar>
-struct ExprTraits<FReal<Scalar>>
+template <class Scalar, std::size_t N>
+struct ExprTraits<FReal<Scalar, N>>
 {
     static const bool isExpr = true;
     static const int numVariables = 1;
@@ -408,20 +435,62 @@ struct ExprTraits<FReal<Scalar>>
     static const bool isReverse = false;
     static const bool isLiteral = true;
     static const Direction direction = Direction::DIR_FORWARD;
+    static const std::size_t vector_size = 1;
 
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
-    typedef FReal<Scalar> value_type;
+    typedef FReal<Scalar, N> value_type;
     typedef Scalar scalar_type;
 };
 
-template <class Scalar>
-struct FReal : public ADTypeBase<Scalar, FReal<Scalar>>
+template <class, std::size_t>
+struct FRealDirect;
+
+template <class Scalar, std::size_t N>
+struct ExprTraits<FRealDirect<Scalar, N>>
 {
-    typedef ADTypeBase<Scalar, FReal<Scalar>> base_type;
+    static const bool isExpr = false;
+    static const int numVariables = 1;
+    static const bool isForward = true;
+    static const bool isReverse = false;
+    static const bool isLiteral = true;
+    static const Direction direction = Direction::DIR_FORWARD;
+    static const std::size_t vector_size = N;
+
+    typedef typename ExprTraits<Scalar>::nested_type nested_type;
+    typedef FRealDirect<Scalar, N> value_type;
+    typedef Scalar scalar_type;
+};
+
+template <class, std::size_t>
+struct ARealDirect;
+
+template <class Scalar, std::size_t N>
+struct ExprTraits<ARealDirect<Scalar, N>>
+{
+    static const bool isExpr = false;
+    static const int numVariables = 1;
+    static const bool isForward = false;
+    static const bool isReverse = true;
+    static const bool isLiteral = true;
+    static const Direction direction = Direction::DIR_REVERSE;
+    static const std::size_t vector_size = N;
+
+    typedef typename ExprTraits<Scalar>::nested_type nested_type;
+    typedef ARealDirect<Scalar, N> value_type;
+    typedef Scalar scalar_type;
+};
+
+template <class Scalar, std::size_t N = 1>
+struct FReal
+    : public ADTypeBase<Scalar, FReal<Scalar, N>, typename FRealTraits<Scalar, N>::derivative_type>
+{
+    typedef typename FRealTraits<Scalar, N>::derivative_type derivative_type;
+    typedef ADTypeBase<Scalar, typename FRealTraits<Scalar, N>::type, derivative_type> base_type;
     typedef Scalar value_type;
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
 
-    constexpr XAD_INLINE FReal(nested_type val = nested_type(), nested_type der = nested_type())
+    constexpr XAD_INLINE FReal(nested_type val = nested_type(),
+                               derivative_type der = derivative_type())
         : base_type(val), der_(der)
     {
     }
@@ -442,22 +511,21 @@ struct FReal : public ADTypeBase<Scalar, FReal<Scalar>>
     XAD_INLINE FReal& operator=(nested_type x)
     {
         this->a_ = x;
-        der_ = nested_type();
+        der_ = derivative_type();
         return *this;
     }
 
     template <class Expr>
-    XAD_INLINE FReal(
-        const Expression<Scalar, Expr>& expr);  // cppcheck-suppress noExplicitConstructor
+    XAD_INLINE FReal(const Expression<Scalar, Expr, derivative_type>& expr);
     template <class Expr>
-    XAD_INLINE FReal& operator=(const Expression<Scalar, Expr>& expr);
+    XAD_INLINE FReal& operator=(const Expression<Scalar, Expr, derivative_type>& expr);
 
     XAD_INLINE ~FReal() = default;
 
-    XAD_INLINE void setDerivative(Scalar a) { derivative() = a; }
-    XAD_INLINE Scalar getDerivative() const { return derivative(); }
-    XAD_INLINE Scalar& derivative() { return der_; }
-    XAD_INLINE const Scalar& derivative() const { return der_; }
+    XAD_INLINE void setDerivative(derivative_type a) { derivative() = a; }
+    XAD_INLINE derivative_type getDerivative() const { return derivative(); }
+    XAD_INLINE derivative_type& derivative() { return der_; }
+    XAD_INLINE const derivative_type& derivative() const { return der_; }
 
     // functions in base class that are meant only for reverse mode are
     // implemented here as stubs. They are never called, but this avoids
@@ -469,19 +537,21 @@ struct FReal : public ADTypeBase<Scalar, FReal<Scalar>>
     }
 
   private:
-    Scalar der_;
+    derivative_type der_;
 };
 
-template <class Scalar>
+template <class Scalar, std::size_t N>
 template <class Expr>
-XAD_INLINE FReal<Scalar>::FReal(const Expression<Scalar, Expr>& expr)
+XAD_INLINE FReal<Scalar, N>::FReal(
+    const Expression<Scalar, Expr, typename FReal<Scalar, N>::derivative_type>& expr)
     : base_type(xad::value(expr)), der_(xad::derivative(expr))
 {
 }
 
-template <class Scalar>
+template <class Scalar, std::size_t N>
 template <class Expr>
-XAD_INLINE FReal<Scalar>& FReal<Scalar>::operator=(const Expression<Scalar, Expr>& expr)
+XAD_INLINE FReal<Scalar, N>& FReal<Scalar, N>::operator=(
+    const Expression<Scalar, Expr, typename FReal<Scalar, N>::derivative_type>& expr)
 {
     using xad::derivative;
     using xad::value;
@@ -490,26 +560,26 @@ XAD_INLINE FReal<Scalar>& FReal<Scalar>::operator=(const Expression<Scalar, Expr
     return *this;
 }
 
-template <class Scalar>
-XAD_INLINE const Scalar& value(const AReal<Scalar>& x)
+template <class Scalar, std::size_t M = 1>
+XAD_INLINE const Scalar& value(const AReal<Scalar, M>& x)
 {
     return x.value();
 }
 
-template <class Scalar>
-XAD_INLINE Scalar& value(AReal<Scalar>& x)
+template <class Scalar, std::size_t M>
+XAD_INLINE Scalar& value(AReal<Scalar, M>& x)
 {
     return x.value();
 }
 
-template <class Scalar>
-XAD_INLINE const Scalar& value(const FReal<Scalar>& x)
+template <class Scalar, std::size_t N>
+XAD_INLINE const Scalar& value(const FReal<Scalar, N>& x)
 {
     return x.value();
 }
 
-template <class Scalar>
-XAD_INLINE Scalar& value(FReal<Scalar>& x)
+template <class Scalar, std::size_t N>
+XAD_INLINE Scalar& value(FReal<Scalar, N>& x)
 {
     return x.value();
 }
@@ -529,26 +599,26 @@ value(const T& x)
     return x;
 }
 
-template <class Scalar>
-XAD_INLINE const Scalar& derivative(const FReal<Scalar>& fr)
+template <class Scalar, std::size_t N>
+XAD_INLINE const typename FReal<Scalar, N>::derivative_type& derivative(const FReal<Scalar, N>& fr)
 {
     return fr.derivative();
 }
 
-template <class Scalar>
-XAD_INLINE Scalar& derivative(FReal<Scalar>& fr)
+template <class Scalar, std::size_t N>
+XAD_INLINE typename FReal<Scalar, N>::derivative_type& derivative(FReal<Scalar, N>& fr)
 {
     return fr.derivative();
 }
 
-template <class Scalar>
-XAD_INLINE const Scalar& derivative(const AReal<Scalar>& fr)
+template <class Scalar, std::size_t M = 1>
+XAD_INLINE const typename AReal<Scalar, M>::derivative_type& derivative(const AReal<Scalar, M>& fr)
 {
     return fr.derivative();
 }
 
-template <class Scalar>
-XAD_INLINE Scalar& derivative(AReal<Scalar>& fr)
+template <class Scalar, std::size_t M = 1>
+XAD_INLINE typename AReal<Scalar, M>::derivative_type& derivative(AReal<Scalar, M>& fr)
 {
     return fr.derivative();
 }
@@ -567,21 +637,21 @@ derivative(const T&)
     return T();
 }
 
-template <class C, class T, class Scalar, class Derived>
+template <class C, class T, class Scalar, class Derived, class Deriv>
 XAD_INLINE std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& os,
-                                                const Expression<Scalar, Derived>& x)
+                                                const Expression<Scalar, Derived, Deriv>& x)
 {
     return os << value(x);
 }
 
-template <class C, class T, class Scalar>
-XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, AReal<Scalar>& x)
+template <class C, class T, class Scalar, std::size_t N>
+XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, AReal<Scalar, N>& x)
 {
     return is >> value(x);
 }
 
-template <class C, class T, class Scalar>
-XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, FReal<Scalar>& x)
+template <class C, class T, class Scalar, std::size_t N>
+XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, FReal<Scalar, N>& x)
 {
     return is >> value(x);
 }
@@ -591,4 +661,7 @@ typedef AReal<float> AF;
 
 typedef FReal<double> FAD;
 typedef FReal<float> FAF;
+
+typedef ARealDirect<double, 1> ADD;
+typedef ARealDirect<float, 1> AFD;
 }  // namespace xad
