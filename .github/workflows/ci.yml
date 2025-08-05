@@ -166,7 +166,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Use debian archive repos
-        if: version == "7" || version == "8"
+        if: matrix.version == '7' || matrix.version == '8'
         run: |
             set -e
             sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list
