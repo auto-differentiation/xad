@@ -45,12 +45,14 @@ XAD is trusted by professionals for its **speed**, **flexibility**, and **scalab
 ### Key Features
 
 - **Forward & Adjoint Mode**: Supports any order using operator overloading.
+- **Vector modes**: Compute multiple derivatives at once.
 - **Checkpointing Support**: Efficient tape memory management for large-scale applications.
 - **External Function Interface**: Seamlessly connect with external libraries.
 - **Thread-Safe Tape**: Ensure safe, concurrent operations.
-- **Exception-Safe**: Formal guarantees for stability and error handling.
 - **High Performance**: Optimized for speed and efficiency.
 - **Proven in Production**: Battle-tested in large-scale, mission-critical systems.
+- **Exception-Safe**: Formal guarantees for stability and error handling.
+- **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page)
 
 ## 💻 Example
 
