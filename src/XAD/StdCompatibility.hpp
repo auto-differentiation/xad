@@ -500,6 +500,19 @@ struct __libcpp_random_is_valid_realtype<xad::FReal<T, N>> : true_type
 {
 };
 
+// to make libc++ happy when calling pow(AReal, int) and similar functions
+template<class T, class T1, std::size_t N>
+class __promote<xad::AReal<T, N>, T1> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, class T1, std::size_t N>
+class __promote<xad::FReal<T, N>, T1> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
 #endif
 
 }  // namespace std
