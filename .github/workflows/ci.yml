@@ -359,19 +359,18 @@ jobs:
       fail-fast: false
       matrix:
         config: [Release, Debug]
-        os: [macos-13, macos-latest]
-        compiler: [default, clang15]
+        os: [macos-14, macos-latest]
         standard: [c++11, c++17]
         memory: ["default", "lowmem"]
         include:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
           - config: Release
-            os: macos-13
+            os: macos-14
             compiler: default
             coverage: false
           - config: Debug
-            os: macos-13
+            os: macos-14
             compiler: default
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
@@ -379,20 +378,14 @@ jobs:
             standard: c++11
           - config: Release
             os: macos-latest
-            compiler: clang15
             coverage: false
           - config: Debug
             os: macos-latest
-            compiler: clang15
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-ftest-coverage"
             standard: c++17
         exclude:
-          - os: macos-13
-            compiler: clang15
-          - os: macos-latest
-            compiler: default
           - config: Release
             memory: lowmem
           - standard: "c++17"
@@ -426,7 +419,6 @@ jobs:
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
-            ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }} \
             -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
@@ -476,8 +468,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }}" \
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install" \
-            ${{ matrix.compiler == 'clang15' && ' -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++ -DCMAKE_C_COMPILER=clang' || '' }}
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install" 
           cmake --build .
 
   coverage_finish:
