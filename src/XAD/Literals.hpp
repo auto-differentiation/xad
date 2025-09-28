@@ -665,3 +665,134 @@ typedef FReal<float> FAF;
 typedef ARealDirect<double, 1> ADD;
 typedef ARealDirect<float, 1> AFD;
 }  // namespace xad
+
+
+#if __clang_major__ > 16 && defined(_LIBCPP_VERSION)
+
+namespace std {
+
+// to make libc++ happy when calling pow(AReal, int) and similar functions
+template<class T, class T1, std::size_t N>
+class __promote<xad::AReal<T, N>, T1> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, class T1, std::size_t N>
+class __promote<T1, xad::AReal<T, N>> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, std::size_t N>
+class __promote<xad::AReal<T, N>, xad::AReal<T, N>> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, class T1, class T2, std::size_t N>
+class __promote<xad::AReal<T, N>, T1, T2> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, class T1, class T2, std::size_t N>
+class __promote<T1, xad::AReal<T, N>, T2> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, class T1, class T2, std::size_t N>
+class __promote<T1, T2, xad::AReal<T, N>> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, class T2, std::size_t N>
+class __promote<xad::AReal<T, N>, xad::AReal<T, N>, T2> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, class T2, std::size_t N>
+class __promote<xad::AReal<T, N>, T2, xad::AReal<T, N>> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, class T2, std::size_t N>
+class __promote<T2, xad::AReal<T, N>, xad::AReal<T, N>> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+template<class T, std::size_t N>
+class __promote<xad::AReal<T, N>, xad::AReal<T, N>, xad::AReal<T, N>> {
+public:
+   using type = xad::AReal<T, N>;
+};
+
+// for for FReal
+template<class T, class T1, std::size_t N>
+class __promote<xad::FReal<T, N>, T1> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, class T1, std::size_t N>
+class __promote<T1, xad::FReal<T, N>> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, std::size_t N>
+class __promote<xad::FReal<T, N>, xad::FReal<T, N>> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, class T1, class T2, std::size_t N>
+class __promote<xad::FReal<T, N>, T1, T2> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, class T1, class T2, std::size_t N>
+class __promote<T1, xad::FReal<T, N>, T2> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, class T1, class T2, std::size_t N>
+class __promote<T1, T2, xad::FReal<T, N>> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, class T2, std::size_t N>
+class __promote<xad::FReal<T, N>, xad::FReal<T, N>, T2> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, class T2, std::size_t N>
+class __promote<xad::FReal<T, N>, T2, xad::FReal<T, N>> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, class T2, std::size_t N>
+class __promote<T2, xad::FReal<T, N>, xad::FReal<T, N>> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+template<class T, std::size_t N>
+class __promote<xad::FReal<T, N>, xad::FReal<T, N>, xad::FReal<T, N>> {
+public:
+   using type = xad::FReal<T, N>;
+};
+
+}
+
+#endif
