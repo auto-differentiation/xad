@@ -96,8 +96,8 @@ using xad::tan;
 using xad::tanh;
 using xad::trunc;
 
-#ifdef _MSC_VER
-// we need these explicit instantiation to disambiguate templates in MSVC
+#if defined(_MSC_VER) || (__clang_major__ > 16 && defined(_LIBCPP_VERSION))
+// we need these explicit instantiation to disambiguate templates in MSVC & Clang
 
 template <class T, std::size_t N>
 XAD_INLINE T copysign(const T& x, const xad::AReal<T, N>& y)
