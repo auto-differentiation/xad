@@ -438,7 +438,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Test Results (macos ${{ matrix.config }}-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}-${{ matrix.standard }})
+          name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }})
           path: build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
