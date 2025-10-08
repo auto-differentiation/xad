@@ -364,7 +364,7 @@ jobs:
           echo "| [testPathwiseGreeks](https://github.com/lballabio/QuantLib/blob/v1.35/test-suite/marketmodel.cpp#L2090)  $TESTSUITE" >> results.md
 
       - name: Find Comment
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         if: github.event_name == 'pull_request'
         id: fc
         with:
