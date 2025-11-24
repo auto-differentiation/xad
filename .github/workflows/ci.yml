@@ -45,7 +45,7 @@ jobs:
             config: Debug
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: setup
         run: |
           choco install -y ninja sccache
@@ -160,7 +160,7 @@ jobs:
     container:
       image: ghcr.io/foonathan/gcc:${{ matrix.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Use debian archive repos
         if: matrix.version == '7' || matrix.version == '8'
         run: |
@@ -299,7 +299,7 @@ jobs:
     container:
       image: ghcr.io/foonathan/clang:${{ matrix.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: setup
         run: |
           apt-get update
@@ -403,7 +403,7 @@ jobs:
           git clone --branch v1.14 https://github.com/linux-test-project/lcov.git
           cd lcov
           sudo make install
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
