@@ -21,7 +21,7 @@ jobs:
           lscpu
           echo "------------------ Mem ---------------"
           lsmem
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -127,15 +127,15 @@ jobs:
           lscpu
           echo "------------------ Mem ---------------"
           lsmem
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: xad
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: lballabio/QuantLib
           ref: v1.35
           path: QuantLib
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: QuantLib-Risks-Cpp
           repository: auto-differentiation/QuantLib-Risks-Cpp
@@ -328,7 +328,7 @@ jobs:
       - quantlib
       - libor
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set runid variable
         run: |
           gh variable list
