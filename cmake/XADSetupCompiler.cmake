@@ -53,7 +53,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL 
         # otherwise we get clashes with complex headers and other things on MacOS
         list(APPEND xad_cxx_flags -stdlib=libc++ -mmacosx-version-min=10.9)
     endif()
-    set(xad_cxx_flags_warnings -Werror -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls)
+    set(xad_cxx_flags_warnings -Werror -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wno-unused-parameter -Wcast-align -Wchar-subscripts -Winline -Wredundant-decls)
     if(XAD_SIMD_OPTION STREQUAL SSE2)
         set(xad_cxx_extra -msse2)
     elseif(XAD_SIMD_OPTION STREQUAL AVX)

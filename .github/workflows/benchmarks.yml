@@ -7,7 +7,6 @@ on:
 jobs:
   libor:
     # if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
-    if: false
     name: Libor Swaption Sample
     runs-on: ubuntu-latest
     container:
@@ -113,7 +112,6 @@ jobs:
           echo "result=| ${REF_TIME}s | ${OUT_TIME}s | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
 
   quantlib:
-    if: false
     name: QuantLib Samples
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
@@ -320,7 +318,6 @@ jobs:
           echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
 
   update-runid:
-    if: false
     name: Update Run-id
     runs-on: ubuntu-latest
     # if: github.event_name == 'workflow_dispatch'
@@ -339,7 +336,6 @@ jobs:
 
 
   collect:
-    if: false
     name: Collect Results
     runs-on: ubuntu-latest
     # if: github.event_name == 'pull_request'

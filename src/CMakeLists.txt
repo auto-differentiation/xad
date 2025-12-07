@@ -126,6 +126,7 @@ set(public_headers
     XAD/ReusableRange.hpp
     XAD/StdCompatibility.hpp
     XAD/Tape.hpp
+    XAD/JITCompiler.hpp
     XAD/TapeContainer.hpp
     XAD/Traits.hpp
     XAD/TypeTraits.hpp
