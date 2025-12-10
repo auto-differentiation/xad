@@ -49,7 +49,3 @@
 #include <XAD/UnaryOperators.hpp>
 #include <XAD/Vec.hpp>
 #include <XAD/Version.hpp>
-
-// JIT compilation support
-#include <XAD/JITCompiler.hpp>
-#include <XAD/ABool.hpp>
