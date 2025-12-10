@@ -25,6 +25,7 @@
 #pragma once
 
 #include <XAD/Expression.hpp>
+#include <XAD/JITExprTraits.hpp>
 #include <XAD/Macros.hpp>
 #include <XAD/Traits.hpp>
 
@@ -81,6 +82,32 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord(); }
 
+    uint32_t recordJIT(JITGraph& graph) const
+    {
+        return recordJITImpl(graph, std::integral_constant<bool, HasScalarConstant<Op>::value>{});
+    }
+
+  private:
+    uint32_t recordJITImpl(JITGraph& graph, std::false_type /* no scalar constant */) const
+    {
+        uint32_t slotA = a_.recordJIT(graph);
+        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+        return graph.addNode(opcode, slotA);
+    }
+
+    uint32_t recordJITImpl(JITGraph& graph, std::true_type /* has scalar constant */) const
+    {
+        uint32_t slotA = a_.recordJIT(graph);
+        uint32_t slotB = recordJITConstant(graph, getScalarConstant(op_));
+        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+        // For scalar_sub1, scalar_div1, scalar_pow1: scalar is first operand
+        if (IsScalarFirstOp<Op>::value)
+            return graph.addNode(opcode, slotB, slotA);
+        else
+            return graph.addNode(opcode, slotA, slotB);
+    }
+
+  public:
     XAD_INLINE DerivativeType derivative() const
     {
         using xad::derivative;
