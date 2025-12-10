@@ -133,6 +133,7 @@ set(public_headers
     XAD/JITGraphInterpreter.hpp
     XAD/JITOpCodeTraits.hpp
     XAD/JITExprTraits.hpp
+    XAD/ABool.hpp
     XAD/TapeContainer.hpp
     XAD/Traits.hpp
     XAD/TypeTraits.hpp
