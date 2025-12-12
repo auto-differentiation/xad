@@ -214,6 +214,16 @@ struct AReal
             pushAll<1>(s, o);
             s->pushLhs(slot_);
         }
+        else if (!s)
+        {
+            // Only check JIT if tape is not active
+            jit_type* j = jit_type::getActive();
+            if (j && o.shouldRecord())
+            {
+                // Copy the slot directly - preserves JIT dependency chain
+                slot_ = o.slot_;
+            }
+        }
         this->a_ = o.getValue();
     }
 
@@ -431,6 +441,16 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
             slot_ = s->registerVariable();
         pushAll<1>(s, o);
         s->pushLhs(slot_);
+    }
+    else if (!s)
+    {
+        // Only check JIT if tape is not active
+        auto* j = jit_type::getActive();
+        if (j && (o.shouldRecord() || this->shouldRecord()))
+        {
+            // Copy the slot directly - preserves JIT dependency chain
+            slot_ = o.slot_;
+        }
     }
     this->a_ = o.getValue();
     return *this;
