@@ -189,6 +189,21 @@ class JITCompiler
 
     uint32_t recordConstant(double value) { return graph_.addConstant(value); }
 
+    /**
+     * Compile the recorded graph to native code.
+     * Must be called after recording and before forward().
+     */
+    void compile()
+    {
+        if (!backend_)
+            throw std::runtime_error("No backend configured");
+        backend_->compile(graph_);
+    }
+
+    /**
+     * Execute the compiled kernel with current input values.
+     * compile() must be called before the first forward() call.
+     */
     void forward(double* outputs, std::size_t numOutputs)
     {
         if (numOutputs != graph_.output_ids.size())
@@ -202,10 +217,13 @@ class JITCompiler
         for (std::size_t i = 0; i < numInputs; ++i)
             inputs[i] = *inputValues_[i];
 
-        backend_->compile(graph_);
         backend_->forward(graph_, inputs.data(), numInputs, outputs, numOutputs);
     }
 
+    /**
+     * Compute adjoints (gradients) using reverse-mode AD.
+     * compile() must be called before this.
+     */
     void computeAdjoints()
     {
         if (!backend_)
@@ -226,7 +244,6 @@ class JITCompiler
                 outputAdjoints[i] = derivatives_[outId];
         }
 
-        backend_->compile(graph_);
         std::vector<double> inputAdjoints(numInputs);
         backend_->computeAdjoints(graph_, inputs.data(), numInputs,
                                   outputAdjoints.data(), numOutputs,

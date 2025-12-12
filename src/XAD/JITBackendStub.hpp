@@ -35,6 +35,22 @@ class JITBackendStub
             std::memset(outputs, 0, numOutputs * sizeof(double));
     }
 
+    void forwardAndBackward(const JITGraph& graph,
+                            const double* inputs, std::size_t numInputs,
+                            const double* outputAdjoints, std::size_t numOutputs,
+                            double* outputs,
+                            double* inputAdjoints)
+    {
+        // Stub: zero all outputs and input adjoints
+        (void)graph;
+        (void)inputs;
+        (void)outputAdjoints;
+        if (outputs && numOutputs > 0)
+            std::memset(outputs, 0, numOutputs * sizeof(double));
+        if (inputAdjoints && numInputs > 0)
+            std::memset(inputAdjoints, 0, numInputs * sizeof(double));
+    }
+
     void computeAdjoints(const JITGraph& graph,
                          const double* inputValues, std::size_t numInputs,
                          const double* outputAdjoints, std::size_t numOutputs,

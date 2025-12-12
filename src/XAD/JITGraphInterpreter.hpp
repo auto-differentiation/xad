@@ -47,14 +47,16 @@ class JITGraphInterpreter : public IJITBackend
             outputs[i] = nodeValues_[graph.output_ids[i]];
     }
 
-    void computeAdjoints(const JITGraph& graph,
-                         const double* inputValues, std::size_t numInputs,
-                         const double* outputAdjoints, std::size_t numOutputs,
-                         double* inputAdjoints) override
+    void forwardAndBackward(const JITGraph& graph,
+                            const double* inputs, std::size_t numInputs,
+                            const double* outputAdjoints, std::size_t numOutputs,
+                            double* outputs,
+                            double* inputAdjoints) override
     {
-        std::vector<double> outputs(numOutputs);
-        forward(graph, inputValues, numInputs, outputs.data(), numOutputs);
+        // Run forward pass
+        forward(graph, inputs, numInputs, outputs, numOutputs);
 
+        // Run backward pass
         nodeAdjoints_.assign(graph.nodeCount(), 0.0);
 
         for (std::size_t i = 0; i < numOutputs; ++i)
@@ -65,6 +67,16 @@ class JITGraphInterpreter : public IJITBackend
 
         for (std::size_t i = 0; i < numInputs; ++i)
             inputAdjoints[i] = nodeAdjoints_[graph.input_ids[i]];
+    }
+
+    void computeAdjoints(const JITGraph& graph,
+                         const double* inputValues, std::size_t numInputs,
+                         const double* outputAdjoints, std::size_t numOutputs,
+                         double* inputAdjoints) override
+    {
+        std::vector<double> outputs(numOutputs);
+        forwardAndBackward(graph, inputValues, numInputs, outputAdjoints, numOutputs,
+                          outputs.data(), inputAdjoints);
     }
 
     void reset() override
