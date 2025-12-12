@@ -28,13 +28,6 @@ class IJITBackend
                                     double* outputs,
                                     double* inputAdjoints) = 0;
 
-    // Backward pass only (deprecated - use forwardAndBackward instead)
-    // Kept for compatibility with existing backends
-    virtual void computeAdjoints(const JITGraph& graph,
-                                 const double* inputValues, std::size_t numInputs,
-                                 const double* outputAdjoints, std::size_t numOutputs,
-                                 double* inputAdjoints) = 0;
-
     virtual void reset() = 0;
 };
 

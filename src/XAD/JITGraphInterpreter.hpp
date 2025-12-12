@@ -69,16 +69,6 @@ class JITGraphInterpreter : public IJITBackend
             inputAdjoints[i] = nodeAdjoints_[graph.input_ids[i]];
     }
 
-    void computeAdjoints(const JITGraph& graph,
-                         const double* inputValues, std::size_t numInputs,
-                         const double* outputAdjoints, std::size_t numOutputs,
-                         double* inputAdjoints) override
-    {
-        std::vector<double> outputs(numOutputs);
-        forwardAndBackward(graph, inputValues, numInputs, outputAdjoints, numOutputs,
-                          outputs.data(), inputAdjoints);
-    }
-
     void reset() override
     {
         nodeValues_.clear();

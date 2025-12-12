@@ -244,10 +244,11 @@ class JITCompiler
                 outputAdjoints[i] = derivatives_[outId];
         }
 
+        std::vector<double> outputs(numOutputs);
         std::vector<double> inputAdjoints(numInputs);
-        backend_->computeAdjoints(graph_, inputs.data(), numInputs,
-                                  outputAdjoints.data(), numOutputs,
-                                  inputAdjoints.data());
+        backend_->forwardAndBackward(graph_, inputs.data(), numInputs,
+                                     outputAdjoints.data(), numOutputs,
+                                     outputs.data(), inputAdjoints.data());
 
         derivatives_.resize(graph_.nodeCount(), derivative_type());
         for (std::size_t i = 0; i < numInputs; ++i)

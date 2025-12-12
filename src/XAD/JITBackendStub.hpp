@@ -51,20 +51,6 @@ class JITBackendStub
             std::memset(inputAdjoints, 0, numInputs * sizeof(double));
     }
 
-    void computeAdjoints(const JITGraph& graph,
-                         const double* inputValues, std::size_t numInputs,
-                         const double* outputAdjoints, std::size_t numOutputs,
-                         double* inputAdjoints)
-    {
-        // Stub: zero all input adjoints
-        (void)graph;
-        (void)inputValues;
-        (void)outputAdjoints;
-        (void)numOutputs;
-        if (inputAdjoints && numInputs > 0)
-            std::memset(inputAdjoints, 0, numInputs * sizeof(double));
-    }
-
     void reset()
     {
         // Stub: nothing to reset
