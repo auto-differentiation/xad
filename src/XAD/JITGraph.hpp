@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
 namespace xad
@@ -145,61 +144,6 @@ struct JITGraph
     double getConstantValue(uint32_t nodeId) const
     {
         return const_pool[static_cast<std::size_t>(immediates[nodeId])];
-    }
-
-    void dump() const
-    {
-        std::cout << "\n=== JITGraph Dump ===" << std::endl;
-        std::cout << "Nodes: " << nodeCount() << std::endl;
-        std::cout << "Constants pool: [";
-        for (std::size_t i = 0; i < const_pool.size(); ++i)
-        {
-            if (i > 0) std::cout << ", ";
-            std::cout << const_pool[i];
-        }
-        std::cout << "]" << std::endl;
-        std::cout << "Inputs: [";
-        for (std::size_t i = 0; i < input_ids.size(); ++i)
-        {
-            if (i > 0) std::cout << ", ";
-            std::cout << input_ids[i];
-        }
-        std::cout << "]" << std::endl;
-        std::cout << "Outputs: [";
-        for (std::size_t i = 0; i < output_ids.size(); ++i)
-        {
-            if (i > 0) std::cout << ", ";
-            std::cout << output_ids[i];
-        }
-        std::cout << "]" << std::endl;
-        std::cout << "\nNode details:" << std::endl;
-        for (std::size_t i = 0; i < nodeCount(); ++i)
-        {
-            std::cout << "  [" << i << "] opcode=" << opcodes[i] << " (";
-            switch (static_cast<JITOpCode>(opcodes[i]))
-            {
-                case JITOpCode::Input: std::cout << "Input"; break;
-                case JITOpCode::Constant:
-                {
-                    std::size_t idx = static_cast<std::size_t>(immediates[i]);
-                    std::cout << "Constant, pool_idx=" << idx;
-                    if (idx < const_pool.size())
-                        std::cout << ", value=" << const_pool[idx];
-                    else
-                        std::cout << ", INVALID INDEX!";
-                    break;
-                }
-                case JITOpCode::Add: std::cout << "Add"; break;
-                case JITOpCode::Sub: std::cout << "Sub"; break;
-                case JITOpCode::Mul: std::cout << "Mul"; break;
-                case JITOpCode::Div: std::cout << "Div"; break;
-                case JITOpCode::Neg: std::cout << "Neg"; break;
-                default: std::cout << "Other"; break;
-            }
-            std::cout << ") a=" << operand_a[i] << " b=" << operand_b[i] << " c=" << operand_c[i];
-            std::cout << " imm=" << immediates[i] << std::endl;
-        }
-        std::cout << "=== End Dump ===\n" << std::endl;
     }
 };
 

@@ -196,7 +196,7 @@ class JITCompiler
     void compile()
     {
         if (!backend_)
-            throw std::runtime_error("No backend configured");
+            throw Exception("No backend configured");
         backend_->compile(graph_);
     }
 
@@ -207,10 +207,10 @@ class JITCompiler
     void forward(double* outputs, std::size_t numOutputs)
     {
         if (numOutputs != graph_.output_ids.size())
-            throw std::runtime_error("Output count mismatch");
+            throw OutOfRange("Output count mismatch");
 
         if (!backend_)
-            throw std::runtime_error("No backend configured");
+            throw Exception("No backend configured");
 
         std::size_t numInputs = graph_.input_ids.size();
         std::vector<double> inputs(numInputs);
@@ -227,7 +227,7 @@ class JITCompiler
     void computeAdjoints()
     {
         if (!backend_)
-            throw std::runtime_error("No backend configured");
+            throw Exception("No backend configured");
 
         std::size_t numInputs = graph_.input_ids.size();
         std::size_t numOutputs = graph_.output_ids.size();
