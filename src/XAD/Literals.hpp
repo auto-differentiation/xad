@@ -472,8 +472,7 @@ XAD_INLINE AReal<Scalar, M>::AReal(
     }
 
     // Only check JIT if tape is not active
-    typedef JITCompiler<Scalar, M> jit_type;
-    jit_type* j = jit_type::getActive();
+    auto* j = JITCompiler<Scalar, M>::getActive();
     if (j && expr.shouldRecord())
     {
         slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
@@ -499,8 +498,7 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
     else if (!s)
     {
         // Only check JIT if tape is not active
-        typedef JITCompiler<Scalar, M> jit_type;
-        jit_type* j = jit_type::getActive();
+        auto* j = JITCompiler<Scalar, M>::getActive();
         if (j && (expr.shouldRecord() || this->shouldRecord()))
         {
             slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());

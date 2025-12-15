@@ -33,7 +33,7 @@ class JITCompiler
 
     // Default constructor - uses interpreter backend
     explicit JITCompiler(bool activate = true)
-        : backend_(std::make_unique<JITGraphInterpreter>())
+        : backend_(std::unique_ptr<JITGraphInterpreter>(new JITGraphInterpreter()))
     {
         if (activate)
             setActive(this);
@@ -51,7 +51,7 @@ class JITCompiler
     template <class BackendType>
     static JITCompiler withBackend(bool activate = true)
     {
-        return JITCompiler(std::make_unique<BackendType>(), activate);
+        return JITCompiler(std::unique_ptr<BackendType>(new BackendType()), activate);
     }
 
     ~JITCompiler() { deactivate(); }
