@@ -462,20 +462,21 @@ XAD_INLINE AReal<Scalar, M>::AReal(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
     : base_type(expr.getValue()), slot_(INVALID_SLOT)
 {
-    tape_type* s = tape_type::getActive();
-    if (s && expr.shouldRecord())
+    if (expr.shouldRecord())
     {
-        slot_ = s->registerVariable();
-        pushAll<ExprTraits<Expr>::numVariables>(s, expr);
-        s->pushLhs(slot_);
-        return;
-    }
-
-    // Only check JIT if tape is not active
-    auto* j = JITCompiler<Scalar, M>::getActive();
-    if (j && expr.shouldRecord())
-    {
-        slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+        tape_type* s = tape_type::getActive();
+        if (s)
+        {
+            slot_ = s->registerVariable();
+            pushAll<ExprTraits<Expr>::numVariables>(s, expr);
+            s->pushLhs(slot_);
+        }
+        else
+        {
+            auto* j = JITCompiler<Scalar, M>::getActive();
+            if (j)
+                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+        }
     }
 }
 
@@ -484,24 +485,24 @@ template <class Expr>
 XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
 {
-    tape_type* s = tape_type::getActive();
-    if (s && (expr.shouldRecord() || this->shouldRecord()))
+    if (expr.shouldRecord() || this->shouldRecord())
     {
-        pushAll<ExprTraits<Expr>::numVariables>(s, expr);
-        // only register this variable after evaluating the expression, as this
-        // variable might appear on the rhs of the equation too and if not yet
-        // registered, it doesn't need recording of derivatives
-        if (slot_ == INVALID_SLOT)
-            slot_ = s->registerVariable();
-        s->pushLhs(slot_);
-    }
-    else if (!s)
-    {
-        // Only check JIT if tape is not active
-        auto* j = JITCompiler<Scalar, M>::getActive();
-        if (j && (expr.shouldRecord() || this->shouldRecord()))
+        tape_type* s = tape_type::getActive();
+        if (s)
         {
-            slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+            pushAll<ExprTraits<Expr>::numVariables>(s, expr);
+            // only register this variable after evaluating the expression, as this
+            // variable might appear on the rhs of the equation too and if not yet
+            // registered, it doesn't need recording of derivatives
+            if (slot_ == INVALID_SLOT)
+                slot_ = s->registerVariable();
+            s->pushLhs(slot_);
+        }
+        else
+        {
+            auto* j = JITCompiler<Scalar, M>::getActive();
+            if (j)
+                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
         }
     }
     this->a_ = expr.getValue();
