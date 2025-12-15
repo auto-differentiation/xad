@@ -96,15 +96,22 @@ class ABool
     slot_type slot_;    // JIT graph node ID for condition
 };
 
-// Helper functions to create ABool from AReal comparisons
+// ============================================================================
+// Comparison helper functions
+// ============================================================================
 
-template <class Scalar, std::size_t N>
-ABool<Scalar, N> less(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
+namespace detail
+{
+
+// Helper: Create ABool from comparing two AReal values
+template <class Scalar, std::size_t N, class Compare>
+ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b,
+                               Compare cmp, JITOpCode opcode)
 {
     using jit_type = JITCompiler<Scalar, N>;
     using slot_type = typename jit_type::slot_type;
 
-    bool passive = (value(a) < value(b));
+    bool passive = cmp(value(a), value(b));
 
     auto* jit = jit_type::getActive();
     if (jit)
@@ -112,187 +119,101 @@ ABool<Scalar, N> less(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
         uint32_t slotA = a.getSlot();
         uint32_t slotB = b.getSlot();
 
-        // Record constants if needed
         if (slotA == ABool<Scalar, N>::INVALID_SLOT)
             slotA = jit->recordConstant(static_cast<double>(value(a)));
         if (slotB == ABool<Scalar, N>::INVALID_SLOT)
             slotB = jit->recordConstant(static_cast<double>(value(b)));
 
-        slot_type cmpSlot = jit->recordNode(JITOpCode::CmpLT, slotA, slotB);
+        slot_type cmpSlot = jit->recordNode(opcode, slotA, slotB);
         return ABool<Scalar, N>(cmpSlot, passive);
     }
 
     return ABool<Scalar, N>(passive);
+}
+
+// Helper: Create ABool from comparing AReal with scalar
+template <class Scalar, std::size_t N, class Compare>
+ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, Scalar b,
+                               Compare cmp, JITOpCode opcode)
+{
+    using jit_type = JITCompiler<Scalar, N>;
+    using slot_type = typename jit_type::slot_type;
+
+    bool passive = cmp(value(a), b);
+
+    auto* jit = jit_type::getActive();
+    if (jit)
+    {
+        uint32_t slotA = a.getSlot();
+        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
+            slotA = jit->recordConstant(static_cast<double>(value(a)));
+
+        uint32_t slotB = jit->recordConstant(static_cast<double>(b));
+        slot_type cmpSlot = jit->recordNode(opcode, slotA, slotB);
+        return ABool<Scalar, N>(cmpSlot, passive);
+    }
+
+    return ABool<Scalar, N>(passive);
+}
+
+// Comparison functors
+struct LessThan { template<class T> bool operator()(T a, T b) const { return a < b; } };
+struct GreaterThan { template<class T> bool operator()(T a, T b) const { return a > b; } };
+struct LessEqual { template<class T> bool operator()(T a, T b) const { return a <= b; } };
+struct GreaterEqual { template<class T> bool operator()(T a, T b) const { return a >= b; } };
+
+}  // namespace detail
+
+// ============================================================================
+// Public comparison functions
+// ============================================================================
+
+template <class Scalar, std::size_t N>
+ABool<Scalar, N> less(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
+{
+    return detail::compareAReal(a, b, detail::LessThan{}, JITOpCode::CmpLT);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> less(const AReal<Scalar, N>& a, Scalar b)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
-
-    bool passive = (value(a) < b);
-
-    auto* jit = jit_type::getActive();
-    if (jit)
-    {
-        uint32_t slotA = a.getSlot();
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
-
-        uint32_t slotB = jit->recordConstant(static_cast<double>(b));
-        slot_type cmpSlot = jit->recordNode(JITOpCode::CmpLT, slotA, slotB);
-        return ABool<Scalar, N>(cmpSlot, passive);
-    }
-
-    return ABool<Scalar, N>(passive);
+    return detail::compareAReal(a, b, detail::LessThan{}, JITOpCode::CmpLT);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> greater(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
-
-    bool passive = (value(a) > value(b));
-
-    auto* jit = jit_type::getActive();
-    if (jit)
-    {
-        uint32_t slotA = a.getSlot();
-        uint32_t slotB = b.getSlot();
-
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
-        if (slotB == ABool<Scalar, N>::INVALID_SLOT)
-            slotB = jit->recordConstant(static_cast<double>(value(b)));
-
-        slot_type cmpSlot = jit->recordNode(JITOpCode::CmpGT, slotA, slotB);
-        return ABool<Scalar, N>(cmpSlot, passive);
-    }
-
-    return ABool<Scalar, N>(passive);
+    return detail::compareAReal(a, b, detail::GreaterThan{}, JITOpCode::CmpGT);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> greater(const AReal<Scalar, N>& a, Scalar b)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
-
-    bool passive = (value(a) > b);
-
-    auto* jit = jit_type::getActive();
-    if (jit)
-    {
-        uint32_t slotA = a.getSlot();
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
-
-        uint32_t slotB = jit->recordConstant(static_cast<double>(b));
-        slot_type cmpSlot = jit->recordNode(JITOpCode::CmpGT, slotA, slotB);
-        return ABool<Scalar, N>(cmpSlot, passive);
-    }
-
-    return ABool<Scalar, N>(passive);
+    return detail::compareAReal(a, b, detail::GreaterThan{}, JITOpCode::CmpGT);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> lessEqual(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
-
-    bool passive = (value(a) <= value(b));
-
-    auto* jit = jit_type::getActive();
-    if (jit)
-    {
-        uint32_t slotA = a.getSlot();
-        uint32_t slotB = b.getSlot();
-
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
-        if (slotB == ABool<Scalar, N>::INVALID_SLOT)
-            slotB = jit->recordConstant(static_cast<double>(value(b)));
-
-        slot_type cmpSlot = jit->recordNode(JITOpCode::CmpLE, slotA, slotB);
-        return ABool<Scalar, N>(cmpSlot, passive);
-    }
-
-    return ABool<Scalar, N>(passive);
+    return detail::compareAReal(a, b, detail::LessEqual{}, JITOpCode::CmpLE);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> lessEqual(const AReal<Scalar, N>& a, Scalar b)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
-
-    bool passive = (value(a) <= b);
-
-    auto* jit = jit_type::getActive();
-    if (jit)
-    {
-        uint32_t slotA = a.getSlot();
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
-
-        uint32_t slotB = jit->recordConstant(static_cast<double>(b));
-        slot_type cmpSlot = jit->recordNode(JITOpCode::CmpLE, slotA, slotB);
-        return ABool<Scalar, N>(cmpSlot, passive);
-    }
-
-    return ABool<Scalar, N>(passive);
+    return detail::compareAReal(a, b, detail::LessEqual{}, JITOpCode::CmpLE);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> greaterEqual(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
-
-    bool passive = (value(a) >= value(b));
-
-    auto* jit = jit_type::getActive();
-    if (jit)
-    {
-        uint32_t slotA = a.getSlot();
-        uint32_t slotB = b.getSlot();
-
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
-        if (slotB == ABool<Scalar, N>::INVALID_SLOT)
-            slotB = jit->recordConstant(static_cast<double>(value(b)));
-
-        slot_type cmpSlot = jit->recordNode(JITOpCode::CmpGE, slotA, slotB);
-        return ABool<Scalar, N>(cmpSlot, passive);
-    }
-
-    return ABool<Scalar, N>(passive);
+    return detail::compareAReal(a, b, detail::GreaterEqual{}, JITOpCode::CmpGE);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> greaterEqual(const AReal<Scalar, N>& a, Scalar b)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
-
-    bool passive = (value(a) >= b);
-
-    auto* jit = jit_type::getActive();
-    if (jit)
-    {
-        uint32_t slotA = a.getSlot();
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
-
-        uint32_t slotB = jit->recordConstant(static_cast<double>(b));
-        slot_type cmpSlot = jit->recordNode(JITOpCode::CmpGE, slotA, slotB);
-        return ABool<Scalar, N>(cmpSlot, passive);
-    }
-
-    return ABool<Scalar, N>(passive);
+    return detail::compareAReal(a, b, detail::GreaterEqual{}, JITOpCode::CmpGE);
 }
 
 // Convenience typedef

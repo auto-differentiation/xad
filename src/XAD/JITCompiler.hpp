@@ -264,11 +264,16 @@ class JITCompiler
 
     const derivative_type& derivative(slot_type s) const
     {
-        static derivative_type zero = derivative_type();
-        return (s < derivatives_.size()) ? derivatives_[s] : zero;
+        if (s < derivatives_.size())
+            return derivatives_[s];
+        // Return reference to class member for out-of-range slots (thread-safe)
+        return zero_;
     }
 
-    derivative_type getDerivative(slot_type s) const { return derivative(s); }
+    derivative_type getDerivative(slot_type s) const
+    {
+        return (s < derivatives_.size()) ? derivatives_[s] : derivative_type();
+    }
 
     void setDerivative(slot_type s, const derivative_type& d)
     {
@@ -291,14 +296,20 @@ class JITCompiler
             backend_->reset();
     }
 
+    // =========================================================================
+    // Tape API compatibility stubs
+    // These methods exist to provide API compatibility with xad::Tape, allowing
+    // code to switch between Tape and JITCompiler with minimal changes.
+    // JIT does not support partial rollback or incremental adjoint computation.
+    // =========================================================================
     void printStatus() const {}
     std::size_t getMemory() const { return graph_.nodeCount() * 32 + derivatives_.size() * sizeof(derivative_type); }
     position_type getPosition() const { return static_cast<position_type>(graph_.nodeCount()); }
-    void clearDerivativesAfter(position_type) {}
-    void resetTo(position_type) {}
-    void computeAdjointsTo(position_type) {}
+    void clearDerivativesAfter(position_type) {}  // No-op: JIT recomputes full graph
+    void resetTo(position_type) {}                // No-op: JIT doesn't support partial rollback
+    void computeAdjointsTo(position_type) {}      // No-op: JIT computes all adjoints at once
 
-    // Compatibility with old interface
+    // Internal Tape recording interface - no-op for JIT (graph is built via expressions)
     XAD_INLINE void pushLhs(slot_type) {}
 
     template <class MulIt, class SlotIt>
@@ -310,6 +321,7 @@ class JITCompiler
     std::unique_ptr<IJITBackend> backend_;
     std::vector<const Real*> inputValues_;
     std::vector<derivative_type> derivatives_;
+    derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
 };
 
 template <class Real, std::size_t N>
