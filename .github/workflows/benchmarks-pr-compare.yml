@@ -5,10 +5,23 @@ on:
     types: [opened, reopened, synchronize]
   workflow_dispatch:
     inputs:
+      base_repo:
+        description: 'Base repository to compare against'
+        required: false
+        default: 'auto-differentiation/xad'
+        type: choice
+        options:
+          - 'auto-differentiation/xad'
+          - 'da-roth/xad-jit'
       base_ref:
-        description: 'Base branch to compare against'
+        description: 'Base branch/ref to compare against'
         required: false
         default: 'main'
+
+env:
+  # Default to original XAD repo for comparison
+  BASE_REPO: ${{ github.event.inputs.base_repo || 'auto-differentiation/xad' }}
+  BASE_REF: ${{ github.event.inputs.base_ref || 'main' }}
 
 jobs:
   benchmark:
@@ -24,11 +37,12 @@ jobs:
           echo "------------------ Mem ---------------"
           lsmem
 
-      # Checkout base branch (main) for reference build
+      # Checkout base branch (original XAD by default) for reference build
       - name: Checkout base branch
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.base.ref || github.event.inputs.base_ref || 'main' }}
+          repository: ${{ env.BASE_REPO }}
+          ref: ${{ env.BASE_REF }}
           path: base
 
       # Checkout PR branch for comparison build
@@ -119,7 +133,7 @@ jobs:
 
           echo "## Benchmark Results" > results.md
           echo "" >> results.md
-          echo "Comparing base branch (\`${{ github.event.pull_request.base.ref || 'main' }}\`) vs PR branch (\`${{ github.event.pull_request.head.ref || github.ref_name }}\`)" >> results.md
+          echo "Comparing base (\`${{ env.BASE_REPO }}@${{ env.BASE_REF }}\`) vs PR branch (\`${{ github.event.pull_request.head.ref || github.ref_name }}\`)" >> results.md
           echo "" >> results.md
 
           echo "### Raw Statistics (5 runs each)" >> results.md
