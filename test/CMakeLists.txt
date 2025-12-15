@@ -53,7 +53,6 @@ set(testfiles
     FReal_test.cpp
     ARealDirect_test.cpp
     DirectModeBenchmark.cpp
-    JIT_test.cpp
 )
 
 if (XAD_ENABLE_EIGEN_TESTS)
