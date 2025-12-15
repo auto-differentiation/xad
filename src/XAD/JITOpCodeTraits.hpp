@@ -1,0 +1,118 @@
+#pragma once
+
+#include <XAD/JITGraph.hpp>
+
+namespace xad
+{
+
+// Forward declarations of operator types
+template <class> struct add_op;
+template <class> struct sub_op;
+template <class> struct prod_op;
+template <class> struct div_op;
+template <class> struct negate_op;
+template <class> struct pow_op;
+template <class> struct max_op;
+template <class> struct min_op;
+template <class> struct fmax_op;
+template <class> struct fmin_op;
+template <class> struct fmod_op;
+template <class> struct atan2_op;
+
+// Unary math functors
+template <class> struct sin_op;
+template <class> struct cos_op;
+template <class> struct tan_op;
+template <class> struct asin_op;
+template <class> struct acos_op;
+template <class> struct atan_op;
+template <class> struct sinh_op;
+template <class> struct cosh_op;
+template <class> struct tanh_op;
+template <class> struct exp_op;
+template <class> struct log_op;
+template <class> struct log10_op;
+template <class> struct log2_op;
+template <class> struct sqrt_op;
+template <class> struct cbrt_op;
+template <class> struct abs_op;
+template <class> struct fabs_op;
+template <class> struct floor_op;
+template <class> struct ceil_op;
+template <class> struct erf_op;
+template <class> struct erfc_op;
+template <class> struct expm1_op;
+template <class> struct log1p_op;
+
+// Scalar ops
+template <class, class> struct scalar_add_op;
+template <class, class> struct scalar_sub1_op;
+template <class, class> struct scalar_sub2_op;
+template <class, class> struct scalar_prod_op;
+template <class, class> struct scalar_div1_op;
+template <class, class> struct scalar_div2_op;
+template <class, class> struct scalar_pow1_op;
+template <class, class> struct scalar_pow2_op;
+
+// Primary template - unknown operator
+template <class Op>
+struct JITOpCodeFor
+{
+    static constexpr bool known = false;
+    static constexpr JITOpCode value = JITOpCode::Input;
+};
+
+// Binary arithmetic
+template <class S> struct JITOpCodeFor<add_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Add; };
+template <class S> struct JITOpCodeFor<sub_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Sub; };
+template <class S> struct JITOpCodeFor<prod_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Mul; };
+template <class S> struct JITOpCodeFor<div_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Div; };
+
+// Unary
+template <class S> struct JITOpCodeFor<negate_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Neg; };
+
+// Binary math
+template <class S> struct JITOpCodeFor<pow_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Pow; };
+template <class S> struct JITOpCodeFor<max_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Max; };
+template <class S> struct JITOpCodeFor<min_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Min; };
+template <class S> struct JITOpCodeFor<fmax_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Max; };
+template <class S> struct JITOpCodeFor<fmin_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Min; };
+template <class S> struct JITOpCodeFor<fmod_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Mod; };
+template <class S> struct JITOpCodeFor<atan2_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Atan2; };
+
+// Unary math
+template <class S> struct JITOpCodeFor<sin_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Sin; };
+template <class S> struct JITOpCodeFor<cos_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Cos; };
+template <class S> struct JITOpCodeFor<tan_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Tan; };
+template <class S> struct JITOpCodeFor<asin_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Asin; };
+template <class S> struct JITOpCodeFor<acos_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Acos; };
+template <class S> struct JITOpCodeFor<atan_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Atan; };
+template <class S> struct JITOpCodeFor<sinh_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Sinh; };
+template <class S> struct JITOpCodeFor<cosh_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Cosh; };
+template <class S> struct JITOpCodeFor<tanh_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Tanh; };
+template <class S> struct JITOpCodeFor<exp_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Exp; };
+template <class S> struct JITOpCodeFor<log_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Log; };
+template <class S> struct JITOpCodeFor<log10_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Log10; };
+template <class S> struct JITOpCodeFor<log2_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Log2; };
+template <class S> struct JITOpCodeFor<sqrt_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Sqrt; };
+template <class S> struct JITOpCodeFor<cbrt_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Cbrt; };
+template <class S> struct JITOpCodeFor<abs_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Abs; };
+template <class S> struct JITOpCodeFor<fabs_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Abs; };
+template <class S> struct JITOpCodeFor<floor_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Floor; };
+template <class S> struct JITOpCodeFor<ceil_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Ceil; };
+template <class S> struct JITOpCodeFor<erf_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Erf; };
+template <class S> struct JITOpCodeFor<erfc_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Erfc; };
+template <class S> struct JITOpCodeFor<expm1_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Expm1; };
+template <class S> struct JITOpCodeFor<log1p_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Log1p; };
+
+// Scalar operations
+template <class S, class T> struct JITOpCodeFor<scalar_add_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Add; };
+template <class S, class T> struct JITOpCodeFor<scalar_sub1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Sub; };
+template <class S, class T> struct JITOpCodeFor<scalar_sub2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Sub; };
+template <class S, class T> struct JITOpCodeFor<scalar_prod_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Mul; };
+template <class S, class T> struct JITOpCodeFor<scalar_div1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Div; };
+template <class S, class T> struct JITOpCodeFor<scalar_div2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Div; };
+template <class S, class T> struct JITOpCodeFor<scalar_pow1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Pow; };
+template <class S, class T> struct JITOpCodeFor<scalar_pow2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Pow; };
+
+}  // namespace xad
