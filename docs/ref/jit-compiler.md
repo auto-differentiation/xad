@@ -1,6 +1,6 @@
-## JITCompiler
+# JITCompiler
 
-### Overview
+## Overview
 
 `#!c++ template <class Real, std::size_t N = 1> class JITCompiler;`
 
@@ -14,7 +14,7 @@
 
     This API is only available when XAD is compiled with `XAD_ENABLE_JIT`.
 
-### Typical usage
+## Typical usage
 
     using AD = xad::AReal<double, 1>;
 
@@ -35,7 +35,7 @@
     double out = 0.0;
     jit.forward(&out, 1);
 
-### Recording control (TLS)
+## Recording control (TLS)
 
 `JITCompiler` mirrors the tape pattern: a thread-local “active” compiler can be set, so that XAD expression construction/assignment can record into the active JIT compiler when no tape is active.
 
@@ -57,7 +57,7 @@ Returns the active compiler for the current thread, or `#!c++ nullptr` if none i
 
 Manage the thread-local active compiler pointer.
 
-### Graph and backend
+## Graph and backend
 
 #### `getGraph`
 
@@ -77,7 +77,7 @@ Replaces the execution backend (requires recompilation of the current graph).
 
 Compiles the currently recorded graph with the current backend.
 
-### Inputs/outputs
+## Inputs/outputs
 
 #### `registerInput` / `registerInputs`
 
@@ -93,7 +93,7 @@ Registers dependent variables as graph outputs.
 
 Starts a new recording using the existing registered inputs.
 
-### Execution
+## Execution
 
 #### `forward`
 

@@ -1,6 +1,6 @@
-## ABool (JIT)
+# ABool (JIT)
 
-### Overview
+## Overview
 
 `#!c++ template <class Scalar, std::size_t N = 1> class ABool;`
 
@@ -13,9 +13,9 @@
 
     This API is only available when XAD is compiled with `XAD_ENABLE_JIT`.
 
-### Conditional selection
+## Conditional selection
 
-#### `If`
+### `If`
 
 `#!c++ template <class AD> AD If(const AD& trueVal, const AD& falseVal) const;`
 
@@ -23,7 +23,7 @@ If the `ABool` is passive (no JIT recording), this behaves like a normal conditi
 
 If a JIT compiler is active, the selection is recorded as an `If` node in the graph.
 
-### Comparisons
+## Comparisons
 
 `ABool` integrates with the comparison helpers (e.g. `less`, `greater`, …) so that comparisons can either:
 

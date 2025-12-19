@@ -104,12 +104,10 @@ void JITGraphInterpreter::evaluateNode(const JITGraph& graph, uint32_t nodeId)
     JITOpCode op = static_cast<JITOpCode>(node.op);
     uint32_t a = node.a;
     uint32_t b = node.b;
-    uint32_t c = node.c;
     double imm = node.imm;
 
     double va = (a < nodeValues_.size()) ? nodeValues_[a] : 0.0;
     double vb = (b < nodeValues_.size()) ? nodeValues_[b] : 0.0;
-    double vc = (c < nodeValues_.size()) ? nodeValues_[c] : 0.0;
 
     double result = 0.0;
 
@@ -207,7 +205,13 @@ void JITGraphInterpreter::evaluateNode(const JITGraph& graph, uint32_t nodeId)
         case JITOpCode::CmpGE: result = (va >= vb) ? 1.0 : 0.0; break;
         case JITOpCode::CmpEQ: result = (va == vb) ? 1.0 : 0.0; break;
         case JITOpCode::CmpNE: result = (va != vb) ? 1.0 : 0.0; break;
-        case JITOpCode::If: result = (va != 0.0) ? vb : vc; break;
+        case JITOpCode::If:
+        {
+            const uint32_t c = node.c;
+            const double vc = (c < nodeValues_.size()) ? nodeValues_[c] : 0.0;
+            result = (va != 0.0) ? vb : vc;
+            break;
+        }
         default: throw std::runtime_error("Unknown opcode");
     }
     nodeValues_[nodeId] = result;
@@ -462,11 +466,10 @@ void JITGraphInterpreter::propagateAdjoint(const JITGraph& graph, uint32_t nodeI
             break;
         case JITOpCode::If:
         {
-            uint32_t c = node.c;
             if (va != 0.0)
                 nodeAdjoints_[b] += adj;
             else
-                nodeAdjoints_[c] += adj;
+                nodeAdjoints_[node.c] += adj;
             break;
         }
         default:
