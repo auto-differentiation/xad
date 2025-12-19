@@ -1,8 +1,37 @@
+/**
+ *
+ *   ABool: Trackable boolean for JIT-compiled conditional expressions.
+ *
+ *   This file is part of XAD, a comprehensive C++ library for
+ *   automatic differentiation.
+ *
+ *   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Affero General Public License as published
+ *   by the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Affero General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Affero General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ******************************************************************************/
+
 #pragma once
 
-#include <XAD/Literals.hpp>
+#include <XAD/Config.hpp>
+
+#ifdef XAD_ENABLE_JIT
+
 #include <XAD/JITCompiler.hpp>
+#include <XAD/JITExprTraits.hpp>
 #include <XAD/JITGraph.hpp>
+#include <XAD/Literals.hpp>
 
 namespace xad
 {
@@ -58,18 +87,18 @@ class ABool
 
             // If either operand doesn't have a slot, record it as a constant
             if (trueSlot == INVALID_SLOT)
-                trueSlot = jit->recordConstant(static_cast<double>(value(trueVal)));
+            {
+                trueSlot = jit->recordConstant(getNestedDoubleValue(value(trueVal)));
+            }
             if (falseSlot == INVALID_SLOT)
-                falseSlot = jit->recordConstant(static_cast<double>(value(falseVal)));
+            {
+                falseSlot = jit->recordConstant(getNestedDoubleValue(value(falseVal)));
+            }
 
             // Record the If node: If(condition, trueVal, falseVal)
             uint32_t resultSlot = jit->recordNode(JITOpCode::If, slot_, trueSlot, falseSlot);
 
             // Create result with the passive value and set the JIT slot
-            areal_type result(passive_ ? value(trueVal) : value(falseVal));
-            // Use JIT to set the slot via derivative access (which resizes derivatives_)
-            jit->derivative(resultSlot);
-            // We need to return a value with the correct slot - construct directly
             return createWithSlot(passive_ ? value(trueVal) : value(falseVal), resultSlot);
         }
 
@@ -120,9 +149,13 @@ ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, const AReal<Scalar, N>&
         uint32_t slotB = b.getSlot();
 
         if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
+        {
+            slotA = jit->recordConstant(getNestedDoubleValue(value(a)));
+        }
         if (slotB == ABool<Scalar, N>::INVALID_SLOT)
-            slotB = jit->recordConstant(static_cast<double>(value(b)));
+        {
+            slotB = jit->recordConstant(getNestedDoubleValue(value(b)));
+        }
 
         slot_type cmpSlot = jit->recordNode(opcode, slotA, slotB);
         return ABool<Scalar, N>(cmpSlot, passive);
@@ -146,9 +179,11 @@ ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, Scalar b,
     {
         uint32_t slotA = a.getSlot();
         if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-            slotA = jit->recordConstant(static_cast<double>(value(a)));
+        {
+            slotA = jit->recordConstant(getNestedDoubleValue(value(a)));
+        }
 
-        uint32_t slotB = jit->recordConstant(static_cast<double>(b));
+        uint32_t slotB = jit->recordConstant(getNestedDoubleValue(b));
         slot_type cmpSlot = jit->recordNode(opcode, slotA, slotB);
         return ABool<Scalar, N>(cmpSlot, passive);
     }
@@ -220,3 +255,5 @@ ABool<Scalar, N> greaterEqual(const AReal<Scalar, N>& a, Scalar b)
 using ADBool = ABool<double, 1>;
 
 }  // namespace xad
+
+#endif  // XAD_ENABLE_JIT
