@@ -232,7 +232,8 @@ class JITGraphInterpreter : public IJITBackend
                 nodeAdjoints_[a] -= adj;
                 break;
             case JITOpCode::Abs:
-                nodeAdjoints_[a] += adj * ((va >= 0.0) ? 1.0 : -1.0);
+                // Match XAD's derivative: (a > 0) - (a < 0), which is 0 at a=0
+                nodeAdjoints_[a] += adj * ((va > 0.0) ? 1.0 : ((va < 0.0) ? -1.0 : 0.0));
                 break;
             case JITOpCode::Square:
                 nodeAdjoints_[a] += adj * 2.0 * va;
