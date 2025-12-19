@@ -31,6 +31,7 @@
 #endif
 #include <XAD/Macros.hpp>
 #include <XAD/Traits.hpp>
+#include <type_traits>
 
 namespace xad
 {
