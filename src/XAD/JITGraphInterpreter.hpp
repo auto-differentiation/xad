@@ -138,6 +138,50 @@ class JITGraphInterpreter : public IJITBackend
             case JITOpCode::Log1p: result = std::log1p(va); break;
             case JITOpCode::Log10: result = std::log10(va); break;
             case JITOpCode::Log2: result = std::log2(va); break;
+            case JITOpCode::Asinh: result = std::asinh(va); break;
+            case JITOpCode::Acosh: result = std::acosh(va); break;
+            case JITOpCode::Atanh: result = std::atanh(va); break;
+            case JITOpCode::Exp2: result = std::exp2(va); break;
+            case JITOpCode::Trunc: result = std::trunc(va); break;
+            case JITOpCode::Round: result = std::round(va); break;
+            case JITOpCode::Fmod: result = std::fmod(va, vb); break;
+            case JITOpCode::Remainder: result = std::remainder(va, vb); break;
+            case JITOpCode::Remquo:
+            {
+                int quo;
+                result = std::remquo(va, vb, &quo);
+                // Store quotient in operand_c if needed
+                break;
+            }
+            case JITOpCode::Hypot: result = std::hypot(va, vb); break;
+            case JITOpCode::Nextafter: result = std::nextafter(va, vb); break;
+            case JITOpCode::Ldexp: result = std::ldexp(va, static_cast<int>(imm)); break;
+            case JITOpCode::Frexp:
+            {
+                int exp;
+                result = std::frexp(va, &exp);
+                // Store exponent somewhere if needed
+                break;
+            }
+            case JITOpCode::Modf:
+            {
+                double intpart;
+                result = std::modf(va, &intpart);
+                // Store integer part somewhere if needed
+                break;
+            }
+            case JITOpCode::Copysign: result = std::copysign(va, vb); break;
+            case JITOpCode::SmoothAbs:
+            {
+                // Smooth abs: if |x| > c return |x|, else smooth function
+                if (std::abs(va) > vb)
+                    result = std::abs(va);
+                else if (va < 0.0)
+                    result = va * va * (2.0 / vb + va / (vb * vb));
+                else
+                    result = va * va * (2.0 / vb - va / (vb * vb));
+                break;
+            }
             case JITOpCode::CmpLT: result = (va < vb) ? 1.0 : 0.0; break;
             case JITOpCode::CmpLE: result = (va <= vb) ? 1.0 : 0.0; break;
             case JITOpCode::CmpGT: result = (va > vb) ? 1.0 : 0.0; break;
@@ -290,6 +334,98 @@ class JITGraphInterpreter : public IJITBackend
             case JITOpCode::Log2:
                 nodeAdjoints_[a] += adj / (va * std::log(2.0));
                 break;
+            case JITOpCode::Asinh:
+                nodeAdjoints_[a] += adj / std::sqrt(va * va + 1.0);
+                break;
+            case JITOpCode::Acosh:
+                nodeAdjoints_[a] += adj / std::sqrt(va * va - 1.0);
+                break;
+            case JITOpCode::Atanh:
+                nodeAdjoints_[a] += adj / (1.0 - va * va);
+                break;
+            case JITOpCode::Exp2:
+                nodeAdjoints_[a] += adj * std::log(2.0) * vResult;
+                break;
+            case JITOpCode::Trunc:
+            case JITOpCode::Round:
+                // Zero derivative
+                break;
+            case JITOpCode::Fmod:
+                nodeAdjoints_[a] += adj;
+                nodeAdjoints_[b] -= adj * std::floor(va / vb);
+                break;
+            case JITOpCode::Remainder:
+            {
+                int quo;
+                std::remquo(va, vb, &quo);
+                nodeAdjoints_[a] += adj;
+                nodeAdjoints_[b] -= adj * quo;
+                break;
+            }
+            case JITOpCode::Remquo:
+            {
+                int quo;
+                std::remquo(va, vb, &quo);
+                nodeAdjoints_[a] += adj;
+                nodeAdjoints_[b] -= adj * quo;
+                break;
+            }
+            case JITOpCode::Hypot:
+                nodeAdjoints_[a] += adj * va / vResult;
+                nodeAdjoints_[b] += adj * vb / vResult;
+                break;
+            case JITOpCode::Nextafter:
+                nodeAdjoints_[a] += adj;
+                // Second operand has zero derivative
+                break;
+            case JITOpCode::Ldexp:
+            {
+                double imm = graph.immediates[nodeId];
+                int exp = static_cast<int>(imm);
+                nodeAdjoints_[a] += adj * (1 << exp);
+                break;
+            }
+            case JITOpCode::Frexp:
+            {
+                // Derivative is 1 / 2^exp, but we need to recompute frexp
+                int exp;
+                std::frexp(va, &exp);
+                nodeAdjoints_[a] += adj / (1 << exp);
+                break;
+            }
+            case JITOpCode::Modf:
+                // Derivative of fractional part is 1
+                nodeAdjoints_[a] += adj;
+                break;
+            case JITOpCode::Copysign:
+                // d/da copysign(a, b) = sign(b)
+                nodeAdjoints_[a] += adj * ((vb >= 0.0) ? 1.0 : -1.0);
+                // d/db copysign(a, b) = 0
+                break;
+            case JITOpCode::SmoothAbs:
+            {
+                double dval;
+                if (va > vb)
+                    dval = 1.0;
+                else if (va < -vb)
+                    dval = -1.0;
+                else if (va < 0.0)
+                    dval = va / (vb * vb) * (3.0 * va + 4.0 * vb);
+                else
+                    dval = -va / (vb * vb) * (3.0 * va - 4.0 * vb);
+                nodeAdjoints_[a] += adj * dval;
+
+                // Derivative w.r.t. c (second parameter)
+                double dcval;
+                if (va > vb || va < -vb)
+                    dcval = 0.0;
+                else if (va < 0.0)
+                    dcval = -2.0 * va * va * (vb + va) / (vb * vb * vb);
+                else
+                    dcval = -2.0 * va * va * (vb - va) / (vb * vb * vb);
+                nodeAdjoints_[b] += adj * dcval;
+                break;
+            }
             case JITOpCode::CmpLT:
             case JITOpCode::CmpLE:
             case JITOpCode::CmpGT:

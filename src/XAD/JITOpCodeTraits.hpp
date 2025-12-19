@@ -18,6 +18,11 @@ template <class> struct fmax_op;
 template <class> struct fmin_op;
 template <class> struct fmod_op;
 template <class> struct atan2_op;
+template <class> struct remainder_op;
+template <class> struct remquo_op;
+template <class> struct hypot_op;
+template <class> struct nextafter_op;
+template <class> struct smooth_abs_op;
 
 // Derived scalar ops (degrees/radians inherit from scalar_prod_op)
 template <class> struct degrees_op;
@@ -47,6 +52,15 @@ template <class> struct erf_op;
 template <class> struct erfc_op;
 template <class> struct expm1_op;
 template <class> struct log1p_op;
+template <class> struct asinh_op;
+template <class> struct acosh_op;
+template <class> struct atanh_op;
+template <class> struct exp2_op;
+template <class> struct trunc_op;
+template <class> struct round_op;
+template <class> struct ldexp_op;
+template <class> struct frexp_op;
+template <class, class> struct modf_op;
 
 // Scalar ops
 template <class, class> struct scalar_add_op;
@@ -61,6 +75,20 @@ template <class, class> struct scalar_max_op;
 template <class, class> struct scalar_min_op;
 template <class, class> struct scalar_fmax_op;
 template <class, class> struct scalar_fmin_op;
+template <class, class> struct scalar_fmod1_op;
+template <class, class> struct scalar_fmod2_op;
+template <class, class> struct scalar_atan21_op;
+template <class, class> struct scalar_atan22_op;
+template <class, class> struct scalar_remainder1_op;
+template <class, class> struct scalar_remainder2_op;
+template <class, class> struct scalar_remquo1_op;
+template <class, class> struct scalar_remquo2_op;
+template <class, class> struct scalar_hypot1_op;
+template <class, class> struct scalar_hypot2_op;
+template <class, class> struct scalar_nextafter1_op;
+template <class, class> struct scalar_nextafter2_op;
+template <class, class> struct scalar_smooth_abs1_op;
+template <class, class> struct scalar_smooth_abs2_op;
 
 // Primary template - unknown operator
 template <class Op>
@@ -85,8 +113,13 @@ template <class S> struct JITOpCodeFor<max_op<S>> { static constexpr bool known 
 template <class S> struct JITOpCodeFor<min_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Min; };
 template <class S> struct JITOpCodeFor<fmax_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Max; };
 template <class S> struct JITOpCodeFor<fmin_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Min; };
-template <class S> struct JITOpCodeFor<fmod_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Mod; };
+template <class S> struct JITOpCodeFor<fmod_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Fmod; };
 template <class S> struct JITOpCodeFor<atan2_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Atan2; };
+template <class S> struct JITOpCodeFor<remainder_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Remainder; };
+template <class S> struct JITOpCodeFor<remquo_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Remquo; };
+template <class S> struct JITOpCodeFor<hypot_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Hypot; };
+template <class S> struct JITOpCodeFor<nextafter_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Nextafter; };
+template <class S> struct JITOpCodeFor<smooth_abs_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::SmoothAbs; };
 
 // Unary math
 template <class S> struct JITOpCodeFor<sin_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Sin; };
@@ -112,6 +145,15 @@ template <class S> struct JITOpCodeFor<erf_op<S>> { static constexpr bool known 
 template <class S> struct JITOpCodeFor<erfc_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Erfc; };
 template <class S> struct JITOpCodeFor<expm1_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Expm1; };
 template <class S> struct JITOpCodeFor<log1p_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Log1p; };
+template <class S> struct JITOpCodeFor<asinh_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Asinh; };
+template <class S> struct JITOpCodeFor<acosh_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Acosh; };
+template <class S> struct JITOpCodeFor<atanh_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Atanh; };
+template <class S> struct JITOpCodeFor<exp2_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Exp2; };
+template <class S> struct JITOpCodeFor<trunc_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Trunc; };
+template <class S> struct JITOpCodeFor<round_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Round; };
+template <class S> struct JITOpCodeFor<ldexp_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Ldexp; };
+template <class S> struct JITOpCodeFor<frexp_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Frexp; };
+template <class S, class T> struct JITOpCodeFor<modf_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Modf; };
 
 // Scalar operations
 template <class S, class T> struct JITOpCodeFor<scalar_add_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Add; };
@@ -126,6 +168,20 @@ template <class S, class T> struct JITOpCodeFor<scalar_max_op<S, T>> { static co
 template <class S, class T> struct JITOpCodeFor<scalar_min_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Min; };
 template <class S, class T> struct JITOpCodeFor<scalar_fmax_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Max; };
 template <class S, class T> struct JITOpCodeFor<scalar_fmin_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Min; };
+template <class S, class T> struct JITOpCodeFor<scalar_fmod1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Fmod; };
+template <class S, class T> struct JITOpCodeFor<scalar_fmod2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Fmod; };
+template <class S, class T> struct JITOpCodeFor<scalar_atan21_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Atan2; };
+template <class S, class T> struct JITOpCodeFor<scalar_atan22_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Atan2; };
+template <class S, class T> struct JITOpCodeFor<scalar_remainder1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Remainder; };
+template <class S, class T> struct JITOpCodeFor<scalar_remainder2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Remainder; };
+template <class S, class T> struct JITOpCodeFor<scalar_remquo1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Remquo; };
+template <class S, class T> struct JITOpCodeFor<scalar_remquo2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Remquo; };
+template <class S, class T> struct JITOpCodeFor<scalar_hypot1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Hypot; };
+template <class S, class T> struct JITOpCodeFor<scalar_hypot2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Hypot; };
+template <class S, class T> struct JITOpCodeFor<scalar_nextafter1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Nextafter; };
+template <class S, class T> struct JITOpCodeFor<scalar_nextafter2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Nextafter; };
+template <class S, class T> struct JITOpCodeFor<scalar_smooth_abs1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::SmoothAbs; };
+template <class S, class T> struct JITOpCodeFor<scalar_smooth_abs2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::SmoothAbs; };
 
 // Derived types that inherit from scalar_prod_op (need explicit specializations since C++ doesn't match base class)
 template <class S> struct JITOpCodeFor<degrees_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Mul; };

@@ -50,7 +50,23 @@ enum class JITOpCode : uint16_t
     Expm1 = 39,
     Log1p = 40,
     Log10 = 41,
-    Log2 = 42
+    Log2 = 42,
+    Asinh = 43,
+    Acosh = 44,
+    Atanh = 45,
+    Exp2 = 46,
+    Trunc = 47,
+    Round = 48,
+    Fmod = 49,
+    Remainder = 50,
+    Remquo = 51,
+    Hypot = 52,
+    Nextafter = 53,
+    Ldexp = 54,
+    Frexp = 55,
+    Modf = 56,
+    Copysign = 57,
+    SmoothAbs = 58
 };
 
 struct JITNodeFlags
