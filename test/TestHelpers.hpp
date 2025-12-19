@@ -581,70 +581,56 @@ inline void mathTest_adj_fwdd(double x, double yref, double dref1, double dref2,
 template <class F>
 inline void mathTest_jit(double x, double yref, double dref, F func)
 {
-    try
-    {
-        xad::JITCompiler<double, 1> jit;
-        using AD = xad::AReal<double, 1>;
-        AD x1 = x;
-        jit.registerInput(x1);
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+    AD x1 = x;
+    jit.registerInput(x1);
 
-        AD y = func(x1);
-        jit.registerOutput(y);
+    AD y = func(x1);
+    jit.registerOutput(y);
 
-        jit.compile();
+    jit.compile();
 
-        // Test forward pass
-        double output;
-        jit.forward(&output, 1);
-        EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
+    // Test forward pass
+    double output;
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
 
-        // Test backward pass (adjoints)
-        jit.setDerivative(y.getSlot(), 1.0);
-        jit.computeAdjoints();
-        compareFinite(dref, jit.getDerivative(x1.getSlot()), "jit, dx");
-    }
-    catch (const std::exception&)
-    {
-        // JIT compilation not supported for this operation - skip test
-        GTEST_SKIP() << "JIT not supported for this operation";
-    }
+    // Test backward pass (adjoints)
+    jit.setDerivative(y.getSlot(), 1.0);
+    jit.computeAdjoints();
+    compareFinite(dref, jit.getDerivative(x1.getSlot()), "jit, dx");
 }
 
 // JIT test helper for two-variable functions
 template <class F>
 inline void mathTest2_jit(double x1, double x2, double yref, double d1ref, double d2ref, F func)
 {
-    try
-    {
-        xad::JITCompiler<double, 1> jit;
-        using AD = xad::AReal<double, 1>;
-        AD ax1 = x1;
-        AD ax2 = x2;
-        jit.registerInput(ax1);
-        jit.registerInput(ax2);
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+    AD ax1 = x1;
+    AD ax2 = x2;
+    jit.registerInput(ax1);
+    jit.registerInput(ax2);
 
-        AD y = func(ax1, ax2);
-        jit.registerOutput(y);
+    AD y = func(ax1, ax2);
+    jit.registerOutput(y);
 
-        jit.compile();
+    jit.compile();
 
-        // Test forward pass
-        double output;
-        jit.forward(&output, 1);
-        EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
+    EXPECT_EQ(3U, jit.getGraph().nodeCount()) << "jit should have 3 nodes (2 inputs + 1 output)";
 
-        // Test backward pass for first input
-        jit.clearDerivatives();
-        jit.setDerivative(y.getSlot(), 1.0);
-        jit.computeAdjoints();
-        compareFinite(d1ref, jit.getDerivative(ax1.getSlot()), "jit, dx1");
-        compareFinite(d2ref, jit.getDerivative(ax2.getSlot()), "jit, dx2");
-    }
-    catch (const std::exception&)
-    {
-        // JIT compilation not supported for this operation - skip test
-        GTEST_SKIP() << "JIT not supported for this operation";
-    }
+    // Test forward pass
+    double output;
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
+
+    // Test backward pass for first input
+    jit.clearDerivatives();
+    jit.setDerivative(y.getSlot(), 1.0);
+    jit.computeAdjoints();
+    compareFinite(d1ref, jit.getDerivative(ax1.getSlot()), "jit, dx1");
+    compareFinite(d2ref, jit.getDerivative(ax2.getSlot()), "jit, dx2");
 }
 #endif
 
