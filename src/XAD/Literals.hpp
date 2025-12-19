@@ -323,7 +323,8 @@ struct AReal
                         static const derivative_type zero = derivative_type();
                         return zero;
                     }
-                    return reinterpret_cast<const derivative_type&>(j->derivative(slot_));
+                    // JITCompiler::derivative(slot) returns derivative_type& for the configured Scalar/N
+                    return j->derivative(slot_);
                 }
             }
 #endif
@@ -354,7 +355,8 @@ struct AReal
                     {
                         slot_ = j->registerVariable();
                     }
-                    return reinterpret_cast<derivative_type&>(j->derivative(slot_));
+                    // JITCompiler::derivative(slot) returns derivative_type& for the configured Scalar/N
+                    return j->derivative(slot_);
                 }
             }
 #endif
