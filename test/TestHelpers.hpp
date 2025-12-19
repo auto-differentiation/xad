@@ -581,11 +581,8 @@ inline void mathTest_adj_fwdd(double x, double yref, double dref1, double dref2,
 template <class F>
 inline void mathTest_jit(double x, double yref, double dref, F func)
 {
-    // Deactivate any active tape to ensure JIT-only mode
-    using AD = xad::AReal<double, 1>;
-    typename AD::tape_type::ScopedDeactivation deactivate_tape;
-
     xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
     AD x1 = x;
     jit.registerInput(x1);
 
@@ -609,11 +606,8 @@ inline void mathTest_jit(double x, double yref, double dref, F func)
 template <class F>
 inline void mathTest2_jit(double x1, double x2, double yref, double d1ref, double d2ref, F func)
 {
-    // Deactivate any active tape to ensure JIT-only mode
-    using AD = xad::AReal<double, 1>;
-    typename AD::tape_type::ScopedDeactivation deactivate_tape;
-
     xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
     AD ax1 = x1;
     AD ax2 = x2;
     jit.registerInput(ax1);
