@@ -394,7 +394,7 @@ class JITGraphInterpreter : public IJITBackend
             case JITOpCode::Remainder:
             {
                 int quo;
-                std::remquo(va, vb, &quo);
+                XAD_UNUSED_VARIABLE(std::remquo(va, vb, &quo));
                 nodeAdjoints_[a] += adj;
                 nodeAdjoints_[b] -= adj * quo;
                 break;
@@ -402,7 +402,7 @@ class JITGraphInterpreter : public IJITBackend
             case JITOpCode::Remquo:
             {
                 int quo;
-                std::remquo(va, vb, &quo);
+                XAD_UNUSED_VARIABLE(std::remquo(va, vb, &quo));
                 nodeAdjoints_[a] += adj;
                 nodeAdjoints_[b] -= adj * quo;
                 break;

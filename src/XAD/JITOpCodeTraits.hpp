@@ -122,6 +122,7 @@ template <class, class> struct scalar_smooth_abs2_op;
 template <class Op>
 struct JITOpCodeFor
 {
+    // `known` is intended for optional compile-time enforcement (e.g. static_assert in recordJIT paths).
     static constexpr bool known = false;
     static constexpr JITOpCode value = JITOpCode::Input;
 };
