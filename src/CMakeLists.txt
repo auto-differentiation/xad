@@ -166,6 +166,7 @@ endif()
 # JIT TLS storage (required when XAD_ENABLE_JIT is ON)
 if(XAD_ENABLE_JIT)
     list(APPEND srcfiles
+        XAD/JITGraphInterpreter.cpp
         XAD/JITCompilerTLS.cpp
     )
 endif()
