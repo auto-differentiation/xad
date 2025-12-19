@@ -224,12 +224,23 @@ jobs:
           lcov --no-external --capture --directory ${{ env.GITHUB_WORKSPACE }} --output-file ./tmp/lcov_run.info
           lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info --output-file ./tmp/lcov_total.info
           lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ env.GITHUB_WORKSPACE }}/test/*" "${{ env.GITHUB_WORKSPACE }}/samples/*" --output-file ./coverage/lcov.info
+      - name: generate html coverage report
+        if: ${{ matrix.coverage }}
+        run: |
+          cd build
+          genhtml ./coverage/lcov.info --output-directory ./coverage/html --title "XAD JIT Coverage"
+      - name: upload coverage html artifact
+        if: ${{ matrix.coverage }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: Coverage Report (JIT) - gcc${{ matrix.version }}-${{ matrix.reuse_slots }}
+          path: ${{ env.GITHUB_WORKSPACE }}/build/coverage/html
       - name: upload coverage results
         if: ${{ matrix.coverage }}
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: linux-${{ matrix.compiler }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
+          flag-name: linux-jit-${{ matrix.reuse_slots }}-${{ matrix.memory }}
           path-to-lcov: ${{env.GITHUB_WORKSPACE }}/build/coverage/lcov.info
           parallel: true
       - name: install
@@ -451,12 +462,23 @@ jobs:
           lcov --no-external --capture --directory ${{ github.workspace }} --output-file ./tmp/lcov_run.info
           lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info  --ignore-errors inconsistent  --output-file ./tmp/lcov_total.info
           lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --ignore-errors inconsistent --output-file ./coverage/lcov.info
+      - name: generate html coverage report
+        if: ${{ matrix.coverage }}
+        run: |
+          cd build
+          genhtml ./coverage/lcov.info --output-directory ./coverage/html --title "XAD JIT Coverage (macOS)"
+      - name: upload coverage html artifact
+        if: ${{ matrix.coverage }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: Coverage Report (JIT macOS) - ${{ matrix.os }}-${{ matrix.standard }}
+          path: build/coverage/html
       - name: upload coverage results
         if: ${{ matrix.coverage }}
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: macos-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}
+          flag-name: macos-jit-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}
           path-to-lcov: build/coverage/lcov.info
           parallel: true
       - name: install

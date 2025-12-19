@@ -576,6 +576,64 @@ inline void mathTest_adj_fwdd(double x, double yref, double dref1, double dref2,
     compareFinite(dref2, derivative(value(x1)), "adj_fwd, dx2");
 }
 
+#ifdef XAD_ENABLE_JIT
+// JIT test helper for single-variable functions
+template <class F>
+inline void mathTest_jit(double x, double yref, double dref, F func)
+{
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+    AD x1 = x;
+    jit.registerInput(x1);
+
+    AD y = func(x1);
+    jit.registerOutput(y);
+
+    jit.compile();
+
+    // Test forward pass
+    double output;
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
+
+    // Test backward pass (adjoints)
+    jit.setDerivative(y.slot(), 1.0);
+    jit.computeAdjoints();
+    compareFinite(dref, jit.getDerivative(x1.slot()), "jit, dx");
+}
+
+// JIT test helper for two-variable functions
+template <class F>
+inline void mathTest2_jit(double x1, double x2, double yref, double d1ref, double d2ref, F func)
+{
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+    AD ax1 = x1;
+    AD ax2 = x2;
+    jit.registerInput(ax1);
+    jit.registerInput(ax2);
+
+    AD y = func(ax1, ax2);
+    jit.registerOutput(y);
+
+    jit.compile();
+
+    EXPECT_EQ(3U, jit.getGraph().nodeCount()) << "jit should have 3 nodes (2 inputs + 1 output)";
+
+    // Test forward pass
+    double output;
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
+
+    // Test backward pass for first input
+    jit.clearDerivatives();
+    jit.setDerivative(y.slot(), 1.0);
+    jit.computeAdjoints();
+    compareFinite(d1ref, jit.getDerivative(ax1.slot()), "jit, dx1");
+    compareFinite(d2ref, jit.getDerivative(ax2.slot()), "jit, dx2");
+}
+#endif
+
 template <class F>
 inline void mathTest_all_aad(double x, double yref, double dref, double dref2, F func)
 {
@@ -611,6 +669,10 @@ inline void mathTest_all_aad(double x, double yref, double dref, double dref2, F
     mathTest_fwd_adj_vec(x, yref, dref, dref2, func);
     mathTest_fwd2_adj4_vec(x, yref, dref, dref2, func);
     mathTest_adj_adj_vec(x, yref, dref, dref2, func);
+
+#ifdef XAD_ENABLE_JIT
+    mathTest_jit(x, yref, dref, func);
+#endif
 }
 
 template <class F>
@@ -1020,6 +1082,10 @@ inline void mathTest2_all_aad(double x1, double x2, double yref, double d1ref, d
     mathTest2_fwdd(x1, x2, yref, d1ref, d2ref, func);
     mathTest2_fwd_fwdd(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
     mathTest2_adj_fwdd(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
+
+#ifdef XAD_ENABLE_JIT
+    mathTest2_jit(x1, x2, yref, d1ref, d2ref, func);
+#endif
 }
 
 template <class F>

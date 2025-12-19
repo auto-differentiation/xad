@@ -59,6 +59,10 @@ if (XAD_ENABLE_EIGEN_TESTS)
     list(APPEND testfiles Eigen_test.cpp)
 endif()
 
+if (XAD_ENABLE_JIT)
+    list(APPEND testfiles JIT_test.cpp)
+endif()
+
 if (CMAKE_COMPILER_IS_GNUCC)
     set_source_files_properties(ExpressionsConversion_test.cpp
         COMPILE_FLAGS "-Wno-conversion")
