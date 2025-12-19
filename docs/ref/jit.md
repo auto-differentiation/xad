@@ -1,4 +1,4 @@
-## JIT (optional)
+# JIT (optional)
 
 XAD provides **optional** JIT recording/execution support that can be compiled into the library.
 When enabled, XAD expressions can be recorded into a compact `JITGraph` and executed via a pluggable `JITBackend`.
