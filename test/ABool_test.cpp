@@ -379,6 +379,21 @@ TEST(ABool, comparisonWithInvalidSlotOperands)
     EXPECT_TRUE(cond.hasSlot());  // JIT is active, so slot should be created
 }
 
+TEST(ABool, comparisonWithScalarRecordsLhsWhenNoSlot)
+{
+    // Cover the branch where comparing AReal vs scalar with JIT active and the AReal has no slot yet.
+    // In that case the AReal operand is recorded as a constant node.
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a(2.0);  // no slot
+    auto cond = xad::less(a, 3.0);
+
+    EXPECT_TRUE(cond.passive());   // 2 < 3
+    EXPECT_TRUE(cond.hasSlot());   // JIT active -> recorded comparison
+    EXPECT_GE(jit.getGraph().const_pool.size(), 2u);  // records lhs value and scalar rhs
+}
+
 // =============================================================================
 // Additional JITCompiler tests
 // =============================================================================

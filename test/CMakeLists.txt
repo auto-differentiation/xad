@@ -62,6 +62,7 @@ endif()
 if (XAD_ENABLE_JIT)
     list(APPEND testfiles
         JITCompiler_test.cpp
+        JITExprTraits_test.cpp
         JITGraph_test.cpp
         JITGraphInterpreter_test.cpp
         ABool_test.cpp

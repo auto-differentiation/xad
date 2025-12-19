@@ -95,6 +95,22 @@ TEST(JITCompiler, isMovable)
     EXPECT_FALSE(jit4.isActive());
 }
 
+TEST(JITCompiler, moveAssignFromActiveTransfersActivePointer)
+{
+    // Cover the move-assignment branch where the source compiler is active.
+    xad::JITCompiler<double> src(true);
+    EXPECT_TRUE(src.isActive());
+    EXPECT_EQ(&src, xad::JITCompiler<double>::getActive());
+
+    xad::JITCompiler<double> dst(false);
+    EXPECT_FALSE(dst.isActive());
+
+    dst = std::move(src);
+    EXPECT_TRUE(dst.isActive());
+    EXPECT_EQ(&dst, xad::JITCompiler<double>::getActive());
+    EXPECT_FALSE(src.isActive());
+}
+
 TEST(JITCompiler, canSetBackend)
 {
     xad::JITCompiler<double> jit;
@@ -453,6 +469,27 @@ TEST(JITCompiler, floatScalarOperations)
     jit.forward(&output, 1);
 
     EXPECT_DOUBLE_EQ(6.0, output);
+}
+
+TEST(ARealJIT, derivativeFallbackUsesJITWhenNoTape)
+{
+    // Cover Literals.hpp JIT-derivative fallback paths:
+    // - const derivative() returns a zero ref when slot is INVALID and JIT is active
+    // - non-const derivative() allocates a slot when slot is INVALID and JIT is active
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+
+    const AD c(2.0);  // no tape, no slot
+    EXPECT_EQ(AD::INVALID_SLOT, c.getSlot());
+    EXPECT_DOUBLE_EQ(0.0, c.derivative());
+    EXPECT_EQ(AD::INVALID_SLOT, c.getSlot()); // const path must not allocate a slot
+
+    AD x(3.0);  // no tape, no slot
+    EXPECT_EQ(AD::INVALID_SLOT, x.getSlot());
+    auto& dx = x.derivative(); // allocates slot in JIT
+    dx = 7.0;
+    EXPECT_NE(AD::INVALID_SLOT, x.getSlot());
+    EXPECT_DOUBLE_EQ(7.0, jit.getDerivative(x.getSlot()));
 }
 
 
