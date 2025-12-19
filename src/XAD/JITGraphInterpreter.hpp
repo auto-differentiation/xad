@@ -30,12 +30,7 @@
 
 #include <XAD/JITBackendInterface.hpp>
 #include <XAD/JITGraph.hpp>
-#define _USE_MATH_DEFINES
 #include <cmath>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 #include <cstddef>
 #include <stdexcept>
 #include <vector>
@@ -106,6 +101,13 @@ class JITGraphInterpreter : public IJITBackend
   private:
     std::vector<double> nodeValues_;
     std::vector<double> nodeAdjoints_;
+
+    static double invSqrtPi()
+    {
+        // Avoid leaking math macros (M_PI, _USE_MATH_DEFINES) into user code.
+        const double pi = std::acos(-1.0);
+        return 2.0 / std::sqrt(pi);
+    }
 
     void evaluateNode(const JITGraph& graph, uint32_t nodeId)
     {
@@ -356,10 +358,10 @@ class JITGraphInterpreter : public IJITBackend
                 nodeAdjoints_[a] += adj / (3.0 * vResult * vResult);
                 break;
             case JITOpCode::Erf:
-                nodeAdjoints_[a] += adj * (2.0 / std::sqrt(M_PI)) * std::exp(-va * va);
+                nodeAdjoints_[a] += adj * invSqrtPi() * std::exp(-va * va);
                 break;
             case JITOpCode::Erfc:
-                nodeAdjoints_[a] -= adj * (2.0 / std::sqrt(M_PI)) * std::exp(-va * va);
+                nodeAdjoints_[a] -= adj * invSqrtPi() * std::exp(-va * va);
                 break;
             case JITOpCode::Expm1:
                 nodeAdjoints_[a] += adj * std::exp(va);
