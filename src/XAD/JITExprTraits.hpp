@@ -9,6 +9,7 @@ namespace xad
 
 // Helper to extract nested double value from potentially nested AD types
 // Non-template overloads for primitive types (preferred over template)
+// These are needed to terminate recursion for different scalar types
 inline double getNestedDoubleValue(double x) { return x; }
 inline double getNestedDoubleValue(float x) { return static_cast<double>(x); }
 inline double getNestedDoubleValue(long double x) { return static_cast<double>(x); }

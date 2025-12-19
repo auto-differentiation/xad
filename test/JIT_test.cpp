@@ -1013,6 +1013,26 @@ TEST(JITCompiler, derivativeConstAccessOutOfRange)
     EXPECT_DOUBLE_EQ(0.0, deriv);
 }
 
+TEST(JITCompiler, floatScalarOperations)
+{
+    // Test JIT with float scalar type to exercise getNestedDoubleValue(float)
+    xad::JITCompiler<float> jit;
+    xad::AReal<float> x = 2.0f;
+    jit.registerInput(x);
+
+    // Scalar multiplication: uses scalar_prod_op which calls getScalarConstant -> getNestedDoubleValue(float)
+    xad::AReal<float> y = x * 3.0f;
+    jit.registerOutput(y);
+
+    jit.compile();
+
+    double output;  // JIT always uses double internally
+    jit.forward(&output, 1);
+
+    EXPECT_DOUBLE_EQ(6.0, output);
+}
+
+
 // =============================================================================
 // Additional JITGraph tests
 // =============================================================================
@@ -1836,6 +1856,60 @@ TEST(JITGraphInterpreter, powAdjointWithZeroBase)
     EXPECT_DOUBLE_EQ(12.0, inputAdjoints[0]);
     // d(a^b)/db = a^b * log(a) = 8 * log(2)
     EXPECT_NEAR(8.0 * std::log(2.0), inputAdjoints[1], 1e-10);
+}
+
+TEST(JITGraphInterpreter, reset)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t result = graph.addUnary(xad::JITOpCode::Neg, inp);
+    graph.markOutput(result);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(-5.0, output);
+
+    // Reset and verify we can still use it after recompiling
+    interp.reset();
+    interp.compile(graph);
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(-5.0, output);
+}
+
+TEST(JITGraphInterpreter, forwardInputCountMismatch)
+{
+    xad::JITGraph graph;
+    graph.addInput();
+    graph.addInput();
+    uint32_t c = graph.addConstant(1.0);
+    graph.markOutput(c);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double output;
+    // Graph expects 2 inputs but we provide 1
+    EXPECT_THROW(interp.forward(graph, &input, 1, &output, 1), std::runtime_error);
+}
+
+TEST(JITGraphInterpreter, forwardOutputCountMismatch)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    graph.markOutput(inp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double outputs[2];
+    // Graph has 1 output but we request 2
+    EXPECT_THROW(interp.forward(graph, &input, 1, outputs, 2), std::runtime_error);
 }
 
 #endif  // XAD_ENABLE_JIT
