@@ -163,6 +163,12 @@ if (MSVC)
     list(APPEND srcfiles ${PROJECT_SOURCE_DIR}/XAD.natvis)
 endif()
 
+if(XAD_ENABLE_JIT)
+    list(APPEND srcfiles
+        XAD/JITCompilerTLS.cpp
+    )
+endif()
+
 xad_add_library(xad STATIC ${srcfiles})
 target_include_directories(xad PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"

@@ -323,9 +323,6 @@ class JITCompiler
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
 };
 
-template <class Real, std::size_t N>
-XAD_THREAD_LOCAL JITCompiler<Real, N>* JITCompiler<Real, N>::active_jit_ = nullptr;
-
 }  // namespace xad
 
 #endif  // XAD_ENABLE_JIT
