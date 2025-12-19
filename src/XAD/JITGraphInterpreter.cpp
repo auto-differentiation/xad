@@ -222,7 +222,6 @@ void JITGraphInterpreter::propagateAdjoint(const JITGraph& graph, uint32_t nodeI
     JITOpCode op = static_cast<JITOpCode>(node.op);
     uint32_t a = node.a;
     uint32_t b = node.b;
-    uint32_t c = node.c;
 
     double va = (a < nodeValues_.size()) ? nodeValues_[a] : 0.0;
     double vb = (b < nodeValues_.size()) ? nodeValues_[b] : 0.0;
@@ -462,11 +461,14 @@ void JITGraphInterpreter::propagateAdjoint(const JITGraph& graph, uint32_t nodeI
         case JITOpCode::CmpNE:
             break;
         case JITOpCode::If:
+        {
+            uint32_t c = node.c;
             if (va != 0.0)
                 nodeAdjoints_[b] += adj;
             else
                 nodeAdjoints_[c] += adj;
             break;
+        }
         default:
             break;
     }

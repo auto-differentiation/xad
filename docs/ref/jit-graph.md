@@ -1,6 +1,6 @@
-# JITGraph
+## JITGraph
 
-## Overview
+### Overview
 
 `JITGraph` is the recorded representation of an XAD expression DAG in JIT-enabled builds.
 
@@ -14,13 +14,13 @@ It consists of:
 
     This API is only available when XAD is compiled with `XAD_ENABLE_JIT`.
 
-## `JITOpCode`
+### `JITOpCode`
 
 `#!c++ enum class JITOpCode : std::uint16_t`
 
 Defines the opcode values used by JIT backends.
 
-## `JITNode`
+### `JITNode`
 
 `#!c++ struct JITNode`
 
@@ -31,24 +31,24 @@ Each node contains:
 - `imm`: immediate value (used for op-specific data, e.g. constant pool index or integer exponent)
 - `flags`: node flags (e.g. “active”)
 
-## `JITGraph`
+### `JITGraph`
 
 `#!c++ struct JITGraph`
 
-### Node storage
+#### Node storage
 
 Nodes are stored in a chunked container (`ChunkContainer<JITNode>`) to avoid large reallocation/copy spikes when building very large graphs.
 
-### Constant pool
+#### Constant pool
 
 `const_pool` stores unique constants. `addConstant(value)` deduplicates by value and records a `Constant` node that references the pool via `imm`.
 
-### Inputs/outputs
+#### Inputs/outputs
 
 - `input_ids`: node IDs that correspond to inputs
 - `output_ids`: node IDs marked as outputs
 
-### Construction helpers
+#### Construction helpers
 
 `JITGraph` provides convenience methods:
 

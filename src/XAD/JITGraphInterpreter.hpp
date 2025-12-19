@@ -57,7 +57,9 @@ class JITGraphInterpreter : public JITBackend
     void reset() override;
 
   private:
+    // cppcheck-suppress unusedStructMember
     std::vector<double> nodeValues_;
+    // cppcheck-suppress unusedStructMember
     std::vector<double> nodeAdjoints_;
 
     static double invSqrtPi();

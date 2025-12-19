@@ -222,7 +222,7 @@ struct AReal
             }
         }
 #ifdef XAD_ENABLE_JIT
-        else if (auto* j = jit_type::getActive())
+        else if (jit_type::getActive() != nullptr)
         {
             if (o.shouldRecord())
             {
@@ -480,7 +480,7 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
         }
     }
 #ifdef XAD_ENABLE_JIT
-    else if (auto* j = jit_type::getActive())
+    else if (jit_type::getActive() != nullptr)
     {
         if (o.shouldRecord() || this->shouldRecord())
         {
