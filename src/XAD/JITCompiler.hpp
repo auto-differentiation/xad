@@ -191,12 +191,7 @@ class JITCompiler
      * Compile the recorded graph to native code.
      * Must be called after recording and before forward().
      */
-    void compile()
-    {
-        if (!backend_)
-            throw Exception("No backend configured");
-        backend_->compile(graph_);
-    }
+    void compile() { backend_->compile(graph_); }
 
     /**
      * Execute the compiled kernel with current input values.
@@ -206,9 +201,6 @@ class JITCompiler
     {
         if (numOutputs != graph_.output_ids.size())
             throw OutOfRange("Output count mismatch");
-
-        if (!backend_)
-            throw Exception("No backend configured");
 
         std::size_t numInputs = graph_.input_ids.size();
         std::vector<double> inputs(numInputs);
@@ -224,8 +216,6 @@ class JITCompiler
      */
     void computeAdjoints()
     {
-        if (!backend_)
-            throw Exception("No backend configured");
 
         std::size_t numInputs = graph_.input_ids.size();
         std::size_t numOutputs = graph_.output_ids.size();

@@ -900,6 +900,45 @@ TEST(JITCompiler, recordNodeAndConstant)
     EXPECT_EQ(xad::JITOpCode::Add, jit.getGraph().getOpCode(n));
 }
 
+TEST(JITCompiler, registerVariable)
+{
+    xad::JITCompiler<double> jit;
+
+    auto slot1 = jit.registerVariable();
+    EXPECT_EQ(0u, slot1);  // First variable gets slot 0
+
+    jit.recordConstant(1.0);  // Add a node
+    auto slot2 = jit.registerVariable();
+    EXPECT_EQ(1u, slot2);  // Second variable gets slot 1
+}
+
+TEST(JITCompiler, setActiveThrowsWhenAlreadyActive)
+{
+    xad::JITCompiler<double> jit1;  // Activates itself
+
+    // Trying to activate another JIT should throw
+    EXPECT_THROW(
+        {
+            xad::JITCompiler<double> jit2;  // Tries to activate, should throw
+        },
+        xad::OutOfRange);
+}
+
+TEST(JITCompiler, forwardThrowsOnOutputMismatch)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x = 2.0;
+    jit.registerInput(x);
+    AD y = x * x;
+    jit.registerOutput(y);
+    jit.compile();
+
+    double outputs[2];  // Wrong size - we only have 1 output
+    EXPECT_THROW(jit.forward(outputs, 2), xad::OutOfRange);
+}
+
 TEST(JITCompiler, clearAll)
 {
     xad::JITCompiler<double> jit;
