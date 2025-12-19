@@ -93,24 +93,24 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
     }
 
   private:
+    // Tag dispatch based on operation type
     uint32_t recordJITDispatch(JITGraph& graph) const
     {
-        if (IsLdexpOp<Op>::value)
-            return recordJITLdexp(graph);
-        else if (HasScalarConstant<Op>::value)
-            return recordJITScalar(graph);
-        else
-            return recordJITSimple(graph);
+        return recordJITImpl(graph,
+            std::integral_constant<int,
+                IsLdexpOp<Op>::value ? 2 : (HasScalarConstant<Op>::value ? 1 : 0)>{});
     }
 
-    uint32_t recordJITSimple(JITGraph& graph) const
+    // Simple unary operation (no scalar constant, not ldexp)
+    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 0>) const
     {
         uint32_t slotA = a_.recordJIT(graph);
         constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
         return graph.addNode(opcode, slotA);
     }
 
-    uint32_t recordJITScalar(JITGraph& graph) const
+    // Scalar operation (has b_ member)
+    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 1>) const
     {
         uint32_t slotA = a_.recordJIT(graph);
         uint32_t slotB = recordJITConstant(graph, getScalarConstant(op_));
@@ -122,7 +122,8 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
             return graph.addNode(opcode, slotA, slotB);
     }
 
-    uint32_t recordJITLdexp(JITGraph& graph) const
+    // ldexp operation (has exp_ member)
+    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 2>) const
     {
         uint32_t slotA = a_.recordJIT(graph);
         constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
