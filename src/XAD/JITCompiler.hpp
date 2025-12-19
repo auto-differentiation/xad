@@ -70,7 +70,7 @@ class JITCompiler
     }
 
     // Constructor with custom backend
-    explicit JITCompiler(std::unique_ptr<IJITBackend> backend, bool activate = true)
+    explicit JITCompiler(std::unique_ptr<JITBackend> backend, bool activate = true)
         : backend_(std::move(backend))
     {
         if (activate)
@@ -85,7 +85,7 @@ class JITCompiler
 
     /// Set or replace the JIT backend.
     /// Resets any compiled state when the backend is changed.
-    void setBackend(std::unique_ptr<IJITBackend> backend)
+    void setBackend(std::unique_ptr<JITBackend> backend)
     {
         backend_ = std::move(backend);
         if (backend_)
@@ -317,7 +317,7 @@ class JITCompiler
   private:
     static XAD_THREAD_LOCAL JITCompiler* active_jit_;
     JITGraph graph_;
-    std::unique_ptr<IJITBackend> backend_;
+    std::unique_ptr<JITBackend> backend_;
     std::vector<const Real*> inputValues_;
     std::vector<derivative_type> derivatives_;
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access

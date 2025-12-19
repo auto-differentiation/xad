@@ -116,7 +116,7 @@ TEST(JITCompiler, canSetBackend)
     EXPECT_DOUBLE_EQ(6.0, output);
 
     // Replace backend with a new interpreter
-    jit.setBackend(std::unique_ptr<xad::IJITBackend>(new xad::JITGraphInterpreter()));
+    jit.setBackend(std::unique_ptr<xad::JITBackend>(new xad::JITGraphInterpreter()));
 
     // After setBackend, need to recompile since backend was reset
     jit.compile();
@@ -126,7 +126,7 @@ TEST(JITCompiler, canSetBackend)
 
 TEST(JITCompiler, constructorWithExplicitBackend)
 {
-    auto backend = std::unique_ptr<xad::IJITBackend>(new xad::JITGraphInterpreter());
+    auto backend = std::unique_ptr<xad::JITBackend>(new xad::JITGraphInterpreter());
     xad::JITCompiler<double> jit(std::move(backend), true);
 
     using AD = xad::AReal<double, 1>;

@@ -1,6 +1,6 @@
 /**
  *
- *   Reference IJITBackend implementation that interprets a JITGraph.
+ *   Reference JITBackend implementation that interprets a JITGraph.
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -38,7 +38,7 @@
 namespace xad
 {
 
-class JITGraphInterpreter : public IJITBackend
+class JITGraphInterpreter : public JITBackend
 {
   public:
     JITGraphInterpreter() = default;

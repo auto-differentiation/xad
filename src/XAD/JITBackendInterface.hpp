@@ -43,7 +43,7 @@ namespace xad
  *
  * ## Implementing a Custom Backend
  *
- * To create a custom backend, inherit from IJITBackend and implement all
+ * To create a custom backend, inherit from JITBackend and implement all
  * pure virtual methods:
  *
  * 1. **compile()**: Called once after graph recording is complete. Use this to:
@@ -66,7 +66,7 @@ namespace xad
  * ## Example Usage
  *
  * @code
- * class MyBackend : public xad::IJITBackend {
+ * class MyBackend : public xad::JITBackend {
  * public:
  *     void compile(const JITGraph& graph) override { ... }
  *     void forward(...) override { ... }
@@ -75,7 +75,7 @@ namespace xad
  * };
  *
  * // Use with JITCompiler:
- * auto backend = std::unique_ptr<IJITBackend>(new MyBackend());
+ * auto backend = std::unique_ptr<JITBackend>(new MyBackend());
  * xad::JITCompiler<double> jit(std::move(backend));
  * @endcode
  *
@@ -84,10 +84,10 @@ namespace xad
  * See JITGraphInterpreter for a reference implementation that interprets
  * the graph directly in C++ without code generation.
  */
-class IJITBackend
+class JITBackend
 {
   public:
-    virtual ~IJITBackend() = default;
+    virtual ~JITBackend() = default;
 
     /**
      * @brief Compile the computation graph for execution.
