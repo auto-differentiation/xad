@@ -57,9 +57,6 @@ class JITCompiler
     typedef typename DerivativesTraits<Real, N>::type derivative_type;
     typedef Tape<Real, N> tape_type;
 
-    // Used across the JIT integration (e.g., ABool / AReal helpers). May not be referenced directly in this TU.
-    static constexpr slot_type INVALID_SLOT = slot_type(-1);
-
     // Default constructor - uses interpreter backend
     explicit JITCompiler(bool activate = true)
         : backend_(std::unique_ptr<JITGraphInterpreter>(new JITGraphInterpreter()))

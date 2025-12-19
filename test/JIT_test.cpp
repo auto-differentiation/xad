@@ -1742,7 +1742,8 @@ TEST(JITGraphInterpreter, remquoAdjoint)
     interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
 
     int quo;
-    std::remquo(7.5, 3.0, &quo);
+    const double rem = std::remquo(7.5, 3.0, &quo);
+    XAD_UNUSED_VARIABLE(rem);
     EXPECT_DOUBLE_EQ(1.0, inputAdjoints[0]);
     EXPECT_DOUBLE_EQ(-static_cast<double>(quo), inputAdjoints[1]);
 }

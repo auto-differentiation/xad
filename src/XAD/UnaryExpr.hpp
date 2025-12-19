@@ -89,7 +89,8 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
 #ifdef XAD_ENABLE_JIT
     uint32_t recordJIT(JITGraph& graph) const
     {
-        static_assert(JITOpCodeFor<Op>::known, "JIT opcode mapping missing for unary operator");
+        static_assert(static_cast<uint16_t>(JITOpCodeFor<Op>::value) != 0xFFFF,
+                      "JIT opcode mapping missing for unary operator");
         // Check ldexp first, then scalar constant, then simple unary
         return recordJITDispatch(graph);
     }

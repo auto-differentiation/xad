@@ -55,7 +55,7 @@ class ABool
     using areal_type = AReal<Scalar, N>;
     using slot_type = typename jit_type::slot_type;
 
-    static constexpr slot_type INVALID_SLOT = jit_type::INVALID_SLOT;
+    static constexpr slot_type INVALID_SLOT = static_cast<slot_type>(-1);
 
     // Constructor: from plain bool (no graph tracking)
     explicit ABool(bool b = false) : passive_(b), slot_(INVALID_SLOT) {}

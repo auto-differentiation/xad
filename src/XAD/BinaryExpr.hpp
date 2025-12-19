@@ -81,7 +81,8 @@ struct BinaryExpr
 #ifdef XAD_ENABLE_JIT
     uint32_t recordJIT(JITGraph& graph) const
     {
-        static_assert(JITOpCodeFor<Op>::known, "JIT opcode mapping missing for binary operator");
+        static_assert(static_cast<uint16_t>(JITOpCodeFor<Op>::value) != 0xFFFF,
+                      "JIT opcode mapping missing for binary operator");
         uint32_t slotA = a_.recordJIT(graph);
         uint32_t slotB = b_.recordJIT(graph);
         constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
