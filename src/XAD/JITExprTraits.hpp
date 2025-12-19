@@ -35,6 +35,13 @@ template <class> struct IsScalarFirstOp : std::false_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_sub1_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_div1_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_pow1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_fmod1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_atan21_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_remainder1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_remquo1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_hypot1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_nextafter1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_smooth_abs1_op<S, T>> : std::true_type {};
 
 // Helper to record scalar value as constant
 inline uint32_t recordJITConstant(JITGraph& graph, double value)
