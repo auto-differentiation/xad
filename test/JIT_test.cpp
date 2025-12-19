@@ -479,7 +479,9 @@ TEST(ABool, defaultConstructor)
     xad::ABool<double> ab;
     EXPECT_FALSE(ab.passive());
     EXPECT_FALSE(ab.hasSlot());
-    EXPECT_EQ(xad::ABool<double>::INVALID_SLOT, ab.slot());
+    // Compare with local copy to avoid ODR-use of static constexpr member
+    constexpr auto invalid_slot = xad::ABool<double>::INVALID_SLOT;
+    EXPECT_EQ(invalid_slot, ab.slot());
 }
 
 TEST(ABool, constructorFromBool)
