@@ -122,6 +122,10 @@ template <class S, class T> struct JITOpCodeFor<scalar_div1_op<S, T>> { static c
 template <class S, class T> struct JITOpCodeFor<scalar_div2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Div; };
 template <class S, class T> struct JITOpCodeFor<scalar_pow1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Pow; };
 template <class S, class T> struct JITOpCodeFor<scalar_pow2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Pow; };
+template <class S, class T> struct JITOpCodeFor<scalar_max_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Max; };
+template <class S, class T> struct JITOpCodeFor<scalar_min_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Min; };
+template <class S, class T> struct JITOpCodeFor<scalar_fmax_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Max; };
+template <class S, class T> struct JITOpCodeFor<scalar_fmin_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Min; };
 
 // Derived types that inherit from scalar_prod_op (need explicit specializations since C++ doesn't match base class)
 template <class S> struct JITOpCodeFor<degrees_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Mul; };
