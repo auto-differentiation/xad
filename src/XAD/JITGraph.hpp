@@ -28,6 +28,8 @@
 
 #ifdef XAD_ENABLE_JIT
 
+#include <XAD/ChunkContainer.hpp>
+
 #include <cstdint>
 #include <vector>
 
@@ -114,7 +116,7 @@ struct JITNode
 
 struct JITGraph
 {
-    std::vector<JITNode> nodes;
+    ChunkContainer<JITNode> nodes;
     std::vector<double> const_pool;
     std::vector<uint32_t> input_ids;
     std::vector<uint32_t> output_ids;
