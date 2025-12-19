@@ -762,6 +762,68 @@ TEST(ABool, ifDerivativeFalseBranch)
     EXPECT_NEAR(3.0, jit.getDerivative(x.getSlot()), 1e-10);
 }
 
+TEST(ABool, ifWithConstantOperands)
+{
+    // Test ABool::If when operands don't have slots (need to be recorded as constants)
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x = 2.0;
+    jit.registerInput(x);
+
+    // Create a condition that has a slot
+    auto cond = xad::less(x, 5.0);  // true for x=2
+
+    // Use constant values (not from graph operations) for branches
+    // These AD values won't have slots, so ABool::If should record them as constants
+    AD trueVal(100.0);   // No slot - just a constant
+    AD falseVal(200.0);  // No slot - just a constant
+
+    AD result = cond.If(trueVal, falseVal);
+    jit.registerOutput(result);
+
+    jit.compile();
+    double output;
+    jit.forward(&output, 1);
+
+    EXPECT_DOUBLE_EQ(100.0, output);  // x < 5, so trueVal = 100
+}
+
+TEST(ABool, comparisonWithoutJIT)
+{
+    // Test comparison functions when JIT is NOT active
+    // Should return ABool with passive value but no slot
+    using AD = xad::AReal<double, 1>;
+
+    AD a(2.0);
+    AD b(3.0);
+
+    // No JIT active - comparisons should work but not have slots
+    auto cond = xad::less(a, b);
+    EXPECT_TRUE(cond.passive());  // 2 < 3 is true
+    EXPECT_FALSE(cond.hasSlot()); // No JIT, so no slot
+
+    auto cond2 = xad::greater(a, 1.0);
+    EXPECT_TRUE(cond2.passive());  // 2 > 1 is true
+    EXPECT_FALSE(cond2.hasSlot());
+}
+
+TEST(ABool, comparisonWithInvalidSlotOperands)
+{
+    // Test comparison when AReal operands don't have slots yet
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    // Create AD values that are NOT registered as inputs (no slots)
+    AD a(2.0);  // No slot
+    AD b(3.0);  // No slot
+
+    // Compare should still work - should record constants for the operands
+    auto cond = xad::less(a, b);
+    EXPECT_TRUE(cond.passive());
+    EXPECT_TRUE(cond.hasSlot());  // JIT is active, so slot should be created
+}
+
 // =============================================================================
 // Additional JITCompiler tests
 // =============================================================================
@@ -1132,6 +1194,48 @@ TEST(JITGraphInterpreter, smoothAbsNegative)
     input = -1.0;
     interp.forward(graph, &input, 1, &output, 1);
     EXPECT_DOUBLE_EQ(1.0, output);  // Should be |x|
+}
+
+TEST(JITGraphInterpreter, smoothAbsAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t c = graph.addConstant(0.5);
+    uint32_t sa = graph.addBinary(xad::JITOpCode::SmoothAbs, inp, c);
+    graph.markOutput(sa);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    // Test adjoint in smooth region (positive x)
+    double input = 0.3;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    // For positive x in smooth region: derivative is -x/(c^2) * (3x - 4c)
+    double c_val = 0.5;
+    double expected_deriv = -input / (c_val * c_val) * (3.0 * input - 4.0 * c_val);
+    EXPECT_NEAR(expected_deriv, inputAdjoint, 1e-10);
+
+    // Test adjoint in smooth region (negative x)
+    input = -0.3;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    // For negative x in smooth region: derivative is x/(c^2) * (3x + 4c)
+    expected_deriv = input / (c_val * c_val) * (3.0 * input + 4.0 * c_val);
+    EXPECT_NEAR(expected_deriv, inputAdjoint, 1e-10);
+
+    // Test adjoint outside smooth region (positive)
+    input = 1.0;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    EXPECT_DOUBLE_EQ(1.0, inputAdjoint);  // d|x|/dx = 1 for x > 0
+
+    // Test adjoint outside smooth region (negative)
+    input = -1.0;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    EXPECT_DOUBLE_EQ(-1.0, inputAdjoint);  // d|x|/dx = -1 for x < 0
 }
 
 // =============================================================================

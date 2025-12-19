@@ -145,24 +145,10 @@ class JITCompiler
         }
     }
 
-    XAD_INLINE void registerInput(std::complex<active_type>& inp)
-    {
-        auto reim_ptr = reinterpret_cast<active_type*>(&inp);
-        registerInput(reim_ptr[0]);
-        registerInput(reim_ptr[1]);
-    }
-
     XAD_INLINE void registerOutput(active_type& outp)
     {
         if (outp.shouldRecord())
             graph_.markOutput(outp.slot_);
-    }
-
-    XAD_INLINE void registerOutput(std::complex<active_type>& outp)
-    {
-        auto reim_ptr = reinterpret_cast<active_type*>(&outp);
-        registerOutput(reim_ptr[0]);
-        registerOutput(reim_ptr[1]);
     }
 
     template <class Inner>
@@ -308,24 +294,8 @@ class JITCompiler
             backend_->reset();
     }
 
-    // =========================================================================
-    // Tape API compatibility stubs
-    // These methods exist to provide API compatibility with xad::Tape, allowing
-    // code to switch between Tape and JITCompiler with minimal changes.
-    // JIT does not support partial rollback or incremental adjoint computation.
-    // =========================================================================
-    void printStatus() const {}
     std::size_t getMemory() const { return graph_.nodeCount() * 32 + derivatives_.size() * sizeof(derivative_type); }
     position_type getPosition() const { return static_cast<position_type>(graph_.nodeCount()); }
-    void clearDerivativesAfter(position_type) {}  // No-op: JIT recomputes full graph
-    void resetTo(position_type) {}                // No-op: JIT doesn't support partial rollback
-    void computeAdjointsTo(position_type) {}      // No-op: JIT computes all adjoints at once
-
-    // Internal Tape recording interface - no-op for JIT (graph is built via expressions)
-    XAD_INLINE void pushLhs(slot_type) {}
-
-    template <class MulIt, class SlotIt>
-    XAD_FORCE_INLINE void pushAll(MulIt, SlotIt, unsigned) {}
 
   private:
     static XAD_THREAD_LOCAL JITCompiler* active_jit_;
