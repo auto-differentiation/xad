@@ -985,16 +985,17 @@ TEST(JITGraph, constantPoolDeduplication)
 {
     xad::JITGraph graph;
     uint32_t c1 = graph.addConstant(3.14);
-    uint32_t c2 = graph.addConstant(3.14);  // Same value
-    uint32_t c3 = graph.addConstant(2.71);  // Different value
+    uint32_t c2 = graph.addConstant(3.14);  // Same value - should reuse pool entry
 
     // Both should give the same constant value
     EXPECT_DOUBLE_EQ(graph.getConstantValue(c1), graph.getConstantValue(c2));
-    EXPECT_EQ(1u, graph.const_pool.size());  // Only one unique constant in pool
+    // Pool should have only one entry since we added the same value twice
+    EXPECT_EQ(1u, graph.const_pool.size());
 
-    // After adding a different value
+    // Adding a different value should add to the pool
+    uint32_t c3 = graph.addConstant(2.71);
     EXPECT_DOUBLE_EQ(2.71, graph.getConstantValue(c3));
-    EXPECT_EQ(2u, graph.const_pool.size());  // Now two constants
+    EXPECT_EQ(2u, graph.const_pool.size());  // Now two constants in pool
 }
 
 // =============================================================================
