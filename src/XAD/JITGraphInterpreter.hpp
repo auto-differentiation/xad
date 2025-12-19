@@ -289,16 +289,26 @@ class JITGraphInterpreter : public IJITBackend
                     nodeAdjoints_[b] += adj * vResult * std::log(va);
                 break;
             case JITOpCode::Min:
-                if (va <= vb)
+                if (va < vb)
                     nodeAdjoints_[a] += adj;
-                else
+                else if (vb < va)
                     nodeAdjoints_[b] += adj;
+                else  // va == vb
+                {
+                    nodeAdjoints_[a] += adj * 0.5;
+                    nodeAdjoints_[b] += adj * 0.5;
+                }
                 break;
             case JITOpCode::Max:
-                if (va >= vb)
+                if (vb < va)
                     nodeAdjoints_[a] += adj;
-                else
+                else if (va < vb)
                     nodeAdjoints_[b] += adj;
+                else  // va == vb
+                {
+                    nodeAdjoints_[a] += adj * 0.5;
+                    nodeAdjoints_[b] += adj * 0.5;
+                }
                 break;
             case JITOpCode::Mod:
                 nodeAdjoints_[a] += adj;
