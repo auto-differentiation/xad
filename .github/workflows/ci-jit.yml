@@ -1,0 +1,501 @@
+name: CI (JIT Enabled)
+on: workflow_dispatch
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+jobs:
+  build_and_test_windows:
+    name: Windows
+    strategy:
+      fail-fast: false
+      matrix:
+        toolset: ["14.2", "14.4"]
+        compiler: [msvc, clang]
+        config: [Release, Debug]
+        standard: ["11", "17"]
+        memory: ["default", "lowmem"]
+        include:
+          - config: Debug
+            sccache: "false"
+            cmake_extra: ""
+          - config: Release
+            sccache: "true"
+            cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          - memory: "lowmem"
+            cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
+          - compiler: clang
+            cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
+            cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
+            # disable cache in Windows with Clang, as it fails compilation with latest compilers
+            sccache: "false"
+            cmake_extra: ""
+            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+          - compiler: msvc
+            cxx: cl
+            cc: cl
+            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+        exclude:
+          - compiler: clang
+            toolset: "14.2"
+          - config: Release
+            memory: lowmem
+          - compiler: clang
+            memory: lowmem
+          - compiler: clang
+            config: Debug
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+      - name: setup
+        run: |
+          choco install -y ninja sccache
+      - name: ccache
+        if: ${{ matrix.sccache == 'true' }}
+        uses: hendrikmuhs/ccache-action@v1.2.10
+        with:
+          key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}
+          variant: sccache
+      - name: configure
+        shell: cmd
+        run: |
+          mkdir build
+          cd build
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
+          cmake .. -GNinja ^
+             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" ^
+             -DCMAKE_CXX_COMPILER="${{ matrix.cxx }}" ^
+             -DCMAKE_C_COMPILER="${{ matrix.cc }}" ^
+             -DCMAKE_CXX_STANDARD="${{ matrix.standard }}" ^
+             ${{ matrix.cmake_extra }} ^
+             ${{ matrix.cmake_mem_flag }} ^
+             -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
+             -DXAD_ENABLE_JIT=ON ^
+             -DXAD_ENABLE_EIGEN_TESTS=ON
+      - name: build
+        shell: cmd
+        run: |
+          cd build
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
+          cmake --build .
+      - name: test
+        shell: cmd
+        run: |
+          cd build
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
+          ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
+      - name: upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }})
+          path: build/test_results.xml
+      - name: install
+        shell: cmd
+        run: |
+          cd build
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
+          cmake --install .
+      - name: install test
+        shell: cmd
+        run: |
+          mkdir installtest
+          cd installtest
+          call "${{ matrix.vsvarsall }}" amd64 -vcvars_ver=${{ matrix.toolset }}
+          cmake ..\\samples -GNinja ^
+             -DCMAKE_CXX_COMPILER="${{ matrix.cxx }}" ^
+             -DCMAKE_C_COMPILER="${{ matrix.cc }}" ^
+             -DCMAKE_CXX_STANDARD="${{ matrix.standard }}" ^
+             -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
+             ${{ matrix.cmake_extra }} ^
+             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"
+          cmake --build .
+
+  build_and_test_gcc:
+    name: Linux/Gcc
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["7", "8", "9", "10", "11", "12", "13", "14"]
+        config: [Release, Debug]
+        reuse_slots: [OFF, ON]
+        standard: [c++11, c++17]
+        memory: ["default", "lowmem"]
+        exclude:
+          - config: Debug
+            reuse_slots: ON
+          - version: "7"
+            standard: c++17
+          - config: Release
+            memory: lowmem
+          - standard: c++17
+            config: lowmem
+          - version: "7"
+            config: Debug
+          - version: "8"
+            config: Debug
+          - version: "9"
+            config: Debug
+          - version: "10"
+            config: Debug
+          - version: "12"
+            config: Debug
+          - version: "13"
+            config: Debug
+        include:
+          - memory: lowmem
+            cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
+          - config: Debug
+            version: "11"
+            coverage: true
+            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
+            coverage_ld_flags: "-lgcov"
+            standard: c++11
+          - version: "11"
+            config: Debug    # also with reusing slots, for coverage
+            reuse_slots: ON
+            coverage: true
+            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
+            coverage_ld_flags: "-lgcov"
+            standard: c++11
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/foonathan/gcc:${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use debian archive repos
+        if: matrix.version == '7' || matrix.version == '8'
+        run: |
+            set -e
+            sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list
+            sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list
+            sed -i 's|http://deb.debian.org/debian buster-updates|http://archive.debian.org/debian buster-updates|g' /etc/apt/sources.list
+            echo 'Acquire::Check-Valid-Until "false";' | tee /etc/apt/apt.conf.d/99no-check-valid-until
+      - name: Setup tools
+        run: |
+          apt-get update
+          apt-get install -y ccache ninja-build lcov build-essential cmake
+      - name: GitHub WS Tmp
+        # there is an issue with workspace locations in github inside containers, which this works around
+        # see: https://github.com/actions/runner/issues/2058
+        run: |
+           echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.10
+        with:
+          key: linux-gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
+            -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
+            -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
+            ${{ matrix.cmake_mem_flag }} \
+            -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install \
+            -DXAD_ENABLE_JIT=ON \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
+      - name: build
+        run: |
+          cd build
+          cmake --build .
+      - name: coverage baseline
+        if: ${{ matrix.coverage }}
+        run: |
+          cd build
+          mkdir coverage tmp
+          lcov --no-external --capture --initial --directory ${{ env.GITHUB_WORKSPACE }} --output-file ./tmp/lcov_base.info
+      - name: test
+        run: |
+          cd build
+          ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2)) --output-junit test_results.xml
+      - name: upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: Test Results (linux gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }})
+          path: ${{ env.GITHUB_WORKSPACE }}/build/test_results.xml
+      - name: coverage tests
+        if: ${{ matrix.coverage }}
+        run: |
+          cd build
+          lcov --no-external --capture --directory ${{ env.GITHUB_WORKSPACE }} --output-file ./tmp/lcov_run.info
+          lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info --output-file ./tmp/lcov_total.info
+          lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ env.GITHUB_WORKSPACE }}/test/*" "${{ env.GITHUB_WORKSPACE }}/samples/*" --output-file ./coverage/lcov.info
+      - name: upload coverage results
+        if: ${{ matrix.coverage }}
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          flag-name: linux-${{ matrix.compiler }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
+          path-to-lcov: ${{env.GITHUB_WORKSPACE }}/build/coverage/lcov.info
+          parallel: true
+      - name: install
+        run: |
+          cd build
+          cmake --install .
+      - name: install test
+        if: ${{ ! matrix.coverage }}
+        run: |
+          mkdir installtest
+          cd installtest
+          cmake ../samples -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_PREFIX_PATH="${{ env.GITHUB_WORKSPACE }}/install"  \
+            -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard}}"  \
+            -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}"
+          cmake --build .
+
+  build_and_test_clang:
+    name: Linux/Clang
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["11", "12", "13", "14", "15", "16", "17", "18"]
+        config: [Release, Debug]
+        reuse_slots: [OFF, ON]
+        standard: ["11", "17"]
+        memory: ["default", "lowmem"]
+        include:
+          - version: "11"
+            cxx: clang++
+            cc: clang
+          - version: "12"
+            cxx: clang++
+            cc: clang
+          - version: "13"
+            cxx: clang++
+            cc: clang
+          - version: "14"
+            cxx: clang++
+            cc: clang
+          - version: "15"
+            cxx: clang++
+            cc: clang
+          - version: "16"
+            cxx: clang++
+            cc: clang
+          - version: "17"
+            cxx: clang++
+            cc: clang
+          - version: "18"
+            cxx: clang++
+            cc: clang
+        exclude:
+          - config: Debug
+            reuse_slots: ON
+          - config: Release
+            memory: lowmem
+          - standard: "17"
+            memory: lowmem
+          - version: "11"
+            config: Debug
+          - version: "12"
+            config: Debug
+          - version: "13"
+            config: Debug
+    container:
+      image: ghcr.io/foonathan/clang:${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: setup
+        run: |
+          apt-get update
+          apt-get install -y ccache ninja-build build-essential cmake
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.10
+        with:
+          key: linux-clang${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DCMAKE_C_COMPILER=${{ matrix.cc }} \
+            -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
+            -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
+            ${{ matrix.memory == 'lowmem' && ' -DXAD_REDUCED_MEMORY=ON' || '' }} \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+            -DXAD_ENABLE_JIT=ON \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
+      - name: build
+        run: |
+          cd build
+          cmake --build .
+      - name: test
+        run: |
+          cd build
+          ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2)) --output-junit test_results.xml
+      - name: upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: Test Results (linux clang-${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }})
+          path: build/test_results.xml
+      - name: install
+        run: |
+          cd build
+          cmake --install .
+      - name: install test
+        run: |
+          mkdir installtest
+          cd installtest
+          cmake ../samples -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install"  \
+            -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DCMAKE_C_COMPILER=${{ matrix.cc }}
+          cmake --build .
+
+  build_and_test_macos:
+    name: Mac
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Release, Debug]
+        os: [macos-14, macos-latest]
+        standard: [c++11, c++17]
+        memory: ["default", "lowmem"]
+        include:
+          - memory: lowmem
+            cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
+          - config: Release
+            os: macos-14
+            compiler: default
+            coverage: false
+          - config: Debug
+            os: macos-14
+            compiler: default
+            coverage: true
+            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
+            coverage_ld_flags: "-ftest-coverage"
+            standard: c++11
+          - config: Release
+            os: macos-latest
+            coverage: false
+          - config: Debug
+            os: macos-latest
+            coverage: true
+            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
+            coverage_ld_flags: "-ftest-coverage"
+            standard: c++17
+        exclude:
+          - config: Release
+            memory: lowmem
+          - standard: "c++17"
+            config: lowmem
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: setup
+        run: |
+          brew update
+          brew install ninja ccache
+      - name: setup coverage
+        if: ${{ matrix.coverage }}
+        # needs to be lcov1.14 specifically and brew no longer supports version selection
+        run: |
+          git clone --branch v1.14 https://github.com/linux-test-project/lcov.git
+          cd lcov
+          sudo make install
+      - uses: actions/checkout@v6
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.10
+        with:
+          key: macos-${{ matrix.config }}-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_FLAGS="-std=${{matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
+            ${{ matrix.cmake_mem_flag }} \
+            -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+            -DXAD_ENABLE_JIT=ON \
+            -DXAD_ENABLE_EIGEN_TESTS=ON
+      - name: build
+        run: |
+          cd build
+          cmake --build .
+      - name: coverage baseline
+        if: ${{ matrix.coverage }}
+        run: |
+          cd build
+          mkdir coverage tmp
+          lcov --no-external --capture --initial --directory ${{ github.workspace }} --output-file ./tmp/lcov_base.info
+      - name: test
+        run: |
+          cd build
+          ctest --no-compress-output --output-on-failure -j$(sysctl -n hw.ncpu) --output-junit test_results.xml
+      - name: upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }})
+          path: build/test_results.xml
+      - name: coverage tests
+        if: ${{ matrix.coverage }}
+        run: |
+          cd build
+          lcov --no-external --capture --directory ${{ github.workspace }} --output-file ./tmp/lcov_run.info
+          lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info  --ignore-errors inconsistent  --output-file ./tmp/lcov_total.info
+          lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --ignore-errors inconsistent --output-file ./coverage/lcov.info
+      - name: upload coverage results
+        if: ${{ matrix.coverage }}
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          flag-name: macos-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}
+          path-to-lcov: build/coverage/lcov.info
+          parallel: true
+      - name: install
+        run: |
+          cd build
+          cmake --install .
+      - name: install test
+        if: ${{ ! matrix.coverage }}
+        run: |
+          mkdir installtest
+          cd installtest
+          cmake ../samples -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }}" \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install" 
+          cmake --build .
+
+  coverage_finish:
+    name: Coverage Collect
+    needs: [ build_and_test_gcc, build_and_test_macos ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
+      - name: Rerun coverage workaround
+        # from https://github.com/lemurheavy/coveralls-public/issues/1653#issuecomment-1251587119
+        run: |
+          curl --location --request GET 'https://coveralls.io/rerun_build?repo_token=${{ secrets.COVERALLS_REPO_TOKEN }}&build_num=${{ github.run_id }}'
+
+  event_file:
+    name: Event File
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v5
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
