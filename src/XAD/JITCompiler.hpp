@@ -104,7 +104,9 @@ class JITCompiler
         if (other.isActive())
         {
             other.deactivate();
-            setActive(this);
+            // `setActive()` can throw if another JIT is active. Here we know `other` was active and we
+            // just deactivated it, so we can safely update the active pointer without risking a throw.
+            active_jit_ = this;
         }
     }
 
@@ -120,7 +122,8 @@ class JITCompiler
             if (other.isActive())
             {
                 other.deactivate();
-                setActive(this);
+                // See move-ctor comment: avoid calling throwing `setActive()` inside a noexcept function.
+                active_jit_ = this;
             }
         }
         return *this;

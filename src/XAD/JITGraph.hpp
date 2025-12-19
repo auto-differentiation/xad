@@ -100,9 +100,6 @@ enum class JITOpCode : uint16_t
 struct JITNodeFlags
 {
     static constexpr uint8_t IsActive = 0x01;
-    // Reserved for future use (e.g., DCE / gradient pruning). Keep to stabilize flag semantics.
-    static constexpr uint8_t IsDead = 0x02;
-    static constexpr uint8_t NeedsGradient = 0x04;
 };
 
 struct JITGraph
