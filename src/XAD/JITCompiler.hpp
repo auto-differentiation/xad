@@ -47,13 +47,6 @@ class JITCompiler
             setActive(this);
     }
 
-    // Factory method for creating with specific backend type
-    template <class BackendType>
-    static JITCompiler withBackend(bool activate = true)
-    {
-        return JITCompiler(std::unique_ptr<BackendType>(new BackendType()), activate);
-    }
-
     ~JITCompiler() { deactivate(); }
 
     /// Set or replace the JIT backend.
