@@ -19,6 +19,10 @@ template <class> struct fmin_op;
 template <class> struct fmod_op;
 template <class> struct atan2_op;
 
+// Derived scalar ops (degrees/radians inherit from scalar_prod_op)
+template <class> struct degrees_op;
+template <class> struct radians_op;
+
 // Unary math functors
 template <class> struct sin_op;
 template <class> struct cos_op;
@@ -53,6 +57,10 @@ template <class, class> struct scalar_div1_op;
 template <class, class> struct scalar_div2_op;
 template <class, class> struct scalar_pow1_op;
 template <class, class> struct scalar_pow2_op;
+template <class, class> struct scalar_max_op;
+template <class, class> struct scalar_min_op;
+template <class, class> struct scalar_fmax_op;
+template <class, class> struct scalar_fmin_op;
 
 // Primary template - unknown operator
 template <class Op>
@@ -114,5 +122,9 @@ template <class S, class T> struct JITOpCodeFor<scalar_div1_op<S, T>> { static c
 template <class S, class T> struct JITOpCodeFor<scalar_div2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Div; };
 template <class S, class T> struct JITOpCodeFor<scalar_pow1_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Pow; };
 template <class S, class T> struct JITOpCodeFor<scalar_pow2_op<S, T>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Pow; };
+
+// Derived types that inherit from scalar_prod_op (need explicit specializations since C++ doesn't match base class)
+template <class S> struct JITOpCodeFor<degrees_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Mul; };
+template <class S> struct JITOpCodeFor<radians_op<S>> { static constexpr bool known = true; static constexpr JITOpCode value = JITOpCode::Mul; };
 
 }  // namespace xad

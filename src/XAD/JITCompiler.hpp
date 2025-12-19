@@ -6,6 +6,7 @@
 #include <XAD/JITGraph.hpp>
 #include <XAD/JITGraphInterpreter.hpp>
 #include <XAD/Macros.hpp>
+#include <XAD/Tape.hpp>
 #include <XAD/Traits.hpp>
 #include <complex>
 #include <memory>
@@ -28,6 +29,7 @@ class JITCompiler
     typedef Real value_type;
     typedef JITCompiler<Real, N> jit_type;
     typedef typename DerivativesTraits<Real, N>::type derivative_type;
+    typedef Tape<Real, N> tape_type;
 
     static constexpr slot_type INVALID_SLOT = slot_type(-1);
 
@@ -36,7 +38,11 @@ class JITCompiler
         : backend_(std::unique_ptr<JITGraphInterpreter>(new JITGraphInterpreter()))
     {
         if (activate)
+        {
+            // Deactivate any active tape - JIT requires no tape to be active
+            tape_type::deactivateAll();
             setActive(this);
+        }
     }
 
     // Constructor with custom backend
@@ -44,7 +50,11 @@ class JITCompiler
         : backend_(std::move(backend))
     {
         if (activate)
+        {
+            // Deactivate any active tape - JIT requires no tape to be active
+            tape_type::deactivateAll();
             setActive(this);
+        }
     }
 
     ~JITCompiler() { deactivate(); }
