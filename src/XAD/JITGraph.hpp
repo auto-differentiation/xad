@@ -102,29 +102,29 @@ struct JITNodeFlags
     static constexpr uint8_t IsActive = 0x01;
 };
 
+struct JITNode
+{
+    uint16_t op = 0;
+    uint32_t a = 0;
+    uint32_t b = 0;
+    uint32_t c = 0;
+    double imm = 0.0;
+    uint8_t flags = 0;
+};
+
 struct JITGraph
 {
-    std::vector<uint16_t> opcodes;
-    std::vector<uint32_t> operand_a;
-    std::vector<uint32_t> operand_b;
-    std::vector<uint32_t> operand_c;
-    std::vector<double> immediates;
-    std::vector<uint8_t> flags;
+    std::vector<JITNode> nodes;
     std::vector<double> const_pool;
     std::vector<uint32_t> input_ids;
     std::vector<uint32_t> output_ids;
 
-    std::size_t nodeCount() const { return opcodes.size(); }
-    bool empty() const { return opcodes.empty(); }
+    std::size_t nodeCount() const { return nodes.size(); }
+    bool empty() const { return nodes.empty(); }
 
     void clear()
     {
-        opcodes.clear();
-        operand_a.clear();
-        operand_b.clear();
-        operand_c.clear();
-        immediates.clear();
-        flags.clear();
+        nodes.clear();
         const_pool.clear();
         input_ids.clear();
         output_ids.clear();
@@ -132,25 +132,22 @@ struct JITGraph
 
     void reserve(std::size_t n)
     {
-        opcodes.reserve(n);
-        operand_a.reserve(n);
-        operand_b.reserve(n);
-        operand_c.reserve(n);
-        immediates.reserve(n);
-        flags.reserve(n);
+        nodes.reserve(n);
     }
 
     uint32_t addNode(JITOpCode op, uint32_t a = 0, uint32_t b = 0,
                      uint32_t c = 0, double imm = 0.0,
                      uint8_t fl = JITNodeFlags::IsActive)
     {
-        uint32_t id = static_cast<uint32_t>(opcodes.size());
-        opcodes.push_back(static_cast<uint16_t>(op));
-        operand_a.push_back(a);
-        operand_b.push_back(b);
-        operand_c.push_back(c);
-        immediates.push_back(imm);
-        flags.push_back(fl);
+        uint32_t id = static_cast<uint32_t>(nodes.size());
+        JITNode n;
+        n.op = static_cast<uint16_t>(op);
+        n.a = a;
+        n.b = b;
+        n.c = c;
+        n.imm = imm;
+        n.flags = fl;
+        nodes.push_back(n);
         return id;
     }
 
@@ -179,13 +176,13 @@ struct JITGraph
 
     void markOutput(uint32_t nodeId) { output_ids.push_back(nodeId); }
 
-    JITOpCode getOpCode(uint32_t nodeId) const { return static_cast<JITOpCode>(opcodes[nodeId]); }
+    JITOpCode getOpCode(uint32_t nodeId) const { return static_cast<JITOpCode>(nodes[nodeId].op); }
     bool isInput(uint32_t nodeId) const { return getOpCode(nodeId) == JITOpCode::Input; }
     bool isConstant(uint32_t nodeId) const { return getOpCode(nodeId) == JITOpCode::Constant; }
 
     double getConstantValue(uint32_t nodeId) const
     {
-        return const_pool[static_cast<std::size_t>(immediates[nodeId])];
+        return const_pool[static_cast<std::size_t>(nodes[nodeId].imm)];
     }
 };
 

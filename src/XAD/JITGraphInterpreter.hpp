@@ -112,11 +112,12 @@ class JITGraphInterpreter : public JITBackend
 
     void evaluateNode(const JITGraph& graph, uint32_t nodeId)
     {
-        JITOpCode op = static_cast<JITOpCode>(graph.opcodes[nodeId]);
-        uint32_t a = graph.operand_a[nodeId];
-        uint32_t b = graph.operand_b[nodeId];
-        uint32_t c = graph.operand_c[nodeId];
-        double imm = graph.immediates[nodeId];
+        const auto& node = graph.nodes[nodeId];
+        JITOpCode op = static_cast<JITOpCode>(node.op);
+        uint32_t a = node.a;
+        uint32_t b = node.b;
+        uint32_t c = node.c;
+        double imm = node.imm;
 
         double va = (a < nodeValues_.size()) ? nodeValues_[a] : 0.0;
         double vb = (b < nodeValues_.size()) ? nodeValues_[b] : 0.0;
@@ -229,10 +230,11 @@ class JITGraphInterpreter : public JITBackend
         double adj = nodeAdjoints_[nodeId];
         if (adj == 0.0) return;
 
-        JITOpCode op = static_cast<JITOpCode>(graph.opcodes[nodeId]);
-        uint32_t a = graph.operand_a[nodeId];
-        uint32_t b = graph.operand_b[nodeId];
-        uint32_t c = graph.operand_c[nodeId];
+        const auto& node = graph.nodes[nodeId];
+        JITOpCode op = static_cast<JITOpCode>(node.op);
+        uint32_t a = node.a;
+        uint32_t b = node.b;
+        uint32_t c = node.c;
 
         double va = (a < nodeValues_.size()) ? nodeValues_[a] : 0.0;
         double vb = (b < nodeValues_.size()) ? nodeValues_[b] : 0.0;
@@ -418,7 +420,7 @@ class JITGraphInterpreter : public JITBackend
                 break;
             case JITOpCode::Ldexp:
             {
-                double imm = graph.immediates[nodeId];
+                double imm = node.imm;
                 int exp = static_cast<int>(imm);
                 nodeAdjoints_[a] += adj * (1 << exp);
                 break;
