@@ -1405,4 +1405,7 @@ TEST(ExpressionsMathJit, fmaADADAD)
     mathTest2_jit(1.3, 0.7, 1.3 * 0.7 + 1.3, 0.7 + 1.0, 1.3, jitFmaADADAD);
 }
 
+#undef JIT_TEST_FUNCTOR1
+#undef JIT_TEST_FUNCTOR2
+
 #endif  // XAD_ENABLE_JIT
