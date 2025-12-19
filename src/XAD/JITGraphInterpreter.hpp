@@ -30,6 +30,7 @@
 
 #include <XAD/JITBackendInterface.hpp>
 #include <XAD/JITGraph.hpp>
+#include <XAD/Macros.hpp>
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
