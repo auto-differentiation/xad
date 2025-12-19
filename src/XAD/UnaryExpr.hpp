@@ -88,18 +88,29 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
 #ifdef XAD_ENABLE_JIT
     uint32_t recordJIT(JITGraph& graph) const
     {
-        return recordJITImpl(graph, std::integral_constant<bool, HasScalarConstant<Op>::value>{});
+        // Check ldexp first, then scalar constant, then simple unary
+        return recordJITDispatch(graph);
     }
 
   private:
-    uint32_t recordJITImpl(JITGraph& graph, std::false_type /* no scalar constant */) const
+    uint32_t recordJITDispatch(JITGraph& graph) const
+    {
+        if (IsLdexpOp<Op>::value)
+            return recordJITLdexp(graph);
+        else if (HasScalarConstant<Op>::value)
+            return recordJITScalar(graph);
+        else
+            return recordJITSimple(graph);
+    }
+
+    uint32_t recordJITSimple(JITGraph& graph) const
     {
         uint32_t slotA = a_.recordJIT(graph);
         constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
         return graph.addNode(opcode, slotA);
     }
 
-    uint32_t recordJITImpl(JITGraph& graph, std::true_type /* has scalar constant */) const
+    uint32_t recordJITScalar(JITGraph& graph) const
     {
         uint32_t slotA = a_.recordJIT(graph);
         uint32_t slotB = recordJITConstant(graph, getScalarConstant(op_));
@@ -109,6 +120,14 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
             return graph.addNode(opcode, slotB, slotA);
         else
             return graph.addNode(opcode, slotA, slotB);
+    }
+
+    uint32_t recordJITLdexp(JITGraph& graph) const
+    {
+        uint32_t slotA = a_.recordJIT(graph);
+        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+        double exp_val = getLdexpExponent(op_);
+        return graph.addNode(opcode, slotA, 0, 0, exp_val);  // Store exponent in immediate
     }
 
   public:

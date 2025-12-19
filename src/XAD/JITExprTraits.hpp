@@ -25,10 +25,22 @@ struct HasScalarConstant : std::false_type {};
 template <class Op>
 struct HasScalarConstant<Op, decltype(void(std::declval<Op>().b_))> : std::true_type {};
 
+// Helper to detect ldexp_op (has exp_ member instead of b_)
+template <class Op, class = void>
+struct IsLdexpOp : std::false_type {};
+
+template <class Op>
+struct IsLdexpOp<Op, decltype(void(std::declval<Op>().exp_))> : std::true_type {};
+
 // Helper to get constant value from scalar ops (handles nested AD types)
 template <class Op>
 typename std::enable_if<HasScalarConstant<Op>::value, double>::type
 getScalarConstant(const Op& op) { return getNestedDoubleValue(op.b_); }
+
+// Helper to get exponent value from ldexp_op
+template <class Op>
+typename std::enable_if<IsLdexpOp<Op>::value, double>::type
+getLdexpExponent(const Op& op) { return static_cast<double>(op.exp_); }
 
 // Detect if Op is scalar_sub1 or scalar_div1 (scalar is first operand)
 template <class> struct IsScalarFirstOp : std::false_type {};

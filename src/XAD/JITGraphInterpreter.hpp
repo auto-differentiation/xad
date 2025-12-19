@@ -144,7 +144,6 @@ class JITGraphInterpreter : public IJITBackend
             case JITOpCode::Exp2: result = std::exp2(va); break;
             case JITOpCode::Trunc: result = std::trunc(va); break;
             case JITOpCode::Round: result = std::round(va); break;
-            case JITOpCode::Fmod: result = std::fmod(va, vb); break;
             case JITOpCode::Remainder: result = std::remainder(va, vb); break;
             case JITOpCode::Remquo:
             {
@@ -302,6 +301,7 @@ class JITGraphInterpreter : public IJITBackend
                 break;
             case JITOpCode::Mod:
                 nodeAdjoints_[a] += adj;
+                nodeAdjoints_[b] -= adj * std::floor(va / vb);
                 break;
             case JITOpCode::Atan2:
                 {
@@ -349,10 +349,6 @@ class JITGraphInterpreter : public IJITBackend
             case JITOpCode::Trunc:
             case JITOpCode::Round:
                 // Zero derivative
-                break;
-            case JITOpCode::Fmod:
-                nodeAdjoints_[a] += adj;
-                nodeAdjoints_[b] -= adj * std::floor(va / vb);
                 break;
             case JITOpCode::Remainder:
             {
