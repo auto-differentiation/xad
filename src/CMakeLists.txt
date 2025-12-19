@@ -126,13 +126,6 @@ set(public_headers
     XAD/ReusableRange.hpp
     XAD/StdCompatibility.hpp
     XAD/Tape.hpp
-    XAD/JITCompiler.hpp
-    XAD/JITGraph.hpp
-    XAD/JITBackendInterface.hpp
-    XAD/JITGraphInterpreter.hpp
-    XAD/JITOpCodeTraits.hpp
-    XAD/JITExprTraits.hpp
-    XAD/ABool.hpp
     XAD/TapeContainer.hpp
     XAD/Traits.hpp
     XAD/TypeTraits.hpp
@@ -150,6 +143,19 @@ set(public_headers
     ${CMAKE_CURRENT_BINARY_DIR}/XAD/Config.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/XAD/GenerateMode.hpp
 )
+
+# JIT compilation support headers (optional)
+if(XAD_ENABLE_JIT)
+    list(APPEND public_headers
+        XAD/JITCompiler.hpp
+        XAD/JITGraph.hpp
+        XAD/JITBackendInterface.hpp
+        XAD/JITGraphInterpreter.hpp
+        XAD/JITOpCodeTraits.hpp
+        XAD/JITExprTraits.hpp
+        XAD/ABool.hpp
+    )
+endif()
 
 
 set(srcfiles Tape.cpp ${public_headers})

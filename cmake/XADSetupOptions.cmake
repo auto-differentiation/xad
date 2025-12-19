@@ -67,6 +67,11 @@ option(XAD_NO_THREADLOCAL "Disable thread-local tape - only for single-threaded 
 option(XAD_USE_STRONG_INLINE "Use forced inlining for higher performance, at a higher compile time cost" OFF)
 option(XAD_ALLOW_INT_CONVERSION "Add real->int conversion operator, potentially missing to track dependencies" ON)
 option(XAD_REDUCED_MEMORY "Reduce memory required for tape, at a slight performance cost" OFF)
+option(XAD_ENABLE_JIT "Enable JIT compilation support (record-once, compile-once, evaluate-many)" ON)
+
+if(XAD_ENABLE_JIT)
+    message(STATUS "JIT compilation support enabled")
+endif()
 
 if(XAD_REDUCED_MEMORY)
     message(STATUS "Using reduced memory for tape storage at a slight performance cost")

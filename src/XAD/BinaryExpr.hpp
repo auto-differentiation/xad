@@ -24,9 +24,12 @@
 
 #pragma once
 
+#include <XAD/Config.hpp>
 #include <XAD/BinaryDerivativeImpl.hpp>
 #include <XAD/Expression.hpp>
+#ifdef XAD_ENABLE_JIT
 #include <XAD/JITExprTraits.hpp>
+#endif
 #include <XAD/Macros.hpp>
 #include <XAD/Traits.hpp>
 #include <type_traits>
@@ -75,6 +78,7 @@ struct BinaryExpr
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord() || b_.shouldRecord(); }
 
+#ifdef XAD_ENABLE_JIT
     uint32_t recordJIT(JITGraph& graph) const
     {
         uint32_t slotA = a_.recordJIT(graph);
@@ -82,6 +86,7 @@ struct BinaryExpr
         constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
         return graph.addNode(opcode, slotA, slotB);
     }
+#endif
 
   private:
     Expr1 a_;

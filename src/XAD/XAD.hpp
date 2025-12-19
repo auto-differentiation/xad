@@ -50,6 +50,8 @@
 #include <XAD/Vec.hpp>
 #include <XAD/Version.hpp>
 
-// JIT compilation support
+// JIT compilation support (optional, controlled by XAD_ENABLE_JIT)
+#ifdef XAD_ENABLE_JIT
 #include <XAD/JITCompiler.hpp>
 #include <XAD/ABool.hpp>
+#endif

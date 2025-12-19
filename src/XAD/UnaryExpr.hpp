@@ -24,8 +24,11 @@
 
 #pragma once
 
+#include <XAD/Config.hpp>
 #include <XAD/Expression.hpp>
+#ifdef XAD_ENABLE_JIT
 #include <XAD/JITExprTraits.hpp>
+#endif
 #include <XAD/Macros.hpp>
 #include <XAD/Traits.hpp>
 
@@ -82,6 +85,7 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord(); }
 
+#ifdef XAD_ENABLE_JIT
     uint32_t recordJIT(JITGraph& graph) const
     {
         return recordJITImpl(graph, std::integral_constant<bool, HasScalarConstant<Op>::value>{});
@@ -108,6 +112,7 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
     }
 
   public:
+#endif
     XAD_INLINE DerivativeType derivative() const
     {
         using xad::derivative;
