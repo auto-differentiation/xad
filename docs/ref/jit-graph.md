@@ -1,5 +1,4 @@
-JITGraph
-=======
+# JITGraph
 
 ## Overview
 

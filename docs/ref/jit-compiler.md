@@ -1,5 +1,4 @@
-JITCompiler
-===========
+# JITCompiler
 
 ## Overview
 
