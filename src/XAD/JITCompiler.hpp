@@ -56,6 +56,15 @@ class JITCompiler
 
     ~JITCompiler() { deactivate(); }
 
+    /// Set or replace the JIT backend.
+    /// Resets any compiled state when the backend is changed.
+    void setBackend(std::unique_ptr<IJITBackend> backend)
+    {
+        backend_ = std::move(backend);
+        if (backend_)
+            backend_->reset();
+    }
+
     JITCompiler(JITCompiler&& other) noexcept
         : graph_(std::move(other.graph_)),
           backend_(std::move(other.backend_)),
