@@ -77,6 +77,54 @@ TEST(JITCompiler, isMovable)
     EXPECT_FALSE(jit4.isActive());
 }
 
+TEST(JITCompiler, canSetBackend)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+    AD a = 2.0;
+    AD b = 3.0;
+
+    jit.registerInput(a);
+    jit.registerInput(b);
+
+    AD c = a * b;
+    jit.registerOutput(c);
+    jit.compile();
+
+    double output;
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(6.0, output);
+
+    // Replace backend with a new interpreter
+    jit.setBackend(std::unique_ptr<xad::IJITBackend>(new xad::JITGraphInterpreter()));
+
+    // After setBackend, need to recompile since backend was reset
+    jit.compile();
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(6.0, output);
+}
+
+TEST(JITCompiler, constructorWithExplicitBackend)
+{
+    auto backend = std::unique_ptr<xad::IJITBackend>(new xad::JITGraphInterpreter());
+    xad::JITCompiler<double> jit(std::move(backend), true);
+
+    using AD = xad::AReal<double, 1>;
+    AD a = 2.0;
+    AD b = 3.0;
+
+    jit.registerInput(a);
+    jit.registerInput(b);
+
+    AD c = a + b;
+    jit.registerOutput(c);
+    jit.compile();
+
+    double output;
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(5.0, output);
+}
+
 TEST(JITCompiler, canRegisterInputsAndOutputs)
 {
     xad::JITCompiler<double> jit;
@@ -420,6 +468,881 @@ TEST(JITGraphInterpreter, adjointsForComplexExpression)
 
     EXPECT_NEAR(4.0, jit.getDerivative(x.getSlot()), 1e-10);
     EXPECT_NEAR(6.0, jit.getDerivative(y.getSlot()), 1e-10);
+}
+
+// =============================================================================
+// ABool tests
+// =============================================================================
+
+TEST(ABool, defaultConstructor)
+{
+    xad::ABool<double> ab;
+    EXPECT_FALSE(ab.passive());
+    EXPECT_FALSE(ab.hasSlot());
+    EXPECT_EQ(xad::ABool<double>::INVALID_SLOT, ab.slot());
+}
+
+TEST(ABool, constructorFromBool)
+{
+    xad::ABool<double> ab_true(true);
+    xad::ABool<double> ab_false(false);
+
+    EXPECT_TRUE(ab_true.passive());
+    EXPECT_FALSE(ab_false.passive());
+    EXPECT_FALSE(ab_true.hasSlot());
+    EXPECT_FALSE(ab_false.hasSlot());
+}
+
+TEST(ABool, constructorWithSlot)
+{
+    xad::ABool<double> ab(42, true);
+
+    EXPECT_TRUE(ab.passive());
+    EXPECT_TRUE(ab.hasSlot());
+    EXPECT_EQ(42u, ab.slot());
+}
+
+TEST(ABool, implicitBoolConversion)
+{
+    xad::ABool<double> ab_true(true);
+    xad::ABool<double> ab_false(false);
+
+    // Test implicit conversion
+    if (ab_true)
+        EXPECT_TRUE(true);
+    else
+        FAIL() << "ABool(true) should convert to true";
+
+    if (ab_false)
+        FAIL() << "ABool(false) should convert to false";
+    else
+        EXPECT_TRUE(true);
+}
+
+TEST(ABool, ifWithoutJIT)
+{
+    // Without JIT active, If should use passive value
+    using AD = xad::AReal<double, 1>;
+    AD trueVal(10.0);
+    AD falseVal(20.0);
+
+    xad::ABool<double> cond_true(true);
+    xad::ABool<double> cond_false(false);
+
+    AD result_true = cond_true.If(trueVal, falseVal);
+    AD result_false = cond_false.If(trueVal, falseVal);
+
+    EXPECT_DOUBLE_EQ(10.0, xad::value(result_true));
+    EXPECT_DOUBLE_EQ(20.0, xad::value(result_false));
+}
+
+TEST(ABool, staticIfWithoutJIT)
+{
+    using AD = xad::AReal<double, 1>;
+    AD trueVal(10.0);
+    AD falseVal(20.0);
+
+    xad::ABool<double> cond_true(true);
+    xad::ABool<double> cond_false(false);
+
+    AD result_true = xad::ABool<double>::If(cond_true, trueVal, falseVal);
+    AD result_false = xad::ABool<double>::If(cond_false, trueVal, falseVal);
+
+    EXPECT_DOUBLE_EQ(10.0, xad::value(result_true));
+    EXPECT_DOUBLE_EQ(20.0, xad::value(result_false));
+}
+
+TEST(ABool, lessComparison)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 2.0;
+    AD b = 3.0;
+    jit.registerInput(a);
+    jit.registerInput(b);
+
+    auto cond = xad::less(a, b);
+    EXPECT_TRUE(cond.passive());  // 2 < 3 is true
+    EXPECT_TRUE(cond.hasSlot());  // JIT is active, so slot should be set
+}
+
+TEST(ABool, lessComparisonWithScalar)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 2.0;
+    jit.registerInput(a);
+
+    auto cond = xad::less(a, 3.0);
+    EXPECT_TRUE(cond.passive());  // 2 < 3 is true
+    EXPECT_TRUE(cond.hasSlot());
+}
+
+TEST(ABool, greaterComparison)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 5.0;
+    AD b = 3.0;
+    jit.registerInput(a);
+    jit.registerInput(b);
+
+    auto cond = xad::greater(a, b);
+    EXPECT_TRUE(cond.passive());  // 5 > 3 is true
+    EXPECT_TRUE(cond.hasSlot());
+}
+
+TEST(ABool, greaterComparisonWithScalar)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 5.0;
+    jit.registerInput(a);
+
+    auto cond = xad::greater(a, 3.0);
+    EXPECT_TRUE(cond.passive());
+    EXPECT_TRUE(cond.hasSlot());
+}
+
+TEST(ABool, lessEqualComparison)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 3.0;
+    AD b = 3.0;
+    jit.registerInput(a);
+    jit.registerInput(b);
+
+    auto cond = xad::lessEqual(a, b);
+    EXPECT_TRUE(cond.passive());  // 3 <= 3 is true
+    EXPECT_TRUE(cond.hasSlot());
+}
+
+TEST(ABool, lessEqualComparisonWithScalar)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 3.0;
+    jit.registerInput(a);
+
+    auto cond = xad::lessEqual(a, 3.0);
+    EXPECT_TRUE(cond.passive());
+    EXPECT_TRUE(cond.hasSlot());
+}
+
+TEST(ABool, greaterEqualComparison)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 5.0;
+    AD b = 3.0;
+    jit.registerInput(a);
+    jit.registerInput(b);
+
+    auto cond = xad::greaterEqual(a, b);
+    EXPECT_TRUE(cond.passive());  // 5 >= 3 is true
+    EXPECT_TRUE(cond.hasSlot());
+}
+
+TEST(ABool, greaterEqualComparisonWithScalar)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 5.0;
+    jit.registerInput(a);
+
+    auto cond = xad::greaterEqual(a, 3.0);
+    EXPECT_TRUE(cond.passive());
+    EXPECT_TRUE(cond.hasSlot());
+}
+
+TEST(ABool, ifWithJITRecording)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x = 2.0;
+    jit.registerInput(x);
+    jit.newRecording();
+
+    AD trueVal = x * 2.0;   // 4.0
+    AD falseVal = x * 3.0;  // 6.0
+
+    auto cond = xad::less(x, 5.0);  // true for x=2
+    AD result = cond.If(trueVal, falseVal);
+    jit.registerOutput(result);
+
+    jit.compile();
+    double output;
+    jit.forward(&output, 1);
+
+    EXPECT_DOUBLE_EQ(4.0, output);  // x < 5, so trueVal = 2*2 = 4
+}
+
+TEST(ABool, ifWithJITRecordingFalseBranch)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x = 10.0;
+    jit.registerInput(x);
+    jit.newRecording();
+
+    AD trueVal = x * 2.0;   // 20.0
+    AD falseVal = x * 3.0;  // 30.0
+
+    auto cond = xad::less(x, 5.0);  // false for x=10
+    AD result = cond.If(trueVal, falseVal);
+    jit.registerOutput(result);
+
+    jit.compile();
+    double output;
+    jit.forward(&output, 1);
+
+    EXPECT_DOUBLE_EQ(30.0, output);  // x >= 5, so falseVal = 10*3 = 30
+}
+
+TEST(ABool, ifDerivativeTrueBranch)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x = 2.0;
+    jit.registerInput(x);
+    jit.newRecording();
+
+    AD trueVal = x * x;     // x^2, derivative = 2x
+    AD falseVal = x * 3.0;  // 3x, derivative = 3
+
+    auto cond = xad::less(x, 5.0);  // true for x=2
+    AD result = cond.If(trueVal, falseVal);
+    jit.registerOutput(result);
+
+    jit.compile();
+    jit.setDerivative(result.getSlot(), 1.0);
+    jit.computeAdjoints();
+
+    // Since x=2 < 5, we take the true branch (x^2)
+    // d(x^2)/dx = 2x = 4
+    EXPECT_NEAR(4.0, jit.getDerivative(x.getSlot()), 1e-10);
+}
+
+TEST(ABool, ifDerivativeFalseBranch)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x = 10.0;
+    jit.registerInput(x);
+    jit.newRecording();
+
+    AD trueVal = x * x;     // x^2, derivative = 2x
+    AD falseVal = x * 3.0;  // 3x, derivative = 3
+
+    auto cond = xad::less(x, 5.0);  // false for x=10
+    AD result = cond.If(trueVal, falseVal);
+    jit.registerOutput(result);
+
+    jit.compile();
+    jit.setDerivative(result.getSlot(), 1.0);
+    jit.computeAdjoints();
+
+    // Since x=10 >= 5, we take the false branch (3x)
+    // d(3x)/dx = 3
+    EXPECT_NEAR(3.0, jit.getDerivative(x.getSlot()), 1e-10);
+}
+
+// =============================================================================
+// Additional JITCompiler tests
+// =============================================================================
+
+TEST(JITCompiler, registerInputsVector)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    std::vector<AD> inputs = {1.0, 2.0, 3.0};
+    jit.registerInputs(inputs);
+
+    EXPECT_EQ(3u, jit.getGraph().input_ids.size());
+}
+
+TEST(JITCompiler, registerInputsRange)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    std::vector<AD> inputs = {1.0, 2.0, 3.0, 4.0};
+    jit.registerInputs(inputs.begin(), inputs.begin() + 2);
+
+    EXPECT_EQ(2u, jit.getGraph().input_ids.size());
+}
+
+TEST(JITCompiler, registerOutputsVector)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 1.0, b = 2.0;
+    jit.registerInput(a);
+    jit.registerInput(b);
+
+    std::vector<AD> outputs;
+    outputs.push_back(a + b);
+    outputs.push_back(a * b);
+
+    jit.registerOutputs(outputs);
+
+    EXPECT_EQ(2u, jit.getGraph().output_ids.size());
+}
+
+TEST(JITCompiler, registerOutputsRange)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 1.0, b = 2.0;
+    jit.registerInput(a);
+    jit.registerInput(b);
+
+    std::vector<AD> outputs;
+    outputs.push_back(a + b);
+    outputs.push_back(a * b);
+    outputs.push_back(a - b);
+
+    jit.registerOutputs(outputs.begin(), outputs.begin() + 2);
+
+    EXPECT_EQ(2u, jit.getGraph().output_ids.size());
+}
+
+TEST(JITCompiler, recordNodeAndConstant)
+{
+    xad::JITCompiler<double> jit;
+
+    uint32_t c1 = jit.recordConstant(5.0);
+    uint32_t c2 = jit.recordConstant(3.0);
+    uint32_t n = jit.recordNode(xad::JITOpCode::Add, c1, c2);
+
+    EXPECT_EQ(xad::JITOpCode::Constant, jit.getGraph().getOpCode(c1));
+    EXPECT_EQ(xad::JITOpCode::Constant, jit.getGraph().getOpCode(c2));
+    EXPECT_EQ(xad::JITOpCode::Add, jit.getGraph().getOpCode(n));
+}
+
+TEST(JITCompiler, clearAll)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 2.0;
+    jit.registerInput(a);
+    AD c = a * a;
+    jit.registerOutput(c);
+
+    EXPECT_GT(jit.getGraph().nodeCount(), 0u);
+
+    jit.clearAll();
+
+    EXPECT_EQ(0u, jit.getGraph().nodeCount());
+    EXPECT_EQ(0u, jit.getGraph().input_ids.size());
+    EXPECT_EQ(0u, jit.getGraph().output_ids.size());
+}
+
+TEST(JITCompiler, getMemory)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 2.0;
+    jit.registerInput(a);
+    AD c = a * a;
+    jit.registerOutput(c);
+
+    std::size_t mem = jit.getMemory();
+    EXPECT_GT(mem, 0u);
+}
+
+TEST(JITCompiler, getPosition)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    auto pos0 = jit.getPosition();
+    EXPECT_EQ(0u, pos0);
+
+    AD a = 2.0;
+    jit.registerInput(a);
+
+    auto pos1 = jit.getPosition();
+    EXPECT_GT(pos1, pos0);
+
+    AD c = a * a;
+    auto pos2 = jit.getPosition();
+    EXPECT_GT(pos2, pos1);
+}
+
+TEST(JITCompiler, derivativeNonConstAccess)
+{
+    xad::JITCompiler<double> jit;
+
+    // Access derivative for a slot that doesn't exist yet
+    auto& deriv = jit.derivative(10);
+    deriv = 42.0;
+
+    EXPECT_DOUBLE_EQ(42.0, jit.getDerivative(10));
+}
+
+TEST(JITCompiler, derivativeConstAccessOutOfRange)
+{
+    xad::JITCompiler<double> jit;
+
+    // Const access to out-of-range slot should return zero
+    const auto& jit_const = jit;
+    const auto& deriv = jit_const.derivative(999);
+
+    EXPECT_DOUBLE_EQ(0.0, deriv);
+}
+
+// =============================================================================
+// Additional JITGraph tests
+// =============================================================================
+
+TEST(JITGraph, empty)
+{
+    xad::JITGraph graph;
+    EXPECT_TRUE(graph.empty());
+
+    graph.addInput();
+    EXPECT_FALSE(graph.empty());
+}
+
+TEST(JITGraph, reserve)
+{
+    xad::JITGraph graph;
+    graph.reserve(100);
+    // Just verify it doesn't crash - capacity is implementation detail
+    EXPECT_TRUE(graph.empty());
+}
+
+TEST(JITGraph, addUnary)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t neg = graph.addUnary(xad::JITOpCode::Neg, inp);
+
+    EXPECT_EQ(xad::JITOpCode::Neg, graph.getOpCode(neg));
+}
+
+TEST(JITGraph, addBinary)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addInput();
+    uint32_t sum = graph.addBinary(xad::JITOpCode::Add, a, b);
+
+    EXPECT_EQ(xad::JITOpCode::Add, graph.getOpCode(sum));
+}
+
+TEST(JITGraph, addTernary)
+{
+    xad::JITGraph graph;
+    uint32_t cond = graph.addInput();
+    uint32_t t = graph.addInput();
+    uint32_t f = graph.addInput();
+    uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
+
+    EXPECT_EQ(xad::JITOpCode::If, graph.getOpCode(result));
+}
+
+TEST(JITGraph, isInput)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t c = graph.addConstant(1.0);
+
+    EXPECT_TRUE(graph.isInput(inp));
+    EXPECT_FALSE(graph.isInput(c));
+}
+
+TEST(JITGraph, isConstant)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t c = graph.addConstant(1.0);
+
+    EXPECT_FALSE(graph.isConstant(inp));
+    EXPECT_TRUE(graph.isConstant(c));
+}
+
+TEST(JITGraph, constantPoolDeduplication)
+{
+    xad::JITGraph graph;
+    uint32_t c1 = graph.addConstant(3.14);
+    uint32_t c2 = graph.addConstant(3.14);  // Same value
+    uint32_t c3 = graph.addConstant(2.71);  // Different value
+
+    // Both should give the same constant value
+    EXPECT_DOUBLE_EQ(graph.getConstantValue(c1), graph.getConstantValue(c2));
+    EXPECT_EQ(1u, graph.const_pool.size());  // Only one unique constant in pool
+
+    // After adding a different value
+    EXPECT_DOUBLE_EQ(2.71, graph.getConstantValue(c3));
+    EXPECT_EQ(2u, graph.const_pool.size());  // Now two constants
+}
+
+// =============================================================================
+// OpCode tests for Square, Recip, SmoothAbs
+// =============================================================================
+
+TEST(JITGraphInterpreter, squareOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t sq = graph.addUnary(xad::JITOpCode::Square, inp);
+    graph.markOutput(sq);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 3.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+
+    EXPECT_DOUBLE_EQ(9.0, output);
+}
+
+TEST(JITGraphInterpreter, squareAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t sq = graph.addUnary(xad::JITOpCode::Square, inp);
+    graph.markOutput(sq);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 3.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    // d(x^2)/dx = 2x = 6
+    EXPECT_DOUBLE_EQ(9.0, output);
+    EXPECT_DOUBLE_EQ(6.0, inputAdjoint);
+}
+
+TEST(JITGraphInterpreter, recipOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t rec = graph.addUnary(xad::JITOpCode::Recip, inp);
+    graph.markOutput(rec);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 4.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+
+    EXPECT_DOUBLE_EQ(0.25, output);
+}
+
+TEST(JITGraphInterpreter, recipAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t rec = graph.addUnary(xad::JITOpCode::Recip, inp);
+    graph.markOutput(rec);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 2.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    // d(1/x)/dx = -1/x^2 = -1/4 = -0.25
+    EXPECT_DOUBLE_EQ(0.5, output);
+    EXPECT_DOUBLE_EQ(-0.25, inputAdjoint);
+}
+
+TEST(JITGraphInterpreter, smoothAbsOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t c = graph.addConstant(0.5);  // smoothing parameter
+    uint32_t sa = graph.addBinary(xad::JITOpCode::SmoothAbs, inp, c);
+    graph.markOutput(sa);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    // Test in the smooth region (|x| < c)
+    double input = 0.3;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+
+    // For x > 0 and |x| < c: x^2 * (2/c - x/c^2)
+    double c_val = 0.5;
+    double expected = input * input * (2.0 / c_val - input / (c_val * c_val));
+    EXPECT_NEAR(expected, output, 1e-10);
+
+    // Test outside smooth region (|x| > c)
+    input = 1.0;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(1.0, output);  // Should be |x|
+}
+
+TEST(JITGraphInterpreter, smoothAbsNegative)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t c = graph.addConstant(0.5);
+    uint32_t sa = graph.addBinary(xad::JITOpCode::SmoothAbs, inp, c);
+    graph.markOutput(sa);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    // Test negative value in smooth region
+    double input = -0.3;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+
+    // For x < 0 and |x| < c: x^2 * (2/c + x/c^2)
+    double c_val = 0.5;
+    double expected = input * input * (2.0 / c_val + input / (c_val * c_val));
+    EXPECT_NEAR(expected, output, 1e-10);
+
+    // Test negative outside smooth region
+    input = -1.0;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(1.0, output);  // Should be |x|
+}
+
+// =============================================================================
+// Comparison OpCode tests
+// =============================================================================
+
+TEST(JITGraphInterpreter, cmpLTOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLT, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 3.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(1.0, output);  // 3 < 5 is true
+
+    input = 7.0;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(0.0, output);  // 7 < 5 is false
+}
+
+TEST(JITGraphInterpreter, cmpLEOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLE, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(1.0, output);  // 5 <= 5 is true
+
+    input = 6.0;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(0.0, output);  // 6 <= 5 is false
+}
+
+TEST(JITGraphInterpreter, cmpGTOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGT, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 7.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(1.0, output);  // 7 > 5 is true
+
+    input = 3.0;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(0.0, output);  // 3 > 5 is false
+}
+
+TEST(JITGraphInterpreter, cmpGEOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGE, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(1.0, output);  // 5 >= 5 is true
+
+    input = 4.0;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(0.0, output);  // 4 >= 5 is false
+}
+
+TEST(JITGraphInterpreter, cmpEQOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpEQ, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(1.0, output);  // 5 == 5 is true
+
+    input = 4.0;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(0.0, output);  // 4 == 5 is false
+}
+
+TEST(JITGraphInterpreter, cmpNEOpCode)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpNE, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 4.0;
+    double output;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(1.0, output);  // 4 != 5 is true
+
+    input = 5.0;
+    interp.forward(graph, &input, 1, &output, 1);
+    EXPECT_DOUBLE_EQ(0.0, output);  // 5 != 5 is false
+}
+
+// =============================================================================
+// If OpCode tests
+// =============================================================================
+
+TEST(JITGraphInterpreter, ifOpCodeTrueBranch)
+{
+    xad::JITGraph graph;
+    uint32_t cond = graph.addConstant(1.0);  // true
+    uint32_t t = graph.addConstant(10.0);
+    uint32_t f = graph.addConstant(20.0);
+    uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
+    graph.markOutput(result);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double output;
+    interp.forward(graph, nullptr, 0, &output, 1);
+    EXPECT_DOUBLE_EQ(10.0, output);  // condition is true, return trueVal
+}
+
+TEST(JITGraphInterpreter, ifOpCodeFalseBranch)
+{
+    xad::JITGraph graph;
+    uint32_t cond = graph.addConstant(0.0);  // false
+    uint32_t t = graph.addConstant(10.0);
+    uint32_t f = graph.addConstant(20.0);
+    uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
+    graph.markOutput(result);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double output;
+    interp.forward(graph, nullptr, 0, &output, 1);
+    EXPECT_DOUBLE_EQ(20.0, output);  // condition is false, return falseVal
+}
+
+TEST(JITGraphInterpreter, ifOpCodeAdjointTrueBranch)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t cond = graph.addConstant(1.0);  // true
+    uint32_t t = graph.addBinary(xad::JITOpCode::Mul, inp, graph.addConstant(2.0));  // 2*x
+    uint32_t f = graph.addBinary(xad::JITOpCode::Mul, inp, graph.addConstant(3.0));  // 3*x
+    uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
+    graph.markOutput(result);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    EXPECT_DOUBLE_EQ(10.0, output);  // 2*5
+    EXPECT_DOUBLE_EQ(2.0, inputAdjoint);  // d(2x)/dx = 2
+}
+
+TEST(JITGraphInterpreter, ifOpCodeAdjointFalseBranch)
+{
+    xad::JITGraph graph;
+    uint32_t inp = graph.addInput();
+    uint32_t cond = graph.addConstant(0.0);  // false
+    uint32_t t = graph.addBinary(xad::JITOpCode::Mul, inp, graph.addConstant(2.0));  // 2*x
+    uint32_t f = graph.addBinary(xad::JITOpCode::Mul, inp, graph.addConstant(3.0));  // 3*x
+    uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
+    graph.markOutput(result);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    EXPECT_DOUBLE_EQ(15.0, output);  // 3*5
+    EXPECT_DOUBLE_EQ(3.0, inputAdjoint);  // d(3x)/dx = 3
 }
 
 #endif  // XAD_ENABLE_JIT
