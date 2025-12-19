@@ -597,9 +597,9 @@ inline void mathTest_jit(double x, double yref, double dref, F func)
     EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
 
     // Test backward pass (adjoints)
-    jit.setDerivative(y.slot(), 1.0);
+    jit.setDerivative(y.getSlot(), 1.0);
     jit.computeAdjoints();
-    compareFinite(dref, jit.getDerivative(x1.slot()), "jit, dx");
+    compareFinite(dref, jit.getDerivative(x1.getSlot()), "jit, dx");
 }
 
 // JIT test helper for two-variable functions
@@ -627,10 +627,10 @@ inline void mathTest2_jit(double x1, double x2, double yref, double d1ref, doubl
 
     // Test backward pass for first input
     jit.clearDerivatives();
-    jit.setDerivative(y.slot(), 1.0);
+    jit.setDerivative(y.getSlot(), 1.0);
     jit.computeAdjoints();
-    compareFinite(d1ref, jit.getDerivative(ax1.slot()), "jit, dx1");
-    compareFinite(d2ref, jit.getDerivative(ax2.slot()), "jit, dx2");
+    compareFinite(d1ref, jit.getDerivative(ax1.getSlot()), "jit, dx1");
+    compareFinite(d2ref, jit.getDerivative(ax2.getSlot()), "jit, dx2");
 }
 #endif
 

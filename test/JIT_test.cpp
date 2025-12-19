@@ -129,11 +129,11 @@ TEST(JITCompiler, computeAdjointsProducesCorrectGradients)
     jit.registerOutput(c);
 
     jit.compile();
-    jit.setDerivative(c.slot(), 1.0);  // seed
+    jit.setDerivative(c.getSlot(), 1.0);  // seed
     jit.computeAdjoints();
 
-    EXPECT_DOUBLE_EQ(3.0, jit.getDerivative(a.slot()));
-    EXPECT_DOUBLE_EQ(2.0, jit.getDerivative(b.slot()));
+    EXPECT_DOUBLE_EQ(3.0, jit.getDerivative(a.getSlot()));
+    EXPECT_DOUBLE_EQ(2.0, jit.getDerivative(b.getSlot()));
 }
 
 TEST(JITCompiler, canUseNewRecording)
@@ -176,13 +176,13 @@ TEST(JITCompiler, clearDerivativesWorks)
     jit.registerOutput(c);
     jit.compile();
 
-    jit.setDerivative(c.slot(), 1.0);
+    jit.setDerivative(c.getSlot(), 1.0);
     jit.computeAdjoints();
-    EXPECT_DOUBLE_EQ(4.0, jit.getDerivative(a.slot()));
+    EXPECT_DOUBLE_EQ(4.0, jit.getDerivative(a.getSlot()));
 
     jit.clearDerivatives();
-    EXPECT_DOUBLE_EQ(0.0, jit.getDerivative(a.slot()));
-    EXPECT_DOUBLE_EQ(0.0, jit.getDerivative(c.slot()));
+    EXPECT_DOUBLE_EQ(0.0, jit.getDerivative(a.getSlot()));
+    EXPECT_DOUBLE_EQ(0.0, jit.getDerivative(c.getSlot()));
 }
 
 TEST(JITGraph, canAddNodesAndConstants)
@@ -415,11 +415,11 @@ TEST(JITGraphInterpreter, adjointsForComplexExpression)
     jit.registerOutput(result);
 
     jit.compile();
-    jit.setDerivative(result.slot(), 1.0);
+    jit.setDerivative(result.getSlot(), 1.0);
     jit.computeAdjoints();
 
-    EXPECT_NEAR(4.0, jit.getDerivative(x.slot()), 1e-10);
-    EXPECT_NEAR(6.0, jit.getDerivative(y.slot()), 1e-10);
+    EXPECT_NEAR(4.0, jit.getDerivative(x.getSlot()), 1e-10);
+    EXPECT_NEAR(6.0, jit.getDerivative(y.getSlot()), 1e-10);
 }
 
 #endif  // XAD_ENABLE_JIT
