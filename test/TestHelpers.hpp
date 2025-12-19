@@ -671,10 +671,6 @@ inline void mathTest_all_aad(double x, double yref, double dref, double dref2, F
     mathTest_fwd_adj_vec(x, yref, dref, dref2, func);
     mathTest_fwd2_adj4_vec(x, yref, dref, dref2, func);
     mathTest_adj_adj_vec(x, yref, dref, dref2, func);
-
-#ifdef XAD_ENABLE_JIT
-    mathTest_jit(x, yref, dref, func);
-#endif
 }
 
 template <class F>
@@ -1084,10 +1080,6 @@ inline void mathTest2_all_aad(double x1, double x2, double yref, double d1ref, d
     mathTest2_fwdd(x1, x2, yref, d1ref, d2ref, func);
     mathTest2_fwd_fwdd(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
     mathTest2_adj_fwdd(x1, x2, yref, d1ref, d2ref, d11ref, d12ref, d21ref, d22ref, func);
-
-#ifdef XAD_ENABLE_JIT
-    mathTest2_jit(x1, x2, yref, d1ref, d2ref, func);
-#endif
 }
 
 template <class F>
