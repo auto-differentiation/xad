@@ -1,6 +1,10 @@
 name: Test Results
 
-on: workflow_dispatch
+on:
+  workflow_run:     # will only run on default branch, after CI finished elsewhere
+    workflows: [ "CI" ]
+    types:
+      - completed
 permissions: {}
 
 jobs:

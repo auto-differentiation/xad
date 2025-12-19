@@ -1,4 +1,4 @@
-name: CI (JIT Enabled)
+name: CI (JIT Disabled)
 on: workflow_dispatch
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -69,7 +69,7 @@ jobs:
              ${{ matrix.cmake_extra }} ^
              ${{ matrix.cmake_mem_flag }} ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
-             -DXAD_ENABLE_JIT=ON ^
+             -DXAD_ENABLE_JIT=OFF ^
              -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         shell: cmd
@@ -195,7 +195,7 @@ jobs:
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install \
-            -DXAD_ENABLE_JIT=ON \
+            -DXAD_ENABLE_JIT=OFF \
             -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
@@ -334,7 +334,7 @@ jobs:
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             ${{ matrix.memory == 'lowmem' && ' -DXAD_REDUCED_MEMORY=ON' || '' }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
-            -DXAD_ENABLE_JIT=ON \
+            -DXAD_ENABLE_JIT=OFF \
             -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |
@@ -433,7 +433,7 @@ jobs:
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
-            -DXAD_ENABLE_JIT=ON \
+            -DXAD_ENABLE_JIT=OFF \
             -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         run: |

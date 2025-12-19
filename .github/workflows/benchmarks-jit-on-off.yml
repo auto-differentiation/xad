@@ -1,0 +1,182 @@
+name: Benchmark Compare (JIT OFF vs ON)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Number of benchmark runs (after warmup)'
+        required: false
+        default: '5'
+      paths:
+        description: 'Number of Monte-Carlo paths for LiborSwaptionPricer'
+        required: false
+        default: '50000'
+
+env:
+  BENCH_RUNS: ${{ github.event.inputs.runs || '5' }}
+  BENCH_PATHS: ${{ github.event.inputs.paths || '50000' }}
+
+jobs:
+  benchmark:
+    name: Compare Benchmarks (JIT OFF vs ON)
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/foonathan/gcc:12
+    steps:
+      - name: Hardware characteristics
+        run: |
+          echo "----------------- CPU ----------------"
+          lscpu
+          echo "------------------ Mem ---------------"
+          lsmem
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: benchmark-jit-on-off
+
+      # Build JIT disabled (reference)
+      - name: Configure (JIT OFF)
+        run: |
+          mkdir -p build-off
+          cd build-off
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            -DXAD_USE_STRONG_INLINE=ON \
+            -DXAD_ENABLE_JIT=OFF
+
+      - name: Build (JIT OFF)
+        run: |
+          cd build-off
+          cmake --build .
+
+      # Build JIT enabled
+      - name: Configure (JIT ON)
+        run: |
+          mkdir -p build-on
+          cd build-on
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            -DXAD_USE_STRONG_INLINE=ON \
+            -DXAD_ENABLE_JIT=ON
+
+      - name: Build (JIT ON)
+        run: |
+          cd build-on
+          cmake --build .
+
+      # Run tests on JIT-enabled build (includes JIT tests)
+      - name: Run Tests (JIT ON)
+        run: |
+          cd build-on
+          ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2))
+
+      # Run benchmarks
+      - name: Run Benchmark (JIT OFF)
+        run: |
+          set -e
+          cd build-off/samples/LiborSwaptionPricer
+          # warmup run
+          ./LiborSwaptionPricer ${{ env.BENCH_PATHS }}
+          rm -f benchmark_off.log || true
+          for i in $(seq 1 ${{ env.BENCH_RUNS }}) ; do \
+            ./LiborSwaptionPricer ${{ env.BENCH_PATHS }} | tee -a benchmark_off.log ; \
+          done
+
+      - name: Run Benchmark (JIT ON)
+        run: |
+          set -e
+          cd build-on/samples/LiborSwaptionPricer
+          # warmup run
+          ./LiborSwaptionPricer ${{ env.BENCH_PATHS }}
+          rm -f benchmark_on.log || true
+          for i in $(seq 1 ${{ env.BENCH_RUNS }}) ; do \
+            ./LiborSwaptionPricer ${{ env.BENCH_PATHS }} | tee -a benchmark_on.log ; \
+          done
+
+      - name: Compare Results
+        id: compare
+        run: |
+          set -e
+          apt-get update && apt-get install -y bc datamash
+
+          echo "## Benchmark Results" > results.md
+          echo "" >> results.md
+          echo "Comparing the same codebase built with \`XAD_ENABLE_JIT=OFF\` vs \`XAD_ENABLE_JIT=ON\`." >> results.md
+          echo "" >> results.md
+          echo "- Commit: \`${{ github.sha }}\`" >> results.md
+          echo "- Paths: \`${{ env.BENCH_PATHS }}\`" >> results.md
+          echo "- Runs: \`${{ env.BENCH_RUNS }}\` (after warmup)" >> results.md
+          echo "" >> results.md
+
+          echo "### Raw Statistics (${BENCH_RUNS} runs each)" >> results.md
+          echo "" >> results.md
+          echo "| Branch | Min | Max | Mean | StdDev | Median |" >> results.md
+          echo "|--------|-----|-----|------|--------|--------|" >> results.md
+
+          echo "**JIT OFF:**"
+          OFF_STATS=$(awk '$2 == "AAD" { print $4 }' build-off/samples/LiborSwaptionPricer/benchmark_off.log | datamash min 1 max 1 mean 1 sstdev 1 median 1)
+          OFF_TIME=$(echo "$OFF_STATS" | awk '{print $5}')
+          echo "| JIT OFF | $(echo "$OFF_STATS" | awk '{printf "%.3fs | %.3fs | %.3fs | %.3fs | %.3fs", $1, $2, $3, $4, $5}') |" >> results.md
+
+          echo "**JIT ON:**"
+          ON_STATS=$(awk '$2 == "AAD" { print $4 }' build-on/samples/LiborSwaptionPricer/benchmark_on.log | datamash min 1 max 1 mean 1 sstdev 1 median 1)
+          ON_TIME=$(echo "$ON_STATS" | awk '{print $5}')
+          echo "| JIT ON | $(echo "$ON_STATS" | awk '{printf "%.3fs | %.3fs | %.3fs | %.3fs | %.3fs", $1, $2, $3, $4, $5}') |" >> results.md
+
+          echo "" >> results.md
+          echo "### Summary" >> results.md
+          echo "" >> results.md
+
+          DIFFERENCE=$(echo "scale=6; $OFF_TIME - $ON_TIME" | bc | awk '{printf "%.3f", $1}')
+          PERCENTAGE=$(echo "scale=6; (($OFF_TIME - $ON_TIME) / $OFF_TIME) * 100.0" | bc | awk '{printf "%.2f", $1}')
+
+          echo "| Metric | Value |" >> results.md
+          echo "|--------|-------|" >> results.md
+          echo "| JIT OFF median | ${OFF_TIME}s |" >> results.md
+          echo "| JIT ON median | ${ON_TIME}s |" >> results.md
+          echo "| Difference | ${DIFFERENCE}s |" >> results.md
+          echo "| Change | ${PERCENTAGE}% |" >> results.md
+          echo "" >> results.md
+
+          # Determine if improvement or regression
+          if (( $(echo "$PERCENTAGE > 1" | bc -l) )); then
+            echo "> **Improvement**: JIT ON is ${PERCENTAGE}% faster than JIT OFF" >> results.md
+          elif (( $(echo "$PERCENTAGE < -1" | bc -l) )); then
+            echo "> **Regression**: JIT ON is $(echo "$PERCENTAGE * -1" | bc)% slower than JIT OFF" >> results.md
+          else
+            echo "> **No significant change**: Within 1% margin" >> results.md
+          fi
+
+          cat results.md
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v5
+        with:
+          name: benchmark-results
+          path: results.md
+
+      - name: Post PR Comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: results.md
+          edit-mode: replace
+
