@@ -60,7 +60,7 @@ if (XAD_ENABLE_EIGEN_TESTS)
 endif()
 
 if (XAD_ENABLE_JIT)
-    list(APPEND testfiles JIT_test.cpp)
+    list(APPEND testfiles JIT_test.cpp ExpressionMathJit_test.cpp)
 endif()
 
 if (CMAKE_COMPILER_IS_GNUCC)
