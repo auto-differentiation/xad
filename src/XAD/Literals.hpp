@@ -212,19 +212,19 @@ struct AReal
 
     XAD_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
     {
-        auto s = tape_type::getActive();
-        if (s && o.shouldRecord())
+        if (auto* s = tape_type::getActive())
         {
-            slot_ = s->registerVariable();
-            pushAll<1>(s, o);
-            s->pushLhs(slot_);
+            if (o.shouldRecord())
+            {
+                slot_ = s->registerVariable();
+                pushAll<1>(s, o);
+                s->pushLhs(slot_);
+            }
         }
 #ifdef XAD_ENABLE_JIT
-        else if (!s)
+        else if (auto* j = jit_type::getActive())
         {
-            // Only check JIT if tape is not active
-            jit_type* j = jit_type::getActive();
-            if (j && o.shouldRecord())
+            if (o.shouldRecord())
             {
                 // Copy the slot directly - preserves JIT dependency chain
                 slot_ = o.slot_;
@@ -469,20 +469,20 @@ struct ADVar
 template <class Scalar, std::size_t M>
 XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
-    tape_type* s = tape_type::getActive();
-    if (s && (o.shouldRecord() || this->shouldRecord()))
+    if (auto* s = tape_type::getActive())
     {
-        if (slot_ == INVALID_SLOT)
-            slot_ = s->registerVariable();
-        pushAll<1>(s, o);
-        s->pushLhs(slot_);
+        if (o.shouldRecord() || this->shouldRecord())
+        {
+            if (slot_ == INVALID_SLOT)
+                slot_ = s->registerVariable();
+            pushAll<1>(s, o);
+            s->pushLhs(slot_);
+        }
     }
 #ifdef XAD_ENABLE_JIT
-    else if (!s)
+    else if (auto* j = jit_type::getActive())
     {
-        // Only check JIT if tape is not active
-        auto* j = jit_type::getActive();
-        if (j && (o.shouldRecord() || this->shouldRecord()))
+        if (o.shouldRecord() || this->shouldRecord())
         {
             // Copy the slot directly - preserves JIT dependency chain
             slot_ = o.slot_;
@@ -499,24 +499,23 @@ XAD_INLINE AReal<Scalar, M>::AReal(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
     : base_type(expr.getValue()), slot_(INVALID_SLOT)
 {
-    if (expr.shouldRecord())
+    tape_type* s = tape_type::getActive();
+    if (s)
     {
-        tape_type* s = tape_type::getActive();
-        if (s)
+        if (expr.shouldRecord())
         {
             slot_ = s->registerVariable();
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             s->pushLhs(slot_);
         }
-#ifdef XAD_ENABLE_JIT
-        else
-        {
-            auto* j = JITCompiler<Scalar, M>::getActive();
-            if (j)
-                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
-        }
-#endif
     }
+#ifdef XAD_ENABLE_JIT
+    else if (auto* j = JITCompiler<Scalar, M>::getActive())
+    {
+        if (expr.shouldRecord())
+            slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+    }
+#endif
 }
 
 template <class Scalar, std::size_t M>
@@ -524,10 +523,10 @@ template <class Expr>
 XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
 {
-    if (expr.shouldRecord() || this->shouldRecord())
+    tape_type* s = tape_type::getActive();
+    if (s)
     {
-        tape_type* s = tape_type::getActive();
-        if (s)
+        if (expr.shouldRecord() || this->shouldRecord())
         {
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             // only register this variable after evaluating the expression, as this
@@ -537,15 +536,14 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
                 slot_ = s->registerVariable();
             s->pushLhs(slot_);
         }
-#ifdef XAD_ENABLE_JIT
-        else
-        {
-            auto* j = JITCompiler<Scalar, M>::getActive();
-            if (j)
-                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
-        }
-#endif
     }
+#ifdef XAD_ENABLE_JIT
+    else if (auto* j = JITCompiler<Scalar, M>::getActive())
+    {
+        if (expr.shouldRecord() || this->shouldRecord())
+            slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+    }
+#endif
     this->a_ = expr.getValue();
     return *this;
 }
