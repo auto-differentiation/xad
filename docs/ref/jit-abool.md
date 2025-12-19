@@ -30,4 +30,3 @@ If a JIT compiler is active, the selection is recorded as an `If` node in the gr
 - remain passive (normal `bool` behaviour) if no JIT compiler is active, or
 - record comparison nodes when JIT is active
 
-

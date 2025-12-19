@@ -39,19 +39,19 @@
 
 `JITCompiler` mirrors the tape pattern: a thread-local “active” compiler can be set, so that XAD expression construction/assignment can record into the active JIT compiler when no tape is active.
 
-#### `isActive`
+### `isActive`
 
 `#!c++ bool isActive() const`
 
 Checks whether this instance is the active compiler for the current thread.
 
-#### `getActive`
+### `getActive`
 
 `#!c++ static JITCompiler* getActive()`
 
 Returns the active compiler for the current thread, or `#!c++ nullptr` if none is active.
 
-#### `activate` / `deactivate` / `deactivateAll`
+### `activate` / `deactivate` / `deactivateAll`
 
 `#!c++ void activate()`, `#!c++ void deactivate()`, `#!c++ static void deactivateAll()`
 
@@ -59,19 +59,19 @@ Manage the thread-local active compiler pointer.
 
 ## Graph and backend
 
-#### `getGraph`
+### `getGraph`
 
 `#!c++ JITGraph& getGraph()`
 
 Access the recorded graph (mainly for backends and debugging).
 
-#### `setBackend`
+### `setBackend`
 
 `#!c++ void setBackend(std::unique_ptr<JITBackend> backend)`
 
 Replaces the execution backend (requires recompilation of the current graph).
 
-#### `compile`
+### `compile`
 
 `#!c++ void compile()`
 
@@ -79,15 +79,15 @@ Compiles the currently recorded graph with the current backend.
 
 ## Inputs/outputs
 
-#### `registerInput` / `registerInputs`
+### `registerInput` / `registerInputs`
 
 Registers independent variables as graph inputs.
 
-#### `registerOutput` / `registerOutputs`
+### `registerOutput` / `registerOutputs`
 
 Registers dependent variables as graph outputs.
 
-#### `newRecording`
+### `newRecording`
 
 `#!c++ void newRecording()`
 
@@ -95,13 +95,13 @@ Starts a new recording using the existing registered inputs.
 
 ## Execution
 
-#### `forward`
+### `forward`
 
 `#!c++ void forward(double* outputs, std::size_t numOutputs)`
 
 Executes the forward pass and fills the output array.
 
-#### `computeAdjoints`
+### `computeAdjoints`
 
 `#!c++ void computeAdjoints()`
 
