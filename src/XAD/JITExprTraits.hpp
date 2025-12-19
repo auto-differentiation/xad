@@ -18,24 +18,43 @@ inline double getNestedDoubleValue(int x) { return static_cast<double>(x); }
 template <class T>
 double getNestedDoubleValue(const T& x) { return getNestedDoubleValue(x.value()); }
 
-// Helper to detect if Op has a scalar constant (b_ member)
+// Helper to detect if Op has a scalar constant (b_ member from UnaryFunctors.hpp)
 template <class Op, class = void>
-struct HasScalarConstant : std::false_type {};
+struct HasScalarConstantB_ : std::false_type {};
 
 template <class Op>
-struct HasScalarConstant<Op, decltype(void(std::declval<Op>().b_))> : std::true_type {};
+struct HasScalarConstantB_<Op, decltype(void(std::declval<Op>().b_))> : std::true_type {};
 
-// Helper to detect ldexp_op (has exp_ member instead of b_)
+// Helper to detect if Op has a scalar constant (b member from UnaryMathFunctors.hpp)
+template <class Op, class = void>
+struct HasScalarConstantB : std::false_type {};
+
+template <class Op>
+struct HasScalarConstantB<Op, decltype(void(std::declval<Op>().b))> : std::true_type {};
+
+// Combined trait - has either b_ or b member
+template <class Op>
+struct HasScalarConstant : std::integral_constant<bool,
+    HasScalarConstantB_<Op>::value || HasScalarConstantB<Op>::value> {};
+
+// Helper to detect ldexp_op (has exp_ member of type int, not int*)
 template <class Op, class = void>
 struct IsLdexpOp : std::false_type {};
 
 template <class Op>
-struct IsLdexpOp<Op, decltype(void(std::declval<Op>().exp_))> : std::true_type {};
+struct IsLdexpOp<Op, typename std::enable_if<
+    std::is_same<decltype(std::declval<Op>().exp_), int>::value
+>::type> : std::true_type {};
 
-// Helper to get constant value from scalar ops (handles nested AD types)
+// Helper to get constant value from scalar ops with b_ member
 template <class Op>
-typename std::enable_if<HasScalarConstant<Op>::value, double>::type
+typename std::enable_if<HasScalarConstantB_<Op>::value, double>::type
 getScalarConstant(const Op& op) { return getNestedDoubleValue(op.b_); }
+
+// Helper to get constant value from scalar ops with b member (math functors)
+template <class Op>
+typename std::enable_if<!HasScalarConstantB_<Op>::value && HasScalarConstantB<Op>::value, double>::type
+getScalarConstant(const Op& op) { return getNestedDoubleValue(op.b); }
 
 // Helper to get exponent value from ldexp_op
 template <class Op>
