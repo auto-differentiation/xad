@@ -281,6 +281,47 @@ struct AReal
     XAD_INLINE void setAdjoint(derivative_type a) { setDerivative(a); }
     XAD_INLINE derivative_type getAdjoint() const { return getDerivative(); }
 
+#ifdef XAD_ENABLE_JIT
+  private:
+    // Only enable the JIT derivative path when it is type-correct.
+    // For higher-order AD (Scalar != nested_type) we must not even instantiate code that
+    // would return JITCompiler<nested_type,N>::derivative_type as derivative_type.
+    XAD_INLINE const derivative_type* tryGetJitDerivativePtr(std::true_type) const
+    {
+        auto j = jit_type::getActive();
+        if (!j)
+            return nullptr;
+        if (slot_ == INVALID_SLOT)
+        {
+            static const derivative_type zero = derivative_type();
+            return &zero;
+        }
+        return &j->derivative(slot_);
+    }
+
+    XAD_INLINE const derivative_type* tryGetJitDerivativePtr(std::false_type) const
+    {
+        return nullptr;
+    }
+
+    XAD_INLINE derivative_type* tryGetJitDerivativePtr(std::true_type)
+    {
+        auto j = jit_type::getActive();
+        if (!j)
+            return nullptr;
+        if (slot_ == INVALID_SLOT)
+            slot_ = j->registerVariable();
+        return &j->derivative(slot_);
+    }
+
+    XAD_INLINE derivative_type* tryGetJitDerivativePtr(std::false_type)
+    {
+        return nullptr;
+    }
+
+  public:
+#endif
+
     template <int Size>
     XAD_FORCE_INLINE void pushRhs(DerivInfo<tape_type, Size>& info, const Scalar& mul,
                                   slot_type slot) const
@@ -312,21 +353,8 @@ struct AReal
         if (!t)
         {
 #ifdef XAD_ENABLE_JIT
-            // JIT only works when Scalar is the same as nested_type (no higher-order AD)
-            if (std::is_same<Scalar, nested_type>::value)
-            {
-                auto j = jit_type::getActive();
-                if (j)
-                {
-                    if (slot_ == INVALID_SLOT)
-                    {
-                        static const derivative_type zero = derivative_type();
-                        return zero;
-                    }
-                    // JITCompiler::derivative(slot) returns derivative_type& for the configured Scalar/N
-                    return j->derivative(slot_);
-                }
-            }
+            if (const derivative_type* d = tryGetJitDerivativePtr(std::is_same<Scalar, nested_type>()))
+                return *d;
 #endif
             throw NoTapeException();
         }
@@ -345,20 +373,8 @@ struct AReal
         if (!t)
         {
 #ifdef XAD_ENABLE_JIT
-            // JIT only works when Scalar is the same as nested_type (no higher-order AD)
-            if (std::is_same<Scalar, nested_type>::value)
-            {
-                auto j = jit_type::getActive();
-                if (j)
-                {
-                    if (slot_ == INVALID_SLOT)
-                    {
-                        slot_ = j->registerVariable();
-                    }
-                    // JITCompiler::derivative(slot) returns derivative_type& for the configured Scalar/N
-                    return j->derivative(slot_);
-                }
-            }
+            if (derivative_type* d = tryGetJitDerivativePtr(std::is_same<Scalar, nested_type>()))
+                return *d;
 #endif
             throw NoTapeException();
         }
