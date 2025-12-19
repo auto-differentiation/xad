@@ -87,7 +87,7 @@ TEST(JITCompiler, canRegisterInputsAndOutputs)
     jit.registerInput(a);
     jit.registerInput(b);
 
-    auto c = a + b;
+    AD c = a + b;
     jit.registerOutput(c);
 
     EXPECT_EQ(2u, jit.getGraph().input_ids.size());
@@ -105,7 +105,7 @@ TEST(JITCompiler, forwardProducesCorrectValues)
     jit.registerInput(a);
     jit.registerInput(b);
 
-    auto c = a * b + a;  // 2*3 + 2 = 8
+    AD c = a * b + a;  // 2*3 + 2 = 8
     jit.registerOutput(c);
 
     jit.compile();
@@ -125,7 +125,7 @@ TEST(JITCompiler, computeAdjointsProducesCorrectGradients)
     jit.registerInput(a);
     jit.registerInput(b);
 
-    auto c = a * b;  // dc/da = b = 3, dc/db = a = 2
+    AD c = a * b;  // dc/da = b = 3, dc/db = a = 2
     jit.registerOutput(c);
 
     jit.compile();
@@ -146,7 +146,7 @@ TEST(JITCompiler, canUseNewRecording)
     jit.registerInput(a);
     jit.registerInput(b);
 
-    auto c1 = a + b;
+    AD c1 = a + b;
     jit.registerOutput(c1);
     jit.compile();
 
@@ -156,7 +156,7 @@ TEST(JITCompiler, canUseNewRecording)
 
     // New recording with same inputs
     jit.newRecording();
-    auto c2 = a * b;  // different computation
+    AD c2 = a * b;  // different computation
     jit.registerOutput(c2);
     jit.compile();
 
@@ -172,7 +172,7 @@ TEST(JITCompiler, clearDerivativesWorks)
     AD a = 2.0;
 
     jit.registerInput(a);
-    auto c = a * a;
+    AD c = a * a;
     jit.registerOutput(c);
     jit.compile();
 
@@ -193,9 +193,9 @@ TEST(JITGraph, canAddNodesAndConstants)
     uint32_t n1 = graph.addNode(xad::JITOpCode::Add, c1, c2);
 
     EXPECT_EQ(3u, graph.nodeCount());
-    EXPECT_DOUBLE_EQ(3.14, graph.nodes[c1].constant_value);
-    EXPECT_DOUBLE_EQ(2.71, graph.nodes[c2].constant_value);
-    EXPECT_EQ(xad::JITOpCode::Add, graph.nodes[n1].op);
+    EXPECT_DOUBLE_EQ(3.14, graph.getConstantValue(c1));
+    EXPECT_DOUBLE_EQ(2.71, graph.getConstantValue(c2));
+    EXPECT_EQ(xad::JITOpCode::Add, graph.getOpCode(n1));
 }
 
 TEST(JITGraph, canAddInputsAndMarkOutputs)
@@ -238,7 +238,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         AD a = 2.0, b = 3.0;
         jit.registerInput(a);
         jit.registerInput(b);
-        auto c = a + b;
+        AD c = a + b;
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -252,7 +252,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         AD a = 5.0, b = 3.0;
         jit.registerInput(a);
         jit.registerInput(b);
-        auto c = a - b;
+        AD c = a - b;
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -266,7 +266,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         AD a = 4.0, b = 3.0;
         jit.registerInput(a);
         jit.registerInput(b);
-        auto c = a * b;
+        AD c = a * b;
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -280,7 +280,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         AD a = 12.0, b = 3.0;
         jit.registerInput(a);
         jit.registerInput(b);
-        auto c = a / b;
+        AD c = a / b;
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -299,7 +299,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
     {
         AD a = 1.0;
         jit.registerInput(a);
-        auto c = sin(a);
+        AD c = sin(a);
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -312,7 +312,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
     {
         AD a = 1.0;
         jit.registerInput(a);
-        auto c = cos(a);
+        AD c = cos(a);
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -325,7 +325,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
     {
         AD a = 2.0;
         jit.registerInput(a);
-        auto c = exp(a);
+        AD c = exp(a);
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -338,7 +338,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
     {
         AD a = 2.0;
         jit.registerInput(a);
-        auto c = log(a);
+        AD c = log(a);
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -351,7 +351,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
     {
         AD a = 4.0;
         jit.registerInput(a);
-        auto c = sqrt(a);
+        AD c = sqrt(a);
         jit.registerOutput(c);
         jit.compile();
         double output;
@@ -367,7 +367,7 @@ TEST(JITGraphInterpreter, executeNegation)
     AD a = 5.0;
 
     jit.registerInput(a);
-    auto c = -a;
+    AD c = -a;
     jit.registerOutput(c);
     jit.compile();
 
@@ -387,7 +387,7 @@ TEST(JITGraphInterpreter, complexExpressionWorks)
     jit.registerInput(y);
 
     // (x^2 + y) * sin(x) / y
-    auto result = (x * x + y) * sin(x) / y;
+    AD result = (x * x + y) * sin(x) / y;
     jit.registerOutput(result);
 
     jit.compile();
@@ -411,7 +411,7 @@ TEST(JITGraphInterpreter, adjointsForComplexExpression)
 
     // f(x,y) = x^2 + y^2
     // df/dx = 2x = 4, df/dy = 2y = 6
-    auto result = x * x + y * y;
+    AD result = x * x + y * y;
     jit.registerOutput(result);
 
     jit.compile();
