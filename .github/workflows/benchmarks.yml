@@ -47,7 +47,7 @@ jobs:
           ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2))
       # if we are on main branch & triggered by workflow-dispatch, push artefact
       - name: Push Reference
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: github.event_name == 'workflow_dispatch'
         with:
           name: libor_exe
@@ -185,7 +185,7 @@ jobs:
           cp -a libQuantLib.so* ../test-suite/
           cp -a libQuantLib.so* ../QuantLib-Risks-Cpp/Examples/AdjointBermudanSwaption
       - name: Push Reference Test-suite
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: github.event_name == 'workflow_dispatch'
         with:
           name: ql_test_exe
@@ -194,7 +194,7 @@ jobs:
           retention-days: 90
           overwrite: true
       - name: Push Reference AdjointBermudan
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: github.event_name == 'workflow_dispatch'
         with:
           name: ql_bermudan_exe
