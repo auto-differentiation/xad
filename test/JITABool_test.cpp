@@ -29,7 +29,7 @@
 #include <utility>
 
 #ifdef XAD_ENABLE_JIT
-TEST(ABool, defaultConstructor)
+TEST(JITABool, defaultConstructor)
 {
     xad::ABool<double> ab;
     EXPECT_FALSE(ab.passive());
@@ -39,7 +39,7 @@ TEST(ABool, defaultConstructor)
     EXPECT_EQ(invalid_slot, ab.slot());
 }
 
-TEST(ABool, constructorFromBool)
+TEST(JITABool, constructorFromBool)
 {
     xad::ABool<double> ab_true(true);
     xad::ABool<double> ab_false(false);
@@ -50,7 +50,7 @@ TEST(ABool, constructorFromBool)
     EXPECT_FALSE(ab_false.hasSlot());
 }
 
-TEST(ABool, constructorWithSlot)
+TEST(JITABool, constructorWithSlot)
 {
     xad::ABool<double> ab(42, true);
 
@@ -59,7 +59,7 @@ TEST(ABool, constructorWithSlot)
     EXPECT_EQ(42u, ab.slot());
 }
 
-TEST(ABool, implicitBoolConversion)
+TEST(JITABool, implicitBoolConversion)
 {
     xad::ABool<double> ab_true(true);
     xad::ABool<double> ab_false(false);
@@ -76,7 +76,7 @@ TEST(ABool, implicitBoolConversion)
         EXPECT_TRUE(true);
 }
 
-TEST(ABool, ifWithoutJIT)
+TEST(JITABool, ifWithoutJIT)
 {
     // Without JIT active, If should use passive value
     using AD = xad::AReal<double, 1>;
@@ -93,7 +93,7 @@ TEST(ABool, ifWithoutJIT)
     EXPECT_DOUBLE_EQ(20.0, xad::value(result_false));
 }
 
-TEST(ABool, staticIfWithoutJIT)
+TEST(JITABool, staticIfWithoutJIT)
 {
     using AD = xad::AReal<double, 1>;
     AD trueVal(10.0);
@@ -109,7 +109,7 @@ TEST(ABool, staticIfWithoutJIT)
     EXPECT_DOUBLE_EQ(20.0, xad::value(result_false));
 }
 
-TEST(ABool, lessComparison)
+TEST(JITABool, lessComparison)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -124,7 +124,7 @@ TEST(ABool, lessComparison)
     EXPECT_TRUE(cond.hasSlot());  // JIT is active, so slot should be set
 }
 
-TEST(ABool, lessComparisonWithScalar)
+TEST(JITABool, lessComparisonWithScalar)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -137,7 +137,7 @@ TEST(ABool, lessComparisonWithScalar)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(ABool, greaterComparison)
+TEST(JITABool, greaterComparison)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -152,7 +152,7 @@ TEST(ABool, greaterComparison)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(ABool, greaterComparisonWithScalar)
+TEST(JITABool, greaterComparisonWithScalar)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -165,7 +165,7 @@ TEST(ABool, greaterComparisonWithScalar)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(ABool, lessEqualComparison)
+TEST(JITABool, lessEqualComparison)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -180,7 +180,7 @@ TEST(ABool, lessEqualComparison)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(ABool, lessEqualComparisonWithScalar)
+TEST(JITABool, lessEqualComparisonWithScalar)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -193,7 +193,7 @@ TEST(ABool, lessEqualComparisonWithScalar)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(ABool, greaterEqualComparison)
+TEST(JITABool, greaterEqualComparison)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -208,7 +208,7 @@ TEST(ABool, greaterEqualComparison)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(ABool, greaterEqualComparisonWithScalar)
+TEST(JITABool, greaterEqualComparisonWithScalar)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -221,7 +221,7 @@ TEST(ABool, greaterEqualComparisonWithScalar)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(ABool, ifWithJITRecording)
+TEST(JITABool, ifWithJITRecording)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -244,7 +244,7 @@ TEST(ABool, ifWithJITRecording)
     EXPECT_DOUBLE_EQ(4.0, output);  // x < 5, so trueVal = 2*2 = 4
 }
 
-TEST(ABool, ifWithJITRecordingFalseBranch)
+TEST(JITABool, ifWithJITRecordingFalseBranch)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -267,7 +267,7 @@ TEST(ABool, ifWithJITRecordingFalseBranch)
     EXPECT_DOUBLE_EQ(30.0, output);  // x >= 5, so falseVal = 10*3 = 30
 }
 
-TEST(ABool, ifDerivativeTrueBranch)
+TEST(JITABool, ifDerivativeTrueBranch)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -292,7 +292,7 @@ TEST(ABool, ifDerivativeTrueBranch)
     EXPECT_NEAR(4.0, jit.getDerivative(x.getSlot()), 1e-10);
 }
 
-TEST(ABool, ifDerivativeFalseBranch)
+TEST(JITABool, ifDerivativeFalseBranch)
 {
     xad::JITCompiler<double> jit;
     using AD = xad::AReal<double, 1>;
@@ -317,7 +317,7 @@ TEST(ABool, ifDerivativeFalseBranch)
     EXPECT_NEAR(3.0, jit.getDerivative(x.getSlot()), 1e-10);
 }
 
-TEST(ABool, ifWithConstantOperands)
+TEST(JITABool, ifWithConstantOperands)
 {
     // Test ABool::If when operands don't have slots (need to be recorded as constants)
     xad::JITCompiler<double> jit;
@@ -344,7 +344,7 @@ TEST(ABool, ifWithConstantOperands)
     EXPECT_DOUBLE_EQ(100.0, output);  // x < 5, so trueVal = 100
 }
 
-TEST(ABool, comparisonWithoutJIT)
+TEST(JITABool, comparisonWithoutJIT)
 {
     // Test comparison functions when JIT is NOT active
     // Should return ABool with passive value but no slot
@@ -363,7 +363,7 @@ TEST(ABool, comparisonWithoutJIT)
     EXPECT_FALSE(cond2.hasSlot());
 }
 
-TEST(ABool, comparisonWithInvalidSlotOperands)
+TEST(JITABool, comparisonWithInvalidSlotOperands)
 {
     // Test comparison when AReal operands don't have slots yet
     xad::JITCompiler<double> jit;
@@ -379,7 +379,7 @@ TEST(ABool, comparisonWithInvalidSlotOperands)
     EXPECT_TRUE(cond.hasSlot());  // JIT is active, so slot should be created
 }
 
-TEST(ABool, comparisonWithScalarRecordsLhsWhenNoSlot)
+TEST(JITABool, comparisonWithScalarRecordsLhsWhenNoSlot)
 {
     // Cover the branch where comparing AReal vs scalar with JIT active and the AReal has no slot yet.
     // In that case the AReal operand is recorded as a constant node.

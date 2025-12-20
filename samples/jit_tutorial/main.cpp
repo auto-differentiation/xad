@@ -1,0 +1,166 @@
+/*******************************************************************************
+ *
+ *   JIT tutorial sample: branching and graph reuse.
+ *
+ *   Demonstrates:
+ *   - Tape: re-records and therefore follows normal C++ control flow per run.
+ *   - JIT: graph is recorded once; plain C++ `if` is baked in at record time.
+ *   - ABool::If: records a conditional node so the branch can vary at runtime.
+ *
+ *   This file is part of XAD, a comprehensive C++ library for
+ *   automatic differentiation.
+ *
+ *   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Affero General Public License as published
+ *   by the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Affero General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Affero General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ ******************************************************************************/
+
+#include <XAD/XAD.hpp>
+
+#include <iostream>
+
+namespace
+{
+
+template <class AD>
+AD piecewise_plain_if(const AD& x)
+{
+    // Normal C++ control flow: decision is made immediately, based on the current value.
+    if (xad::value(x) < 2.0)
+        return 1.0 * x;
+    return 7.0 * x;
+}
+
+#ifdef XAD_ENABLE_JIT
+template <class AD>
+AD piecewise_abool_if(const AD& x)
+{
+    // Trackable control flow for JIT: record both branches and select at runtime.
+    auto cond = xad::less(x, 2.0);
+    AD t = 1.0 * x;
+    AD f = 7.0 * x;
+    return cond.If(t, f);
+}
+#endif
+
+}  // namespace
+
+int main()
+{
+    std::cout << "XAD sample: JIT tutorial (branching demo)\n";
+
+    // -------------------------------------------------------------------------
+    // Tape (adjoint): normal C++ if works, because we record per run.
+    // -------------------------------------------------------------------------
+    {
+        using mode = xad::adj<double>;
+        using tape_type = mode::tape_type;
+        using AD = mode::active_type;
+
+        auto run = [](double x0) {
+            tape_type tape;
+            AD x = x0;
+            tape.registerInput(x);
+
+            tape.newRecording();
+            AD y = piecewise_plain_if(x);
+            tape.registerOutput(y);
+            xad::derivative(y) = 1.0;
+            tape.computeAdjoints();
+
+            std::cout << "Tape  : x=" << x0 << "  y=" << xad::value(y) << "  dy/dx=" << xad::derivative(x)
+                      << "\n";
+        };
+
+        run(1.0);  // expected y=1, dy/dx=1
+        run(3.0);  // expected y=21, dy/dx=7
+    }
+
+#ifndef XAD_ENABLE_JIT
+    std::cout << "JIT is not enabled in this XAD build (rebuild with -DXAD_ENABLE_JIT=ON to run JIT examples).\n";
+    return 0;
+#else
+
+    // -------------------------------------------------------------------------
+    // JIT: record once, then re-run with different inputs without re-recording.
+    // Plain C++ if is baked in at record time -> wrong for different branches.
+    // -------------------------------------------------------------------------
+    {
+        using AD = xad::AReal<double, 1>;
+
+        xad::JITCompiler<double, 1> jit;
+        AD x = 1.0;
+        jit.registerInput(x);
+
+        // Record with x=1.0: the branch decision is made now.
+        AD y = piecewise_plain_if(x);
+        jit.registerOutput(y);
+        jit.compile();
+
+        double out = 0.0;
+        jit.forward(&out, 1);
+        jit.setDerivative(y.getSlot(), 1.0);
+        jit.computeAdjoints();
+        std::cout << "JIT   : record plain-if at x=1  -> y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
+                  << "\n";
+
+        // Re-run without re-recording: branch stays baked in.
+        x = 3.0;
+        jit.clearDerivatives();
+        jit.forward(&out, 1);
+        jit.setDerivative(y.getSlot(), 1.0);
+        jit.computeAdjoints();
+        std::cout << "JIT   : replay plain-if at x=3  -> y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
+                  << "  (expected y=21, dy/dx=7)\n";
+    }
+
+    // -------------------------------------------------------------------------
+    // JIT + ABool::If: records a conditional node, so the branch can vary per run.
+    // -------------------------------------------------------------------------
+    {
+        using AD = xad::AReal<double, 1>;
+
+        xad::JITCompiler<double, 1> jit;
+        AD x = 1.0;
+        jit.registerInput(x);
+
+        AD y = piecewise_abool_if(x);
+        jit.registerOutput(y);
+        jit.compile();
+
+        double out = 0.0;
+
+        x = 1.0;
+        jit.clearDerivatives();
+        jit.forward(&out, 1);
+        jit.setDerivative(y.getSlot(), 1.0);
+        jit.computeAdjoints();
+        std::cout << "JIT+If: replay ABool.If at x=1 -> y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
+                  << "\n";
+
+        x = 3.0;
+        jit.clearDerivatives();
+        jit.forward(&out, 1);
+        jit.setDerivative(y.getSlot(), 1.0);
+        jit.computeAdjoints();
+        std::cout << "JIT+If: replay ABool.If at x=3 -> y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
+                  << "\n";
+    }
+
+    return 0;
+#endif
+}
+
+
