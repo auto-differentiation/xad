@@ -492,6 +492,62 @@ TEST(ARealJIT, derivativeFallbackUsesJITWhenNoTape)
     EXPECT_DOUBLE_EQ(7.0, jit.getDerivative(x.getSlot()));
 }
 
+TEST(ARealJIT, copyCtorCopiesSlotWhenNoTapeAndJitActive)
+{
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x(3.0);
+    (void)x.derivative();  // allocate slot in JIT
+    EXPECT_NE(AD::INVALID_SLOT, x.getSlot());
+
+    AD y(x);  // copy-ctor should copy the slot when JIT is active and no tape is active
+    EXPECT_EQ(x.getSlot(), y.getSlot());
+    EXPECT_DOUBLE_EQ(x.getValue(), y.getValue());
+}
+
+TEST(ARealJIT, copyAssignCopiesSlotWhenNoTapeAndJitActive)
+{
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x(4.0);
+    (void)x.derivative();  // allocate slot in JIT
+    EXPECT_NE(AD::INVALID_SLOT, x.getSlot());
+
+    AD y(1.0);
+    EXPECT_EQ(AD::INVALID_SLOT, y.getSlot());
+
+    y = x;  // copy-assign should copy the slot when JIT is active and no tape is active
+    EXPECT_EQ(x.getSlot(), y.getSlot());
+    EXPECT_DOUBLE_EQ(x.getValue(), y.getValue());
+}
+
+TEST(ARealJIT, constantExpressionDoesNotRecordWhenNoTapeAndJitActive)
+{
+    // Exercise the "expr.shouldRecord() == false" branch in the JIT recording path.
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD c(2.0);  // no slot
+    EXPECT_EQ(AD::INVALID_SLOT, c.getSlot());
+
+    AD y = c + 1.0;  // pure constant expression => should not record any JIT node
+    EXPECT_EQ(AD::INVALID_SLOT, y.getSlot());
+    EXPECT_DOUBLE_EQ(3.0, y.getValue());
+}
+
+TEST(ARealJIT, vectorModeDoesNotUseJitFallback)
+{
+    // JIT is intentionally scalar-only; vector AD should not attempt JIT fallback.
+    xad::JITCompiler<double, 1> jit;
+
+    using ADV = xad::AReal<double, 2>;
+    const ADV v;  // no tape
+
+    EXPECT_THROW((void)v.derivative(), xad::NoTapeException);
+}
+
 
 // =============================================================================
 // Additional JITGraph tests
