@@ -33,6 +33,11 @@
 #include <cmath>
 #include <stdexcept>
 
+// Provide a fallback for environments where M_PI is not defined.
+#ifndef M_PI
+#define M_PI 3.141592653589793238462643383279502884
+#endif
+
 namespace xad
 {
 
@@ -93,9 +98,7 @@ void JITGraphInterpreter::reset()
 
 double JITGraphInterpreter::invSqrtPi()
 {
-    // Avoid leaking math macros (M_PI, _USE_MATH_DEFINES) into user code.
-    const double pi = std::acos(-1.0);
-    return 2.0 / std::sqrt(pi);
+    return 2.0 / std::sqrt(M_PI);
 }
 
 void JITGraphInterpreter::evaluateNode(const JITGraph& graph, uint32_t nodeId)
