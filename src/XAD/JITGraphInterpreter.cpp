@@ -41,6 +41,11 @@
 namespace xad
 {
 
+// Thread-local scratch buffers for the interpreter (one set per thread).
+// Defined here to keep the header clean and avoid cppcheck false positives.
+static XAD_THREAD_LOCAL std::vector<double> nodeValues_;
+static XAD_THREAD_LOCAL std::vector<double> nodeAdjoints_;
+
 void JITGraphInterpreter::compile(const JITGraph& graph)
 {
     nodeValues_.resize(graph.nodeCount());
