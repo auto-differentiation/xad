@@ -29,7 +29,9 @@
 
 #include <XAD/XAD.hpp>
 
+#include <iomanip>
 #include <iostream>
+#include <vector>
 
 namespace
 {
@@ -57,9 +59,22 @@ AD piecewise_abool_if(const AD& x)
 
 int main()
 {
-    std::cout << "Comparing Tape vs. JIT for the following two functions (inputs: x=1, x=3)\n";
+    std::cout << "Comparing Tape vs. JIT for the following two functions\n";
     std::cout << "f1(x) = (x < 2) ? (1*x) : (7*x)          (plain C++ if)\n";
     std::cout << "f2(x) = less(x,2).If(1*x, 7*x)           (ABool::If)\n";
+    std::cout << "      (f2 is semantically the same as f1, but expressed in a way JIT can record as a conditional)\n";
+    std::cout << "Tape: run 1 uses x=1, run 2 uses x=3 (re-records per run)\n";
+    std::cout << "JIT : record uses x=1, replay uses x=3 (same recorded graph)\n";
+
+    struct Row
+    {
+        const char* scenario;
+        double x;
+        double y;
+        double dydx;
+        const char* note;
+    };
+    std::vector<Row> rows;
 
     // -------------------------------------------------------------------------
     // 1) Tape using f1 (plain if): re-records each run, so control flow is evaluated per input.
@@ -85,10 +100,14 @@ int main()
 
             std::cout << "Tape run " << runNo << "   input: x=" << x0 << "  result:  y=" << xad::value(y)
                       << "  dy/dx=" << xad::derivative(x) << "\n";
+
+            return std::make_pair(xad::value(y), xad::derivative(x));
         };
 
-        run(1.0);  // y=1,  dy/dx=1
-        run(3.0);  // y=21, dy/dx=7
+        auto r1 = run(1.0);  // y=1,  dy/dx=1
+        auto r2 = run(3.0);  // y=21, dy/dx=7
+        rows.push_back({"Tape f1", 1.0, r1.first, r1.second, ""});
+        rows.push_back({"Tape f1", 3.0, r2.first, r2.second, ""});
     }
 
     // -------------------------------------------------------------------------
@@ -112,6 +131,7 @@ int main()
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
         std::cout << "JIT recording with input:  x=1  y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
+        rows.push_back({"JIT f1 (record)", 1.0, out, jit.getDerivative(x.getSlot()), ""});
 
         x = 3.0;
         jit.clearDerivatives();
@@ -120,6 +140,7 @@ int main()
         jit.computeAdjoints();
         std::cout << "JIT run with input: x=3  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
                   << "  (expected y=21, dy/dx=7)\n";
+        rows.push_back({"JIT f1 (replay)", 3.0, out, jit.getDerivative(x.getSlot()), "expected fail"});
     }
 
     // -------------------------------------------------------------------------
@@ -130,7 +151,7 @@ int main()
         using tape_type = mode::tape_type;
         using AD = mode::active_type;
 
-        std::cout << "\n3) Tape using f2:\n";
+        std::cout << "\n3) Tape using f2: (works fine; ABool is passive when not JIT-recording)\n";
         int runNo = 0;
         auto run = [&runNo](double x0) {
             ++runNo;
@@ -146,10 +167,14 @@ int main()
 
             std::cout << "Tape run " << runNo << "   input: x=" << x0 << "  result:  y=" << xad::value(y)
                       << "  dy/dx=" << xad::derivative(x) << "\n";
+
+            return std::make_pair(xad::value(y), xad::derivative(x));
         };
 
-        run(1.0);
-        run(3.0);
+        auto r1 = run(1.0);
+        auto r2 = run(3.0);
+        rows.push_back({"Tape f2", 1.0, r1.first, r1.second, ""});
+        rows.push_back({"Tape f2", 3.0, r2.first, r2.second, "Tape supports ABool too"});
     }
 
     // -------------------------------------------------------------------------
@@ -176,6 +201,7 @@ int main()
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
         std::cout << "JIT run with input: x=1  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
+        rows.push_back({"JIT f2 (record)", 1.0, out, jit.getDerivative(x.getSlot()), ""});
 
         x = 3.0;
         jit.clearDerivatives();
@@ -183,6 +209,25 @@ int main()
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
         std::cout << "JIT run with input: x=3  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
+        rows.push_back({"JIT f2 (replay)", 3.0, out, jit.getDerivative(x.getSlot()), "replay picks correct branch"});
+    }
+
+    std::cout << "\nSummary:\n";
+    std::cout << std::left << std::setw(22) << "Scenario"
+              << std::right << std::setw(6) << "x"
+              << std::setw(10) << "y"
+              << std::setw(10) << "dy/dx"
+              << "  " << "note"
+              << "\n";
+    std::cout << std::string(70, '-') << "\n";
+    for (const auto& r : rows)
+    {
+        std::cout << std::left << std::setw(22) << r.scenario
+                  << std::right << std::setw(6) << r.x
+                  << std::setw(10) << r.y
+                  << std::setw(10) << r.dydx
+                  << "  " << r.note
+                  << "\n";
     }
 
     return 0;
