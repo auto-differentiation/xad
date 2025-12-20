@@ -39,8 +39,6 @@ namespace xad
 class JITGraphInterpreter : public JITBackend
 {
   public:
-    JITGraphInterpreter() = default;
-    ~JITGraphInterpreter() override = default;
 
     void compile(const JITGraph& graph) override;
 
