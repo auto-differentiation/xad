@@ -42,6 +42,22 @@ jobs:
             config: Release
             standard: "17"
             memory: default
+            cxx: cl
+            cc: cl
+            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+            sccache: "true"
+            cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          - jit: ON
+            toolset: "14.4"
+            compiler: clang
+            config: Release
+            standard: "17"
+            memory: default
+            cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
+            cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
+            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+            sccache: "false"
+            cmake_extra: ""
         exclude:
           - compiler: clang
             toolset: "14.2"
