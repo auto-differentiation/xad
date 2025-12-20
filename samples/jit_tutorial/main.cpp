@@ -62,7 +62,9 @@ int main()
     std::cout << "Comparing Tape vs. JIT for the following two functions\n";
     std::cout << "f1(x) = (x < 2) ? (1*x) : (7*x)          (plain C++ if)\n";
     std::cout << "f2(x) = less(x,2).If(1*x, 7*x)           (ABool::If)\n";
-    std::cout << "      (f2 is semantically the same as f1, but expressed in a way JIT can record as a conditional)\n";
+    std::cout << "(f2 is semantically the same as f1, but expressed in a way JIT can record as a conditional)\n";
+    std::cout << "\n";
+    std::cout << "Example settings:\n";
     std::cout << "Tape: run 1 uses x=1, run 2 uses x=3 (re-records per run)\n";
     std::cout << "JIT : record uses x=1, replay uses x=3 (same recorded graph)\n";
 
