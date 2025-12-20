@@ -22,6 +22,10 @@
 #
 ##############################################################################
 
-xad_add_sample(jit_tutorial SOURCES main.cpp)
+if (NOT XAD_ENABLE_JIT)
+    message(STATUS "Skipping jit_tutorial sample (XAD_ENABLE_JIT is OFF)")
+else()
+    xad_add_sample(jit_tutorial SOURCES main.cpp)
+endif()
 
 

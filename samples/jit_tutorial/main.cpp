@@ -43,7 +43,6 @@ AD piecewise_plain_if(const AD& x)
     return 7.0 * x;
 }
 
-#ifdef XAD_ENABLE_JIT
 template <class AD>
 AD piecewise_abool_if(const AD& x)
 {
@@ -53,7 +52,6 @@ AD piecewise_abool_if(const AD& x)
     AD f = 7.0 * x;
     return cond.If(t, f);
 }
-#endif
 
 }  // namespace
 
@@ -87,11 +85,6 @@ int main()
         run(1.0);  // expected y=1, dy/dx=1
         run(3.0);  // expected y=21, dy/dx=7
     }
-
-#ifndef XAD_ENABLE_JIT
-    std::cout << "JIT is not enabled in this XAD build (rebuild with -DXAD_ENABLE_JIT=ON to run JIT examples).\n";
-    return 0;
-#else
 
     // -------------------------------------------------------------------------
     // JIT: record once, then re-run with different inputs without re-recording.
@@ -160,7 +153,6 @@ int main()
     }
 
     return 0;
-#endif
 }
 
 
