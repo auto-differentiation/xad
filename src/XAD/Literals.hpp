@@ -222,7 +222,7 @@ struct AReal
             }
         }
 #ifdef XAD_ENABLE_JIT
-        else if (jit_type::getActive() != nullptr)
+        else if (getActiveJit() != nullptr)
         {
             if (o.shouldRecord())
             {
@@ -283,12 +283,62 @@ struct AReal
 
 #ifdef XAD_ENABLE_JIT
   private:
+    // JIT is intentionally limited to scalar, first-order mode only:
+    // - vector mode (N>1) is not supported
+    // - higher-order AD (Scalar != nested_type) is not supported
+    enum
+    {
+        jit_supported = std::is_same<Scalar, nested_type>::value && (N == 1)
+    };
+
+    static XAD_INLINE jit_type* getActiveJitImpl(std::true_type) { return jit_type::getActive(); }
+    static XAD_INLINE jit_type* getActiveJitImpl(std::false_type) { return nullptr; }
+    static XAD_INLINE jit_type* getActiveJit()
+    {
+        return getActiveJitImpl(std::integral_constant<bool, jit_supported>());
+    }
+
+    template <class Expr>
+    XAD_INLINE void tryRecordJitFromExprCtor(const Expression<Scalar, Expr, derivative_type>& expr,
+                                             std::true_type)
+    {
+        if (auto* j = jit_type::getActive())
+        {
+            if (expr.shouldRecord())
+                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+        }
+    }
+
+    template <class Expr>
+    XAD_INLINE void tryRecordJitFromExprCtor(const Expression<Scalar, Expr, derivative_type>&,
+                                             std::false_type)
+    {
+    }
+
+    template <class Expr>
+    XAD_INLINE void tryRecordJitFromExprAssign(const Expression<Scalar, Expr, derivative_type>& expr,
+                                               std::true_type)
+    {
+        if (auto* j = jit_type::getActive())
+        {
+            if (expr.shouldRecord() || this->shouldRecord())
+                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+        }
+    }
+
+    template <class Expr>
+    XAD_INLINE void tryRecordJitFromExprAssign(const Expression<Scalar, Expr, derivative_type>&,
+                                               std::false_type)
+    {
+    }
+
+  private:
     // Only enable the JIT derivative path when it is type-correct.
     // For higher-order AD (Scalar != nested_type) we must not even instantiate code that
     // would return JITCompiler<nested_type,N>::derivative_type as derivative_type.
     XAD_INLINE const derivative_type* tryGetJitDerivativePtr(std::true_type) const
     {
-        auto j = jit_type::getActive();
+        auto j = getActiveJit();
         if (!j)
             return nullptr;
         if (slot_ == INVALID_SLOT)
@@ -306,7 +356,7 @@ struct AReal
 
     XAD_INLINE derivative_type* tryGetJitDerivativePtr(std::true_type)
     {
-        auto j = jit_type::getActive();
+        auto j = getActiveJit();
         if (!j)
             return nullptr;
         if (slot_ == INVALID_SLOT)
@@ -353,7 +403,8 @@ struct AReal
         if (!t)
         {
 #ifdef XAD_ENABLE_JIT
-            if (const derivative_type* d = tryGetJitDerivativePtr(std::is_same<Scalar, nested_type>()))
+            if (const derivative_type* d =
+                    tryGetJitDerivativePtr(std::integral_constant<bool, jit_supported>()))
                 return *d;
 #endif
             throw NoTapeException();
@@ -373,7 +424,8 @@ struct AReal
         if (!t)
         {
 #ifdef XAD_ENABLE_JIT
-            if (derivative_type* d = tryGetJitDerivativePtr(std::is_same<Scalar, nested_type>()))
+            if (derivative_type* d =
+                    tryGetJitDerivativePtr(std::integral_constant<bool, jit_supported>()))
                 return *d;
 #endif
             throw NoTapeException();
@@ -480,7 +532,7 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
         }
     }
 #ifdef XAD_ENABLE_JIT
-    else if (jit_type::getActive() != nullptr)
+    else if (getActiveJit() != nullptr)
     {
         if (o.shouldRecord() || this->shouldRecord())
         {
@@ -510,10 +562,9 @@ XAD_INLINE AReal<Scalar, M>::AReal(
         }
     }
 #ifdef XAD_ENABLE_JIT
-    else if (auto* j = JITCompiler<Scalar, M>::getActive())
+    else
     {
-        if (expr.shouldRecord())
-            slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+        this->tryRecordJitFromExprCtor(expr, std::integral_constant<bool, jit_supported>());
     }
 #endif
 }
@@ -538,10 +589,9 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
         }
     }
 #ifdef XAD_ENABLE_JIT
-    else if (auto* j = JITCompiler<Scalar, M>::getActive())
+    else
     {
-        if (expr.shouldRecord() || this->shouldRecord())
-            slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+        this->tryRecordJitFromExprAssign(expr, std::integral_constant<bool, jit_supported>());
     }
 #endif
     this->a_ = expr.getValue();

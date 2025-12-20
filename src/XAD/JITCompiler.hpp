@@ -48,6 +48,8 @@ template <class Real, std::size_t N = 1>
 class JITCompiler
 {
   public:
+    static_assert(N == 1, "JITCompiler only supports scalar mode (N=1).");
+
     typedef unsigned int size_type;
     typedef unsigned int slot_type;
     typedef slot_type position_type;
