@@ -471,7 +471,7 @@ TEST(JITCompiler, floatScalarOperations)
     EXPECT_DOUBLE_EQ(6.0, output);
 }
 
-TEST(ARealJIT, derivativeFallbackUsesJITWhenNoTape)
+TEST(JITAReal, derivativeFallbackUsesJITWhenNoTape)
 {
     // Cover Literals.hpp JIT-derivative fallback paths:
     // - const derivative() returns a zero ref when slot is INVALID and JIT is active
@@ -492,7 +492,7 @@ TEST(ARealJIT, derivativeFallbackUsesJITWhenNoTape)
     EXPECT_DOUBLE_EQ(7.0, jit.getDerivative(x.getSlot()));
 }
 
-TEST(ARealJIT, copyCtorCopiesSlotWhenNoTapeAndJitActive)
+TEST(JITAReal, copyCtorCopiesSlotWhenNoTapeAndJitActive)
 {
     xad::JITCompiler<double, 1> jit;
     using AD = xad::AReal<double, 1>;
@@ -506,7 +506,7 @@ TEST(ARealJIT, copyCtorCopiesSlotWhenNoTapeAndJitActive)
     EXPECT_DOUBLE_EQ(x.getValue(), y.getValue());
 }
 
-TEST(ARealJIT, copyAssignCopiesSlotWhenNoTapeAndJitActive)
+TEST(JITAReal, copyAssignCopiesSlotWhenNoTapeAndJitActive)
 {
     xad::JITCompiler<double, 1> jit;
     using AD = xad::AReal<double, 1>;
@@ -523,7 +523,7 @@ TEST(ARealJIT, copyAssignCopiesSlotWhenNoTapeAndJitActive)
     EXPECT_DOUBLE_EQ(x.getValue(), y.getValue());
 }
 
-TEST(ARealJIT, constantExpressionDoesNotRecordWhenNoTapeAndJitActive)
+TEST(JITAReal, constantExpressionDoesNotRecordWhenNoTapeAndJitActive)
 {
     // Exercise the "expr.shouldRecord() == false" branch in the JIT recording path.
     xad::JITCompiler<double, 1> jit;
@@ -537,7 +537,7 @@ TEST(ARealJIT, constantExpressionDoesNotRecordWhenNoTapeAndJitActive)
     EXPECT_DOUBLE_EQ(3.0, y.getValue());
 }
 
-TEST(ARealJIT, vectorModeDoesNotUseJitFallback)
+TEST(JITAReal, vectorModeDoesNotUseJitFallback)
 {
     // JIT is intentionally scalar-only; vector AD should not attempt JIT fallback.
     xad::JITCompiler<double, 1> jit;
