@@ -57,38 +57,42 @@ AD piecewise_abool_if(const AD& x)
 
 int main()
 {
-    std::cout << "XAD sample: JIT tutorial (branching demo)\n";
+    std::cout << "Comparing Tape vs. JIT for the following two functions (inputs: x=1, x=3)\n";
+    std::cout << "f1(x) = (x < 2) ? (1*x) : (7*x)          (plain C++ if)\n";
+    std::cout << "f2(x) = less(x,2).If(1*x, 7*x)           (ABool::If)\n";
 
     // -------------------------------------------------------------------------
-    // Tape (adjoint): normal C++ if works, because we record per run.
+    // 1) Tape using f1 (plain if): re-records each run, so control flow is evaluated per input.
     // -------------------------------------------------------------------------
     {
         using mode = xad::adj<double>;
         using tape_type = mode::tape_type;
         using AD = mode::active_type;
 
-        auto run = [](double x0) {
+        std::cout << "\n1) Tape using f1:\n";
+        int runNo = 0;
+        auto run = [&runNo](double x0) {
+            ++runNo;
             tape_type tape;
             AD x = x0;
             tape.registerInput(x);
 
             tape.newRecording();
-            AD y = piecewise_plain_if(x);
+            AD y = piecewise_plain_if(x);  // f1
             tape.registerOutput(y);
             xad::derivative(y) = 1.0;
             tape.computeAdjoints();
 
-            std::cout << "Tape  : x=" << x0 << "  y=" << xad::value(y) << "  dy/dx=" << xad::derivative(x)
-                      << "\n";
+            std::cout << "Tape run " << runNo << "   input: x=" << x0 << "  result:  y=" << xad::value(y)
+                      << "  dy/dx=" << xad::derivative(x) << "\n";
         };
 
-        run(1.0);  // expected y=1, dy/dx=1
-        run(3.0);  // expected y=21, dy/dx=7
+        run(1.0);  // y=1,  dy/dx=1
+        run(3.0);  // y=21, dy/dx=7
     }
 
     // -------------------------------------------------------------------------
-    // JIT: record once, then re-run with different inputs without re-recording.
-    // Plain C++ if is baked in at record time -> wrong for different branches.
+    // 2) JIT using f1 (plain if): record once; plain if is baked in at record time.
     // -------------------------------------------------------------------------
     {
         using AD = xad::AReal<double, 1>;
@@ -97,8 +101,9 @@ int main()
         AD x = 1.0;
         jit.registerInput(x);
 
-        // Record with x=1.0: the branch decision is made now.
-        AD y = piecewise_plain_if(x);
+        std::cout << "\n2) JIT using f1:\n";
+        std::cout << "JIT plain-if: record at x=1, replay at x=3 (expected fail)\n";
+        AD y = piecewise_plain_if(x);  // f1
         jit.registerOutput(y);
         jit.compile();
 
@@ -106,21 +111,49 @@ int main()
         jit.forward(&out, 1);
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
-        std::cout << "JIT   : record plain-if at x=1  -> y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
-                  << "\n";
+        std::cout << "JIT recording with input:  x=1  y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
 
-        // Re-run without re-recording: branch stays baked in.
         x = 3.0;
         jit.clearDerivatives();
         jit.forward(&out, 1);
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
-        std::cout << "JIT   : replay plain-if at x=3  -> y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
+        std::cout << "JIT run with input: x=3  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
                   << "  (expected y=21, dy/dx=7)\n";
     }
 
     // -------------------------------------------------------------------------
-    // JIT + ABool::If: records a conditional node, so the branch can vary per run.
+    // 3) Tape using f2 (ABool::If): still works fine (ABool is passive when not JIT-recording).
+    // -------------------------------------------------------------------------
+    {
+        using mode = xad::adj<double>;
+        using tape_type = mode::tape_type;
+        using AD = mode::active_type;
+
+        std::cout << "\n3) Tape using f2:\n";
+        int runNo = 0;
+        auto run = [&runNo](double x0) {
+            ++runNo;
+            tape_type tape;
+            AD x = x0;
+            tape.registerInput(x);
+
+            tape.newRecording();
+            AD y = piecewise_abool_if(x);  // f2
+            tape.registerOutput(y);
+            xad::derivative(y) = 1.0;
+            tape.computeAdjoints();
+
+            std::cout << "Tape run " << runNo << "   input: x=" << x0 << "  result:  y=" << xad::value(y)
+                      << "  dy/dx=" << xad::derivative(x) << "\n";
+        };
+
+        run(1.0);
+        run(3.0);
+    }
+
+    // -------------------------------------------------------------------------
+    // 4) JIT using f2 (ABool::If): records a conditional node, so branch varies per replay.
     // -------------------------------------------------------------------------
     {
         using AD = xad::AReal<double, 1>;
@@ -129,7 +162,9 @@ int main()
         AD x = 1.0;
         jit.registerInput(x);
 
-        AD y = piecewise_abool_if(x);
+        std::cout << "\n4) JIT using f2:\n";
+        std::cout << "JIT ABool.If: record once, replay at x=1 and x=3 (expected ok)\n";
+        AD y = piecewise_abool_if(x);  // f2
         jit.registerOutput(y);
         jit.compile();
 
@@ -140,16 +175,14 @@ int main()
         jit.forward(&out, 1);
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
-        std::cout << "JIT+If: replay ABool.If at x=1 -> y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
-                  << "\n";
+        std::cout << "JIT run with input: x=1  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
 
         x = 3.0;
         jit.clearDerivatives();
         jit.forward(&out, 1);
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
-        std::cout << "JIT+If: replay ABool.If at x=3 -> y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
-                  << "\n";
+        std::cout << "JIT run with input: x=3  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
     }
 
     return 0;
