@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <vector>
 
 // Provide a fallback for environments where M_PI is not defined.
 #ifndef M_PI
