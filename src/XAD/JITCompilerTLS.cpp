@@ -45,12 +45,12 @@ namespace xad
 template <class Real, std::size_t N>
 XAD_THREAD_LOCAL JITCompiler<Real, N>* JITCompiler<Real, N>::active_jit_ = nullptr;
 
-// JIT is intentionally limited to scalar, first-order mode with double only:
+// JIT is intentionally limited to scalar, first-order mode only:
 // - no vector mode (N>1)
 // - no higher-order AD types
-// - no float (JITBackend interface uses double)
 //
-// Therefore we only provide explicit instantiation for double.
+// Therefore we only provide explicit instantiations for the scalar specializations.
+template class JITCompiler<float>;
 template class JITCompiler<double>;
 
 }  // namespace xad

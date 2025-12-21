@@ -325,9 +325,9 @@ class JITCompiler
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
 };
 
-// Declare external explicit instantiation (mirrors Tape.hpp pattern).
-// Definition is provided in JITCompilerTLS.cpp.
-// Only double is supported (JITBackend interface uses double).
+// Declare external explicit instantiations (mirrors Tape.hpp pattern).
+// Definitions are provided in JITCompilerTLS.cpp.
+extern template class JITCompiler<float>;
 extern template class JITCompiler<double>;
 
 }  // namespace xad
