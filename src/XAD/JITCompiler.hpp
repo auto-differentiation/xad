@@ -269,7 +269,7 @@ class JITCompiler
 
         derivatives_.resize(graph_.nodeCount(), derivative_type());
         for (std::size_t i = 0; i < numInputs; ++i)
-            derivatives_[graph_.input_ids[i]] = inputAdjoints[i];
+            derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputAdjoints[i]);
     }
 
     derivative_type& derivative(slot_type s)
