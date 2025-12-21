@@ -326,7 +326,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: Test Results (linux gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }})
+          name: Test Results (linux gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
           path: ${{ env.GITHUB_WORKSPACE }}/build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
@@ -474,7 +474,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: Test Results (linux clang-${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }})
+          name: Test Results (linux clang-${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
           path: build/test_results.xml
       - name: install
         run: |
@@ -605,7 +605,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }})
+          name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }}-jit${{ matrix.jit }})
           path: build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
