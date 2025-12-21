@@ -325,12 +325,10 @@ class JITCompiler
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
 };
 
-// Explicit specialization declarations for the TLS member.
+// Declare external explicit instantiations (mirrors Tape.hpp pattern).
 // Definitions are provided in JITCompilerTLS.cpp.
-template <>
-XAD_THREAD_LOCAL JITCompiler<float>* JITCompiler<float>::active_jit_;
-template <>
-XAD_THREAD_LOCAL JITCompiler<double>* JITCompiler<double>::active_jit_;
+extern template class JITCompiler<float>;
+extern template class JITCompiler<double>;
 
 }  // namespace xad
 
