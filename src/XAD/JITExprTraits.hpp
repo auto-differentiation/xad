@@ -42,6 +42,13 @@ inline double getNestedDoubleValue(double x) { return x; }
 inline double getNestedDoubleValue(float x) { return static_cast<double>(x); }
 inline double getNestedDoubleValue(long double x) { return static_cast<double>(x); }
 inline double getNestedDoubleValue(int x) { return static_cast<double>(x); }
+inline double getNestedDoubleValue(long x) { return static_cast<double>(x); }
+inline double getNestedDoubleValue(long long x) { return static_cast<double>(x); }
+inline double getNestedDoubleValue(unsigned int x) { return static_cast<double>(x); }
+inline double getNestedDoubleValue(unsigned long x) { return static_cast<double>(x); }
+inline double getNestedDoubleValue(unsigned long long x) { return static_cast<double>(x); }
+inline double getNestedDoubleValue(short x) { return static_cast<double>(x); }
+inline double getNestedDoubleValue(unsigned short x) { return static_cast<double>(x); }
 
 // Template for AD types - recurses via value()
 template <class T>
