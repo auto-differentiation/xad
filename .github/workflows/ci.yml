@@ -179,7 +179,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }})
+          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
           path: build/test_results.xml
       - name: install
         shell: cmd
