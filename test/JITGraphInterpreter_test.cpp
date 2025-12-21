@@ -530,6 +530,136 @@ TEST(JITGraphInterpreter, cmpNEOpCode)
 }
 
 // =============================================================================
+// Comparison OpCode adjoint tests (comparisons have zero derivative)
+// =============================================================================
+
+TEST(JITGraphInterpreter, cmpLTAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLT, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 3.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    EXPECT_DOUBLE_EQ(1.0, output);   // 3 < 5 is true
+    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
+}
+
+TEST(JITGraphInterpreter, cmpLEAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLE, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    EXPECT_DOUBLE_EQ(1.0, output);   // 5 <= 5 is true
+    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
+}
+
+TEST(JITGraphInterpreter, cmpGTAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGT, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 7.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    EXPECT_DOUBLE_EQ(1.0, output);   // 7 > 5 is true
+    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
+}
+
+TEST(JITGraphInterpreter, cmpGEAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGE, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    EXPECT_DOUBLE_EQ(1.0, output);   // 5 >= 5 is true
+    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
+}
+
+TEST(JITGraphInterpreter, cmpEQAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpEQ, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    EXPECT_DOUBLE_EQ(1.0, output);   // 5 == 5 is true
+    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
+}
+
+TEST(JITGraphInterpreter, cmpNEAdjoint)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addConstant(5.0);
+    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpNE, a, b);
+    graph.markOutput(cmp);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 4.0;
+    double outputAdjoint = 1.0;
+    double output;
+    double inputAdjoint;
+    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+
+    EXPECT_DOUBLE_EQ(1.0, output);   // 4 != 5 is true
+    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
+}
+
+// =============================================================================
 // If OpCode tests
 // =============================================================================
 
