@@ -480,15 +480,15 @@ TEST(JITAReal, derivativeFallbackUsesJITWhenNoTape)
     using AD = xad::AReal<double, 1>;
 
     const AD c(2.0);  // no tape, no slot
-    EXPECT_EQ(AD::INVALID_SLOT, c.getSlot());
+    EXPECT_EQ(static_cast<AD::slot_type>(-1), c.getSlot());
     EXPECT_DOUBLE_EQ(0.0, c.derivative());
-    EXPECT_EQ(AD::INVALID_SLOT, c.getSlot()); // const path must not allocate a slot
+    EXPECT_EQ(static_cast<AD::slot_type>(-1), c.getSlot()); // const path must not allocate a slot
 
     AD x(3.0);  // no tape, no slot
-    EXPECT_EQ(AD::INVALID_SLOT, x.getSlot());
+    EXPECT_EQ(static_cast<AD::slot_type>(-1), x.getSlot());
     auto& dx = x.derivative(); // allocates slot in JIT
     dx = 7.0;
-    EXPECT_NE(AD::INVALID_SLOT, x.getSlot());
+    EXPECT_NE(static_cast<AD::slot_type>(-1), x.getSlot());
     EXPECT_DOUBLE_EQ(7.0, jit.getDerivative(x.getSlot()));
 }
 
@@ -499,7 +499,7 @@ TEST(JITAReal, copyCtorCopiesSlotWhenNoTapeAndJitActive)
 
     AD x(3.0);
     (void)x.derivative();  // allocate slot in JIT
-    EXPECT_NE(AD::INVALID_SLOT, x.getSlot());
+    EXPECT_NE(static_cast<AD::slot_type>(-1), x.getSlot());
 
     AD y(x);  // copy-ctor should copy the slot when JIT is active and no tape is active
     EXPECT_EQ(x.getSlot(), y.getSlot());
@@ -513,10 +513,10 @@ TEST(JITAReal, copyAssignCopiesSlotWhenNoTapeAndJitActive)
 
     AD x(4.0);
     (void)x.derivative();  // allocate slot in JIT
-    EXPECT_NE(AD::INVALID_SLOT, x.getSlot());
+    EXPECT_NE(static_cast<AD::slot_type>(-1), x.getSlot());
 
     AD y(1.0);
-    EXPECT_EQ(AD::INVALID_SLOT, y.getSlot());
+    EXPECT_EQ(static_cast<AD::slot_type>(-1), y.getSlot());
 
     y = x;  // copy-assign should copy the slot when JIT is active and no tape is active
     EXPECT_EQ(x.getSlot(), y.getSlot());
@@ -530,10 +530,10 @@ TEST(JITAReal, constantExpressionDoesNotRecordWhenNoTapeAndJitActive)
     using AD = xad::AReal<double, 1>;
 
     AD c(2.0);  // no slot
-    EXPECT_EQ(AD::INVALID_SLOT, c.getSlot());
+    EXPECT_EQ(static_cast<AD::slot_type>(-1), c.getSlot());
 
     AD y = c + 1.0;  // pure constant expression => should not record any JIT node
-    EXPECT_EQ(AD::INVALID_SLOT, y.getSlot());
+    EXPECT_EQ(static_cast<AD::slot_type>(-1), y.getSlot());
     EXPECT_DOUBLE_EQ(3.0, y.getValue());
 }
 
