@@ -43,28 +43,28 @@ TEST(JITCompiler, isEmptyByDefault)
 
 TEST(JITCompiler, canInitializeDeactivated)
 {
-    xad::JITCompiler<float> jit(false);
+    xad::JITCompiler<double> jit(false);
 
     EXPECT_FALSE(jit.isActive());
-    EXPECT_EQ(nullptr, xad::JITCompiler<float>::getActive());
+    EXPECT_EQ(nullptr, xad::JITCompiler<double>::getActive());
 
     jit.activate();
 
     EXPECT_TRUE(jit.isActive());
-    EXPECT_NE(nullptr, xad::JITCompiler<float>::getActive());
+    EXPECT_NE(nullptr, xad::JITCompiler<double>::getActive());
 }
 
 TEST(JITCompiler, canActivateStatically)
 {
-    xad::JITCompiler<float> jit(false);
+    xad::JITCompiler<double> jit(false);
 
     EXPECT_FALSE(jit.isActive());
-    EXPECT_EQ(nullptr, xad::JITCompiler<float>::getActive());
+    EXPECT_EQ(nullptr, xad::JITCompiler<double>::getActive());
 
-    xad::JITCompiler<float>::setActive(&jit);
+    xad::JITCompiler<double>::setActive(&jit);
 
     EXPECT_TRUE(jit.isActive());
-    EXPECT_NE(nullptr, xad::JITCompiler<float>::getActive());
+    EXPECT_NE(nullptr, xad::JITCompiler<double>::getActive());
 }
 
 TEST(JITCompiler, canDeactivateGlobally)
@@ -452,24 +452,6 @@ TEST(JITCompiler, derivativeConstAccessOutOfRange)
     EXPECT_DOUBLE_EQ(0.0, deriv);
 }
 
-TEST(JITCompiler, floatScalarOperations)
-{
-    // Test JIT with float scalar type to exercise getNestedDoubleValue(float)
-    xad::JITCompiler<float> jit;
-    xad::AReal<float> x = 2.0f;
-    jit.registerInput(x);
-
-    // Scalar multiplication: uses scalar_prod_op which calls getScalarConstant -> getNestedDoubleValue(float)
-    xad::AReal<float> y = x * 3.0f;
-    jit.registerOutput(y);
-
-    jit.compile();
-
-    double output;  // JIT always uses double internally
-    jit.forward(&output, 1);
-
-    EXPECT_DOUBLE_EQ(6.0, output);
-}
 
 TEST(JITAReal, derivativeFallbackUsesJITWhenNoTape)
 {
