@@ -31,6 +31,11 @@
 #include <XAD/Macros.hpp>
 #include <XAD/UnaryOperatorMacros.hpp>
 
+#ifdef XAD_ENABLE_JIT
+#include <XAD/ABool.hpp>
+#include <XAD/JITCompiler.hpp>
+#endif
+
 namespace xad
 {
 template <class, std::size_t>

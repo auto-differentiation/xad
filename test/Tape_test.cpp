@@ -202,6 +202,29 @@ TEST(Tape, canReuseSlots)
 }
 #endif
 
+TEST(Tape, reusableSlotsMethodsAlwaysCallable)
+{
+    // Test that getNumReusableSlotSections() and getNumReusableSlots() are
+    // callable regardless of XAD_TAPE_REUSE_SLOTS being defined.
+    // When XAD_TAPE_REUSE_SLOTS is NOT defined, they return 1 and 0 respectively.
+    // When XAD_TAPE_REUSE_SLOTS IS defined, they return actual values.
+    xad::Tape<double> s;
+
+    // These methods should always be callable
+    auto sections = s.getNumReusableSlotSections();
+    auto slots = s.getNumReusableSlots();
+
+#ifdef XAD_TAPE_REUSE_SLOTS
+    // With slot reuse enabled, initially no reusable slots
+    EXPECT_EQ(0U, sections);
+    EXPECT_EQ(0U, slots);
+#else
+    // Without slot reuse, returns fixed values
+    EXPECT_EQ(1U, sections);
+    EXPECT_EQ(0U, slots);
+#endif
+}
+
 TEST(Tape, canDeriveStatements)
 {
     xad::Tape<double> s;

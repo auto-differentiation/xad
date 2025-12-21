@@ -23,3 +23,13 @@ There are four additional headers provided that can be included on demand:
   single output function into the `xad` namespace.
 * `XAD/Jacobian.hpp` - Imports methods for computing the Jacobian matrix of a
   function with multiple inputs and multiple outputs into the `xad` namespace.
+
+## Optional JIT headers
+
+When XAD is compiled with `XAD_ENABLE_JIT`, additional JIT headers are available:
+
+* `XAD/JITCompiler.hpp` - JIT recorder/executor (see [JITCompiler](jit-compiler.md)).
+* `XAD/JITGraph.hpp` - Graph representation (see [JITGraph](jit-graph.md)).
+* `XAD/JITBackendInterface.hpp` - Backend interface (see [JIT Backend Interface](jit-backend.md)).
+* `XAD/JITGraphInterpreter.hpp` - Reference interpreter backend (see [JIT Backend Interface](jit-backend.md)).
+* `XAD/ABool.hpp` - Trackable boolean helper for comparisons/`If` (see [ABool (JIT)](jit-abool.md)).

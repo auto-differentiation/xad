@@ -144,10 +144,31 @@ set(public_headers
     ${CMAKE_CURRENT_BINARY_DIR}/XAD/GenerateMode.hpp
 )
 
+# JIT compilation support headers (optional)
+if(XAD_ENABLE_JIT)
+    list(APPEND public_headers
+        XAD/JITCompiler.hpp
+        XAD/JITGraph.hpp
+        XAD/JITBackendInterface.hpp
+        XAD/JITGraphInterpreter.hpp
+        XAD/JITOpCodeTraits.hpp
+        XAD/JITExprTraits.hpp
+        XAD/ABool.hpp
+    )
+endif()
+
 
 set(srcfiles Tape.cpp ${public_headers})
 if (MSVC)
     list(APPEND srcfiles ${PROJECT_SOURCE_DIR}/XAD.natvis)
+endif()
+
+# JIT TLS storage (required when XAD_ENABLE_JIT is ON)
+if(XAD_ENABLE_JIT)
+    list(APPEND srcfiles
+        XAD/JITGraphInterpreter.cpp
+        XAD/JITCompilerTLS.cpp
+    )
 endif()
 
 xad_add_library(xad STATIC ${srcfiles})

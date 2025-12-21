@@ -2,7 +2,7 @@ name: Post Benchmark Results
 
 on:
   workflow_run:
-    workflows: ["Benchmarks"]
+    workflows: ["Benchmarks", "Benchmark Compare (JIT OFF vs ON)"]
     types:
       - completed
 
