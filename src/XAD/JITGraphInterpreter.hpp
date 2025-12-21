@@ -31,6 +31,7 @@
 #include <XAD/JITBackendInterface.hpp>
 #include <XAD/JITGraph.hpp>
 #include <cstddef>
+#include <vector>
 
 namespace xad
 {
@@ -54,6 +55,9 @@ class JITGraphInterpreter : public JITBackend
     void reset() override;
 
   private:
+    std::vector<double> nodeValues_;
+    std::vector<double> nodeAdjoints_;
+
     static double invSqrtPi();
     void evaluateNode(const JITGraph& graph, uint32_t nodeId);
     void propagateAdjoint(const JITGraph& graph, uint32_t nodeId);
