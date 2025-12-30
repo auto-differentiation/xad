@@ -122,7 +122,7 @@ jobs:
           ctest --no-compress-output --output-on-failure -j3 --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
           path: build/test_results.xml
@@ -298,7 +298,7 @@ jobs:
           ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2)) --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Test Results (linux gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
           path: ${{ env.GITHUB_WORKSPACE }}/build/test_results.xml
@@ -470,7 +470,7 @@ jobs:
           ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2)) --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Test Results (linux clang-${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
           path: build/test_results.xml
@@ -589,7 +589,7 @@ jobs:
           ctest --no-compress-output --output-on-failure -j$(sysctl -n hw.ncpu) --output-junit test_results.xml
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }}-jit${{ matrix.jit }})
           path: build/test_results.xml
@@ -644,7 +644,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Upload
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: Event File
           path: ${{ github.event_path }}
