@@ -52,7 +52,7 @@ AD piecewise_abool_if(const AD& x)
     // xad::less returns an ABool (trackable boolean) instead of a plain bool.
     // Note: ABool also works with Tape mode (see example 3 below) - it converts to bool
     // and If() falls back to passive selection.
-    xad::ABool cond = xad::less(x, 2.0);
+    auto cond = xad::less(x, 2.0);  // returns xad::ABool
     AD t = 1.0 * x;
     AD f = 7.0 * x;
     return cond.If(t, f);
