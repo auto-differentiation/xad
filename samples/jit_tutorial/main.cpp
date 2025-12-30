@@ -49,7 +49,10 @@ template <class AD>
 AD piecewise_abool_if(const AD& x)
 {
     // Trackable control flow for JIT: record both branches and select at runtime.
-    auto cond = xad::less(x, 2.0);
+    // xad::less returns an ABool (trackable boolean) instead of a plain bool.
+    // Note: ABool also works with Tape mode (see example 3 below) - it converts to bool
+    // and If() falls back to passive selection.
+    xad::ABool cond = xad::less(x, 2.0);
     AD t = 1.0 * x;
     AD f = 7.0 * x;
     return cond.If(t, f);
