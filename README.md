@@ -53,6 +53,7 @@ XAD is trusted by professionals for its **speed**, **flexibility**, and **scalab
 - **Proven in Production**: Battle-tested in large-scale, mission-critical systems.
 - **Exception-Safe**: Formal guarantees for stability and error handling.
 - **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+- **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many workflows — with or without automatic differentiation. See [samples/jit_tutorial](samples/jit_tutorial).
 
 ## 💻 Example
 
