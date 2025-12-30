@@ -576,6 +576,66 @@ inline void mathTest_adj_fwdd(double x, double yref, double dref1, double dref2,
     compareFinite(dref2, derivative(value(x1)), "adj_fwd, dx2");
 }
 
+#ifdef XAD_ENABLE_JIT
+// JIT test helper for single-variable functions
+template <class F>
+inline void mathTest_jit(double x, double yref, double dref, F func)
+{
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+    AD x1(0.0);  // Initialize with dummy value
+    jit.registerInput(x1);
+    jit.newRecording();
+
+    AD y = func(x1);
+    jit.registerOutput(y);
+    jit.compile();
+
+    // Test forward pass - update input value before forward
+    value(x1) = x;
+    double output;
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
+
+    // Test backward pass (adjoints)
+    jit.clearDerivatives();
+    derivative(y) = 1.0;
+    jit.computeAdjoints();
+    compareFinite(dref, derivative(x1), "jit, dx");
+}
+
+// JIT test helper for two-variable functions
+template <class F>
+inline void mathTest2_jit(double x1, double x2, double yref, double d1ref, double d2ref, F func)
+{
+    xad::JITCompiler<double, 1> jit;
+    using AD = xad::AReal<double, 1>;
+    AD ax1(0.0);  // Initialize with dummy values
+    AD ax2(0.0);
+    jit.registerInput(ax1);
+    jit.registerInput(ax2);
+    jit.newRecording();
+
+    AD y = func(ax1, ax2);
+    jit.registerOutput(y);
+    jit.compile();
+
+    // Test forward pass - update input values before forward
+    value(ax1) = x1;
+    value(ax2) = x2;
+    double output;
+    jit.forward(&output, 1);
+    EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
+
+    // Test backward pass
+    jit.clearDerivatives();
+    derivative(y) = 1.0;
+    jit.computeAdjoints();
+    compareFinite(d1ref, derivative(ax1), "jit, dx1");
+    compareFinite(d2ref, derivative(ax2), "jit, dx2");
+}
+#endif
+
 template <class F>
 inline void mathTest_all_aad(double x, double yref, double dref, double dref2, F func)
 {

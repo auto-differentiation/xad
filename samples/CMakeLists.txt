@@ -81,5 +81,6 @@ add_subdirectory(fwd_adj_2nd)
 add_subdirectory(Hessian)
 add_subdirectory(Jacobian)
 add_subdirectory(LiborSwaptionPricer)
+add_subdirectory(jit_tutorial)
 
 

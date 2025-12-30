@@ -53,6 +53,7 @@ XAD is trusted by professionals for its **speed**, **flexibility**, and **scalab
 - **Proven in Production**: Battle-tested in large-scale, mission-critical systems.
 - **Exception-Safe**: Formal guarantees for stability and error handling.
 - **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+- **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many workflows — with or without automatic differentiation. See [samples/jit_tutorial](samples/jit_tutorial).
 
 ## 💻 Example
 
@@ -105,5 +106,6 @@ Please report any issues through our
 - [XAD-Py](https://github.com/auto-differentiation/xad-py): XAD in Python.
 - [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp): Fast
   risk evaluations in C++ and Python.
+- [xad-forge](https://github.com/da-roth/xad-forge): Forge JIT backends for XAD.
 
 ---

@@ -24,7 +24,12 @@
 
 #pragma once
 
+#include <XAD/Config.hpp>
 #include <XAD/Expression.hpp>
+#ifdef XAD_ENABLE_JIT
+#include <XAD/JITCompiler.hpp>
+#include <XAD/JITExprTraits.hpp>
+#endif
 #include <XAD/Macros.hpp>
 #include <XAD/Tape.hpp>
 #include <XAD/Traits.hpp>
@@ -192,6 +197,9 @@ struct AReal
     typedef Scalar value_type;
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
     typedef typename DerivativesTraits<Scalar, N>::type derivative_type;
+#ifdef XAD_ENABLE_JIT
+    typedef JITCompiler<nested_type, N> jit_type;
+#endif
 
     XAD_INLINE AReal(nested_type val = nested_type()) : base_type(val), slot_(INVALID_SLOT) {}
 
@@ -204,13 +212,25 @@ struct AReal
 
     XAD_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
     {
-        auto s = tape_type::getActive();
-        if (s && o.shouldRecord())
+        if (auto* s = tape_type::getActive())
         {
-            slot_ = s->registerVariable();
-            pushAll<1>(s, o);
-            s->pushLhs(slot_);
+            if (o.shouldRecord())
+            {
+                slot_ = s->registerVariable();
+                pushAll<1>(s, o);
+                s->pushLhs(slot_);
+            }
         }
+#ifdef XAD_ENABLE_JIT
+        else if (getActiveJit() != nullptr)
+        {
+            if (o.shouldRecord())
+            {
+                // Copy the slot directly - preserves JIT dependency chain
+                slot_ = o.slot_;
+            }
+        }
+#endif
         this->a_ = o.getValue();
     }
 
@@ -261,6 +281,97 @@ struct AReal
     XAD_INLINE void setAdjoint(derivative_type a) { setDerivative(a); }
     XAD_INLINE derivative_type getAdjoint() const { return getDerivative(); }
 
+#ifdef XAD_ENABLE_JIT
+  private:
+    // JIT is intentionally limited to scalar, first-order mode only:
+    // - vector mode (N>1) is not supported
+    // - higher-order AD (Scalar != nested_type) is not supported
+    enum
+    {
+        jit_supported = std::is_same<Scalar, nested_type>::value && (N == 1)
+    };
+
+    static XAD_INLINE jit_type* getActiveJitImpl(std::true_type) { return jit_type::getActive(); }
+    static XAD_INLINE jit_type* getActiveJitImpl(std::false_type) { return nullptr; }
+    static XAD_INLINE jit_type* getActiveJit()
+    {
+        return getActiveJitImpl(std::integral_constant<bool, jit_supported>());
+    }
+
+    template <class Expr>
+    XAD_INLINE void tryRecordJitFromExprCtor(const Expression<Scalar, Expr, derivative_type>& expr,
+                                             std::true_type)
+    {
+        if (auto* j = jit_type::getActive())
+        {
+            if (expr.shouldRecord())
+                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+        }
+    }
+
+    template <class Expr>
+    XAD_INLINE void tryRecordJitFromExprCtor(const Expression<Scalar, Expr, derivative_type>&,
+                                             std::false_type)
+    {
+    }
+
+    template <class Expr>
+    XAD_INLINE void tryRecordJitFromExprAssign(const Expression<Scalar, Expr, derivative_type>& expr,
+                                               std::true_type)
+    {
+        if (auto* j = jit_type::getActive())
+        {
+            if (expr.shouldRecord() || this->shouldRecord())
+                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+        }
+    }
+
+    template <class Expr>
+    XAD_INLINE void tryRecordJitFromExprAssign(const Expression<Scalar, Expr, derivative_type>&,
+                                               std::false_type)
+    {
+    }
+
+  private:
+    // Only enable the JIT derivative path when it is type-correct.
+    // For higher-order AD (Scalar != nested_type) we must not even instantiate code that
+    // would return JITCompiler<nested_type,N>::derivative_type as derivative_type.
+    XAD_INLINE const derivative_type* tryGetJitDerivativePtr(std::true_type) const
+    {
+        auto j = getActiveJit();
+        if (!j)
+            return nullptr;
+        if (slot_ == INVALID_SLOT)
+        {
+            static const derivative_type zero = derivative_type();
+            return &zero;
+        }
+        return &j->derivative(slot_);
+    }
+
+    XAD_INLINE const derivative_type* tryGetJitDerivativePtr(std::false_type) const
+    {
+        return nullptr;
+    }
+
+    XAD_INLINE derivative_type* tryGetJitDerivativePtr(std::true_type)
+    {
+        auto j = getActiveJit();
+        if (!j)
+            return nullptr;
+        if (slot_ == INVALID_SLOT)
+            slot_ = j->registerVariable();
+        return &j->derivative(slot_);
+    }
+
+    XAD_INLINE derivative_type* tryGetJitDerivativePtr(std::false_type)
+    {
+        return nullptr;
+    }
+
+  public:
+#endif
+
     template <int Size>
     XAD_FORCE_INLINE void pushRhs(DerivInfo<tape_type, Size>& info, const Scalar& mul,
                                   slot_type slot) const
@@ -290,7 +401,14 @@ struct AReal
     {
         auto t = tape_type::getActive();
         if (!t)
+        {
+#ifdef XAD_ENABLE_JIT
+            if (const derivative_type* d =
+                    tryGetJitDerivativePtr(std::integral_constant<bool, jit_supported>()))
+                return *d;
+#endif
             throw NoTapeException();
+        }
         if (slot_ == INVALID_SLOT)
         {
             // we return a dummy const ref if not registered on tape - always zero
@@ -304,7 +422,14 @@ struct AReal
     {
         auto t = tape_type::getActive();
         if (!t)
+        {
+#ifdef XAD_ENABLE_JIT
+            if (derivative_type* d =
+                    tryGetJitDerivativePtr(std::integral_constant<bool, jit_supported>()))
+                return *d;
+#endif
             throw NoTapeException();
+        }
         // register ourselves if not already done
         if (slot_ == INVALID_SLOT)
         {
@@ -314,6 +439,16 @@ struct AReal
         return t->derivative(slot_);
     }
     XAD_INLINE bool shouldRecord() const { return slot_ != INVALID_SLOT; }
+
+#ifdef XAD_ENABLE_JIT
+    uint32_t recordJIT(JITGraph& graph) const
+    {
+        if (slot_ != INVALID_SLOT)
+            return slot_;
+        // Not registered - treat as constant (handles nested AD types)
+        return recordJITConstant(graph, getNestedDoubleValue(this->a_));
+    }
+#endif
 
   private:
     template <int Size, typename Expr>
@@ -328,6 +463,12 @@ struct AReal
 
     template <class T, std::size_t d__cnt>
     friend class Tape;
+#ifdef XAD_ENABLE_JIT
+    template <class T, std::size_t d__cnt>
+    friend class JITCompiler;
+    template <class T, std::size_t d__cnt>
+    friend class ABool;
+#endif
     typename tape_type::slot_type slot_;
 };
 
@@ -368,6 +509,10 @@ struct ADVar
 
     XAD_INLINE bool shouldRecord() const { return shouldRecord_; }
 
+#ifdef XAD_ENABLE_JIT
+    uint32_t recordJIT(JITGraph& graph) const { return ar_.recordJIT(graph); }
+#endif
+
   private:
     areal_type const& ar_;
     bool shouldRecord_;
@@ -376,14 +521,26 @@ struct ADVar
 template <class Scalar, std::size_t M>
 XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
-    tape_type* s = tape_type::getActive();
-    if (s && (o.shouldRecord() || this->shouldRecord()))
+    if (auto* s = tape_type::getActive())
     {
-        if (slot_ == INVALID_SLOT)
-            slot_ = s->registerVariable();
-        pushAll<1>(s, o);
-        s->pushLhs(slot_);
+        if (o.shouldRecord() || this->shouldRecord())
+        {
+            if (slot_ == INVALID_SLOT)
+                slot_ = s->registerVariable();
+            pushAll<1>(s, o);
+            s->pushLhs(slot_);
+        }
     }
+#ifdef XAD_ENABLE_JIT
+    else if (getActiveJit() != nullptr)
+    {
+        if (o.shouldRecord() || this->shouldRecord())
+        {
+            // Copy the slot directly - preserves JIT dependency chain
+            slot_ = o.slot_;
+        }
+    }
+#endif
     this->a_ = o.getValue();
     return *this;
 }
@@ -395,12 +552,21 @@ XAD_INLINE AReal<Scalar, M>::AReal(
     : base_type(expr.getValue()), slot_(INVALID_SLOT)
 {
     tape_type* s = tape_type::getActive();
-    if (s && expr.shouldRecord())
+    if (s)
     {
-        slot_ = s->registerVariable();
-        pushAll<ExprTraits<Expr>::numVariables>(s, expr);
-        s->pushLhs(slot_);
+        if (expr.shouldRecord())
+        {
+            slot_ = s->registerVariable();
+            pushAll<ExprTraits<Expr>::numVariables>(s, expr);
+            s->pushLhs(slot_);
+        }
     }
+#ifdef XAD_ENABLE_JIT
+    else
+    {
+        this->tryRecordJitFromExprCtor(expr, std::integral_constant<bool, jit_supported>());
+    }
+#endif
 }
 
 template <class Scalar, std::size_t M>
@@ -409,16 +575,25 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
 {
     tape_type* s = tape_type::getActive();
-    if (s && (expr.shouldRecord() || this->shouldRecord()))
+    if (s)
     {
-        pushAll<ExprTraits<Expr>::numVariables>(s, expr);
-        // only register this variable after evaluating the expression, as this
-        // variable might appear on the rhs of the equation too and if not yet
-        // registered, it doesn't need recording of derivatives
-        if (slot_ == INVALID_SLOT)
-            slot_ = s->registerVariable();
-        s->pushLhs(slot_);
+        if (expr.shouldRecord() || this->shouldRecord())
+        {
+            pushAll<ExprTraits<Expr>::numVariables>(s, expr);
+            // only register this variable after evaluating the expression, as this
+            // variable might appear on the rhs of the equation too and if not yet
+            // registered, it doesn't need recording of derivatives
+            if (slot_ == INVALID_SLOT)
+                slot_ = s->registerVariable();
+            s->pushLhs(slot_);
+        }
     }
+#ifdef XAD_ENABLE_JIT
+    else
+    {
+        this->tryRecordJitFromExprAssign(expr, std::integral_constant<bool, jit_supported>());
+    }
+#endif
     this->a_ = expr.getValue();
     return *this;
 }

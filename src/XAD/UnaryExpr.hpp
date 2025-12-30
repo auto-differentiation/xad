@@ -24,9 +24,14 @@
 
 #pragma once
 
+#include <XAD/Config.hpp>
 #include <XAD/Expression.hpp>
+#ifdef XAD_ENABLE_JIT
+#include <XAD/JITExprTraits.hpp>
+#endif
 #include <XAD/Macros.hpp>
 #include <XAD/Traits.hpp>
+#include <type_traits>
 
 namespace xad
 {
@@ -81,6 +86,56 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord(); }
 
+#ifdef XAD_ENABLE_JIT
+    uint32_t recordJIT(JITGraph& graph) const
+    {
+        static_assert(static_cast<uint16_t>(JITOpCodeFor<Op>::value) != 0xFFFF,
+                      "JIT opcode mapping missing for unary operator");
+        // Check ldexp first, then scalar constant, then simple unary
+        return recordJITDispatch(graph);
+    }
+
+  private:
+    // Tag dispatch based on operation type
+    uint32_t recordJITDispatch(JITGraph& graph) const
+    {
+        return recordJITImpl(graph,
+            std::integral_constant<int,
+                IsLdexpOp<Op>::value ? 2 : (HasScalarConstant<Op>::value ? 1 : 0)>{});
+    }
+
+    // Simple unary operation (no scalar constant, not ldexp)
+    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 0>) const
+    {
+        uint32_t slotA = a_.recordJIT(graph);
+        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+        return graph.addNode(opcode, slotA);
+    }
+
+    // Scalar operation (has b_ member)
+    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 1>) const
+    {
+        uint32_t slotA = a_.recordJIT(graph);
+        uint32_t slotB = recordJITConstant(graph, getScalarConstant(op_));
+        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+        // For scalar_sub1, scalar_div1, scalar_pow1: scalar is first operand
+        if (IsScalarFirstOp<Op>::value)
+            return graph.addNode(opcode, slotB, slotA);
+        else
+            return graph.addNode(opcode, slotA, slotB);
+    }
+
+    // ldexp operation (has exp_ member)
+    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 2>) const
+    {
+        uint32_t slotA = a_.recordJIT(graph);
+        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+        double exp_val = getLdexpExponent(op_);
+        return graph.addNode(opcode, slotA, 0, 0, exp_val);  // Store exponent in immediate
+    }
+
+  public:
+#endif
     XAD_INLINE DerivativeType derivative() const
     {
         using xad::derivative;
