@@ -106,5 +106,6 @@ Please report any issues through our
 - [XAD-Py](https://github.com/auto-differentiation/xad-py): XAD in Python.
 - [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp): Fast
   risk evaluations in C++ and Python.
+- [xad-forge](https://github.com/da-roth/xad-forge): Forge JIT backends for XAD.
 
 ---
