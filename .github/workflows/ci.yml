@@ -35,10 +35,10 @@ jobs:
             cxx: cl
             cc: cl
             vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
-          # JIT-enabled builds (subset; keep memory=default only)
-          # MSVC / 14.4
+          # JIT-enabled builds: Release, C++11, all compiler versions
+          # MSVC
           - jit: ON
-            toolset: "14.4"
+            toolset: "14.2"
             compiler: msvc
             config: Release
             standard: "11"
@@ -52,74 +52,19 @@ jobs:
             toolset: "14.4"
             compiler: msvc
             config: Release
-            standard: "17"
+            standard: "11"
             memory: default
             cxx: cl
             cc: cl
             vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
             sccache: "true"
             cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
-          - jit: ON
-            toolset: "14.4"
-            compiler: msvc
-            config: Debug
-            standard: "11"
-            memory: default
-            cxx: cl
-            cc: cl
-            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
-            sccache: "false"
-            cmake_extra: ""
-          - jit: ON
-            toolset: "14.4"
-            compiler: msvc
-            config: Debug
-            standard: "17"
-            memory: default
-            cxx: cl
-            cc: cl
-            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
-            sccache: "false"
-            cmake_extra: ""
-          # Clang-cl / 14.4
+          # Clang-cl
           - jit: ON
             toolset: "14.4"
             compiler: clang
             config: Release
             standard: "11"
-            memory: default
-            cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
-            cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
-            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
-            sccache: "false"
-            cmake_extra: ""
-          - jit: ON
-            toolset: "14.4"
-            compiler: clang
-            config: Release
-            standard: "17"
-            memory: default
-            cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
-            cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
-            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
-            sccache: "false"
-            cmake_extra: ""
-          - jit: ON
-            toolset: "14.4"
-            compiler: clang
-            config: Debug
-            standard: "11"
-            memory: default
-            cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
-            cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
-            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
-            sccache: "false"
-            cmake_extra: ""
-          - jit: ON
-            toolset: "14.4"
-            compiler: clang
-            config: Debug
-            standard: "17"
             memory: default
             cxx: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
             cc: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-cl.exe
@@ -237,8 +182,8 @@ jobs:
         include:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
-          # JIT-enabled builds (subset; keep memory=default, reuse_slots=OFF only)
-          # Coverage job for JIT-enabled code path (keep as single job)
+          # JIT-enabled builds: Release, C++11, all compiler versions
+          # Coverage job (requires Debug)
           - jit: ON
             config: Debug
             version: "11"
@@ -248,25 +193,54 @@ jobs:
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-lgcov"
-          # Additional JIT-enabled build variants (same compiler version; vary std/config)
+          # All GCC versions
           - jit: ON
-            config: Debug
+            config: Release
+            version: "7"
+            reuse_slots: OFF
+            standard: c++11
+            memory: default
+          - jit: ON
+            config: Release
+            version: "8"
+            reuse_slots: OFF
+            standard: c++11
+            memory: default
+          - jit: ON
+            config: Release
+            version: "9"
+            reuse_slots: OFF
+            standard: c++11
+            memory: default
+          - jit: ON
+            config: Release
+            version: "10"
+            reuse_slots: OFF
+            standard: c++11
+            memory: default
+          - jit: ON
+            config: Release
             version: "11"
             reuse_slots: OFF
-            standard: c++17
+            standard: c++11
+            memory: default
+          - jit: ON
+            config: Release
+            version: "12"
+            reuse_slots: OFF
+            standard: c++11
+            memory: default
+          - jit: ON
+            config: Release
+            version: "13"
+            reuse_slots: OFF
+            standard: c++11
             memory: default
           - jit: ON
             config: Release
             version: "14"
             reuse_slots: OFF
             standard: c++11
-            memory: default
-          # JIT-enabled Release build
-          - jit: ON
-            config: Release
-            version: "14"
-            reuse_slots: OFF
-            standard: c++17
             memory: default
     runs-on: ubuntu-latest
     container:
@@ -397,9 +371,45 @@ jobs:
           - version: "18"
             cxx: clang++
             cc: clang
-          # JIT-enabled builds (subset; keep memory=default, reuse_slots=OFF only)
+          # JIT-enabled builds: Release, C++11, all compiler versions
           - jit: ON
-            version: "18"
+            version: "11"
+            config: Release
+            reuse_slots: OFF
+            standard: "11"
+            memory: default
+          - jit: ON
+            version: "12"
+            config: Release
+            reuse_slots: OFF
+            standard: "11"
+            memory: default
+          - jit: ON
+            version: "13"
+            config: Release
+            reuse_slots: OFF
+            standard: "11"
+            memory: default
+          - jit: ON
+            version: "14"
+            config: Release
+            reuse_slots: OFF
+            standard: "11"
+            memory: default
+          - jit: ON
+            version: "15"
+            config: Release
+            reuse_slots: OFF
+            standard: "11"
+            memory: default
+          - jit: ON
+            version: "16"
+            config: Release
+            reuse_slots: OFF
+            standard: "11"
+            memory: default
+          - jit: ON
+            version: "17"
             config: Release
             reuse_slots: OFF
             standard: "11"
@@ -408,19 +418,7 @@ jobs:
             version: "18"
             config: Release
             reuse_slots: OFF
-            standard: "17"
-            memory: default
-          - jit: ON
-            version: "18"
-            config: Debug
-            reuse_slots: OFF
             standard: "11"
-            memory: default
-          - jit: ON
-            version: "18"
-            config: Debug
-            reuse_slots: OFF
-            standard: "17"
             memory: default
         exclude:
           - config: Debug
@@ -526,29 +524,17 @@ jobs:
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-ftest-coverage"
             standard: c++17
-          # JIT-enabled builds (subset; keep memory=default only)
+          # JIT-enabled builds: Release, C++11, all OS versions
           - jit: ON
             config: Release
-            os: macos-latest
+            os: macos-14
             standard: c++11
             memory: default
             coverage: false
           - jit: ON
             config: Release
             os: macos-latest
-            standard: c++17
-            memory: default
-            coverage: false
-          - jit: ON
-            config: Debug
-            os: macos-latest
             standard: c++11
-            memory: default
-            coverage: false
-          - jit: ON
-            config: Debug
-            os: macos-latest
-            standard: c++17
             memory: default
             coverage: false
         exclude:
