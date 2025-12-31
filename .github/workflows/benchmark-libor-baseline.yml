@@ -1,0 +1,123 @@
+##############################################################################
+#
+#  LiborSwaptionPricer Baseline Benchmark
+#
+#  Runs the LiborSwaptionPricer sample with standard XAD tape-based AAD.
+#  This serves as the baseline for comparison with JIT-accelerated version.
+#
+#  Copyright (C) 2010-2025 Xcelerit Computing Ltd.
+#  SPDX-License-Identifier: AGPL-3.0-or-later
+#
+##############################################################################
+
+name: Benchmark Libor Baseline
+
+on:
+  push:
+    paths:
+      - 'samples/LiborSwaptionPricer/**'
+      - '.github/workflows/benchmark-libor-baseline.yml'
+  pull_request:
+    paths:
+      - 'samples/LiborSwaptionPricer/**'
+      - '.github/workflows/benchmark-libor-baseline.yml'
+  workflow_dispatch:
+    inputs:
+      num_paths:
+        description: 'Number of Monte Carlo paths'
+        required: true
+        default: '50000'
+
+env:
+  NUM_PATHS: ${{ github.event.inputs.num_paths || '50000' }}
+
+jobs:
+  ##############################################################################
+  # Linux Baseline Benchmark
+  ##############################################################################
+  linux:
+    name: Linux Baseline
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/foonathan/gcc:13
+
+    steps:
+      - name: Hardware Info
+        run: |
+          echo "===== CPU ====="
+          lscpu | grep -E "^(Model name|CPU\(s\)|Thread|Core|Socket|CPU max MHz)"
+          echo "===== Memory ====="
+          free -h
+
+      - name: Checkout XAD
+        uses: actions/checkout@v4
+
+      - name: Setup
+        run: |
+          apt-get update
+          apt-get install -y ninja-build cmake
+
+      - name: Configure
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DXAD_ENABLE_TESTS=OFF \
+            -DXAD_ENABLE_SAMPLES=ON
+
+      - name: Build
+        run: cmake --build build --target LiborSwaptionPricer
+
+      - name: Run Benchmark
+        run: |
+          echo "============================================================================="
+          echo "  LIBOR SWAPTION PRICER - BASELINE BENCHMARK (XAD Tape)"
+          echo "============================================================================="
+          echo ""
+          echo "Running with ${{ env.NUM_PATHS }} paths..."
+          echo ""
+          ./build/samples/LiborSwaptionPricer/LiborSwaptionPricer ${{ env.NUM_PATHS }}
+
+  ##############################################################################
+  # Windows Baseline Benchmark
+  ##############################################################################
+  windows:
+    name: Windows Baseline
+    runs-on: windows-2022
+
+    env:
+      VSVARSALL: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+
+    steps:
+      - name: Checkout XAD
+        uses: actions/checkout@v4
+
+      - name: Setup
+        run: choco install -y ninja
+
+      - name: Configure
+        shell: cmd
+        run: |
+          call "%VSVARSALL%" amd64
+          cmake -B build -G Ninja ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DCMAKE_CXX_STANDARD=17 ^
+            -DXAD_ENABLE_TESTS=OFF ^
+            -DXAD_ENABLE_SAMPLES=ON
+
+      - name: Build
+        shell: cmd
+        run: |
+          call "%VSVARSALL%" amd64
+          cmake --build build --target LiborSwaptionPricer
+
+      - name: Run Benchmark
+        shell: cmd
+        run: |
+          echo =============================================================================
+          echo   LIBOR SWAPTION PRICER - BASELINE BENCHMARK (XAD Tape)
+          echo =============================================================================
+          echo.
+          echo Running with %NUM_PATHS% paths...
+          echo.
+          build\samples\LiborSwaptionPricer\LiborSwaptionPricer.exe %NUM_PATHS%

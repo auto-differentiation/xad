@@ -66,11 +66,32 @@ bool checkError(double ad_value, double fd_value, const std::string& what)
     return false;
 }
 
+void printUsage(const char* progName)
+{
+    std::cout << "Usage: " << progName << " [numPaths] [options]\n\n";
+    std::cout << "Options:\n";
+    std::cout << "  test    Run finite difference validation\n";
+#ifdef XAD_FORGE_ENABLED
+    std::cout << "  jit     Run JIT-compiled pricing (requires xad-forge)\n";
+#endif
+    std::cout << "\nExamples:\n";
+    std::cout << "  " << progName << " 10000           # 10K paths, AAD only\n";
+    std::cout << "  " << progName << " 10000 test      # 10K paths with FD validation\n";
+#ifdef XAD_FORGE_ENABLED
+    std::cout << "  " << progName << " 10000 jit       # 10K paths, compare AAD vs JIT\n";
+    std::cout << "  " << progName << " 10000 jit test  # 10K paths, JIT + FD validation\n";
+#endif
+}
+
 /// Runs pricing given number of paths and optionally tests against finite differences
 /// for correctness.
 ///
 /// Usage:
-///   LiborSwaptionPricer [numPaths] [test]
+///   LiborSwaptionPricer [numPaths] [options]
+///
+/// Options:
+///   test - Run finite difference validation
+///   jit  - Run JIT-compiled pricing (requires xad-forge)
 ///
 /// By default, it uses 10,000 paths and does not run tests against finite differences.
 ///
@@ -81,14 +102,60 @@ bool checkError(double ad_value, double fd_value, const std::string& what)
 int main(int argc, char** argv)
 {
     const int NUM_PATHS = argc < 2 ? 10000 : std::atol(argv[1]);
-    const bool doTests = argc < 3 ? false : argv[2] == std::string("test");
+
+    // Parse options
+    bool doTests = false;
+    bool doJIT = false;
+    for (int i = 2; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+        if (arg == "test")
+            doTests = true;
+        else if (arg == "jit")
+            doJIT = true;
+        else if (arg == "help" || arg == "-h" || arg == "--help")
+        {
+            printUsage(argv[0]);
+            return 0;
+        }
+    }
+
+#ifndef XAD_FORGE_ENABLED
+    if (doJIT)
+    {
+        std::cerr << "Error: JIT mode requires XAD_FORGE_ENABLED.\n";
+        std::cerr << "Rebuild with -DXAD_LIBOR_ENABLE_FORGE=ON and xad-forge available.\n";
+        return 1;
+    }
+#endif
+
     constexpr unsigned long long SEED = 91672912;
 
     SwaptionPortfolio p = setupTestPortfolio();
     MarketParameters market = setupTestMarket();
 
+    std::cout << "=============================================================================\n";
+    std::cout << "  LIBOR Swaption Portfolio Pricer - AAD Benchmark\n";
+    std::cout << "=============================================================================\n";
+    std::cout << "\n";
+    std::cout << "  Configuration:\n";
+    std::cout << "    Paths:        " << NUM_PATHS << "\n";
+    std::cout << "    Swaptions:    " << p.maturities.size() << "\n";
+    std::cout << "    Inputs:       " << (1 + market.lambda.size() + market.L0.size())
+              << " (1 delta + " << market.lambda.size() << " lambda + "
+              << market.L0.size() << " L0)\n";
+#ifdef XAD_FORGE_ENABLED
+    std::cout << "    Forge JIT:    Available\n";
+#else
+    std::cout << "    Forge JIT:    Not available (XAD_FORGE_ENABLED not set)\n";
+#endif
+    std::cout << "\n";
+
     std::cout << std::fixed << std::setprecision(8);
 
+    // -------------------------------------------------------------------------
+    // Pure pricing (no sensitivities)
+    // -------------------------------------------------------------------------
     std::cout << "-------- Pure pricing ---------------------\n";
     auto start{std::chrono::steady_clock::now()};
     auto resPlain = pricePortfolio(p, market, NUM_PATHS, SEED);
@@ -96,17 +163,22 @@ int main(int argc, char** argv)
     std::cout << "Portfolio price = " << resPlain.price << "\n";
     std::chrono::duration<double> elapsed_plain{end - start};
 
-    std::cout << "-------- AD pricing -----------------------\n";
+    // -------------------------------------------------------------------------
+    // AAD pricing (tape-based)
+    // -------------------------------------------------------------------------
+    std::cout << "-------- AAD pricing (tape) ---------------\n";
     start = std::chrono::steady_clock::now();
     auto resAD = pricePortfolioAD(p, market, NUM_PATHS, SEED);
     end = std::chrono::steady_clock::now();
     std::cout << "Portfolio price         = " << resAD.price << "\n";
     std::cout << "Derivative w.r.t. delta = " << resAD.d_delta << "\n";
-    for (size_t i = 0; i < market.lambda.size(); ++i)
+    std::cout << "(Showing first 3 of " << market.lambda.size() << " lambda derivatives)\n";
+    for (size_t i = 0; i < 3 && i < market.lambda.size(); ++i)
     {
         std::cout << "Derivative w.r.t. lambda[" << i << "] = " << resAD.d_lambda[i] << "\n";
     }
-    for (size_t i = 0; i < market.L0.size(); ++i)
+    std::cout << "(Showing first 3 of " << market.L0.size() << " L0 derivatives)\n";
+    for (size_t i = 0; i < 3 && i < market.L0.size(); ++i)
     {
         std::cout << "Derivative w.r.t. L0[" << i << "] = " << resAD.d_L0[i] << "\n";
     }
@@ -118,19 +190,83 @@ int main(int argc, char** argv)
         return 1;
     }
 
+#ifdef XAD_FORGE_ENABLED
+    // -------------------------------------------------------------------------
+    // JIT pricing (Forge backend)
+    // -------------------------------------------------------------------------
+    std::chrono::duration<double> elapsed_jit{0};
+    JITStats jitStats;
+    Results resJIT;
+
+    if (doJIT)
+    {
+        std::cout << "-------- JIT pricing (Forge) --------------\n";
+        start = std::chrono::steady_clock::now();
+        resJIT = pricePortfolioJIT(p, market, NUM_PATHS, SEED, &jitStats);
+        end = std::chrono::steady_clock::now();
+        std::cout << "Portfolio price         = " << resJIT.price << "\n";
+        std::cout << "Derivative w.r.t. delta = " << resJIT.d_delta << "\n";
+        std::cout << "(Showing first 3 of " << market.lambda.size() << " lambda derivatives)\n";
+        for (size_t i = 0; i < 3 && i < market.lambda.size(); ++i)
+        {
+            std::cout << "Derivative w.r.t. lambda[" << i << "] = " << resJIT.d_lambda[i] << "\n";
+        }
+        elapsed_jit = end - start;
+
+        // Validate JIT results against AAD
+        hasError = checkError(resJIT.price, resAD.price, "JIT price") || hasError;
+        hasError = checkError(resJIT.d_delta, resAD.d_delta, "JIT d_delta") || hasError;
+        for (size_t i = 0; i < market.lambda.size(); ++i)
+        {
+            hasError = checkError(resJIT.d_lambda[i], resAD.d_lambda[i],
+                                  "JIT lambda[" + std::to_string(i) + "]") ||
+                       hasError;
+        }
+        for (size_t i = 0; i < market.L0.size(); ++i)
+        {
+            hasError = checkError(resJIT.d_L0[i], resAD.d_L0[i],
+                                  "JIT L0[" + std::to_string(i) + "]") ||
+                       hasError;
+        }
+    }
+#endif
+
+    // -------------------------------------------------------------------------
+    // Timing summary
+    // -------------------------------------------------------------------------
     std::cout << std::fixed << std::setprecision(3);
-
     std::cout << "\n";
-    std::cout << "----- Plain: " << std::setw(8) << elapsed_plain.count() << " seconds\n";
-    std::cout << "----- AAD  : " << std::setw(8) << elapsed_ad.count() << " seconds\n";
+    std::cout << "=============================================================================\n";
+    std::cout << "  TIMING SUMMARY\n";
+    std::cout << "=============================================================================\n";
+    std::cout << "----- Plain: " << std::setw(10) << elapsed_plain.count() << " seconds\n";
+    std::cout << "----- AAD  : " << std::setw(10) << elapsed_ad.count() << " seconds";
+    std::cout << "  (slowdown vs plain: " << std::setprecision(1)
+              << (elapsed_ad.count() / elapsed_plain.count()) << "x)\n";
 
+#ifdef XAD_FORGE_ENABLED
+    if (doJIT)
+    {
+        std::cout << std::setprecision(3);
+        std::cout << "----- JIT  : " << std::setw(10) << elapsed_jit.count() << " seconds";
+        std::cout << "  (speedup vs AAD: " << std::setprecision(1)
+                  << (elapsed_ad.count() / elapsed_jit.count()) << "x)\n";
+        std::cout << std::setprecision(3);
+        std::cout << "      Compile time: " << jitStats.compileTimeMs << " ms\n";
+    }
+#endif
+
+    // -------------------------------------------------------------------------
+    // Finite difference validation (optional)
+    // -------------------------------------------------------------------------
     if (doTests)
     {
+        std::cout << "\n-------- Finite Difference validation -----\n";
         start = std::chrono::steady_clock::now();
         auto resFD = pricePortfolioFD(p, market, NUM_PATHS, SEED);
         end = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_fd{end - start};
-        std::cout << "----- FD   : " << std::setw(8) << elapsed_fd.count() << " seconds\n";
+        std::cout << "----- FD   : " << std::setw(10) << elapsed_fd.count() << " seconds\n";
 
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
@@ -143,14 +279,14 @@ int main(int argc, char** argv)
             hasError = checkError(resAD.d_L0[i], resFD.d_L0[i], "L0[" + std::to_string(i) + "]") ||
                        hasError;
         }
-
-        if (hasError)
-        {
-            std::cerr << "\nThere were errors.\n";
-            return 1;
-        }
-        std::cout << "\nAll tests passed.\n";
     }
 
+    if (hasError)
+    {
+        std::cerr << "\nThere were errors.\n";
+        return 1;
+    }
+
+    std::cout << "\nAll validations passed.\n";
     return 0;
 }

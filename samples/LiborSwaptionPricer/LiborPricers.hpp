@@ -39,3 +39,19 @@ Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParamet
 /// Price with first-order sensitivities, estimated using finite differences
 Results pricePortfolioFD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                          int numPaths, unsigned long long seed = 12354);
+
+#ifdef XAD_FORGE_ENABLED
+
+/// Statistics from JIT compilation
+struct JITStats
+{
+    double compileTimeMs = 0.0;  ///< Time spent compiling the JIT kernel
+};
+
+/// Price with first-order sensitivities, using AAD with Forge JIT compilation
+/// The computation graph is compiled once on the first path and reused.
+/// @param stats Optional pointer to receive JIT compilation statistics
+Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParameters& market,
+                          int numPaths, unsigned long long seed = 12354, JITStats* stats = nullptr);
+
+#endif // XAD_FORGE_ENABLED
