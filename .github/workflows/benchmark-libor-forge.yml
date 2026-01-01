@@ -115,7 +115,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_JIT=ON \
-            -DXAD_ENABLE_TESTS=OFF \
             -DCMAKE_INSTALL_PREFIX=$(pwd)/../install
           cmake --build build
           cmake --install build
@@ -140,8 +139,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_JIT=ON \
-            -DXAD_ENABLE_TESTS=OFF \
-            -DXAD_ENABLE_SAMPLES=ON \
+            -DXAD_ENABLE_TESTS=ON \
             -DXAD_LIBOR_ENABLE_FORGE=ON \
             -DCMAKE_PREFIX_PATH=$(pwd)/../install
           cmake --build build-benchmark --target LiborSwaptionPricer
@@ -211,7 +209,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CXX_STANDARD=17 ^
             -DXAD_ENABLE_JIT=ON ^
-            -DXAD_ENABLE_TESTS=OFF ^
             -DCMAKE_INSTALL_PREFIX="%cd%\..\install"
           cmake --build build
           cmake --install build
@@ -240,8 +237,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CXX_STANDARD=17 ^
             -DXAD_ENABLE_JIT=ON ^
-            -DXAD_ENABLE_TESTS=OFF ^
-            -DXAD_ENABLE_SAMPLES=ON ^
+            -DXAD_ENABLE_TESTS=ON ^
             -DXAD_LIBOR_ENABLE_FORGE=ON ^
             -DCMAKE_PREFIX_PATH="%cd%\..\install"
           cmake --build build-benchmark --target LiborSwaptionPricer

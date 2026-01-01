@@ -62,8 +62,7 @@ jobs:
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
-            -DXAD_ENABLE_TESTS=OFF \
-            -DXAD_ENABLE_SAMPLES=ON
+            -DXAD_ENABLE_TESTS=ON
 
       - name: Build
         run: cmake --build build --target LiborSwaptionPricer
@@ -102,8 +101,7 @@ jobs:
           cmake -B build -G Ninja ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CXX_STANDARD=17 ^
-            -DXAD_ENABLE_TESTS=OFF ^
-            -DXAD_ENABLE_SAMPLES=ON
+            -DXAD_ENABLE_TESTS=ON
 
       - name: Build
         shell: cmd
