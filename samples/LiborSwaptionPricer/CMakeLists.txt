@@ -41,7 +41,7 @@ xad_add_sample(LiborSwaptionPricer
 if(XAD_LIBOR_ENABLE_FORGE)
     # Try to find xad-forge
     if(NOT TARGET XADForge::xad-forge)
-        find_package(XADForge CONFIG QUIET)
+        find_package(xad-forge CONFIG QUIET)
     endif()
 
     if(TARGET XADForge::xad-forge)
@@ -55,6 +55,7 @@ if(XAD_LIBOR_ENABLE_FORGE)
                      COMMAND LiborSwaptionPricer 100 jit test)
         endif()
     else()
-        message(WARNING "LiborSwaptionPricer: XAD_LIBOR_ENABLE_FORGE=ON but xad-forge not found")
+        message(FATAL_ERROR "LiborSwaptionPricer: XAD_LIBOR_ENABLE_FORGE=ON but xad-forge not found. "
+                            "Please set CMAKE_PREFIX_PATH to include xad-forge install location.")
     endif()
 endif()
