@@ -72,7 +72,7 @@ typedef mode::active_type AD;
 tape_type tape;
 
 Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
-                         int numPaths, unsigned long long seed = 12354)
+                         int numPaths, unsigned long long seed)
 {
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);
@@ -140,7 +140,7 @@ Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParamet
 }
 
 Results pricePortfolioFD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
-                         int numPaths, unsigned long long seed = 12354)
+                         int numPaths, unsigned long long seed)
 {
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);
