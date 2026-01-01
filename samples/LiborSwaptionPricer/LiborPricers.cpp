@@ -28,6 +28,7 @@
 #include <XAD/XAD.hpp>
 #include "LiborData.hpp"
 #include "LiborFunctions.hpp"
+#include "LiborPricers.hpp"
 #include <random>
 #include <chrono>
 
