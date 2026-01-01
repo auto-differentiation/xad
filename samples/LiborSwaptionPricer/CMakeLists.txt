@@ -29,6 +29,7 @@ xad_add_sample(LiborSwaptionPricer
   SOURCES
     LiborData.hpp
     LiborFunctions.hpp
+    LiborFunctionsJIT.hpp
     LiborPricers.hpp
     LiborPricers.cpp
     main.cpp

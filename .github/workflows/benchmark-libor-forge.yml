@@ -153,7 +153,7 @@ jobs:
           echo "Running with ${{ env.NUM_PATHS }} paths..."
           echo ""
           export LD_LIBRARY_PATH=$(pwd)/install/lib:$LD_LIBRARY_PATH
-          ./xad/build-benchmark/samples/LiborSwaptionPricer/LiborSwaptionPricer ${{ env.NUM_PATHS }} jit
+          ./xad/build-benchmark/samples/LiborSwaptionPricer/LiborSwaptionPricer ${{ env.NUM_PATHS }} jit test
 
   ##############################################################################
   # Windows Forge JIT Benchmark
@@ -252,4 +252,4 @@ jobs:
           echo Running with %NUM_PATHS% paths...
           echo.
           set PATH=%cd%\install\bin;%PATH%
-          xad\build-benchmark\samples\LiborSwaptionPricer\LiborSwaptionPricer.exe %NUM_PATHS% jit
+          xad\build-benchmark\samples\LiborSwaptionPricer\LiborSwaptionPricer.exe %NUM_PATHS% jit test
