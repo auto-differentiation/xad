@@ -77,9 +77,6 @@ tape_type tape;
 Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                          int numPaths, unsigned long long seed)
 {
-    // Activate tape (may have been deactivated from previous call)
-    tape.activate();
-
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);
     std::vector<double> samples(market.lambda.size() / 2);
@@ -142,7 +139,7 @@ Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParamet
         res.d_L0[i] /= numPaths;
     }
 
-    // Deactivate tape to avoid interference with JIT
+    // Deactivate tape so JIT can use xad::AD without interference
     tape.deactivate();
 
     return res;
@@ -233,6 +230,9 @@ Results pricePortfolioFD(const SwaptionPortfolio& portfolio, const MarketParamet
 Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                           int numPaths, unsigned long long seed, JITStats* stats)
 {
+    // Use xad::AD directly (not bound to global tape) for JIT operations
+    using JitAD = xad::AD;
+
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);
 
@@ -249,9 +249,9 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     }
 
     // AD types for JIT - these persist across paths
-    std::vector<AD> L, tmp1, tmp2;
-    std::vector<AD> lambda, L0;
-    std::vector<AD> jit_samples(numSamples);  // Random samples as AD inputs
+    std::vector<JitAD> L, tmp1, tmp2;
+    std::vector<JitAD> lambda, L0;
+    std::vector<JitAD> jit_samples(numSamples);  // Random samples as AD inputs
 
     Results res;
     res.price = 0.;
@@ -263,8 +263,8 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     xad::JITCompiler<double, 1> jit(
         std::make_unique<xad::forge::ScalarBackend>());
 
-    AD delta;
-    AD v;
+    JitAD delta;
+    JitAD v;
 
     auto compileStart = std::chrono::steady_clock::now();
 
@@ -285,7 +285,7 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     // Each path will update these values before forward pass
     for (size_t i = 0; i < numSamples; ++i)
     {
-        jit_samples[i] = AD(allSamples[0][i]);  // Initialize with first path's samples
+        jit_samples[i] = JitAD(allSamples[0][i]);  // Initialize with first path's samples
         jit.registerInput(jit_samples[i]);
     }
 
@@ -360,6 +360,9 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
 Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                               int numPaths, unsigned long long seed, JITStats* stats)
 {
+    // Use xad::AD directly (not bound to global tape) for JIT operations
+    using JitAD = xad::AD;
+
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);
 
@@ -375,9 +378,9 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
     }
 
     // AD types for JIT graph recording
-    std::vector<AD> L, tmp1, tmp2;
-    std::vector<AD> lambda, L0;
-    std::vector<AD> jit_samples(numSamples);
+    std::vector<JitAD> L, tmp1, tmp2;
+    std::vector<JitAD> lambda, L0;
+    std::vector<JitAD> jit_samples(numSamples);
 
     Results res;
     res.price = 0.;
@@ -389,8 +392,8 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
     xad::JITCompiler<double, 1> jit(
         std::make_unique<xad::forge::ScalarBackend>());
 
-    AD delta;
-    AD v;
+    JitAD delta;
+    JitAD v;
 
     auto compileStart = std::chrono::steady_clock::now();
 
@@ -408,7 +411,7 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
 
     for (size_t i = 0; i < numSamples; ++i)
     {
-        jit_samples[i] = AD(allSamples[0][i]);
+        jit_samples[i] = JitAD(allSamples[0][i]);
         jit.registerInput(jit_samples[i]);
     }
 

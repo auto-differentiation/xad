@@ -177,38 +177,69 @@ std::string getCompilerInfo()
     std::ostringstream oss;
     oss << "MSVC " << _MSC_VER / 100 << "." << _MSC_VER % 100;
 #if defined(_DEBUG)
-    oss << " (Debug";
+    oss << " (Debug)";
 #else
-    oss << " (Release";
-#endif
-#if defined(__AVX2__)
-    oss << ", AVX2)";
-#elif defined(__AVX__)
-    oss << ", AVX)";
-#else
-    oss << ")";
+    oss << " (Release)";
 #endif
     return oss.str();
 #elif defined(__clang__)
     std::ostringstream oss;
     oss << "Clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
-#if defined(__AVX2__)
-    oss << " (AVX2)";
-#elif defined(__AVX__)
-    oss << " (AVX)";
-#endif
     return oss.str();
 #elif defined(__GNUC__)
     std::ostringstream oss;
     oss << "GCC " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
-#if defined(__AVX2__)
-    oss << " (AVX2)";
-#elif defined(__AVX__)
-    oss << " (AVX)";
-#endif
     return oss.str();
 #else
     return "Unknown Compiler";
+#endif
+}
+
+std::string getSimdInfo()
+{
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+    unsigned int regs[4];
+    std::vector<std::string> features;
+
+    // Check for basic features (CPUID function 1)
+#ifdef _WIN32
+    __cpuid(reinterpret_cast<int*>(regs), 1);
+#else
+    __get_cpuid(1, &regs[0], &regs[1], &regs[2], &regs[3]);
+#endif
+
+    // ECX bits
+    if (regs[2] & (1 << 0)) features.push_back("SSE3");
+    if (regs[2] & (1 << 19)) features.push_back("SSE4.1");
+    if (regs[2] & (1 << 20)) features.push_back("SSE4.2");
+    if (regs[2] & (1 << 28)) features.push_back("AVX");
+
+    // Check for extended features (CPUID function 7)
+#ifdef _WIN32
+    __cpuidex(reinterpret_cast<int*>(regs), 7, 0);
+#else
+    __get_cpuid_count(7, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
+#endif
+
+    // EBX bits
+    if (regs[1] & (1 << 5)) features.push_back("AVX2");
+    if (regs[1] & (1 << 16)) features.push_back("AVX512F");
+    if (regs[1] & (1 << 17)) features.push_back("AVX512DQ");
+    if (regs[1] & (1 << 30)) features.push_back("AVX512BW");
+    if (regs[1] & (1 << 31)) features.push_back("AVX512VL");
+
+    if (features.empty())
+        return "None detected";
+
+    std::ostringstream oss;
+    for (size_t i = 0; i < features.size(); ++i)
+    {
+        if (i > 0) oss << ", ";
+        oss << features[i];
+    }
+    return oss.str();
+#else
+    return "N/A (non-x86)";
 #endif
 }
 
@@ -360,6 +391,7 @@ int main(int argc, char** argv)
     std::cout << "  Platform:     " << getPlatformInfo() << "\n";
     std::cout << "  CPU:          " << getCpuInfo() << "\n";
     std::cout << "  RAM:          " << getMemoryInfo() << "\n";
+    std::cout << "  SIMD:         " << getSimdInfo() << "\n";
     std::cout << "  Compiler:     " << getCompilerInfo() << "\n";
 
     // Instrument
