@@ -62,8 +62,6 @@ typedef xad::adj<double> mode;
 typedef mode::tape_type tape_type;
 typedef mode::active_type AD;
 
-tape_type tape;
-
 Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                          int numPaths, unsigned long long seed = 12354)
 {
@@ -74,6 +72,10 @@ Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParamet
     // AD types setup / copy input data
     std::vector<AD> L, tmp1, tmp2;
     std::vector<AD> lambda, L0;
+
+    // Use local tape to avoid conflicts with JIT tape management
+    tape_type tape;
+    tape.activate();
 
     Results res;
     res.price = 0.;
@@ -129,6 +131,7 @@ Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParamet
         res.d_L0[i] /= numPaths;
     }
 
+    tape.deactivate();
     return res;
 }
 
