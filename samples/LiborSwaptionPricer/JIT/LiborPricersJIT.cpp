@@ -111,8 +111,7 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
 
     // --- Execution Phase (per path) ---
     double setInputsTotal = 0.0;
-    double forwardTotal = 0.0;
-    double backwardTotal = 0.0;
+    double forwardBackwardTotal = 0.0;  // Combined - Forge computes both in single kernel
     double getGradientsTotal = 0.0;
     double accumulateTotal = 0.0;
 
@@ -130,20 +129,14 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
         auto setEnd = std::chrono::steady_clock::now();
         setInputsTotal += std::chrono::duration<double, std::milli>(setEnd - setStart).count();
 
-        // Forward pass
-        auto fwdStart = std::chrono::steady_clock::now();
-        double output;
-        jit.forward(&output, 1);
-        auto fwdEnd = std::chrono::steady_clock::now();
-        forwardTotal += std::chrono::duration<double, std::milli>(fwdEnd - fwdStart).count();
-
-        // Backward pass
-        auto bwdStart = std::chrono::steady_clock::now();
+        // Forward + Backward pass (combined - Forge executes single kernel for both)
+        auto fwdBwdStart = std::chrono::steady_clock::now();
         jit.clearDerivatives();
         derivative(v) = 1.0;
-        jit.computeAdjoints();
-        auto bwdEnd = std::chrono::steady_clock::now();
-        backwardTotal += std::chrono::duration<double, std::milli>(bwdEnd - bwdStart).count();
+        jit.computeAdjoints();  // Computes forward values and adjoints in one kernel
+        double output = value(v);  // Output available after computeAdjoints
+        auto fwdBwdEnd = std::chrono::steady_clock::now();
+        forwardBackwardTotal += std::chrono::duration<double, std::milli>(fwdBwdEnd - fwdBwdStart).count();
 
         // Get gradients
         auto getStart = std::chrono::steady_clock::now();
@@ -172,8 +165,8 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
     }
 
     timing.setInputsMs = setInputsTotal;
-    timing.forwardMs = forwardTotal;
-    timing.backwardMs = backwardTotal;
+    timing.forwardMs = forwardBackwardTotal;  // Forward+backward combined
+    timing.backwardMs = 0.0;  // Included in forwardMs
     timing.getGradientsMs = getGradientsTotal;
     timing.accumulateMs = accumulateTotal;
 
@@ -456,14 +449,11 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
         for (size_t i = 0; i < numSamples; ++i)
             value(jit_samples[i]) = allSamples[path][i];
 
-        // Forward pass - executes compiled native code
-        double output;
-        jit.forward(&output, 1);
-
-        // Adjoint pass - computes all sensitivities
+        // Forward + Backward pass (combined - Forge executes single kernel for both)
         jit.clearDerivatives();
         derivative(v) = 1.0;
-        jit.computeAdjoints();
+        jit.computeAdjoints();  // Computes forward values and adjoints in one kernel
+        double output = value(v);  // Output available after computeAdjoints
 
         // Accumulate results
         res.price += output;
