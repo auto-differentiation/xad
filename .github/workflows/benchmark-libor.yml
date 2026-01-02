@@ -1,12 +1,13 @@
 ##############################################################################
 #
-#  LiborSwaptionPricer Benchmark
+#  Benchmarks JIT Backends
 #
-#  Runs the LiborSwaptionPricer benchmarks comparing:
-#  - JIT OFF: FD + XAD tape-based AAD (LiborSwaptionPricerBenchmark)
-#  - JIT ON:  FD + XAD + JIT + JIT-AVX (LiborSwaptionPricerJIT)
+#  Compares different JIT configurations for LiborSwaptionPricer:
+#  - JIT=OFF:              FD + XAD tape-based AAD (baseline)
+#  - JIT=ON:               FD + XAD with built-in JIT enabled
+#  - JIT=ON, ForgeBackend: FD + XAD + Forge JIT + JIT-AVX
 #
-#  Dependencies (JIT ON build only):
+#  Dependencies (ForgeBackend only):
 #  - xad-forge (da-roth/xad-forge)
 #  - Forge C API (da-roth/forge)
 #
@@ -15,7 +16,7 @@
 #
 ##############################################################################
 
-name: Benchmark Libor
+name: Benchmarks JIT Backends
 
 on:
   push:
@@ -31,12 +32,13 @@ on:
       jit_mode:
         description: 'JIT Mode'
         required: true
-        default: 'both'
+        default: 'all'
         type: choice
         options:
           - 'off'
           - 'on'
-          - 'both'
+          - 'forge'
+          - 'all'
       forge_repo:
         description: 'Forge repository'
         required: false
@@ -62,7 +64,7 @@ env:
 
 jobs:
   ##############################################################################
-  # Linux Benchmark
+  # Linux Benchmarks
   ##############################################################################
   linux:
     name: Linux, JIT=${{ matrix.jit }}${{ matrix.jit == 'on' && ', ForgeBackend' || '' }}
@@ -76,9 +78,19 @@ jobs:
         jit:
           - 'off'
           - 'on'
+        include:
+          - jit: 'off'
+            xad_jit: 'OFF'
+            forge: false
+            target: 'LiborSwaptionPricerBenchmark'
+          - jit: 'on'
+            xad_jit: 'ON'
+            forge: true
+            target: 'LiborSwaptionPricerJIT'
         exclude:
           - jit: ${{ github.event.inputs.jit_mode == 'off' && 'on' || '' }}
           - jit: ${{ github.event.inputs.jit_mode == 'on' && 'off' || '' }}
+          - jit: ${{ github.event.inputs.jit_mode == 'forge' && 'off' || '' }}
 
     steps:
       - name: Hardware Info
@@ -94,7 +106,7 @@ jobs:
           path: xad
 
       - name: Checkout Forge
-        if: matrix.jit == 'on'
+        if: matrix.forge
         uses: actions/checkout@v4
         with:
           repository: ${{ env.FORGE_REPO }}
@@ -102,7 +114,7 @@ jobs:
           path: forge
 
       - name: Checkout xad-forge
-        if: matrix.jit == 'on'
+        if: matrix.forge
         uses: actions/checkout@v4
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
@@ -114,9 +126,9 @@ jobs:
           apt-get update
           apt-get install -y ninja-build cmake
 
-      # --- JIT ON build steps ---
+      # --- ForgeBackend build steps ---
       - name: Build Forge C API
-        if: matrix.jit == 'on'
+        if: matrix.forge
         run: |
           cd forge
           cmake -B build -S api/c -G Ninja \
@@ -126,20 +138,20 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build XAD (with JIT)
-        if: matrix.jit == 'on'
+      - name: Build XAD
         run: |
           cd xad
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
-            -DXAD_ENABLE_JIT=ON \
-            -DCMAKE_INSTALL_PREFIX=$(pwd)/../install
+            -DXAD_ENABLE_JIT=${{ matrix.xad_jit }} \
+            -DXAD_ENABLE_TESTS=ON \
+            ${{ matrix.forge && '-DCMAKE_PREFIX_PATH=$(pwd)/../install -DCMAKE_INSTALL_PREFIX=$(pwd)/../install' || '' }}
           cmake --build build
-          cmake --install build
+          ${{ matrix.forge && 'cmake --install build' || '' }}
 
       - name: Build xad-forge
-        if: matrix.jit == 'on'
+        if: matrix.forge
         run: |
           cd xad-forge
           cmake -B build -G Ninja \
@@ -152,8 +164,8 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build LiborSwaptionPricerJIT
-        if: matrix.jit == 'on'
+      - name: Build Benchmark Target (ForgeBackend)
+        if: matrix.forge
         run: |
           cd xad
           cmake -B build-benchmark -G Ninja \
@@ -162,33 +174,28 @@ jobs:
             -DXAD_ENABLE_JIT=ON \
             -DXAD_ENABLE_TESTS=ON \
             -DCMAKE_PREFIX_PATH=$(pwd)/../install
-          cmake --build build-benchmark --target LiborSwaptionPricerJIT
+          cmake --build build-benchmark --target ${{ matrix.target }}
 
-      # --- JIT OFF build steps ---
-      - name: Build LiborSwaptionPricerBenchmark (JIT OFF)
-        if: matrix.jit == 'off'
+      - name: Build Benchmark Target (No Forge)
+        if: ${{ !matrix.forge }}
         run: |
           cd xad
-          cmake -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_STANDARD=17 \
-            -DXAD_ENABLE_TESTS=ON
-          cmake --build build --target LiborSwaptionPricerBenchmark
+          cmake --build build --target ${{ matrix.target }}
 
       # --- Run benchmarks ---
-      - name: Run Benchmark (JIT ON)
-        if: matrix.jit == 'on'
+      - name: Run Benchmark (ForgeBackend)
+        if: matrix.forge
         run: |
           export LD_LIBRARY_PATH=$(pwd)/install/lib:$LD_LIBRARY_PATH
-          ./xad/build-benchmark/samples/LiborSwaptionPricer/JIT/LiborSwaptionPricerJIT
+          ./xad/build-benchmark/samples/LiborSwaptionPricer/JIT/${{ matrix.target }}
 
-      - name: Run Benchmark (JIT OFF)
-        if: matrix.jit == 'off'
+      - name: Run Benchmark (No Forge)
+        if: ${{ !matrix.forge }}
         run: |
-          ./xad/build/samples/LiborSwaptionPricer/LiborSwaptionPricerBenchmark
+          ./xad/build/samples/LiborSwaptionPricer/${{ matrix.target }}
 
   ##############################################################################
-  # Windows Benchmark
+  # Windows Benchmarks
   ##############################################################################
   windows:
     name: Windows, JIT=${{ matrix.jit }}${{ matrix.jit == 'on' && ', ForgeBackend' || '' }}
@@ -200,9 +207,19 @@ jobs:
         jit:
           - 'off'
           - 'on'
+        include:
+          - jit: 'off'
+            xad_jit: 'OFF'
+            forge: false
+            target: 'LiborSwaptionPricerBenchmark'
+          - jit: 'on'
+            xad_jit: 'ON'
+            forge: true
+            target: 'LiborSwaptionPricerJIT'
         exclude:
           - jit: ${{ github.event.inputs.jit_mode == 'off' && 'on' || '' }}
           - jit: ${{ github.event.inputs.jit_mode == 'on' && 'off' || '' }}
+          - jit: ${{ github.event.inputs.jit_mode == 'forge' && 'off' || '' }}
 
     env:
       VSVARSALL: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
@@ -214,7 +231,7 @@ jobs:
           path: xad
 
       - name: Checkout Forge
-        if: matrix.jit == 'on'
+        if: matrix.forge
         uses: actions/checkout@v4
         with:
           repository: ${{ env.FORGE_REPO }}
@@ -222,7 +239,7 @@ jobs:
           path: forge
 
       - name: Checkout xad-forge
-        if: matrix.jit == 'on'
+        if: matrix.forge
         uses: actions/checkout@v4
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
@@ -232,9 +249,9 @@ jobs:
       - name: Setup
         run: choco install -y ninja
 
-      # --- JIT ON build steps ---
+      # --- ForgeBackend build steps ---
       - name: Build Forge C API
-        if: matrix.jit == 'on'
+        if: matrix.forge
         shell: cmd
         run: |
           cd forge
@@ -246,8 +263,7 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build XAD (with JIT)
-        if: matrix.jit == 'on'
+      - name: Build XAD
         shell: cmd
         run: |
           cd xad
@@ -255,13 +271,14 @@ jobs:
           cmake -B build -G Ninja ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CXX_STANDARD=17 ^
-            -DXAD_ENABLE_JIT=ON ^
-            -DCMAKE_INSTALL_PREFIX="%cd%\..\install"
+            -DXAD_ENABLE_JIT=${{ matrix.xad_jit }} ^
+            -DXAD_ENABLE_TESTS=ON ^
+            ${{ matrix.forge && '-DCMAKE_PREFIX_PATH="%cd%\..\install" -DCMAKE_INSTALL_PREFIX="%cd%\..\install"' || '' }}
           cmake --build build
-          cmake --install build
+          ${{ matrix.forge && 'cmake --install build' || '' }}
 
       - name: Build xad-forge
-        if: matrix.jit == 'on'
+        if: matrix.forge
         shell: cmd
         run: |
           cd xad-forge
@@ -276,8 +293,8 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build LiborSwaptionPricerJIT
-        if: matrix.jit == 'on'
+      - name: Build Benchmark Target (ForgeBackend)
+        if: matrix.forge
         shell: cmd
         run: |
           cd xad
@@ -288,31 +305,179 @@ jobs:
             -DXAD_ENABLE_JIT=ON ^
             -DXAD_ENABLE_TESTS=ON ^
             -DCMAKE_PREFIX_PATH="%cd%\..\install"
-          cmake --build build-benchmark --target LiborSwaptionPricerJIT
+          cmake --build build-benchmark --target ${{ matrix.target }}
 
-      # --- JIT OFF build steps ---
-      - name: Build LiborSwaptionPricerBenchmark (JIT OFF)
-        if: matrix.jit == 'off'
+      - name: Build Benchmark Target (No Forge)
+        if: ${{ !matrix.forge }}
         shell: cmd
         run: |
           cd xad
           call "%VSVARSALL%" amd64
-          cmake -B build -G Ninja ^
-            -DCMAKE_BUILD_TYPE=Release ^
-            -DCMAKE_CXX_STANDARD=17 ^
-            -DXAD_ENABLE_TESTS=ON
-          cmake --build build --target LiborSwaptionPricerBenchmark
+          cmake --build build --target ${{ matrix.target }}
 
       # --- Run benchmarks ---
-      - name: Run Benchmark (JIT ON)
-        if: matrix.jit == 'on'
+      - name: Run Benchmark (ForgeBackend)
+        if: matrix.forge
         shell: cmd
         run: |
           set PATH=%cd%\install\bin;%PATH%
-          xad\build-benchmark\samples\LiborSwaptionPricer\JIT\LiborSwaptionPricerJIT.exe
+          xad\build-benchmark\samples\LiborSwaptionPricer\JIT\${{ matrix.target }}.exe
 
-      - name: Run Benchmark (JIT OFF)
-        if: matrix.jit == 'off'
+      - name: Run Benchmark (No Forge)
+        if: ${{ !matrix.forge }}
         shell: cmd
         run: |
-          xad\build\samples\LiborSwaptionPricer\LiborSwaptionPricerBenchmark.exe
+          xad\build\samples\LiborSwaptionPricer\${{ matrix.target }}.exe
+
+  ##############################################################################
+  # Compare JIT Build Impact - Original XAD test
+  ##############################################################################
+  compare-jit:
+    name: Compare JIT Build Impact
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/foonathan/gcc:12
+
+    steps:
+      - name: Hardware characteristics
+        run: |
+          echo "----------------- CPU ----------------"
+          lscpu
+          echo "------------------ Mem ---------------"
+          lsmem
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: benchmark-jit-on-off
+
+      # Build JIT disabled (reference)
+      - name: Configure (JIT OFF)
+        run: |
+          mkdir -p build-off
+          cd build-off
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            -DXAD_USE_STRONG_INLINE=ON \
+            -DXAD_ENABLE_JIT=OFF
+
+      - name: Build (JIT OFF)
+        run: |
+          cd build-off
+          cmake --build .
+
+      # Build JIT enabled
+      - name: Configure (JIT ON)
+        run: |
+          mkdir -p build-on
+          cd build-on
+          cmake .. -GNinja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DXAD_NO_THREADLOCAL=ON \
+            -DXAD_SIMD_OPTION=AVX2 \
+            -DXAD_USE_STRONG_INLINE=ON \
+            -DXAD_ENABLE_JIT=ON
+
+      - name: Build (JIT ON)
+        run: |
+          cd build-on
+          cmake --build .
+
+      # Run tests on JIT-enabled build
+      - name: Run Tests (JIT ON)
+        run: |
+          cd build-on
+          ctest --no-compress-output --output-on-failure --parallel $(($(nproc) + 2))
+
+      # Run benchmarks
+      - name: Run Benchmark (JIT OFF)
+        run: |
+          set -e
+          cd build-off/samples/LiborSwaptionPricer
+          # warmup run
+          ./LiborSwaptionPricer 50000
+          rm -f benchmark_off.log || true
+          for i in $(seq 1 5) ; do \
+            ./LiborSwaptionPricer 50000 | tee -a benchmark_off.log ; \
+          done
+
+      - name: Run Benchmark (JIT ON)
+        run: |
+          set -e
+          cd build-on/samples/LiborSwaptionPricer
+          # warmup run
+          ./LiborSwaptionPricer 50000
+          rm -f benchmark_on.log || true
+          for i in $(seq 1 5) ; do \
+            ./LiborSwaptionPricer 50000 | tee -a benchmark_on.log ; \
+          done
+
+      - name: Compare Results
+        id: compare
+        run: |
+          set -e
+          apt-get update && apt-get install -y bc datamash
+
+          echo "## Benchmark Results: JIT OFF vs ON" > benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "Comparing XAD built with \`XAD_ENABLE_JIT=OFF\` vs \`XAD_ENABLE_JIT=ON\`." >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "- Commit: \`${{ github.sha }}\`" >> benchmark_results.md
+          echo "- Paths: 50000" >> benchmark_results.md
+          echo "- Runs: 5 (after warmup)" >> benchmark_results.md
+          echo "" >> benchmark_results.md
+
+          echo "### Raw Statistics" >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "| Build | Min | Max | Mean | StdDev | Median |" >> benchmark_results.md
+          echo "|-------|-----|-----|------|--------|--------|" >> benchmark_results.md
+
+          echo "**JIT OFF:**"
+          OFF_STATS=$(awk '$2 == "AAD" { print $4 }' build-off/samples/LiborSwaptionPricer/benchmark_off.log | datamash min 1 max 1 mean 1 sstdev 1 median 1)
+          OFF_TIME=$(echo "$OFF_STATS" | awk '{print $5}')
+          echo "| JIT OFF | $(echo "$OFF_STATS" | awk '{printf "%.3fs | %.3fs | %.3fs | %.3fs | %.3fs", $1, $2, $3, $4, $5}') |" >> benchmark_results.md
+
+          echo "**JIT ON:**"
+          ON_STATS=$(awk '$2 == "AAD" { print $4 }' build-on/samples/LiborSwaptionPricer/benchmark_on.log | datamash min 1 max 1 mean 1 sstdev 1 median 1)
+          ON_TIME=$(echo "$ON_STATS" | awk '{print $5}')
+          echo "| JIT ON | $(echo "$ON_STATS" | awk '{printf "%.3fs | %.3fs | %.3fs | %.3fs | %.3fs", $1, $2, $3, $4, $5}') |" >> benchmark_results.md
+
+          echo "" >> benchmark_results.md
+          echo "### Summary" >> benchmark_results.md
+          echo "" >> benchmark_results.md
+
+          DIFFERENCE=$(echo "scale=6; $OFF_TIME - $ON_TIME" | bc | awk '{printf "%.3f", $1}')
+          PERCENTAGE=$(echo "scale=6; (($OFF_TIME - $ON_TIME) / $OFF_TIME) * 100.0" | bc | awk '{printf "%.2f", $1}')
+
+          echo "| Metric | Value |" >> benchmark_results.md
+          echo "|--------|-------|" >> benchmark_results.md
+          echo "| JIT OFF median | ${OFF_TIME}s |" >> benchmark_results.md
+          echo "| JIT ON median | ${ON_TIME}s |" >> benchmark_results.md
+          echo "| Difference | ${DIFFERENCE}s |" >> benchmark_results.md
+          echo "| Change | ${PERCENTAGE}% |" >> benchmark_results.md
+          echo "" >> benchmark_results.md
+
+          if (( $(echo "$PERCENTAGE > 1" | bc -l) )); then
+            echo "> **Improvement**: JIT ON is ${PERCENTAGE}% faster than JIT OFF" >> benchmark_results.md
+          elif (( $(echo "$PERCENTAGE < -1" | bc -l) )); then
+            echo "> **Regression**: JIT ON is $(echo "$PERCENTAGE * -1" | bc)% slower than JIT OFF" >> benchmark_results.md
+          else
+            echo "> **No significant change**: Within 1% margin" >> benchmark_results.md
+          fi
+
+          cat benchmark_results.md
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-jit-compare
+          path: benchmark_results.md
