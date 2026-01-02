@@ -31,11 +31,11 @@
 ##############################################################################
 
 # Try to find xad-forge
-if(NOT TARGET xad-forge::xad-forge)
+if(NOT TARGET XADForge::xad-forge)
     find_package(xad-forge QUIET)
 endif()
 
-if(NOT TARGET xad-forge::xad-forge)
+if(NOT TARGET XADForge::xad-forge)
     message(STATUS "xad-forge not found - skipping LiborSwaptionPricerJIT")
     return()
 endif()
@@ -63,7 +63,7 @@ endif()
 target_link_libraries(LiborSwaptionPricerJIT
     PRIVATE
         ${XAD_TARGET}
-        xad-forge::xad-forge
+        XADForge::xad-forge
 )
 
 target_include_directories(LiborSwaptionPricerJIT

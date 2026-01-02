@@ -298,6 +298,7 @@ jobs:
         if: matrix.forge
         shell: cmd
         run: |
+          set INSTALL_DIR=%cd%\install
           cd xad
           call "%VSVARSALL%" amd64
           cmake -B build-benchmark -G Ninja ^
@@ -305,7 +306,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=17 ^
             -DXAD_ENABLE_JIT=ON ^
             -DXAD_ENABLE_TESTS=ON ^
-            -DCMAKE_PREFIX_PATH="%cd%\..\install"
+            -DCMAKE_PREFIX_PATH="%INSTALL_DIR%"
           cmake --build build-benchmark --target ${{ matrix.target }}
 
       - name: Build Benchmark Target (No Forge)
