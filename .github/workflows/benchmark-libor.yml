@@ -167,13 +167,14 @@ jobs:
       - name: Build Benchmark Target (ForgeBackend)
         if: matrix.forge
         run: |
+          INSTALL_DIR=$(pwd)/install
           cd xad
           cmake -B build-benchmark -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_JIT=ON \
             -DXAD_ENABLE_TESTS=ON \
-            -DCMAKE_PREFIX_PATH=$(pwd)/../install
+            -DCMAKE_PREFIX_PATH=$INSTALL_DIR
           cmake --build build-benchmark --target ${{ matrix.target }}
 
       - name: Build Benchmark Target (No Forge)
