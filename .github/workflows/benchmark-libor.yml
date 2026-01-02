@@ -2,11 +2,11 @@
 #
 #  LiborSwaptionPricer Benchmark
 #
-#  Runs the LiborSwaptionPricer sample comparing:
-#  - Baseline: FD + XAD tape-based AAD (LiborSwaptionPricer target)
-#  - Forge: FD + XAD + JIT + JIT-AVX (LiborSwaptionPricerJIT target)
+#  Runs the LiborSwaptionPricer benchmarks comparing:
+#  - JIT OFF: FD + XAD tape-based AAD (LiborSwaptionPricerBenchmark)
+#  - JIT ON:  FD + XAD + JIT + JIT-AVX (LiborSwaptionPricerJIT)
 #
-#  Dependencies (Forge build only):
+#  Dependencies (JIT ON build only):
 #  - xad-forge (da-roth/xad-forge)
 #  - Forge C API (da-roth/forge)
 #
@@ -28,15 +28,15 @@ on:
       - '.github/workflows/benchmark-libor.yml'
   workflow_dispatch:
     inputs:
-      build_type:
-        description: 'Build type'
+      jit_mode:
+        description: 'JIT Mode'
         required: true
         default: 'both'
         type: choice
         options:
-          - baseline
-          - forge
-          - both
+          - 'off'
+          - 'on'
+          - 'both'
       forge_repo:
         description: 'Forge repository'
         required: false
@@ -65,7 +65,7 @@ jobs:
   # Linux Benchmark
   ##############################################################################
   linux:
-    name: Linux ${{ matrix.build_type }}
+    name: Linux JIT ${{ matrix.jit }}
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/foonathan/gcc:13
@@ -73,12 +73,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type:
-          - baseline
-          - forge
+        jit:
+          - 'off'
+          - 'on'
         exclude:
-          - build_type: ${{ github.event.inputs.build_type == 'baseline' && 'forge' || '' }}
-          - build_type: ${{ github.event.inputs.build_type == 'forge' && 'baseline' || '' }}
+          - jit: ${{ github.event.inputs.jit_mode == 'off' && 'on' || '' }}
+          - jit: ${{ github.event.inputs.jit_mode == 'on' && 'off' || '' }}
 
     steps:
       - name: Hardware Info
@@ -94,7 +94,7 @@ jobs:
           path: xad
 
       - name: Checkout Forge
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         uses: actions/checkout@v4
         with:
           repository: ${{ env.FORGE_REPO }}
@@ -102,7 +102,7 @@ jobs:
           path: forge
 
       - name: Checkout xad-forge
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         uses: actions/checkout@v4
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
@@ -114,9 +114,9 @@ jobs:
           apt-get update
           apt-get install -y ninja-build cmake
 
-      # --- Forge build steps (only for forge build_type) ---
+      # --- JIT ON build steps ---
       - name: Build Forge C API
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         run: |
           cd forge
           cmake -B build -S api/c -G Ninja \
@@ -127,7 +127,7 @@ jobs:
           cmake --install build
 
       - name: Build XAD (with JIT)
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         run: |
           cd xad
           cmake -B build -G Ninja \
@@ -139,7 +139,7 @@ jobs:
           cmake --install build
 
       - name: Build xad-forge
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         run: |
           cd xad-forge
           cmake -B build -G Ninja \
@@ -152,8 +152,8 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build LiborSwaptionPricerJIT (Forge)
-        if: matrix.build_type == 'forge'
+      - name: Build LiborSwaptionPricerJIT
+        if: matrix.jit == 'on'
         run: |
           cd xad
           cmake -B build-benchmark -G Ninja \
@@ -164,45 +164,45 @@ jobs:
             -DCMAKE_PREFIX_PATH=$(pwd)/../install
           cmake --build build-benchmark --target LiborSwaptionPricerJIT
 
-      # --- Baseline build steps (only for baseline build_type) ---
-      - name: Build LiborSwaptionPricer (Baseline)
-        if: matrix.build_type == 'baseline'
+      # --- JIT OFF build steps ---
+      - name: Build LiborSwaptionPricerBenchmark (JIT OFF)
+        if: matrix.jit == 'off'
         run: |
           cd xad
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_TESTS=ON
-          cmake --build build --target LiborSwaptionPricer
+          cmake --build build --target LiborSwaptionPricerBenchmark
 
       # --- Run benchmarks ---
-      - name: Run Benchmark (Forge)
-        if: matrix.build_type == 'forge'
+      - name: Run Benchmark (JIT ON)
+        if: matrix.jit == 'on'
         run: |
           export LD_LIBRARY_PATH=$(pwd)/install/lib:$LD_LIBRARY_PATH
           ./xad/build-benchmark/samples/LiborSwaptionPricer/JIT/LiborSwaptionPricerJIT
 
-      - name: Run Benchmark (Baseline)
-        if: matrix.build_type == 'baseline'
+      - name: Run Benchmark (JIT OFF)
+        if: matrix.jit == 'off'
         run: |
-          ./xad/build/samples/LiborSwaptionPricer/LiborSwaptionPricer
+          ./xad/build/samples/LiborSwaptionPricer/LiborSwaptionPricerBenchmark
 
   ##############################################################################
   # Windows Benchmark
   ##############################################################################
   windows:
-    name: Windows ${{ matrix.build_type }}
+    name: Windows JIT ${{ matrix.jit }}
     runs-on: windows-2022
 
     strategy:
       fail-fast: false
       matrix:
-        build_type:
-          - baseline
-          - forge
+        jit:
+          - 'off'
+          - 'on'
         exclude:
-          - build_type: ${{ github.event.inputs.build_type == 'baseline' && 'forge' || '' }}
-          - build_type: ${{ github.event.inputs.build_type == 'forge' && 'baseline' || '' }}
+          - jit: ${{ github.event.inputs.jit_mode == 'off' && 'on' || '' }}
+          - jit: ${{ github.event.inputs.jit_mode == 'on' && 'off' || '' }}
 
     env:
       VSVARSALL: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
@@ -214,7 +214,7 @@ jobs:
           path: xad
 
       - name: Checkout Forge
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         uses: actions/checkout@v4
         with:
           repository: ${{ env.FORGE_REPO }}
@@ -222,7 +222,7 @@ jobs:
           path: forge
 
       - name: Checkout xad-forge
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         uses: actions/checkout@v4
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
@@ -232,9 +232,9 @@ jobs:
       - name: Setup
         run: choco install -y ninja
 
-      # --- Forge build steps (only for forge build_type) ---
+      # --- JIT ON build steps ---
       - name: Build Forge C API
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         shell: cmd
         run: |
           cd forge
@@ -247,7 +247,7 @@ jobs:
           cmake --install build
 
       - name: Build XAD (with JIT)
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         shell: cmd
         run: |
           cd xad
@@ -261,7 +261,7 @@ jobs:
           cmake --install build
 
       - name: Build xad-forge
-        if: matrix.build_type == 'forge'
+        if: matrix.jit == 'on'
         shell: cmd
         run: |
           cd xad-forge
@@ -276,8 +276,8 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build LiborSwaptionPricerJIT (Forge)
-        if: matrix.build_type == 'forge'
+      - name: Build LiborSwaptionPricerJIT
+        if: matrix.jit == 'on'
         shell: cmd
         run: |
           cd xad
@@ -290,9 +290,9 @@ jobs:
             -DCMAKE_PREFIX_PATH="%cd%\..\install"
           cmake --build build-benchmark --target LiborSwaptionPricerJIT
 
-      # --- Baseline build steps (only for baseline build_type) ---
-      - name: Build LiborSwaptionPricer (Baseline)
-        if: matrix.build_type == 'baseline'
+      # --- JIT OFF build steps ---
+      - name: Build LiborSwaptionPricerBenchmark (JIT OFF)
+        if: matrix.jit == 'off'
         shell: cmd
         run: |
           cd xad
@@ -301,18 +301,18 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CXX_STANDARD=17 ^
             -DXAD_ENABLE_TESTS=ON
-          cmake --build build --target LiborSwaptionPricer
+          cmake --build build --target LiborSwaptionPricerBenchmark
 
       # --- Run benchmarks ---
-      - name: Run Benchmark (Forge)
-        if: matrix.build_type == 'forge'
+      - name: Run Benchmark (JIT ON)
+        if: matrix.jit == 'on'
         shell: cmd
         run: |
           set PATH=%cd%\install\bin;%PATH%
           xad\build-benchmark\samples\LiborSwaptionPricer\JIT\LiborSwaptionPricerJIT.exe
 
-      - name: Run Benchmark (Baseline)
-        if: matrix.build_type == 'baseline'
+      - name: Run Benchmark (JIT OFF)
+        if: matrix.jit == 'off'
         shell: cmd
         run: |
-          xad\build\samples\LiborSwaptionPricer\LiborSwaptionPricer.exe
+          xad\build\samples\LiborSwaptionPricer\LiborSwaptionPricerBenchmark.exe

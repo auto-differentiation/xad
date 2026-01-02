@@ -30,9 +30,12 @@
 #
 ##############################################################################
 
-find_package(xad-forge QUIET)
+# Try to find xad-forge
+if(NOT TARGET xad-forge::xad-forge)
+    find_package(xad-forge QUIET)
+endif()
 
-if(NOT xad-forge_FOUND)
+if(NOT TARGET xad-forge::xad-forge)
     message(STATUS "xad-forge not found - skipping LiborSwaptionPricerJIT")
     return()
 endif()
@@ -48,9 +51,18 @@ add_executable(LiborSwaptionPricerJIT
     ../LiborPricers.cpp
 )
 
+# Link to xad (use target name based on context)
+if(TARGET xad)
+    set(XAD_TARGET xad)
+elseif(TARGET xad::xad)
+    set(XAD_TARGET xad::xad)
+else()
+    message(FATAL_ERROR "XAD target not found")
+endif()
+
 target_link_libraries(LiborSwaptionPricerJIT
     PRIVATE
-        xad::xad
+        ${XAD_TARGET}
         xad-forge::xad-forge
 )
 

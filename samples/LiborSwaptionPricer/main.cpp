@@ -1,7 +1,7 @@
 /*******************************************************************************
 
-   Sample main file for 1st order adjoint mode for a Monte-Carlo LIBOR
-   swaption portfolio pricer.
+   1st order adjoint mode for a Monte-Carlo LIBOR Swaption
+   portfolio pricer.
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -30,17 +30,19 @@
 #include "LiborPricers.hpp"
 
 #include <chrono>
-#include <cmath>
-#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <vector>
+#include <cmath>
 
 SwaptionPortfolio setupTestPortfolio()
 {
     SwaptionPortfolio p;
+    // maturities of the swaptions in years
     p.maturities = {4, 4, 4, 8, 8, 8, 20, 20, 20, 28, 28, 28, 40, 40, 40};
-    p.swaprates = {.045, .05, .055, .045, .05, .055, .045, .05, .055, .045, .05, .055, .045, .05, .055};
+    p.swaprates = {.045, .05,  .055, .045, .05,  .055, .045, .05,
+                   .055, .045, .05,  .055, .045, .05,  .055};
     return p;
 }
 
@@ -53,125 +55,102 @@ MarketParameters setupTestMarket()
     return market;
 }
 
-void printUsage(const char* progName)
+bool checkError(double ad_value, double fd_value, const std::string& what)
 {
-    std::cout << "Usage: " << progName << " [options]\n\n";
-    std::cout << "Options:\n";
-    std::cout << "  --help, -h     Show this help message\n";
-    std::cout << "  --quick        Run quick test (fewer iterations)\n";
-    std::cout << "  --validate     Validate AAD results against finite differences\n";
+    if (std::abs(ad_value - fd_value) / (fd_value + 1e-6) > 1e-4)
+    {
+        std::cerr << std::fixed << std::setprecision(10);
+        std::cerr << what << ": AD " << ad_value << " does not match FD " << fd_value << "\n";
+        return true;
+    }
+    return false;
 }
 
+/// Runs pricing given number of paths and optionally tests against finite differences
+/// for correctness.
+///
+/// Usage:
+///   LiborSwaptionPricer [numPaths] [test]
+///
+/// By default, it uses 10,000 paths and does not run tests against finite differences.
+///
+/// For example, for running 100,000 paths and compare to finite differences:
+///
+/// LiborSwaptionPricer 100000 test
+///
 int main(int argc, char** argv)
 {
-    // Parse options
-    bool quickMode = false;
-    bool validateMode = false;
-    for (int i = 1; i < argc; ++i)
-    {
-        std::string arg = argv[i];
-        if (arg == "--help" || arg == "-h")
-        {
-            printUsage(argv[0]);
-            return 0;
-        }
-        else if (arg == "--quick")
-            quickMode = true;
-        else if (arg == "--validate")
-            validateMode = true;
-    }
-
+    const int NUM_PATHS = argc < 2 ? 10000 : std::atol(argv[1]);
+    const bool doTests = argc < 3 ? false : argv[2] == std::string("test");
     constexpr unsigned long long SEED = 91672912;
 
-    SwaptionPortfolio portfolio = setupTestPortfolio();
+    SwaptionPortfolio p = setupTestPortfolio();
     MarketParameters market = setupTestMarket();
 
-    int numPaths = quickMode ? 1000 : 10000;
+    std::cout << std::fixed << std::setprecision(8);
 
-    std::cout << "\n";
-    std::cout << "LIBOR Swaption Portfolio Pricer\n";
-    std::cout << "================================\n";
-    std::cout << "Portfolio:    " << portfolio.maturities.size() << " European swaptions\n";
-    std::cout << "Paths:        " << numPaths << "\n";
-    std::cout << "Inputs:       " << (1 + market.lambda.size() + market.L0.size()) << " sensitivities\n";
-    std::cout << "\n";
+    std::cout << "-------- Pure pricing ---------------------\n";
+    auto start{std::chrono::steady_clock::now()};
+    auto resPlain = pricePortfolio(p, market, NUM_PATHS, SEED);
+    auto end{std::chrono::steady_clock::now()};
+    std::cout << "Portfolio price = " << resPlain.price << "\n";
+    std::chrono::duration<double> elapsed_plain{end - start};
 
-    // Run pricing without sensitivities
-    std::cout << "Pure pricing (no sensitivities)...\n";
-    auto start = std::chrono::steady_clock::now();
-    auto resPlain = pricePortfolio(portfolio, market, numPaths, SEED);
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double, std::milli> elapsed = end - start;
-    std::cout << "  Price: " << std::fixed << std::setprecision(6) << resPlain.price << "\n";
-    std::cout << "  Time:  " << std::fixed << std::setprecision(2) << elapsed.count() << " ms\n";
-    std::cout << "\n";
-
-    // Run AAD pricing
-    std::cout << "AAD pricing (with sensitivities)...\n";
+    std::cout << "-------- AD pricing -----------------------\n";
     start = std::chrono::steady_clock::now();
-    auto resAD = pricePortfolioAD(portfolio, market, numPaths, SEED);
+    auto resAD = pricePortfolioAD(p, market, NUM_PATHS, SEED);
     end = std::chrono::steady_clock::now();
-    elapsed = end - start;
-    std::cout << "  Price: " << std::fixed << std::setprecision(6) << resAD.price << "\n";
-    std::cout << "  Time:  " << std::fixed << std::setprecision(2) << elapsed.count() << " ms\n";
-    std::cout << "  d/d(delta):   " << std::scientific << std::setprecision(6) << resAD.d_delta << "\n";
-    std::cout << "  d/d(L0[0]):   " << resAD.d_L0[0] << "\n";
-    std::cout << "  d/d(lambda[0]): " << resAD.d_lambda[0] << "\n";
-    std::cout << "\n";
-
-    if (validateMode)
+    std::cout << "Portfolio price         = " << resAD.price << "\n";
+    std::cout << "Derivative w.r.t. delta = " << resAD.d_delta << "\n";
+    for (size_t i = 0; i < market.lambda.size(); ++i)
     {
-        std::cout << "Validating against finite differences...\n";
-        auto resFD = pricePortfolioFD(portfolio, market, numPaths, SEED);
+        std::cout << "Derivative w.r.t. lambda[" << i << "] = " << resAD.d_lambda[i] << "\n";
+    }
+    for (size_t i = 0; i < market.L0.size(); ++i)
+    {
+        std::cout << "Derivative w.r.t. L0[" << i << "] = " << resAD.d_L0[i] << "\n";
+    }
+    std::chrono::duration<double> elapsed_ad{end - start};
 
-        double priceDiff = std::abs(resAD.price - resFD.price);
-        double deltaDiff = std::abs(resAD.d_delta - resFD.d_delta);
-
-        std::cout << "  Price diff:       " << std::scientific << priceDiff << "\n";
-        std::cout << "  d_delta diff:     " << deltaDiff << "\n";
-
-        // Check a sample of derivatives
-        int matchCount = 0;
-        int totalChecked = 0;
-        double tol = 1e-4;
-
-        // Check d_delta
-        if (std::abs(resAD.d_delta - resFD.d_delta) / (std::abs(resFD.d_delta) + 1e-10) < tol)
-            matchCount++;
-        totalChecked++;
-
-        // Check d_lambda
-        for (size_t i = 0; i < market.lambda.size(); ++i)
-        {
-            if (std::abs(resAD.d_lambda[i] - resFD.d_lambda[i]) /
-                    (std::abs(resFD.d_lambda[i]) + 1e-10) <
-                tol)
-                matchCount++;
-            totalChecked++;
-        }
-
-        // Check d_L0
-        for (size_t i = 0; i < market.L0.size(); ++i)
-        {
-            if (std::abs(resAD.d_L0[i] - resFD.d_L0[i]) / (std::abs(resFD.d_L0[i]) + 1e-10) < tol)
-                matchCount++;
-            totalChecked++;
-        }
-
-        std::cout << "  Derivatives OK:   " << matchCount << "/" << totalChecked << "\n";
-        std::cout << "\n";
-
-        if (matchCount == totalChecked)
-        {
-            std::cout << "VALIDATION PASSED\n";
-        }
-        else
-        {
-            std::cout << "VALIDATION FAILED\n";
-            return 1;
-        }
+    bool hasError = checkError(resAD.price, resPlain.price, "price");
+    if (hasError)
+    {
+        return 1;
     }
 
-    std::cout << "Done.\n\n";
+    std::cout << std::fixed << std::setprecision(3);
+
+    std::cout << "\n";
+    std::cout << "----- Plain: " << std::setw(8) << elapsed_plain.count() << " seconds\n";
+    std::cout << "----- AAD  : " << std::setw(8) << elapsed_ad.count() << " seconds\n";
+
+    if (doTests)
+    {
+        start = std::chrono::steady_clock::now();
+        auto resFD = pricePortfolioFD(p, market, NUM_PATHS, SEED);
+        end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_fd{end - start};
+        std::cout << "----- FD   : " << std::setw(8) << elapsed_fd.count() << " seconds\n";
+
+        for (size_t i = 0; i < market.lambda.size(); ++i)
+        {
+            hasError = checkError(resAD.d_lambda[i], resFD.d_lambda[i],
+                                  "lambda[" + std::to_string(i) + "]") ||
+                       hasError;
+        }
+        for (size_t i = 0; i < market.L0.size(); ++i)
+        {
+            hasError = checkError(resAD.d_L0[i], resFD.d_L0[i], "L0[" + std::to_string(i) + "]") ||
+                       hasError;
+        }
+
+        if (hasError)
+        {
+            std::cerr << "\nThere were errors.\n";
+            return 1;
+        }
+        std::cout << "\nAll tests passed.\n";
+    }
+
     return 0;
 }
