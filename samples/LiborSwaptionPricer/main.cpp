@@ -370,7 +370,10 @@ int main(int argc, char** argv)
 
     // Benchmark configuration
     std::vector<int> pathCounts = quickMode ? std::vector<int>{100, 1000, 10000}
-                                            : std::vector<int>{10, 100, 1000, 10000, 50000};
+                                            : std::vector<int>{10, 100, 1000, 10000, 50000, 100000, 400000};
+
+    // FD is too slow for high path counts, skip it for >= 10K paths
+    constexpr int FD_MAX_PATHS = 1000;
 
     size_t warmupIterations = quickMode ? 1 : 2;
     size_t benchmarkIterations = quickMode ? 2 : 3;
@@ -428,7 +431,7 @@ int main(int argc, char** argv)
     // Methods
     std::cout << "\n  METHODS\n";
     std::cout << std::string(80, '-') << "\n";
-    std::cout << "  FD       Finite Differences (bump-and-revalue)\n";
+    std::cout << "  FD       Finite Differences (bump-and-revalue, paths <= " << FD_MAX_PATHS << " only)\n";
     std::cout << "  XAD      XAD tape-based reverse-mode AAD\n";
 #ifdef XAD_FORGE_ENABLED
     std::cout << "  JIT      Forge JIT-compiled native code\n";
@@ -447,6 +450,7 @@ int main(int argc, char** argv)
     // Results storage
     struct TimingResult
     {
+        bool fd_measured = false;
         double fd_mean = 0, fd_std = 0;
         double xad_mean = 0, xad_std = 0;
 #ifdef XAD_FORGE_ENABLED
@@ -478,7 +482,8 @@ int main(int argc, char** argv)
         {
             bool recordTiming = (iter >= warmupIterations);
 
-            // FD
+            // FD - only run for low path counts (too slow otherwise)
+            if (numPaths <= FD_MAX_PATHS)
             {
                 auto start = std::chrono::steady_clock::now();
                 auto res = pricePortfolioFD(portfolio, market, numPaths, SEED);
@@ -518,8 +523,12 @@ int main(int argc, char** argv)
         }
 
         // Store results
-        results[tc].fd_mean = mean(fd_times);
-        results[tc].fd_std = stddev(fd_times);
+        results[tc].fd_measured = (numPaths <= FD_MAX_PATHS);
+        if (results[tc].fd_measured)
+        {
+            results[tc].fd_mean = mean(fd_times);
+            results[tc].fd_std = stddev(fd_times);
+        }
         results[tc].xad_mean = mean(xad_times);
         results[tc].xad_std = stddev(xad_times);
 #ifdef XAD_FORGE_ENABLED
@@ -540,10 +549,10 @@ int main(int argc, char** argv)
     std::cout << "  VALIDATION\n";
     std::cout << std::string(80, '=') << "\n";
     std::cout << "\n";
-    std::cout << "  Comparing all methods against Finite Differences (10K paths):\n";
+    std::cout << "  Comparing all methods against Finite Differences (" << FD_MAX_PATHS << " paths):\n";
     std::cout << "\n";
 
-    int validationPaths = 10000;
+    int validationPaths = FD_MAX_PATHS;
     auto resFD = pricePortfolioFD(portfolio, market, validationPaths, SEED);
     auto resXAD = pricePortfolioAD(portfolio, market, validationPaths, SEED);
 
@@ -602,10 +611,19 @@ int main(int argc, char** argv)
 
         std::cout << std::fixed << std::setprecision(2);
 
-        // FD
-        std::cout << "  " << std::setw(6) << pathLabel << " | FD       |"
-                  << std::setw(12) << results[tc].fd_mean << " |"
-                  << std::setw(12) << results[tc].fd_std << "\n";
+        // FD (only if measured)
+        if (results[tc].fd_measured)
+        {
+            std::cout << "  " << std::setw(6) << pathLabel << " | FD       |"
+                      << std::setw(12) << results[tc].fd_mean << " |"
+                      << std::setw(12) << results[tc].fd_std << "\n";
+        }
+        else
+        {
+            std::cout << "  " << std::setw(6) << pathLabel << " | FD       |"
+                      << std::setw(12) << "-" << " |"
+                      << std::setw(12) << "-" << "\n";
+        }
 
         // XAD
         std::cout << "         | XAD      |"
@@ -639,10 +657,19 @@ int main(int argc, char** argv)
 
         std::cout << std::fixed << std::setprecision(2);
 
-        // FD
-        std::cout << "  " << std::setw(6) << pathLabel << " | FD       |"
-                  << std::setw(12) << results[tc].fd_mean << " |"
-                  << std::setw(12) << results[tc].fd_std << "\n";
+        // FD (only if measured)
+        if (results[tc].fd_measured)
+        {
+            std::cout << "  " << std::setw(6) << pathLabel << " | FD       |"
+                      << std::setw(12) << results[tc].fd_mean << " |"
+                      << std::setw(12) << results[tc].fd_std << "\n";
+        }
+        else
+        {
+            std::cout << "  " << std::setw(6) << pathLabel << " | FD       |"
+                      << std::setw(12) << "-" << " |"
+                      << std::setw(12) << "-" << "\n";
+        }
 
         // XAD
         std::cout << "         | XAD      |"
