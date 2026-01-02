@@ -372,8 +372,8 @@ int main(int argc, char** argv)
     std::vector<int> pathCounts = quickMode ? std::vector<int>{100, 1000, 10000}
                                             : std::vector<int>{10, 100, 1000, 10000, 50000};
 
-    size_t warmupIterations = quickMode ? 1 : 3;
-    size_t benchmarkIterations = quickMode ? 3 : 5;
+    size_t warmupIterations = quickMode ? 1 : 2;
+    size_t benchmarkIterations = quickMode ? 2 : 3;
 
     size_t totalInputs = 1 + market.lambda.size() + market.L0.size();
 
