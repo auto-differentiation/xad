@@ -1,12 +1,12 @@
 ##############################################################################
 #
-#  LiborSwaptionPricer Forge JIT Benchmark
+#  LiborSwaptionPricer Benchmark
 #
-#  Runs the LiborSwaptionPricer sample with Forge JIT backend and compares
-#  performance against standard XAD tape-based AAD.
+#  Runs the LiborSwaptionPricer sample comparing:
+#  - Baseline: FD + XAD tape-based AAD (LiborSwaptionPricer target)
+#  - Forge: FD + XAD + JIT + JIT-AVX (LiborSwaptionPricerJIT target)
 #
-#  Dependencies:
-#  - XAD (this repo)
+#  Dependencies (Forge build only):
 #  - xad-forge (da-roth/xad-forge)
 #  - Forge C API (da-roth/forge)
 #
@@ -15,42 +15,46 @@
 #
 ##############################################################################
 
-name: Benchmark Libor Forge
+name: Benchmark Libor
 
 on:
   push:
     paths:
       - 'samples/LiborSwaptionPricer/**'
-      - '.github/workflows/benchmark-libor-forge.yml'
+      - '.github/workflows/benchmark-libor.yml'
   pull_request:
     paths:
       - 'samples/LiborSwaptionPricer/**'
-      - '.github/workflows/benchmark-libor-forge.yml'
+      - '.github/workflows/benchmark-libor.yml'
   workflow_dispatch:
     inputs:
-      num_paths:
-        description: 'Number of Monte Carlo paths'
+      build_type:
+        description: 'Build type'
         required: true
-        default: '50000'
+        default: 'both'
+        type: choice
+        options:
+          - baseline
+          - forge
+          - both
       forge_repo:
         description: 'Forge repository'
-        required: true
+        required: false
         default: 'da-roth/forge'
       forge_branch:
         description: 'Forge branch'
-        required: true
+        required: false
         default: 'main'
       xad_forge_repo:
         description: 'xad-forge repository'
-        required: true
+        required: false
         default: 'da-roth/xad-forge'
       xad_forge_branch:
         description: 'xad-forge branch'
-        required: true
+        required: false
         default: 'main'
 
 env:
-  NUM_PATHS: ${{ github.event.inputs.num_paths || '50000' }}
   FORGE_REPO: ${{ github.event.inputs.forge_repo || 'da-roth/forge' }}
   FORGE_BRANCH: ${{ github.event.inputs.forge_branch || 'main' }}
   XAD_FORGE_REPO: ${{ github.event.inputs.xad_forge_repo || 'da-roth/xad-forge' }}
@@ -58,13 +62,23 @@ env:
 
 jobs:
   ##############################################################################
-  # Linux Forge JIT Benchmark
+  # Linux Benchmark
   ##############################################################################
   linux:
-    name: Linux Forge JIT
+    name: Linux ${{ matrix.build_type }}
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/foonathan/gcc:13
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - baseline
+          - forge
+        exclude:
+          - build_type: ${{ github.event.inputs.build_type == 'baseline' && 'forge' || '' }}
+          - build_type: ${{ github.event.inputs.build_type == 'forge' && 'baseline' || '' }}
 
     steps:
       - name: Hardware Info
@@ -80,6 +94,7 @@ jobs:
           path: xad
 
       - name: Checkout Forge
+        if: matrix.build_type == 'forge'
         uses: actions/checkout@v4
         with:
           repository: ${{ env.FORGE_REPO }}
@@ -87,6 +102,7 @@ jobs:
           path: forge
 
       - name: Checkout xad-forge
+        if: matrix.build_type == 'forge'
         uses: actions/checkout@v4
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
@@ -98,7 +114,9 @@ jobs:
           apt-get update
           apt-get install -y ninja-build cmake
 
+      # --- Forge build steps (only for forge build_type) ---
       - name: Build Forge C API
+        if: matrix.build_type == 'forge'
         run: |
           cd forge
           cmake -B build -S api/c -G Ninja \
@@ -108,7 +126,8 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build XAD
+      - name: Build XAD (with JIT)
+        if: matrix.build_type == 'forge'
         run: |
           cd xad
           cmake -B build -G Ninja \
@@ -120,6 +139,7 @@ jobs:
           cmake --install build
 
       - name: Build xad-forge
+        if: matrix.build_type == 'forge'
         run: |
           cd xad-forge
           cmake -B build -G Ninja \
@@ -132,7 +152,8 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build LiborSwaptionPricer with Forge
+      - name: Build LiborSwaptionPricerJIT (Forge)
+        if: matrix.build_type == 'forge'
         run: |
           cd xad
           cmake -B build-benchmark -G Ninja \
@@ -140,27 +161,48 @@ jobs:
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_JIT=ON \
             -DXAD_ENABLE_TESTS=ON \
-            -DXAD_LIBOR_ENABLE_FORGE=ON \
             -DCMAKE_PREFIX_PATH=$(pwd)/../install
-          cmake --build build-benchmark --target LiborSwaptionPricer
+          cmake --build build-benchmark --target LiborSwaptionPricerJIT
 
-      - name: Run Benchmark
+      # --- Baseline build steps (only for baseline build_type) ---
+      - name: Build LiborSwaptionPricer (Baseline)
+        if: matrix.build_type == 'baseline'
         run: |
-          echo "============================================================================="
-          echo "  LIBOR SWAPTION PRICER - FORGE JIT BENCHMARK"
-          echo "============================================================================="
-          echo ""
-          echo "Running with ${{ env.NUM_PATHS }} paths..."
-          echo ""
+          cd xad
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DXAD_ENABLE_TESTS=ON
+          cmake --build build --target LiborSwaptionPricer
+
+      # --- Run benchmarks ---
+      - name: Run Benchmark (Forge)
+        if: matrix.build_type == 'forge'
+        run: |
           export LD_LIBRARY_PATH=$(pwd)/install/lib:$LD_LIBRARY_PATH
-          ./xad/build-benchmark/samples/LiborSwaptionPricer/LiborSwaptionPricer ${{ env.NUM_PATHS }} jit test
+          ./xad/build-benchmark/samples/LiborSwaptionPricer/JIT/LiborSwaptionPricerJIT
+
+      - name: Run Benchmark (Baseline)
+        if: matrix.build_type == 'baseline'
+        run: |
+          ./xad/build/samples/LiborSwaptionPricer/LiborSwaptionPricer
 
   ##############################################################################
-  # Windows Forge JIT Benchmark
+  # Windows Benchmark
   ##############################################################################
   windows:
-    name: Windows Forge JIT
+    name: Windows ${{ matrix.build_type }}
     runs-on: windows-2022
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - baseline
+          - forge
+        exclude:
+          - build_type: ${{ github.event.inputs.build_type == 'baseline' && 'forge' || '' }}
+          - build_type: ${{ github.event.inputs.build_type == 'forge' && 'baseline' || '' }}
 
     env:
       VSVARSALL: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
@@ -172,6 +214,7 @@ jobs:
           path: xad
 
       - name: Checkout Forge
+        if: matrix.build_type == 'forge'
         uses: actions/checkout@v4
         with:
           repository: ${{ env.FORGE_REPO }}
@@ -179,6 +222,7 @@ jobs:
           path: forge
 
       - name: Checkout xad-forge
+        if: matrix.build_type == 'forge'
         uses: actions/checkout@v4
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
@@ -188,7 +232,9 @@ jobs:
       - name: Setup
         run: choco install -y ninja
 
+      # --- Forge build steps (only for forge build_type) ---
       - name: Build Forge C API
+        if: matrix.build_type == 'forge'
         shell: cmd
         run: |
           cd forge
@@ -200,7 +246,8 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build XAD
+      - name: Build XAD (with JIT)
+        if: matrix.build_type == 'forge'
         shell: cmd
         run: |
           cd xad
@@ -214,6 +261,7 @@ jobs:
           cmake --install build
 
       - name: Build xad-forge
+        if: matrix.build_type == 'forge'
         shell: cmd
         run: |
           cd xad-forge
@@ -228,7 +276,8 @@ jobs:
           cmake --build build
           cmake --install build
 
-      - name: Build LiborSwaptionPricer with Forge
+      - name: Build LiborSwaptionPricerJIT (Forge)
+        if: matrix.build_type == 'forge'
         shell: cmd
         run: |
           cd xad
@@ -238,18 +287,32 @@ jobs:
             -DCMAKE_CXX_STANDARD=17 ^
             -DXAD_ENABLE_JIT=ON ^
             -DXAD_ENABLE_TESTS=ON ^
-            -DXAD_LIBOR_ENABLE_FORGE=ON ^
             -DCMAKE_PREFIX_PATH="%cd%\..\install"
-          cmake --build build-benchmark --target LiborSwaptionPricer
+          cmake --build build-benchmark --target LiborSwaptionPricerJIT
 
-      - name: Run Benchmark
+      # --- Baseline build steps (only for baseline build_type) ---
+      - name: Build LiborSwaptionPricer (Baseline)
+        if: matrix.build_type == 'baseline'
         shell: cmd
         run: |
-          echo =============================================================================
-          echo   LIBOR SWAPTION PRICER - FORGE JIT BENCHMARK
-          echo =============================================================================
-          echo.
-          echo Running with %NUM_PATHS% paths...
-          echo.
+          cd xad
+          call "%VSVARSALL%" amd64
+          cmake -B build -G Ninja ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DCMAKE_CXX_STANDARD=17 ^
+            -DXAD_ENABLE_TESTS=ON
+          cmake --build build --target LiborSwaptionPricer
+
+      # --- Run benchmarks ---
+      - name: Run Benchmark (Forge)
+        if: matrix.build_type == 'forge'
+        shell: cmd
+        run: |
           set PATH=%cd%\install\bin;%PATH%
-          xad\build-benchmark\samples\LiborSwaptionPricer\LiborSwaptionPricer.exe %NUM_PATHS% jit test
+          xad\build-benchmark\samples\LiborSwaptionPricer\JIT\LiborSwaptionPricerJIT.exe
+
+      - name: Run Benchmark (Baseline)
+        if: matrix.build_type == 'baseline'
+        shell: cmd
+        run: |
+          xad\build\samples\LiborSwaptionPricer\LiborSwaptionPricer.exe

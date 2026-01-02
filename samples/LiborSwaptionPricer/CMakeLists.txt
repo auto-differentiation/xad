@@ -23,13 +23,10 @@
 #
 ##############################################################################
 
-option(XAD_LIBOR_ENABLE_FORGE "Enable Forge JIT backend for LiborSwaptionPricer benchmark" OFF)
-
 xad_add_sample(LiborSwaptionPricer
   SOURCES
     LiborData.hpp
     LiborFunctions.hpp
-    LiborFunctionsJIT.hpp
     LiborPricers.hpp
     LiborPricers.cpp
     main.cpp
@@ -38,19 +35,5 @@ xad_add_sample(LiborSwaptionPricer
     --validate
 )
 
-# Optional xad-forge integration for JIT benchmarking
-if(XAD_LIBOR_ENABLE_FORGE)
-    # Try to find xad-forge
-    if(NOT TARGET XADForge::xad-forge)
-        find_package(xad-forge CONFIG QUIET)
-    endif()
-
-    if(TARGET XADForge::xad-forge)
-        target_link_libraries(LiborSwaptionPricer PRIVATE XADForge::xad-forge)
-        target_compile_definitions(LiborSwaptionPricer PRIVATE XAD_FORGE_ENABLED=1)
-        message(STATUS "LiborSwaptionPricer: Forge JIT backend enabled")
-    else()
-        message(FATAL_ERROR "LiborSwaptionPricer: XAD_LIBOR_ENABLE_FORGE=ON but xad-forge not found. "
-                            "Please set CMAKE_PREFIX_PATH to include xad-forge install location.")
-    endif()
-endif()
+# Add JIT subfolder if xad-forge is available
+add_subdirectory(JIT)
