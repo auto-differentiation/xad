@@ -1,7 +1,19 @@
 /*******************************************************************************
 
-   1st order adjoint mode for a Monte-Carlo LIBOR Swaption
-   portfolio pricer.
+   LIBOR Swaption Portfolio Pricer - AAD Benchmark
+
+   This benchmark compares different approaches for computing sensitivities
+   in Monte Carlo pricing of a LIBOR swaption portfolio.
+
+   APPROACHES TESTED:
+     FD      - Finite Differences (bump-and-revalue)
+     XAD     - XAD tape-based reverse-mode AAD
+     JIT     - Forge JIT-compiled native code (scalar)
+     JIT-AVX - Forge JIT + AVX2 SIMD (4 paths/instruction)
+
+   BUILD CONFIGURATIONS:
+     Baseline (XAD_FORGE_ENABLED=OFF): FD, XAD
+     Full     (XAD_FORGE_ENABLED=ON):  FD, XAD, JIT, JIT-AVX
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -29,12 +41,14 @@
 #include "LiborData.hpp"
 #include "LiborPricers.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <vector>
-#include <cmath>
 
 SwaptionPortfolio setupTestPortfolio()
 {
@@ -57,7 +71,7 @@ MarketParameters setupTestMarket()
 
 bool checkError(double ad_value, double fd_value, const std::string& what)
 {
-    if (std::abs(ad_value - fd_value) / (fd_value + 1e-6) > 1e-4)
+    if (std::abs(ad_value - fd_value) / (std::abs(fd_value) + 1e-6) > 1e-4)
     {
         std::cerr << std::fixed << std::setprecision(10);
         std::cerr << what << ": AD " << ad_value << " does not match FD " << fd_value << "\n";
@@ -66,227 +80,335 @@ bool checkError(double ad_value, double fd_value, const std::string& what)
     return false;
 }
 
+/// Compute mean of a vector
+double mean(const std::vector<double>& v)
+{
+    if (v.empty()) return 0.0;
+    return std::accumulate(v.begin(), v.end(), 0.0) / static_cast<double>(v.size());
+}
+
+/// Compute standard deviation of a vector
+double stddev(const std::vector<double>& v)
+{
+    if (v.size() <= 1) return 0.0;
+    double m = mean(v);
+    double sq_sum = 0.0;
+    for (double x : v)
+    {
+        double diff = x - m;
+        sq_sum += diff * diff;
+    }
+    return std::sqrt(sq_sum / static_cast<double>(v.size() - 1));
+}
+
 void printUsage(const char* progName)
 {
-    std::cout << "Usage: " << progName << " [numPaths] [options]\n\n";
+    std::cout << "Usage: " << progName << " [options]\n\n";
     std::cout << "Options:\n";
-    std::cout << "  test    Run finite difference validation\n";
+    std::cout << "  --help, -h     Show this help message\n";
+    std::cout << "  --validate     Run validation against finite differences\n";
+    std::cout << "  --quick        Run quick benchmark (fewer iterations)\n";
+    std::cout << "\nThis benchmark compares AD approaches for LIBOR swaption pricing.\n";
 #ifdef XAD_FORGE_ENABLED
-    std::cout << "  jit     Run JIT-compiled pricing (requires xad-forge)\n";
-#endif
-    std::cout << "\nExamples:\n";
-    std::cout << "  " << progName << " 10000           # 10K paths, AAD only\n";
-    std::cout << "  " << progName << " 10000 test      # 10K paths with FD validation\n";
-#ifdef XAD_FORGE_ENABLED
-    std::cout << "  " << progName << " 10000 jit       # 10K paths, compare AAD vs JIT\n";
-    std::cout << "  " << progName << " 10000 jit test  # 10K paths, JIT + FD validation\n";
+    std::cout << "Build: Full benchmark (Forge JIT enabled)\n";
+#else
+    std::cout << "Build: Baseline (Forge JIT disabled)\n";
 #endif
 }
 
-/// Runs pricing given number of paths and optionally tests against finite differences
-/// for correctness.
-///
-/// Usage:
-///   LiborSwaptionPricer [numPaths] [options]
-///
-/// Options:
-///   test - Run finite difference validation
-///   jit  - Run JIT-compiled pricing (requires xad-forge)
-///
-/// By default, it uses 10,000 paths and does not run tests against finite differences.
-///
-/// For example, for running 100,000 paths and compare to finite differences:
-///
-/// LiborSwaptionPricer 100000 test
-///
 int main(int argc, char** argv)
 {
-    const int NUM_PATHS = argc < 2 ? 10000 : std::atol(argv[1]);
-
     // Parse options
-    bool doTests = false;
-    bool doJIT = false;
-    for (int i = 2; i < argc; ++i)
+    bool doValidation = false;
+    bool quickMode = false;
+    for (int i = 1; i < argc; ++i)
     {
         std::string arg = argv[i];
-        if (arg == "test")
-            doTests = true;
-        else if (arg == "jit")
-            doJIT = true;
-        else if (arg == "help" || arg == "-h" || arg == "--help")
+        if (arg == "--help" || arg == "-h")
         {
             printUsage(argv[0]);
             return 0;
         }
+        else if (arg == "--validate")
+            doValidation = true;
+        else if (arg == "--quick")
+            quickMode = true;
     }
-
-#ifndef XAD_FORGE_ENABLED
-    if (doJIT)
-    {
-        std::cerr << "Error: JIT mode requires XAD_FORGE_ENABLED.\n";
-        std::cerr << "Rebuild with -DXAD_LIBOR_ENABLE_FORGE=ON and xad-forge available.\n";
-        return 1;
-    }
-#endif
 
     constexpr unsigned long long SEED = 91672912;
 
-    SwaptionPortfolio p = setupTestPortfolio();
+    SwaptionPortfolio portfolio = setupTestPortfolio();
     MarketParameters market = setupTestMarket();
 
+    // Benchmark configuration
+    std::vector<int> pathCounts = {10, 100, 1000, 10000};
+    std::vector<std::string> pathLabels = {"10", "100", "1K", "10K"};
+
+    size_t warmupIterations = quickMode ? 1 : 3;
+    size_t benchmarkIterations = quickMode ? 3 : 10;
+
+    // Results storage
+    struct TimingResult
+    {
+        double fd_mean = 0, fd_std = 0;
+        double xad_mean = 0, xad_std = 0;
+#ifdef XAD_FORGE_ENABLED
+        double jit_mean = 0, jit_std = 0;
+        double jit_avx_mean = 0, jit_avx_std = 0;
+#endif
+    };
+    std::vector<TimingResult> results(pathCounts.size());
+
+    // Print header
+    std::cout << "\n";
     std::cout << "=============================================================================\n";
     std::cout << "  LIBOR Swaption Portfolio Pricer - AAD Benchmark\n";
     std::cout << "=============================================================================\n";
     std::cout << "\n";
-    std::cout << "  Configuration:\n";
-    std::cout << "    Paths:        " << NUM_PATHS << "\n";
-    std::cout << "    Swaptions:    " << p.maturities.size() << "\n";
-    std::cout << "    Inputs:       " << (1 + market.lambda.size() + market.L0.size())
-              << " (1 delta + " << market.lambda.size() << " lambda + "
-              << market.L0.size() << " L0)\n";
+    std::cout << "  INSTRUMENT:\n";
+    std::cout << "    Portfolio of " << portfolio.maturities.size() << " European swaptions\n";
+    std::cout << "    Maturities: 4, 8, 20, 28, 40 years (3 each)\n";
+    std::cout << "    Model: LIBOR Market Model (lognormal forwards)\n";
+    std::cout << "\n";
+    std::cout << "  MARKET INPUTS:\n";
+    std::cout << "    delta:  1 parameter\n";
+    std::cout << "    lambda: " << market.lambda.size() << " volatility parameters\n";
+    std::cout << "    L0:     " << market.L0.size() << " initial forward rates\n";
+    std::cout << "    Total:  " << (1 + market.lambda.size() + market.L0.size()) << " sensitivities\n";
+    std::cout << "\n";
+    std::cout << "  APPROACHES TESTED:\n";
+    std::cout << "    FD      - Finite Differences (bump-and-revalue)\n";
+    std::cout << "    XAD     - XAD tape-based reverse-mode AAD\n";
 #ifdef XAD_FORGE_ENABLED
-    std::cout << "    Forge JIT:    Available\n";
+    std::cout << "    JIT     - Forge JIT-compiled native code\n";
+    std::cout << "    JIT-AVX - Forge JIT + AVX2 SIMD (4 paths/instruction)\n";
+    std::cout << "\n";
+    std::cout << "  BUILD: Full benchmark (Forge JIT enabled)\n";
 #else
-    std::cout << "    Forge JIT:    Not available (XAD_FORGE_ENABLED not set)\n";
+    std::cout << "\n";
+    std::cout << "  BUILD: Baseline (Forge JIT disabled)\n";
+#endif
+    std::cout << "\n";
+    std::cout << "  CONFIGURATION:\n";
+    std::cout << "    Path counts:     10, 100, 1K, 10K\n";
+    std::cout << "    Warmup/Bench:    " << warmupIterations << "/" << benchmarkIterations
+              << " iterations\n";
+    std::cout << "\n";
+
+    // Run benchmarks for each path count
+    for (size_t tc = 0; tc < pathCounts.size(); ++tc)
+    {
+        int numPaths = pathCounts[tc];
+        std::cout << "  Running " << pathLabels[tc] << " paths..." << std::flush;
+
+        std::vector<double> fd_times, xad_times;
+#ifdef XAD_FORGE_ENABLED
+        std::vector<double> jit_times, jit_avx_times;
+#endif
+
+        for (size_t iter = 0; iter < warmupIterations + benchmarkIterations; ++iter)
+        {
+            bool recordTiming = (iter >= warmupIterations);
+
+            // ---------------------------------------------------------------------
+            // Finite Differences
+            // ---------------------------------------------------------------------
+            {
+                auto start = std::chrono::steady_clock::now();
+                auto res = pricePortfolioFD(portfolio, market, numPaths, SEED);
+                auto end = std::chrono::steady_clock::now();
+                std::chrono::duration<double, std::milli> elapsed = end - start;
+                if (recordTiming)
+                    fd_times.push_back(elapsed.count());
+            }
+
+            // ---------------------------------------------------------------------
+            // XAD Tape
+            // ---------------------------------------------------------------------
+            {
+                auto start = std::chrono::steady_clock::now();
+                auto res = pricePortfolioAD(portfolio, market, numPaths, SEED);
+                auto end = std::chrono::steady_clock::now();
+                std::chrono::duration<double, std::milli> elapsed = end - start;
+                if (recordTiming)
+                    xad_times.push_back(elapsed.count());
+            }
+
+#ifdef XAD_FORGE_ENABLED
+            // ---------------------------------------------------------------------
+            // JIT (Scalar)
+            // ---------------------------------------------------------------------
+            {
+                auto start = std::chrono::steady_clock::now();
+                auto res = pricePortfolioJIT(portfolio, market, numPaths, SEED);
+                auto end = std::chrono::steady_clock::now();
+                std::chrono::duration<double, std::milli> elapsed = end - start;
+                if (recordTiming)
+                    jit_times.push_back(elapsed.count());
+            }
+
+            // ---------------------------------------------------------------------
+            // JIT-AVX
+            // ---------------------------------------------------------------------
+            {
+                auto start = std::chrono::steady_clock::now();
+                auto res = pricePortfolioJIT_AVX(portfolio, market, numPaths, SEED);
+                auto end = std::chrono::steady_clock::now();
+                std::chrono::duration<double, std::milli> elapsed = end - start;
+                if (recordTiming)
+                    jit_avx_times.push_back(elapsed.count());
+            }
+#endif
+        }
+
+        // Store results
+        results[tc].fd_mean = mean(fd_times);
+        results[tc].fd_std = stddev(fd_times);
+        results[tc].xad_mean = mean(xad_times);
+        results[tc].xad_std = stddev(xad_times);
+#ifdef XAD_FORGE_ENABLED
+        results[tc].jit_mean = mean(jit_times);
+        results[tc].jit_std = stddev(jit_times);
+        results[tc].jit_avx_mean = mean(jit_avx_times);
+        results[tc].jit_avx_std = stddev(jit_avx_times);
+#endif
+
+        std::cout << " Done." << std::endl;
+    }
+
+    // =========================================================================
+    // Print results table
+    // =========================================================================
+    std::cout << "\n";
+    std::cout << "  " << std::string(79, '=') << "\n";
+#ifdef XAD_FORGE_ENABLED
+    std::cout << "  RESULTS: LIBOR Swaption Benchmark (times in ms)\n";
+#else
+    std::cout << "  RESULTS: LIBOR Swaption Benchmark - BASELINE (times in ms)\n";
+#endif
+    std::cout << "  " << std::string(79, '=') << "\n";
+    std::cout << "\n";
+
+#ifdef XAD_FORGE_ENABLED
+    // Full benchmark table
+    std::cout << "   Paths |       FD |      XAD |      JIT |  JIT-AVX | XAD/JIT | XAD/AVX\n";
+    std::cout << "  -------+----------+----------+----------+----------+---------+---------\n";
+
+    for (size_t tc = 0; tc < pathCounts.size(); ++tc)
+    {
+        double speedup_jit = results[tc].xad_mean / results[tc].jit_mean;
+        double speedup_avx = results[tc].xad_mean / results[tc].jit_avx_mean;
+
+        std::cout << "  " << std::setw(6) << pathCounts[tc] << " |"
+                  << std::fixed << std::setprecision(1) << std::setw(9) << results[tc].fd_mean
+                  << " |" << std::setw(9) << results[tc].xad_mean << " |" << std::setw(9)
+                  << results[tc].jit_mean << " |" << std::setw(9) << results[tc].jit_avx_mean
+                  << " |" << std::setprecision(2) << std::setw(7) << speedup_jit << "x |"
+                  << std::setw(7) << speedup_avx << "x\n";
+    }
+#else
+    // Baseline table (FD and XAD only)
+    std::cout << "   Paths |       FD |      XAD | FD/XAD\n";
+    std::cout << "  -------+----------+----------+--------\n";
+
+    for (size_t tc = 0; tc < pathCounts.size(); ++tc)
+    {
+        double speedup = results[tc].fd_mean / results[tc].xad_mean;
+
+        std::cout << "  " << std::setw(6) << pathCounts[tc] << " |"
+                  << std::fixed << std::setprecision(1) << std::setw(9) << results[tc].fd_mean
+                  << " |" << std::setw(9) << results[tc].xad_mean << " |" << std::setprecision(2)
+                  << std::setw(6) << speedup << "x\n";
+    }
+#endif
+
+    std::cout << "\n";
+#ifdef XAD_FORGE_ENABLED
+    std::cout << "  Speedup = XAD time / JIT time\n";
+#else
+    std::cout << "  FD/XAD = ratio of Finite Differences to XAD tape\n";
 #endif
     std::cout << "\n";
 
-    std::cout << std::fixed << std::setprecision(8);
-
-    // -------------------------------------------------------------------------
-    // Pure pricing (no sensitivities)
-    // -------------------------------------------------------------------------
-    std::cout << "-------- Pure pricing ---------------------\n";
-    auto start{std::chrono::steady_clock::now()};
-    auto resPlain = pricePortfolio(p, market, NUM_PATHS, SEED);
-    auto end{std::chrono::steady_clock::now()};
-    std::cout << "Portfolio price = " << resPlain.price << "\n";
-    std::chrono::duration<double> elapsed_plain{end - start};
-
-    // -------------------------------------------------------------------------
-    // AAD pricing (tape-based)
-    // -------------------------------------------------------------------------
-    std::cout << "-------- AAD pricing (tape) ---------------\n";
-    start = std::chrono::steady_clock::now();
-    auto resAD = pricePortfolioAD(p, market, NUM_PATHS, SEED);
-    end = std::chrono::steady_clock::now();
-    std::cout << "Portfolio price         = " << resAD.price << "\n";
-    std::cout << "Derivative w.r.t. delta = " << resAD.d_delta << "\n";
-    std::cout << "(Showing first 3 of " << market.lambda.size() << " lambda derivatives)\n";
-    for (size_t i = 0; i < 3 && i < market.lambda.size(); ++i)
+    // =========================================================================
+    // Optional validation
+    // =========================================================================
+    if (doValidation)
     {
-        std::cout << "Derivative w.r.t. lambda[" << i << "] = " << resAD.d_lambda[i] << "\n";
-    }
-    std::cout << "(Showing first 3 of " << market.L0.size() << " L0 derivatives)\n";
-    for (size_t i = 0; i < 3 && i < market.L0.size(); ++i)
-    {
-        std::cout << "Derivative w.r.t. L0[" << i << "] = " << resAD.d_L0[i] << "\n";
-    }
-    std::chrono::duration<double> elapsed_ad{end - start};
+        std::cout << "  " << std::string(79, '-') << "\n";
+        std::cout << "  VALIDATION (comparing against Finite Differences)\n";
+        std::cout << "  " << std::string(79, '-') << "\n";
 
-    bool hasError = checkError(resAD.price, resPlain.price, "price");
-    if (hasError)
-    {
-        return 1;
-    }
+        int numPaths = 10000;
+        bool hasError = false;
+
+        auto resFD = pricePortfolioFD(portfolio, market, numPaths, SEED);
+        auto resAD = pricePortfolioAD(portfolio, market, numPaths, SEED);
+
+        // Check XAD against FD
+        hasError = checkError(resAD.price, resFD.price, "XAD price") || hasError;
+        hasError = checkError(resAD.d_delta, resFD.d_delta, "XAD d_delta") || hasError;
+        for (size_t i = 0; i < market.lambda.size(); ++i)
+        {
+            hasError =
+                checkError(resAD.d_lambda[i], resFD.d_lambda[i], "XAD lambda[" + std::to_string(i) + "]") ||
+                hasError;
+        }
+        for (size_t i = 0; i < market.L0.size(); ++i)
+        {
+            hasError = checkError(resAD.d_L0[i], resFD.d_L0[i], "XAD L0[" + std::to_string(i) + "]") ||
+                       hasError;
+        }
+
+        if (!hasError)
+            std::cout << "  XAD validation: PASSED\n";
 
 #ifdef XAD_FORGE_ENABLED
-    // -------------------------------------------------------------------------
-    // JIT pricing (Forge backend)
-    // -------------------------------------------------------------------------
-    std::chrono::duration<double> elapsed_jit{0};
-    JITStats jitStats;
-    Results resJIT;
+        hasError = false;
+        auto resJIT = pricePortfolioJIT(portfolio, market, numPaths, SEED);
 
-    if (doJIT)
-    {
-        std::cout << "-------- JIT pricing (Forge) --------------\n";
-        start = std::chrono::steady_clock::now();
-        resJIT = pricePortfolioJIT(p, market, NUM_PATHS, SEED, &jitStats);
-        end = std::chrono::steady_clock::now();
-        std::cout << "Portfolio price         = " << resJIT.price << "\n";
-        std::cout << "Derivative w.r.t. delta = " << resJIT.d_delta << "\n";
-        std::cout << "(Showing first 3 of " << market.lambda.size() << " lambda derivatives)\n";
-        for (size_t i = 0; i < 3 && i < market.lambda.size(); ++i)
-        {
-            std::cout << "Derivative w.r.t. lambda[" << i << "] = " << resJIT.d_lambda[i] << "\n";
-        }
-        elapsed_jit = end - start;
-
-        // Validate JIT results against AAD
         hasError = checkError(resJIT.price, resAD.price, "JIT price") || hasError;
         hasError = checkError(resJIT.d_delta, resAD.d_delta, "JIT d_delta") || hasError;
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
-            hasError = checkError(resJIT.d_lambda[i], resAD.d_lambda[i],
-                                  "JIT lambda[" + std::to_string(i) + "]") ||
-                       hasError;
+            hasError =
+                checkError(resJIT.d_lambda[i], resAD.d_lambda[i], "JIT lambda[" + std::to_string(i) + "]") ||
+                hasError;
         }
         for (size_t i = 0; i < market.L0.size(); ++i)
         {
-            hasError = checkError(resJIT.d_L0[i], resAD.d_L0[i],
-                                  "JIT L0[" + std::to_string(i) + "]") ||
+            hasError = checkError(resJIT.d_L0[i], resAD.d_L0[i], "JIT L0[" + std::to_string(i) + "]") ||
                        hasError;
         }
-    }
-#endif
 
-    // -------------------------------------------------------------------------
-    // Timing summary
-    // -------------------------------------------------------------------------
-    std::cout << std::fixed << std::setprecision(3);
-    std::cout << "\n";
-    std::cout << "=============================================================================\n";
-    std::cout << "  TIMING SUMMARY\n";
-    std::cout << "=============================================================================\n";
-    std::cout << "----- Plain: " << std::setw(10) << elapsed_plain.count() << " seconds\n";
-    std::cout << "----- AAD  : " << std::setw(10) << elapsed_ad.count() << " seconds";
-    std::cout << "  (slowdown vs plain: " << std::setprecision(1)
-              << (elapsed_ad.count() / elapsed_plain.count()) << "x)\n";
+        if (!hasError)
+            std::cout << "  JIT validation: PASSED\n";
 
-#ifdef XAD_FORGE_ENABLED
-    if (doJIT)
-    {
-        std::cout << std::setprecision(3);
-        std::cout << "----- JIT  : " << std::setw(10) << elapsed_jit.count() << " seconds";
-        std::cout << "  (speedup vs AAD: " << std::setprecision(1)
-                  << (elapsed_ad.count() / elapsed_jit.count()) << "x)\n";
-        std::cout << std::setprecision(3);
-        std::cout << "      Compile time: " << jitStats.compileTimeMs << " ms\n";
-    }
-#endif
+        hasError = false;
+        auto resAVX = pricePortfolioJIT_AVX(portfolio, market, numPaths, SEED);
 
-    // -------------------------------------------------------------------------
-    // Finite difference validation (optional)
-    // -------------------------------------------------------------------------
-    if (doTests)
-    {
-        std::cout << "\n-------- Finite Difference validation -----\n";
-        start = std::chrono::steady_clock::now();
-        auto resFD = pricePortfolioFD(p, market, NUM_PATHS, SEED);
-        end = std::chrono::steady_clock::now();
-        std::chrono::duration<double> elapsed_fd{end - start};
-        std::cout << "----- FD   : " << std::setw(10) << elapsed_fd.count() << " seconds\n";
-
+        hasError = checkError(resAVX.price, resAD.price, "JIT-AVX price") || hasError;
+        hasError = checkError(resAVX.d_delta, resAD.d_delta, "JIT-AVX d_delta") || hasError;
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
-            hasError = checkError(resAD.d_lambda[i], resFD.d_lambda[i],
-                                  "lambda[" + std::to_string(i) + "]") ||
+            hasError = checkError(resAVX.d_lambda[i], resAD.d_lambda[i],
+                                  "JIT-AVX lambda[" + std::to_string(i) + "]") ||
                        hasError;
         }
         for (size_t i = 0; i < market.L0.size(); ++i)
         {
-            hasError = checkError(resAD.d_L0[i], resFD.d_L0[i], "L0[" + std::to_string(i) + "]") ||
-                       hasError;
+            hasError =
+                checkError(resAVX.d_L0[i], resAD.d_L0[i], "JIT-AVX L0[" + std::to_string(i) + "]") ||
+                hasError;
         }
+
+        if (!hasError)
+            std::cout << "  JIT-AVX validation: PASSED\n";
+#endif
+
+        std::cout << "\n";
     }
 
-    if (hasError)
-    {
-        std::cerr << "\nThere were errors.\n";
-        return 1;
-    }
-
-    std::cout << "\nAll validations passed.\n";
+    std::cout << "  Benchmark complete.\n\n";
     return 0;
 }

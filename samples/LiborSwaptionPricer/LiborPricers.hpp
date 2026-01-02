@@ -54,4 +54,10 @@ struct JITStats
 Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                           int numPaths, unsigned long long seed = 12354, JITStats* stats = nullptr);
 
+/// Price with first-order sensitivities, using Forge JIT with AVX2 SIMD
+/// Processes 4 Monte Carlo paths per kernel execution using AVX2 instructions.
+/// @param stats Optional pointer to receive JIT compilation statistics
+Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketParameters& market,
+                              int numPaths, unsigned long long seed = 12354, JITStats* stats = nullptr);
+
 #endif // XAD_FORGE_ENABLED
