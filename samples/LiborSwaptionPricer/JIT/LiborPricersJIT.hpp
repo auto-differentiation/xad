@@ -33,6 +33,31 @@ struct JITStats
     double compileTimeMs = 0.0;  ///< Time spent compiling the JIT kernel
 };
 
+/// Detailed timing breakdown for performance decomposition
+struct TimingDecomposition
+{
+    double totalMs = 0.0;           ///< Total execution time
+    double compileMs = 0.0;         ///< JIT compilation time (one-time)
+    double setInputsMs = 0.0;       ///< Time setting input values
+    double forwardMs = 0.0;         ///< Forward pass execution time
+    double backwardMs = 0.0;        ///< Backward pass (adjoint) execution time
+    double getGradientsMs = 0.0;    ///< Time retrieving gradients
+    double accumulateMs = 0.0;      ///< Time accumulating results
+    int numPaths = 0;               ///< Number of paths executed
+};
+
+/// Run performance decomposition for JIT scalar backend
+/// Returns detailed timing breakdown of each phase
+TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
+                                         const MarketParameters& market,
+                                         int numPaths, unsigned long long seed = 12354);
+
+/// Run performance decomposition for JIT AVX backend
+/// Returns detailed timing breakdown of each phase
+TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
+                                             const MarketParameters& market,
+                                             int numPaths, unsigned long long seed = 12354);
+
 /// Price with first-order sensitivities, using AAD with Forge JIT compilation
 /// The computation graph is compiled once on the first path and reused.
 /// @param stats Optional pointer to receive JIT compilation statistics

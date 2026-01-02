@@ -28,7 +28,6 @@
 #include <XAD/XAD.hpp>
 #include "LiborData.hpp"
 #include "LiborFunctions.hpp"
-#include "LiborPricers.hpp"
 #include <random>
 
 Results pricePortfolio(const SwaptionPortfolio& portfolio, const MarketParameters& market,
@@ -63,12 +62,11 @@ typedef xad::adj<double> mode;
 typedef mode::tape_type tape_type;
 typedef mode::active_type AD;
 
-Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
-                         int numPaths, unsigned long long seed)
-{
-    // Create local tape for thread safety and to avoid interference with JIT
-    tape_type tape;
+tape_type tape;
 
+Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
+                         int numPaths, unsigned long long seed = 12354)
+{
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);
     std::vector<double> samples(market.lambda.size() / 2);
@@ -131,14 +129,11 @@ Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParamet
         res.d_L0[i] /= numPaths;
     }
 
-    // Deactivate tape before returning
-    tape.deactivate();
-
     return res;
 }
 
 Results pricePortfolioFD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
-                         int numPaths, unsigned long long seed)
+                         int numPaths, unsigned long long seed = 12354)
 {
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);

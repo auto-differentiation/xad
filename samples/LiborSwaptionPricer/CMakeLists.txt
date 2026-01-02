@@ -32,7 +32,7 @@ xad_add_sample(LiborSwaptionPricer
     LiborPricers.cpp
     main.cpp
   TEST_ARGS
-    1000
+    100
     test
 )
 

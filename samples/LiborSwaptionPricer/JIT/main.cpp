@@ -317,15 +317,148 @@ void printUsage(const char* progName)
 {
     std::cout << "Usage: " << progName << " [options]\n\n";
     std::cout << "Options:\n";
-    std::cout << "  --help, -h     Show this help message\n";
-    std::cout << "  --quick        Run quick benchmark (fewer iterations, fewer path counts)\n";
+    std::cout << "  --help, -h        Show this help message\n";
+    std::cout << "  --quick           Run quick benchmark (fewer iterations, fewer path counts)\n";
+    std::cout << "  --decomposition   Run performance decomposition analysis (10K paths)\n";
     std::cout << "\nThis benchmark compares AD approaches for LIBOR swaption pricing.\n";
     std::cout << "Build: Full benchmark with Forge JIT\n";
+}
+
+// ============================================================================
+// Performance Decomposition Output
+// ============================================================================
+
+void printDecomposition(const SwaptionPortfolio& portfolio, const MarketParameters& market,
+                        int numPaths, unsigned long long seed)
+{
+    std::cout << "\n";
+    std::cout << std::string(80, '=') << "\n";
+    std::cout << "  PERFORMANCE DECOMPOSITION (" << (numPaths >= 1000 ? std::to_string(numPaths/1000) + "K" : std::to_string(numPaths)) << " paths)\n";
+    std::cout << std::string(80, '=') << "\n";
+
+    const size_t totalInputs = 1 + market.lambda.size() + market.L0.size();
+
+    // =========================================================================
+    // FD Decomposition
+    // =========================================================================
+    std::cout << "\n  FINITE DIFFERENCES (FD)\n";
+    std::cout << std::string(80, '-') << "\n";
+
+    auto fdStart = std::chrono::steady_clock::now();
+    auto fdRes = pricePortfolioFD(portfolio, market, numPaths, seed);
+    auto fdEnd = std::chrono::steady_clock::now();
+    double fdTotalMs = std::chrono::duration<double, std::milli>(fdEnd - fdStart).count();
+
+    // FD does (1 base + totalInputs bumps) * numPaths forward evaluations
+    size_t fdEvaluations = (1 + totalInputs) * numPaths;
+    double fdPerEvalMs = fdTotalMs / fdEvaluations;
+
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "  Total time:              " << std::setw(10) << fdTotalMs << " ms\n";
+    std::cout << "  Number of inputs:        " << std::setw(10) << totalInputs << "\n";
+    std::cout << "  Bump-and-revalue evals:  " << std::setw(10) << fdEvaluations << " (1 base + " << totalInputs << " bumps) x " << numPaths << " paths\n";
+    std::cout << "  Time per evaluation:     " << std::setw(10) << (fdPerEvalMs * 1000) << " us\n";
+
+    // =========================================================================
+    // XAD Decomposition
+    // =========================================================================
+    std::cout << "\n  XAD TAPE-BASED AAD\n";
+    std::cout << std::string(80, '-') << "\n";
+
+    auto xadStart = std::chrono::steady_clock::now();
+    auto xadRes = pricePortfolioAD(portfolio, market, numPaths, seed);
+    auto xadEnd = std::chrono::steady_clock::now();
+    double xadTotalMs = std::chrono::duration<double, std::milli>(xadEnd - xadStart).count();
+
+    // XAD does 1 forward + 1 backward per path
+    double xadPerPathMs = xadTotalMs / numPaths;
+
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "  Total time:              " << std::setw(10) << xadTotalMs << " ms\n";
+    std::cout << "  Paths executed:          " << std::setw(10) << numPaths << "\n";
+    std::cout << "  Time per path:           " << std::setw(10) << (xadPerPathMs * 1000) << " us\n";
+    std::cout << "  (includes: tape record, forward, backward, gradient extract)\n";
+
+    // =========================================================================
+    // JIT Scalar Decomposition
+    // =========================================================================
+    std::cout << "\n  JIT SCALAR (Forge)\n";
+    std::cout << std::string(80, '-') << "\n";
+
+    auto jitTiming = runDecompositionJIT(portfolio, market, numPaths, seed);
+
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "  Total time:              " << std::setw(10) << jitTiming.totalMs << " ms (100.0%)\n";
+    std::cout << "  -------------------------\n";
+    std::cout << "  Compile (one-time):      " << std::setw(10) << jitTiming.compileMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (jitTiming.compileMs / jitTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Set inputs:              " << std::setw(10) << std::setprecision(2) << jitTiming.setInputsMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (jitTiming.setInputsMs / jitTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Forward pass:            " << std::setw(10) << std::setprecision(2) << jitTiming.forwardMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (jitTiming.forwardMs / jitTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Backward pass:           " << std::setw(10) << std::setprecision(2) << jitTiming.backwardMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (jitTiming.backwardMs / jitTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Get gradients:           " << std::setw(10) << std::setprecision(2) << jitTiming.getGradientsMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (jitTiming.getGradientsMs / jitTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Accumulate results:      " << std::setw(10) << std::setprecision(2) << jitTiming.accumulateMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (jitTiming.accumulateMs / jitTiming.totalMs * 100) << "%)\n";
+
+    double jitExecMs = jitTiming.totalMs - jitTiming.compileMs;
+    std::cout << "  -------------------------\n";
+    std::cout << "  Execution (excl compile):" << std::setw(10) << std::setprecision(2) << jitExecMs << " ms\n";
+    std::cout << "  Time per path:           " << std::setw(10) << std::setprecision(2) << (jitExecMs / numPaths * 1000) << " us\n";
+
+    // =========================================================================
+    // JIT-AVX Decomposition
+    // =========================================================================
+    std::cout << "\n  JIT-AVX (Forge + AVX2 SIMD)\n";
+    std::cout << std::string(80, '-') << "\n";
+
+    auto avxTiming = runDecompositionJIT_AVX(portfolio, market, numPaths, seed);
+    int numBatches = (numPaths + 3) / 4;
+
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << "  Total time:              " << std::setw(10) << avxTiming.totalMs << " ms (100.0%)\n";
+    std::cout << "  -------------------------\n";
+    std::cout << "  Compile (one-time):      " << std::setw(10) << avxTiming.compileMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (avxTiming.compileMs / avxTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Set inputs:              " << std::setw(10) << std::setprecision(2) << avxTiming.setInputsMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (avxTiming.setInputsMs / avxTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Forward+Backward:        " << std::setw(10) << std::setprecision(2) << avxTiming.forwardMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (avxTiming.forwardMs / avxTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Get gradients:           " << std::setw(10) << std::setprecision(2) << avxTiming.getGradientsMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (avxTiming.getGradientsMs / avxTiming.totalMs * 100) << "%)\n";
+    std::cout << "  Accumulate results:      " << std::setw(10) << std::setprecision(2) << avxTiming.accumulateMs << " ms ("
+              << std::setw(5) << std::setprecision(1) << (avxTiming.accumulateMs / avxTiming.totalMs * 100) << "%)\n";
+
+    double avxExecMs = avxTiming.totalMs - avxTiming.compileMs;
+    std::cout << "  -------------------------\n";
+    std::cout << "  Execution (excl compile):" << std::setw(10) << std::setprecision(2) << avxExecMs << " ms\n";
+    std::cout << "  Batches (4 paths each):  " << std::setw(10) << numBatches << "\n";
+    std::cout << "  Time per batch:          " << std::setw(10) << std::setprecision(2) << (avxExecMs / numBatches * 1000) << " us\n";
+    std::cout << "  Time per path:           " << std::setw(10) << std::setprecision(2) << (avxExecMs / numPaths * 1000) << " us\n";
+
+    // =========================================================================
+    // Summary Comparison
+    // =========================================================================
+    std::cout << "\n  SUMMARY COMPARISON\n";
+    std::cout << std::string(80, '-') << "\n";
+    std::cout << std::fixed << std::setprecision(2);
+
+    std::cout << "  Method   |   Total (ms) |  Per Path (us) |  vs XAD\n";
+    std::cout << "  ---------+--------------+----------------+---------\n";
+    std::cout << "  FD       |" << std::setw(13) << fdTotalMs << " |" << std::setw(15) << (fdTotalMs / numPaths * 1000) << " |" << std::setw(7) << std::setprecision(1) << (fdTotalMs / xadTotalMs) << "x\n";
+    std::cout << "  XAD      |" << std::setw(13) << std::setprecision(2) << xadTotalMs << " |" << std::setw(15) << (xadTotalMs / numPaths * 1000) << " |" << std::setw(7) << "1.00x\n";
+    std::cout << "  JIT      |" << std::setw(13) << jitTiming.totalMs << " |" << std::setw(15) << (jitTiming.totalMs / numPaths * 1000) << " |" << std::setw(7) << std::setprecision(1) << (jitTiming.totalMs / xadTotalMs) << "x\n";
+    std::cout << "  JIT-AVX  |" << std::setw(13) << std::setprecision(2) << avxTiming.totalMs << " |" << std::setw(15) << (avxTiming.totalMs / numPaths * 1000) << " |" << std::setw(7) << std::setprecision(1) << (avxTiming.totalMs / xadTotalMs) << "x\n";
+
+    std::cout << "\n";
 }
 
 int main(int argc, char** argv)
 {
     bool quickMode = false;
+    bool decompositionMode = false;
     for (int i = 1; i < argc; ++i)
     {
         std::string arg = argv[i];
@@ -336,6 +469,8 @@ int main(int argc, char** argv)
         }
         else if (arg == "--quick")
             quickMode = true;
+        else if (arg == "--decomposition")
+            decompositionMode = true;
     }
 
     constexpr unsigned long long SEED = 91672912;
