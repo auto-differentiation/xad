@@ -72,11 +72,12 @@ typedef xad::adj<double> mode;
 typedef mode::tape_type tape_type;
 typedef mode::active_type AD;
 
-tape_type tape;
-
 Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                          int numPaths, unsigned long long seed)
 {
+    // Create local tape (like QuantLib-Risks-Cpp-Forge pattern)
+    tape_type tape;
+
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);
     std::vector<double> samples(market.lambda.size() / 2);
@@ -138,6 +139,9 @@ Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParamet
         res.d_lambda[i] /= numPaths;
         res.d_L0[i] /= numPaths;
     }
+
+    // Deactivate tape before returning (like QuantLib-Risks-Cpp-Forge)
+    tape.deactivate();
 
     return res;
 }
