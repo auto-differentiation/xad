@@ -65,7 +65,7 @@ jobs:
   # Linux Benchmark
   ##############################################################################
   linux:
-    name: Linux JIT ${{ matrix.jit }}
+    name: Linux, JIT=${{ matrix.jit }}${{ matrix.jit == 'on' && ', ForgeBackend' || '' }}
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/foonathan/gcc:13
@@ -191,7 +191,7 @@ jobs:
   # Windows Benchmark
   ##############################################################################
   windows:
-    name: Windows JIT ${{ matrix.jit }}
+    name: Windows, JIT=${{ matrix.jit }}${{ matrix.jit == 'on' && ', ForgeBackend' || '' }}
     runs-on: windows-2022
 
     strategy:
