@@ -77,6 +77,9 @@ tape_type tape;
 Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                          int numPaths, unsigned long long seed)
 {
+    // Activate tape (may have been deactivated from previous call)
+    tape.activate();
+
     std::mt19937 gen(seed);
     std::normal_distribution<double> dist(0., 1.);
     std::vector<double> samples(market.lambda.size() / 2);
