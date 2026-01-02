@@ -478,6 +478,33 @@ int main(int argc, char** argv)
     SwaptionPortfolio portfolio = setupTestPortfolio();
     MarketParameters market = setupTestMarket();
 
+    // Handle decomposition mode separately
+    if (decompositionMode)
+    {
+        constexpr int DECOMPOSITION_PATHS = 1000;  // 1K paths for decomposition
+
+        std::cout << "\n";
+        std::cout << std::string(80, '=') << "\n";
+        std::cout << "  LIBOR Swaption Portfolio Pricer - Performance Decomposition\n";
+        std::cout << std::string(80, '=') << "\n";
+
+        std::cout << "\n  ENVIRONMENT\n";
+        std::cout << std::string(80, '-') << "\n";
+        std::cout << "  Platform:     " << getPlatformInfo() << "\n";
+        std::cout << "  CPU:          " << getCpuInfo() << "\n";
+        std::cout << "  RAM:          " << getMemoryInfo() << "\n";
+        std::cout << "  SIMD:         " << getSimdInfo() << "\n";
+        std::cout << "  Compiler:     " << getCompilerInfo() << "\n";
+
+        printDecomposition(portfolio, market, DECOMPOSITION_PATHS, SEED);
+
+        std::cout << std::string(80, '=') << "\n";
+        std::cout << "  Decomposition complete.\n";
+        std::cout << std::string(80, '=') << "\n\n";
+
+        return 0;
+    }
+
     std::vector<int> pathCounts = quickMode ? std::vector<int>{100, 1000, 10000}
                                             : std::vector<int>{10, 100, 1000, 10000, 50000, 100000, 400000};
 

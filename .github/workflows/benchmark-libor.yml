@@ -332,6 +332,101 @@ jobs:
           xad\build\samples\LiborSwaptionPricer\${{ matrix.target }}.exe
 
   ##############################################################################
+  # Performance Decomposition - Detailed timing breakdown
+  ##############################################################################
+  decomposition:
+    name: Performance Decomposition (Linux)
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/foonathan/gcc:13
+    if: github.event.inputs.jit_mode != 'off'
+
+    steps:
+      - name: Hardware Info
+        run: |
+          echo "===== CPU ====="
+          lscpu | grep -E "^(Model name|CPU\(s\)|Thread|Core|Socket|CPU max MHz)"
+          echo "===== Memory ====="
+          free -h
+
+      - name: Checkout XAD
+        uses: actions/checkout@v4
+        with:
+          path: xad
+
+      - name: Checkout Forge
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FORGE_REPO }}
+          ref: ${{ env.FORGE_BRANCH }}
+          path: forge
+
+      - name: Checkout xad-forge
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.XAD_FORGE_REPO }}
+          ref: ${{ env.XAD_FORGE_BRANCH }}
+          path: xad-forge
+
+      - name: Setup
+        run: |
+          apt-get update
+          apt-get install -y ninja-build cmake
+
+      - name: Build Forge C API
+        run: |
+          cd forge
+          cmake -B build -S api/c -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DFORGE_CAPI_BUILD_TESTS=OFF \
+            -DCMAKE_INSTALL_PREFIX=$(pwd)/../install
+          cmake --build build
+          cmake --install build
+
+      - name: Build XAD
+        run: |
+          cd xad
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DXAD_ENABLE_JIT=ON \
+            -DXAD_ENABLE_TESTS=ON \
+            -DCMAKE_PREFIX_PATH=$(pwd)/../install \
+            -DCMAKE_INSTALL_PREFIX=$(pwd)/../install
+          cmake --build build
+          cmake --install build
+
+      - name: Build xad-forge
+        run: |
+          cd xad-forge
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_PREFIX_PATH=$(pwd)/../install \
+            -DXAD_FORGE_USE_CAPI=ON \
+            -DXAD_FORGE_BUILD_TESTS=OFF \
+            -DCMAKE_INSTALL_PREFIX=$(pwd)/../install
+          cmake --build build
+          cmake --install build
+
+      - name: Build Benchmark
+        run: |
+          INSTALL_DIR=$(pwd)/install
+          cd xad
+          cmake -B build-benchmark -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DXAD_ENABLE_JIT=ON \
+            -DXAD_ENABLE_TESTS=ON \
+            -DCMAKE_PREFIX_PATH=$INSTALL_DIR
+          cmake --build build-benchmark --target LiborSwaptionPricerJIT
+
+      - name: Run Performance Decomposition
+        run: |
+          export LD_LIBRARY_PATH=$(pwd)/install/lib:$LD_LIBRARY_PATH
+          ./xad/build-benchmark/samples/LiborSwaptionPricer/JIT/LiborSwaptionPricerJIT --decomposition
+
+  ##############################################################################
   # Compare JIT Build Impact - Original XAD test
   ##############################################################################
   compare-jit:
