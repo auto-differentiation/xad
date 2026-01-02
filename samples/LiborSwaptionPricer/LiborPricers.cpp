@@ -139,6 +139,9 @@ Results pricePortfolioAD(const SwaptionPortfolio& portfolio, const MarketParamet
         res.d_L0[i] /= numPaths;
     }
 
+    // Deactivate tape to avoid interference with JIT
+    tape.deactivate();
+
     return res;
 }
 
