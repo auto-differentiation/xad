@@ -28,7 +28,7 @@
 #include "LiborFunctionsJIT.hpp"
 
 #include <XAD/XAD.hpp>
-#include <xad-forge/ForgeBackends.hpp>
+#include <xad-forge/ForgeBackend.hpp>
 #include <xad-forge/ForgeBackendAVX.hpp>
 
 #include <random>
@@ -75,8 +75,7 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
     res.d_delta = 0.0;
     res.d_L0.resize(market.L0.size());
 
-    xad::JITCompiler<double, 1> jit(
-        std::make_unique<xad::forge::ScalarBackend>());
+    xad::JITCompiler<double, 1> jit;
 
     JitAD delta;
     JitAD v;
@@ -104,14 +103,25 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
     path_gen_jit(delta, L, lambda, jit_samples);
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
-    jit.compile();
+
+    // Compile with ForgeBackend
+    xad::forge::ForgeBackend backend;
+    backend.compile(jit.getGraph());
 
     auto compileEnd = std::chrono::steady_clock::now();
     timing.compileMs = std::chrono::duration<double, std::milli>(compileEnd - compileStart).count();
 
     // --- Execution Phase (per path) ---
+    constexpr int LANES = xad::forge::ForgeBackend::VECTOR_WIDTH;
+    const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
+
+    double inputLanes[LANES];
+    double outputAdjoints[LANES] = {1.0};
+    double outputs[LANES];
+    std::vector<std::array<double, LANES>> inputGradients(numInputs);
+
     double setInputsTotal = 0.0;
-    double forwardBackwardTotal = 0.0;  // Combined - Forge computes both in single kernel
+    double forwardBackwardTotal = 0.0;
     double getGradientsTotal = 0.0;
     double accumulateTotal = 0.0;
 
@@ -119,46 +129,55 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
     {
         // Set inputs
         auto setStart = std::chrono::steady_clock::now();
-        value(delta) = market.delta;
+
+        // delta
+        inputLanes[0] = market.delta;
+        backend.setInputLanes(0, inputLanes);
+
+        // lambda
         for (size_t i = 0; i < market.lambda.size(); ++i)
-            value(lambda[i]) = market.lambda[i];
+        {
+            inputLanes[0] = market.lambda[i];
+            backend.setInputLanes(1 + i, inputLanes);
+        }
+
+        // L0
         for (size_t i = 0; i < market.L0.size(); ++i)
-            value(L0[i]) = market.L0[i];
+        {
+            inputLanes[0] = market.L0[i];
+            backend.setInputLanes(1 + market.lambda.size() + i, inputLanes);
+        }
+
+        // samples
+        size_t sampleOffset = 1 + market.lambda.size() + market.L0.size();
         for (size_t i = 0; i < numSamples; ++i)
-            value(jit_samples[i]) = allSamples[path][i];
+        {
+            inputLanes[0] = allSamples[path][i];
+            backend.setInputLanes(sampleOffset + i, inputLanes);
+        }
+
         auto setEnd = std::chrono::steady_clock::now();
         setInputsTotal += std::chrono::duration<double, std::milli>(setEnd - setStart).count();
 
-        // Forward + Backward pass (combined - Forge executes single kernel for both)
+        // Forward + backward (combined)
         auto fwdBwdStart = std::chrono::steady_clock::now();
-        jit.clearDerivatives();
-        derivative(v) = 1.0;
-        jit.computeAdjoints();  // Computes forward values and adjoints in one kernel
-        double output = value(v);  // Output available after computeAdjoints
+        backend.forwardAndBackward(outputAdjoints, outputs, inputGradients);
         auto fwdBwdEnd = std::chrono::steady_clock::now();
         forwardBackwardTotal += std::chrono::duration<double, std::milli>(fwdBwdEnd - fwdBwdStart).count();
 
-        // Get gradients
+        // Get gradients (already retrieved)
         auto getStart = std::chrono::steady_clock::now();
-        double d_delta_val = derivative(delta);
-        std::vector<double> d_lambda_vals(market.lambda.size());
-        std::vector<double> d_L0_vals(market.L0.size());
-        for (size_t i = 0; i < market.lambda.size(); ++i)
-        {
-            d_lambda_vals[i] = derivative(lambda[i]);
-            d_L0_vals[i] = derivative(L0[i]);
-        }
         auto getEnd = std::chrono::steady_clock::now();
         getGradientsTotal += std::chrono::duration<double, std::milli>(getEnd - getStart).count();
 
         // Accumulate
         auto accStart = std::chrono::steady_clock::now();
-        res.price += output;
-        res.d_delta += d_delta_val;
+        res.price += outputs[0];
+        res.d_delta += inputGradients[0][0];
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
-            res.d_lambda[i] += d_lambda_vals[i];
-            res.d_L0[i] += d_L0_vals[i];
+            res.d_lambda[i] += inputGradients[1 + i][0];
+            res.d_L0[i] += inputGradients[1 + market.lambda.size() + i][0];
         }
         auto accEnd = std::chrono::steady_clock::now();
         accumulateTotal += std::chrono::duration<double, std::milli>(accEnd - accStart).count();
@@ -211,8 +230,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
     res.d_delta = 0.0;
     res.d_L0.resize(market.L0.size());
 
-    xad::JITCompiler<double, 1> jit(
-        std::make_unique<xad::forge::ScalarBackend>());
+    xad::JITCompiler<double, 1> jit;
 
     JitAD delta;
     JitAD v;
@@ -241,11 +259,8 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    const auto& jitGraph = jit.getGraph();
-    jit.deactivate();
-
     xad::forge::ForgeBackendAVX avxBackend(false);
-    avxBackend.compile(jitGraph);
+    avxBackend.compile(jit.getGraph());
 
     auto compileEnd = std::chrono::steady_clock::now();
     timing.compileMs = std::chrono::duration<double, std::milli>(compileEnd - compileStart).count();
@@ -382,9 +397,8 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     res.d_delta = 0.0;
     res.d_L0.resize(market.L0.size());
 
-    // Create JIT compiler with Forge backend
-    xad::JITCompiler<double, 1> jit(
-        std::make_unique<xad::forge::ScalarBackend>());
+    // Create JIT compiler for graph recording
+    xad::JITCompiler<double, 1> jit;
 
     JitAD delta;
     JitAD v;
@@ -422,8 +436,9 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    // Compile the graph to native code
-    jit.compile();
+    // Compile with ForgeBackend
+    xad::forge::ForgeBackend backend;
+    backend.compile(jit.getGraph());
 
     auto compileEnd = std::chrono::steady_clock::now();
     if (stats)
@@ -436,32 +451,52 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     // Phase 2: Execute compiled graph for all paths
     // =========================================================================
 
+    constexpr int LANES = xad::forge::ForgeBackend::VECTOR_WIDTH;
+    const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
+
+    double inputLanes[LANES];
+    double outputAdjoints[LANES] = {1.0};
+    double outputs[LANES];
+    std::vector<std::array<double, LANES>> inputGradients(numInputs);
+
     for (int path = 0; path < numPaths; ++path)
     {
-        // Set market input values (constant across paths, but needed for JIT)
-        value(delta) = market.delta;
-        for (size_t i = 0; i < market.lambda.size(); ++i)
-            value(lambda[i]) = market.lambda[i];
-        for (size_t i = 0; i < market.L0.size(); ++i)
-            value(L0[i]) = market.L0[i];
+        // Set delta
+        inputLanes[0] = market.delta;
+        backend.setInputLanes(0, inputLanes);
 
-        // Set random sample values for this path - this is what changes each path!
-        for (size_t i = 0; i < numSamples; ++i)
-            value(jit_samples[i]) = allSamples[path][i];
-
-        // Forward + Backward pass (combined - Forge executes single kernel for both)
-        jit.clearDerivatives();
-        derivative(v) = 1.0;
-        jit.computeAdjoints();  // Computes forward values and adjoints in one kernel
-        double output = value(v);  // Output available after computeAdjoints
-
-        // Accumulate results
-        res.price += output;
-        res.d_delta += derivative(delta);
+        // Set lambda
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
-            res.d_lambda[i] += derivative(lambda[i]);
-            res.d_L0[i] += derivative(L0[i]);
+            inputLanes[0] = market.lambda[i];
+            backend.setInputLanes(1 + i, inputLanes);
+        }
+
+        // Set L0
+        for (size_t i = 0; i < market.L0.size(); ++i)
+        {
+            inputLanes[0] = market.L0[i];
+            backend.setInputLanes(1 + market.lambda.size() + i, inputLanes);
+        }
+
+        // Set random samples for this path
+        size_t sampleOffset = 1 + market.lambda.size() + market.L0.size();
+        for (size_t i = 0; i < numSamples; ++i)
+        {
+            inputLanes[0] = allSamples[path][i];
+            backend.setInputLanes(sampleOffset + i, inputLanes);
+        }
+
+        // Forward + backward (combined)
+        backend.forwardAndBackward(outputAdjoints, outputs, inputGradients);
+
+        // Accumulate results
+        res.price += outputs[0];
+        res.d_delta += inputGradients[0][0];
+        for (size_t i = 0; i < market.lambda.size(); ++i)
+        {
+            res.d_lambda[i] += inputGradients[1 + i][0];
+            res.d_L0[i] += inputGradients[1 + market.lambda.size() + i][0];
         }
     }
 
@@ -508,9 +543,8 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
     res.d_delta = 0.0;
     res.d_L0.resize(market.L0.size());
 
-    // Create JIT compiler with Forge scalar backend for graph recording
-    xad::JITCompiler<double, 1> jit(
-        std::make_unique<xad::forge::ScalarBackend>());
+    // Create JIT compiler for graph recording
+    xad::JITCompiler<double, 1> jit;
 
     JitAD delta;
     JitAD v;
@@ -518,7 +552,7 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
     auto compileStart = std::chrono::steady_clock::now();
 
     // =========================================================================
-    // Phase 1: Record the computation graph (using ScalarBackend)
+    // Phase 1: Record the computation graph
     // =========================================================================
 
     delta = market.delta;
@@ -542,12 +576,9 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    // Get the JIT graph and compile with AVX backend
-    const auto& jitGraph = jit.getGraph();
-    jit.deactivate();
-
+    // Compile with AVX backend
     xad::forge::ForgeBackendAVX avxBackend(false);
-    avxBackend.compile(jitGraph);
+    avxBackend.compile(jit.getGraph());
 
     auto compileEnd = std::chrono::steady_clock::now();
     if (stats)
