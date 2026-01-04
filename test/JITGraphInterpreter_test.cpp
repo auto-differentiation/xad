@@ -43,7 +43,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_DOUBLE_EQ(5.0, output);
         jit.newRecording();
     }
@@ -57,7 +57,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_DOUBLE_EQ(2.0, output);
         jit.newRecording();
     }
@@ -71,7 +71,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_DOUBLE_EQ(12.0, output);
         jit.newRecording();
     }
@@ -85,7 +85,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_DOUBLE_EQ(4.0, output);
         jit.newRecording();
     }
@@ -104,7 +104,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_NEAR(std::sin(1.0), output, 1e-10);
         jit.newRecording();
     }
@@ -117,7 +117,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_NEAR(std::cos(1.0), output, 1e-10);
         jit.newRecording();
     }
@@ -130,7 +130,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_NEAR(std::exp(2.0), output, 1e-10);
         jit.newRecording();
     }
@@ -143,7 +143,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_NEAR(std::log(2.0), output, 1e-10);
         jit.newRecording();
     }
@@ -156,7 +156,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         jit.registerOutput(c);
         jit.compile();
         double output;
-        jit.forward(&output, 1);
+        jit.forward(&output);
         EXPECT_NEAR(2.0, output, 1e-10);
     }
 }
@@ -173,7 +173,7 @@ TEST(JITGraphInterpreter, executeNegation)
     jit.compile();
 
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(-5.0, output);
 }
 
@@ -194,7 +194,7 @@ TEST(JITGraphInterpreter, complexExpressionWorks)
     jit.compile();
 
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
 
     double expected = (2.0 * 2.0 + 3.0) * std::sin(2.0) / 3.0;
     EXPECT_NEAR(expected, output, 1e-10);

@@ -594,7 +594,7 @@ inline void mathTest_jit(double x, double yref, double dref, F func)
     // Test forward pass - update input value before forward
     value(x1) = x;
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
 
     // Test backward pass (adjoints)
@@ -624,7 +624,7 @@ inline void mathTest2_jit(double x1, double x2, double yref, double d1ref, doubl
     value(ax1) = x1;
     value(ax2) = x2;
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(yref, output) << "jit forward, yref";
 
     // Test backward pass

@@ -126,7 +126,7 @@ TEST(JITCompiler, canSetBackend)
     jit.compile();
 
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(6.0, output);
 
     // Replace backend with a new interpreter
@@ -134,7 +134,7 @@ TEST(JITCompiler, canSetBackend)
 
     // After setBackend, need to recompile since backend was reset
     jit.compile();
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(6.0, output);
 }
 
@@ -155,7 +155,7 @@ TEST(JITCompiler, constructorWithExplicitBackend)
     jit.compile();
 
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(5.0, output);
 }
 
@@ -193,7 +193,7 @@ TEST(JITCompiler, forwardProducesCorrectValues)
     jit.compile();
 
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(8.0, output);
 }
 
@@ -466,7 +466,7 @@ TEST(JITCompiler, floatScalarOperations)
     jit.compile();
 
     double output;  // JIT always uses double internally
-    jit.forward(&output, 1);
+    jit.forward(&output);
 
     EXPECT_DOUBLE_EQ(6.0, output);
 }
