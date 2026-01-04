@@ -39,30 +39,33 @@ namespace xad
 class JITGraphInterpreter : public JITBackend
 {
   public:
+    static constexpr std::size_t VECTOR_WIDTH = 1;  // Scalar interpreter
+
     JITGraphInterpreter();
     ~JITGraphInterpreter() override;
 
+    //=========================================================================
+    // JITBackend interface
+    //=========================================================================
+
     void compile(const JITGraph& graph) override;
-
-    void forward(const JITGraph& graph,
-                 const double* inputs, std::size_t numInputs,
-                 double* outputs, std::size_t numOutputs) override;
-
-    void forwardAndBackward(const JITGraph& graph,
-                            const double* inputs, std::size_t numInputs,
-                            const double* outputAdjoints, std::size_t numOutputs,
-                            double* outputs,
-                            double* inputAdjoints) override;
-
     void reset() override;
+
+    std::size_t vectorWidth() const override { return VECTOR_WIDTH; }
+    std::size_t numInputs() const override;
+    std::size_t numOutputs() const override;
+
+    void setInput(std::size_t inputIndex, const double* values) override;
+    void forward(double* outputs) override;
+    void forwardAndBackward(double* outputs, double* inputGradients) override;
 
   private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 
     static double invSqrtPi();
-    void evaluateNode(const JITGraph& graph, uint32_t nodeId);
-    void propagateAdjoint(const JITGraph& graph, uint32_t nodeId);
+    void evaluateNode(uint32_t nodeId);
+    void propagateAdjoint(uint32_t nodeId);
 };
 
 }  // namespace xad

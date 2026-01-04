@@ -216,60 +216,87 @@ class JITCompiler
 
     uint32_t recordConstant(double value) { return graph_.addConstant(value); }
 
+    //=========================================================================
+    // Compilation
+    //=========================================================================
+
     /**
-     * Compile the recorded graph to native code.
-     * Must be called after recording and before forward().
+     * Compile the recorded graph.
+     * Must be called after recording and before execution methods.
      */
     void compile() { backend_->compile(graph_); }
 
+    //=========================================================================
+    // Query (delegates to backend)
+    //=========================================================================
+
+    /// Get the vector width from the backend (1 for scalar, 4 for AVX2, etc.)
+    std::size_t vectorWidth() const { return backend_->vectorWidth(); }
+
+    /// Get the number of inputs in the compiled graph
+    std::size_t numInputs() const { return backend_->numInputs(); }
+
+    /// Get the number of outputs in the compiled graph
+    std::size_t numOutputs() const { return backend_->numOutputs(); }
+
+    //=========================================================================
+    // Execution API
+    //=========================================================================
+
     /**
-     * Execute the compiled kernel with current input values.
-     * compile() must be called before the first forward() call.
+     * Set input values.
+     * @param inputIndex Index of the input (0 to numInputs()-1).
+     * @param values Array of vectorWidth() doubles. For scalar backends,
+     *        pass a pointer to a single double.
      */
-    void forward(double* outputs, std::size_t numOutputs)
+    void setInput(std::size_t inputIndex, const double* values)
     {
-        if (numOutputs != graph_.output_ids.size())
-            throw OutOfRange("Output count mismatch");
-
-        std::size_t numInputs = graph_.input_ids.size();
-        std::vector<double> inputs(numInputs);
-        for (std::size_t i = 0; i < numInputs; ++i)
-            inputs[i] = *inputValues_[i];
-
-        backend_->forward(graph_, inputs.data(), numInputs, outputs, numOutputs);
+        backend_->setInput(inputIndex, values);
     }
 
     /**
-     * Compute adjoints (gradients) using reverse-mode AD.
-     * compile() must be called before this.
+     * Execute forward pass only.
+     * @param outputs Array of numOutputs() * vectorWidth() doubles.
+     */
+    void forward(double* outputs)
+    {
+        backend_->forward(outputs);
+    }
+
+    /**
+     * Execute forward and backward passes combined.
+     * @param outputs Array of numOutputs() * vectorWidth() doubles.
+     * @param inputGradients Array of numInputs() * vectorWidth() doubles.
+     */
+    void forwardAndBackward(double* outputs, double* inputGradients)
+    {
+        backend_->forwardAndBackward(outputs, inputGradients);
+    }
+
+    /**
+     * Compute adjoints using registered input pointers and derivative storage.
+     * Convenience method that uses the registered input pointers.
      */
     void computeAdjoints()
     {
+        std::size_t nInputs = graph_.input_ids.size();
+        std::size_t nOutputs = graph_.output_ids.size();
 
-        std::size_t numInputs = graph_.input_ids.size();
-        std::size_t numOutputs = graph_.output_ids.size();
-
-        std::vector<double> inputs(numInputs);
-        for (std::size_t i = 0; i < numInputs; ++i)
-            inputs[i] = *inputValues_[i];
-
-        std::vector<double> outputAdjoints(numOutputs, 0.0);
-        for (std::size_t i = 0; i < numOutputs; ++i)
+        // Set inputs from registered pointers
+        for (std::size_t i = 0; i < inputValues_.size(); ++i)
         {
-            uint32_t outId = graph_.output_ids[i];
-            if (outId < derivatives_.size())
-                outputAdjoints[i] = derivatives_[outId];
+            double value = *inputValues_[i];
+            backend_->setInput(i, &value);
         }
 
-        std::vector<double> outputs(numOutputs);
-        std::vector<double> inputAdjoints(numInputs);
-        backend_->forwardAndBackward(graph_, inputs.data(), numInputs,
-                                     outputAdjoints.data(), numOutputs,
-                                     outputs.data(), inputAdjoints.data());
+        std::vector<double> outputs(nOutputs);
+        std::vector<double> inputGradients(nInputs);
+        backend_->forwardAndBackward(outputs.data(), inputGradients.data());
 
+        // Store gradients in derivatives_ array
         derivatives_.resize(graph_.nodeCount(), derivative_type());
-        for (std::size_t i = 0; i < numInputs; ++i)
-            derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputAdjoints[i]);
+        for (std::size_t i = 0; i < nInputs; ++i)
+            derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputGradients[i]);
     }
 
     derivative_type& derivative(slot_type s)

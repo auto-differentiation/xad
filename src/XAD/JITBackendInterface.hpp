@@ -39,7 +39,17 @@ namespace xad
  *
  * This interface allows plugging in different execution backends for the
  * JIT-compiled computation graphs. Backends can range from simple interpreters
- * to native code generators or GPU executors.
+ * to native code generators (e.g., Forge) or GPU executors.
+ *
+ * ## Batch Evaluation Support
+ *
+ * Some backends support evaluating multiple input sets in a single call for
+ * better performance (e.g., via SIMD vectorization). The vectorWidth() method
+ * returns how many evaluations the backend performs per execution:
+ * - Scalar backends return 1
+ * - SIMD backends return the number of parallel evaluations (e.g., 4 for AVX2)
+ *
+ * All input/output arrays are sized as count * vectorWidth() elements.
  *
  * ## Implementing a Custom Backend
  *
@@ -50,17 +60,22 @@ namespace xad
  *    - Translate JITGraph opcodes to your target representation
  *    - Perform optimizations (CSE, constant folding, etc.)
  *    - Generate native code or prepare execution structures
+ *    - Store the graph reference for subsequent execution
  *
- * 2. **forward()**: Execute the forward pass only. Read input values, evaluate
- *    the graph, and write output values. Called for value-only evaluation.
+ * 2. **vectorWidth()**: Return the number of parallel evaluations (1 for scalar)
  *
- * 3. **forwardAndBackward()**: Execute both forward and backward (adjoint) passes.
- *    This combined method allows backends to optimize by:
- *    - Reusing intermediate values from forward pass in backward pass
- *    - Fusing operations across both passes
- *    - Avoiding redundant memory allocations
+ * 3. **numInputs()** / **numOutputs()**: Return counts from compiled graph
  *
- * 4. **reset()**: Clear any compiled state. Called when the graph is cleared
+ * 4. **setInput()**: Set input values before execution. Called once per
+ *    input, with vectorWidth() values per call.
+ *
+ * 5. **forward()**: Execute forward pass only. Writes vectorWidth() values
+ *    per output.
+ *
+ * 6. **forwardAndBackward()**: Execute both forward and backward passes in
+ *    one call. Returns both outputs and input gradients.
+ *
+ * 7. **reset()**: Clear any compiled state. Called when the graph is cleared
  *    or recompiled.
  *
  * ## Example Usage
@@ -69,14 +84,22 @@ namespace xad
  * class MyBackend : public xad::JITBackend {
  * public:
  *     void compile(const JITGraph& graph) override { ... }
- *     void forward(...) override { ... }
- *     void forwardAndBackward(...) override { ... }
+ *     std::size_t vectorWidth() const override { return 1; }
+ *     std::size_t numInputs() const override { return graph_->input_ids.size(); }
+ *     std::size_t numOutputs() const override { return graph_->output_ids.size(); }
+ *     void setInput(std::size_t idx, const double* v) override { ... }
+ *     void forward(double* outputs) override { ... }
+ *     void forwardAndBackward(double* outputs, double* grads) override { ... }
  *     void reset() override { ... }
  * };
  *
  * // Use with JITCompiler:
- * auto backend = std::unique_ptr<JITBackend>(new MyBackend());
- * xad::JITCompiler<double> jit(std::move(backend));
+ * xad::JITCompiler<double> jit;
+ * // ... record graph ...
+ * jit.setBackend(std::make_unique<MyBackend>());
+ * jit.compile();
+ * jit.setInput(0, inputValues);
+ * jit.forwardAndBackward(outputs, gradients);
  * @endcode
  *
  * ## Reference Implementation
@@ -89,48 +112,19 @@ class JITBackend
   public:
     virtual ~JITBackend() = default;
 
+    //=========================================================================
+    // Compilation
+    //=========================================================================
+
     /**
      * @brief Compile the computation graph for execution.
      * @param graph The recorded computation graph to compile.
      *
      * Called once after graph recording is complete. Implementations should
-     * prepare any necessary data structures or generate code for subsequent
-     * forward() and forwardAndBackward() calls.
+     * store the graph reference and prepare any necessary data structures
+     * or generate code for subsequent execution calls.
      */
     virtual void compile(const JITGraph& graph) = 0;
-
-    /**
-     * @brief Execute forward pass only (compute outputs from inputs).
-     * @param graph The computation graph.
-     * @param inputs Pointer to input values array.
-     * @param numInputs Number of input values (must match graph.input_ids.size()).
-     * @param outputs Pointer to output values array (caller-allocated).
-     * @param numOutputs Number of output values (must match graph.output_ids.size()).
-     */
-    virtual void forward(const JITGraph& graph,
-                         const double* inputs, std::size_t numInputs,
-                         double* outputs, std::size_t numOutputs) = 0;
-
-    /**
-     * @brief Execute combined forward and backward (adjoint) passes.
-     * @param graph The computation graph.
-     * @param inputs Pointer to input values array.
-     * @param numInputs Number of input values.
-     * @param outputAdjoints Pointer to output adjoint (gradient) seeds.
-     * @param numOutputs Number of outputs.
-     * @param outputs Pointer to output values array (caller-allocated).
-     * @param inputAdjoints Pointer to input adjoints array (caller-allocated).
-     *
-     * This combined method enables backends to optimize the forward+backward
-     * computation, for example by reusing intermediate values or fusing
-     * operations. The backward pass computes gradients of outputs with respect
-     * to inputs using reverse-mode automatic differentiation.
-     */
-    virtual void forwardAndBackward(const JITGraph& graph,
-                                    const double* inputs, std::size_t numInputs,
-                                    const double* outputAdjoints, std::size_t numOutputs,
-                                    double* outputs,
-                                    double* inputAdjoints) = 0;
 
     /**
      * @brief Reset/clear any compiled state.
@@ -139,6 +133,71 @@ class JITBackend
      * should release any resources allocated during compile().
      */
     virtual void reset() = 0;
+
+    //=========================================================================
+    // Query
+    //=========================================================================
+
+    /**
+     * @brief Get the number of parallel evaluations per execution.
+     * @return 1 for scalar backends, or higher for SIMD backends (e.g., 4 for AVX2).
+     */
+    virtual std::size_t vectorWidth() const = 0;
+
+    /**
+     * @brief Get the number of inputs in the compiled graph.
+     * @return Number of inputs.
+     */
+    virtual std::size_t numInputs() const = 0;
+
+    /**
+     * @brief Get the number of outputs in the compiled graph.
+     * @return Number of outputs.
+     */
+    virtual std::size_t numOutputs() const = 0;
+
+    //=========================================================================
+    // Execution
+    //=========================================================================
+
+    /**
+     * @brief Set input values for an input variable.
+     * @param inputIndex Index of the input (0 to numInputs()-1).
+     * @param values Array of vectorWidth() doubles containing the input values.
+     *
+     * Must be called for each input before forward() or forwardAndBackward().
+     * For scalar backends (vectorWidth() == 1), pass a pointer to a single double.
+     * For SIMD backends, pass an array with vectorWidth() values for parallel evaluation.
+     */
+    virtual void setInput(std::size_t inputIndex, const double* values) = 0;
+
+    /**
+     * @brief Execute forward pass only.
+     * @param outputs Array of numOutputs() * vectorWidth() doubles.
+     *        Layout: [out0_v0, out0_v1, ..., out1_v0, out1_v1, ...]
+     *        where v0, v1, ... are the parallel evaluations.
+     *
+     * Computes output values from the previously set input values.
+     */
+    virtual void forward(double* outputs) = 0;
+
+    /**
+     * @brief Execute combined forward and backward passes.
+     * @param outputs Array of numOutputs() * vectorWidth() doubles.
+     *        Layout: [out0_v0, out0_v1, ..., out1_v0, out1_v1, ...]
+     * @param inputGradients Array of numInputs() * vectorWidth() doubles.
+     *        Layout: [in0_v0, in0_v1, ..., in1_v0, in1_v1, ...]
+     *        where v0, v1, ... are the parallel evaluations.
+     *
+     * Computes both output values and input gradients in a single pass.
+     * This combined method enables backends to optimize by reusing
+     * intermediate values from the forward pass in the backward pass.
+     *
+     * The backward pass computes gradients of outputs with respect to inputs
+     * using reverse-mode automatic differentiation. Output adjoints are
+     * implicitly seeded to 1.0.
+     */
+    virtual void forwardAndBackward(double* outputs, double* inputGradients) = 0;
 };
 
 }  // namespace xad

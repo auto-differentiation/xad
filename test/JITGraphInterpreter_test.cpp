@@ -238,8 +238,9 @@ TEST(JITGraphInterpreter, squareOpCode)
     interp.compile(graph);
 
     double input = 3.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
 
     EXPECT_DOUBLE_EQ(9.0, output);
 }
@@ -255,10 +256,10 @@ TEST(JITGraphInterpreter, squareAdjoint)
     interp.compile(graph);
 
     double input = 3.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     // d(x^2)/dx = 2x = 6
     EXPECT_DOUBLE_EQ(9.0, output);
@@ -276,8 +277,9 @@ TEST(JITGraphInterpreter, recipOpCode)
     interp.compile(graph);
 
     double input = 4.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
 
     EXPECT_DOUBLE_EQ(0.25, output);
 }
@@ -293,10 +295,10 @@ TEST(JITGraphInterpreter, recipAdjoint)
     interp.compile(graph);
 
     double input = 2.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     // d(1/x)/dx = -1/x^2 = -1/4 = -0.25
     EXPECT_DOUBLE_EQ(0.5, output);
@@ -316,8 +318,9 @@ TEST(JITGraphInterpreter, smoothAbsOpCode)
 
     // Test in the smooth region (|x| < c)
     double input = 0.3;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
 
     // For x > 0 and |x| < c: x^2 * (2/c - x/c^2)
     double c_val = 0.5;
@@ -326,7 +329,8 @@ TEST(JITGraphInterpreter, smoothAbsOpCode)
 
     // Test outside smooth region (|x| > c)
     input = 1.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(1.0, output);  // Should be |x|
 }
 
@@ -343,8 +347,9 @@ TEST(JITGraphInterpreter, smoothAbsNegative)
 
     // Test negative value in smooth region
     double input = -0.3;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
 
     // For x < 0 and |x| < c: x^2 * (2/c + x/c^2)
     double c_val = 0.5;
@@ -353,7 +358,8 @@ TEST(JITGraphInterpreter, smoothAbsNegative)
 
     // Test negative outside smooth region
     input = -1.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(1.0, output);  // Should be |x|
 }
 
@@ -370,10 +376,10 @@ TEST(JITGraphInterpreter, smoothAbsAdjoint)
 
     // Test adjoint in smooth region (positive x)
     double input = 0.3;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     // For positive x in smooth region: derivative is -x/(c^2) * (3x - 4c)
     double c_val = 0.5;
@@ -382,7 +388,8 @@ TEST(JITGraphInterpreter, smoothAbsAdjoint)
 
     // Test adjoint in smooth region (negative x)
     input = -0.3;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.setInput(0, &input);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     // For negative x in smooth region: derivative is x/(c^2) * (3x + 4c)
     expected_deriv = input / (c_val * c_val) * (3.0 * input + 4.0 * c_val);
@@ -390,12 +397,14 @@ TEST(JITGraphInterpreter, smoothAbsAdjoint)
 
     // Test adjoint outside smooth region (positive)
     input = 1.0;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.setInput(0, &input);
+    interp.forwardAndBackward(&output, &inputAdjoint);
     EXPECT_DOUBLE_EQ(1.0, inputAdjoint);  // d|x|/dx = 1 for x > 0
 
     // Test adjoint outside smooth region (negative)
     input = -1.0;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.setInput(0, &input);
+    interp.forwardAndBackward(&output, &inputAdjoint);
     EXPECT_DOUBLE_EQ(-1.0, inputAdjoint);  // d|x|/dx = -1 for x < 0
 }
 
@@ -415,12 +424,14 @@ TEST(JITGraphInterpreter, cmpLTOpCode)
     interp.compile(graph);
 
     double input = 3.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(1.0, output);  // 3 < 5 is true
 
     input = 7.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(0.0, output);  // 7 < 5 is false
 }
 
@@ -436,12 +447,14 @@ TEST(JITGraphInterpreter, cmpLEOpCode)
     interp.compile(graph);
 
     double input = 5.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(1.0, output);  // 5 <= 5 is true
 
     input = 6.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(0.0, output);  // 6 <= 5 is false
 }
 
@@ -457,12 +470,14 @@ TEST(JITGraphInterpreter, cmpGTOpCode)
     interp.compile(graph);
 
     double input = 7.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(1.0, output);  // 7 > 5 is true
 
     input = 3.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(0.0, output);  // 3 > 5 is false
 }
 
@@ -478,12 +493,14 @@ TEST(JITGraphInterpreter, cmpGEOpCode)
     interp.compile(graph);
 
     double input = 5.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(1.0, output);  // 5 >= 5 is true
 
     input = 4.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(0.0, output);  // 4 >= 5 is false
 }
 
@@ -499,12 +516,14 @@ TEST(JITGraphInterpreter, cmpEQOpCode)
     interp.compile(graph);
 
     double input = 5.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(1.0, output);  // 5 == 5 is true
 
     input = 4.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(0.0, output);  // 4 == 5 is false
 }
 
@@ -520,12 +539,14 @@ TEST(JITGraphInterpreter, cmpNEOpCode)
     interp.compile(graph);
 
     double input = 4.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(1.0, output);  // 4 != 5 is true
 
     input = 5.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(0.0, output);  // 5 != 5 is false
 }
 
@@ -545,10 +566,10 @@ TEST(JITGraphInterpreter, cmpLTAdjoint)
     interp.compile(graph);
 
     double input = 3.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(1.0, output);   // 3 < 5 is true
     EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
@@ -566,10 +587,10 @@ TEST(JITGraphInterpreter, cmpLEAdjoint)
     interp.compile(graph);
 
     double input = 5.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(1.0, output);   // 5 <= 5 is true
     EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
@@ -587,10 +608,10 @@ TEST(JITGraphInterpreter, cmpGTAdjoint)
     interp.compile(graph);
 
     double input = 7.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(1.0, output);   // 7 > 5 is true
     EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
@@ -608,10 +629,10 @@ TEST(JITGraphInterpreter, cmpGEAdjoint)
     interp.compile(graph);
 
     double input = 5.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(1.0, output);   // 5 >= 5 is true
     EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
@@ -629,10 +650,10 @@ TEST(JITGraphInterpreter, cmpEQAdjoint)
     interp.compile(graph);
 
     double input = 5.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(1.0, output);   // 5 == 5 is true
     EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
@@ -650,10 +671,10 @@ TEST(JITGraphInterpreter, cmpNEAdjoint)
     interp.compile(graph);
 
     double input = 4.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(1.0, output);   // 4 != 5 is true
     EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
@@ -676,7 +697,7 @@ TEST(JITGraphInterpreter, ifOpCodeTrueBranch)
     interp.compile(graph);
 
     double output;
-    interp.forward(graph, nullptr, 0, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(10.0, output);  // condition is true, return trueVal
 }
 
@@ -693,7 +714,7 @@ TEST(JITGraphInterpreter, ifOpCodeFalseBranch)
     interp.compile(graph);
 
     double output;
-    interp.forward(graph, nullptr, 0, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(20.0, output);  // condition is false, return falseVal
 }
 
@@ -711,10 +732,10 @@ TEST(JITGraphInterpreter, ifOpCodeAdjointTrueBranch)
     interp.compile(graph);
 
     double input = 5.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(10.0, output);  // 2*5
     EXPECT_DOUBLE_EQ(2.0, inputAdjoint);  // d(2x)/dx = 2
@@ -734,10 +755,10 @@ TEST(JITGraphInterpreter, ifOpCodeAdjointFalseBranch)
     interp.compile(graph);
 
     double input = 5.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(15.0, output);  // 3*5
     EXPECT_DOUBLE_EQ(3.0, inputAdjoint);  // d(3x)/dx = 3
@@ -759,8 +780,9 @@ TEST(JITGraphInterpreter, modOpCode)
     interp.compile(graph);
 
     double input = 7.5;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(std::fmod(7.5, 3.0), output);
 }
 
@@ -776,10 +798,11 @@ TEST(JITGraphInterpreter, modAdjoint)
     interp.compile(graph);
 
     double inputs[2] = {7.5, 3.0};
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
     double output;
     double inputAdjoints[2];
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.forwardAndBackward(&output, inputAdjoints);
 
     // d(fmod(a,b))/da = 1, d(fmod(a,b))/db = -floor(a/b)
     EXPECT_DOUBLE_EQ(1.0, inputAdjoints[0]);
@@ -798,12 +821,14 @@ TEST(JITGraphInterpreter, copysignOpCode)
     interp.compile(graph);
 
     double input = 5.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(-5.0, output);  // copysign(5, -1) = -5
 
     input = -3.0;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(-3.0, output);  // copysign(-3, -1) = -3
 }
 
@@ -820,10 +845,11 @@ TEST(JITGraphInterpreter, copysignAdjoint)
 
     // Test with positive b
     double inputs[2] = {5.0, 1.0};
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
     double output;
     double inputAdjoints[2];
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.forwardAndBackward(&output, inputAdjoints);
 
     // d/da copysign(a, b) = sign(b) = 1
     EXPECT_DOUBLE_EQ(1.0, inputAdjoints[0]);
@@ -832,7 +858,8 @@ TEST(JITGraphInterpreter, copysignAdjoint)
 
     // Test with negative b
     inputs[1] = -1.0;
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.setInput(1, &inputs[1]);
+    interp.forwardAndBackward(&output, inputAdjoints);
     EXPECT_DOUBLE_EQ(-1.0, inputAdjoints[0]);  // sign(b) = -1
 }
 
@@ -847,8 +874,9 @@ TEST(JITGraphInterpreter, frexpOpCode)
     interp.compile(graph);
 
     double input = 8.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
 
     int exp;
     double expected = std::frexp(8.0, &exp);
@@ -866,10 +894,10 @@ TEST(JITGraphInterpreter, frexpAdjoint)
     interp.compile(graph);
 
     double input = 8.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     // Derivative of frexp mantissa is 1 / 2^exp
     int exp;
@@ -888,8 +916,9 @@ TEST(JITGraphInterpreter, modfOpCode)
     interp.compile(graph);
 
     double input = 3.75;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
 
     double intpart;
     double expected = std::modf(3.75, &intpart);
@@ -907,10 +936,10 @@ TEST(JITGraphInterpreter, modfAdjoint)
     interp.compile(graph);
 
     double input = 3.75;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     // Derivative of fractional part is 1
     EXPECT_DOUBLE_EQ(1.0, inputAdjoint);
@@ -928,8 +957,9 @@ TEST(JITGraphInterpreter, remquoOpCode)
     interp.compile(graph);
 
     double input = 7.5;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
 
     int quo;
     double expected = std::remquo(7.5, 3.0, &quo);
@@ -948,10 +978,11 @@ TEST(JITGraphInterpreter, remquoAdjoint)
     interp.compile(graph);
 
     double inputs[2] = {7.5, 3.0};
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
     double output;
     double inputAdjoints[2];
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.forwardAndBackward(&output, inputAdjoints);
 
     int quo;
     const double rem = std::remquo(7.5, 3.0, &quo);
@@ -975,10 +1006,11 @@ TEST(JITGraphInterpreter, smoothAbsCDerivative)
 
     // Test in smooth region (positive x)
     double inputs[2] = {0.3, 0.5};
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
     double output;
     double inputAdjoints[2];
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.forwardAndBackward(&output, inputAdjoints);
 
     // dc derivative for positive x in smooth region: -2*x^2*(c-x)/(c^3)
     double x_val = 0.3, c_val = 0.5;
@@ -987,7 +1019,8 @@ TEST(JITGraphInterpreter, smoothAbsCDerivative)
 
     // Test in smooth region (negative x)
     inputs[0] = -0.3;
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.setInput(0, &inputs[0]);
+    interp.forwardAndBackward(&output, inputAdjoints);
 
     // dc derivative for negative x in smooth region: -2*x^2*(c+x)/(c^3)
     x_val = -0.3;
@@ -996,7 +1029,8 @@ TEST(JITGraphInterpreter, smoothAbsCDerivative)
 
     // Test outside smooth region - dc should be 0
     inputs[0] = 1.0;  // |x| > c
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.setInput(0, &inputs[0]);
+    interp.forwardAndBackward(&output, inputAdjoints);
     EXPECT_DOUBLE_EQ(0.0, inputAdjoints[1]);
 }
 
@@ -1013,10 +1047,11 @@ TEST(JITGraphInterpreter, minEqualValues)
     interp.compile(graph);
 
     double inputs[2] = {5.0, 5.0};  // Equal values
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
     double output;
     double inputAdjoints[2];
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.forwardAndBackward(&output, inputAdjoints);
 
     EXPECT_DOUBLE_EQ(5.0, output);
     EXPECT_DOUBLE_EQ(0.5, inputAdjoints[0]);  // Split 50/50
@@ -1036,10 +1071,11 @@ TEST(JITGraphInterpreter, maxEqualValues)
     interp.compile(graph);
 
     double inputs[2] = {5.0, 5.0};  // Equal values
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
     double output;
     double inputAdjoints[2];
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.forwardAndBackward(&output, inputAdjoints);
 
     EXPECT_DOUBLE_EQ(5.0, output);
     EXPECT_DOUBLE_EQ(0.5, inputAdjoints[0]);  // Split 50/50
@@ -1058,10 +1094,10 @@ TEST(JITGraphInterpreter, ldexpAdjoint)
     interp.compile(graph);
 
     double input = 2.0;
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &input);
     double output;
     double inputAdjoint;
-    interp.forwardAndBackward(graph, &input, 1, &outputAdjoint, 1, &output, &inputAdjoint);
+    interp.forwardAndBackward(&output, &inputAdjoint);
 
     EXPECT_DOUBLE_EQ(16.0, output);  // 2 * 2^3 = 16
     EXPECT_DOUBLE_EQ(8.0, inputAdjoint);  // d(a*8)/da = 8
@@ -1080,10 +1116,11 @@ TEST(JITGraphInterpreter, powAdjointWithZeroBase)
     interp.compile(graph);
 
     double inputs[2] = {2.0, 3.0};  // 2^3 = 8
-    double outputAdjoint = 1.0;
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
     double output;
     double inputAdjoints[2];
-    interp.forwardAndBackward(graph, inputs, 2, &outputAdjoint, 1, &output, inputAdjoints);
+    interp.forwardAndBackward(&output, inputAdjoints);
 
     // d(a^b)/da = b * a^(b-1) = 3 * 4 = 12
     EXPECT_DOUBLE_EQ(12.0, inputAdjoints[0]);
@@ -1102,18 +1139,35 @@ TEST(JITGraphInterpreter, reset)
     interp.compile(graph);
 
     double input = 5.0;
+    interp.setInput(0, &input);
     double output;
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(-5.0, output);
 
     // Reset and verify we can still use it after recompiling
     interp.reset();
     interp.compile(graph);
-    interp.forward(graph, &input, 1, &output, 1);
+    interp.setInput(0, &input);
+    interp.forward(&output);
     EXPECT_DOUBLE_EQ(-5.0, output);
 }
 
-TEST(JITGraphInterpreter, forwardInputCountMismatch)
+TEST(JITGraphInterpreter, setInputOutOfRange)
+{
+    xad::JITGraph graph;
+    graph.addInput();
+    uint32_t c = graph.addConstant(1.0);
+    graph.markOutput(c);
+
+    xad::JITGraphInterpreter interp;
+    interp.compile(graph);
+
+    double input = 5.0;
+    // Graph has 1 input but we try to set input at index 1
+    EXPECT_THROW(interp.setInput(1, &input), std::runtime_error);
+}
+
+TEST(JITGraphInterpreter, queryMethods)
 {
     xad::JITGraph graph;
     graph.addInput();
@@ -1124,25 +1178,9 @@ TEST(JITGraphInterpreter, forwardInputCountMismatch)
     xad::JITGraphInterpreter interp;
     interp.compile(graph);
 
-    double input = 5.0;
-    double output;
-    // Graph expects 2 inputs but we provide 1
-    EXPECT_THROW(interp.forward(graph, &input, 1, &output, 1), std::runtime_error);
-}
-
-TEST(JITGraphInterpreter, forwardOutputCountMismatch)
-{
-    xad::JITGraph graph;
-    uint32_t inp = graph.addInput();
-    graph.markOutput(inp);
-
-    xad::JITGraphInterpreter interp;
-    interp.compile(graph);
-
-    double input = 5.0;
-    double outputs[2];
-    // Graph has 1 output but we request 2
-    EXPECT_THROW(interp.forward(graph, &input, 1, outputs, 2), std::runtime_error);
+    EXPECT_EQ(1u, interp.vectorWidth());
+    EXPECT_EQ(2u, interp.numInputs());
+    EXPECT_EQ(1u, interp.numOutputs());
 }
 
 

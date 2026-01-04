@@ -115,10 +115,8 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
     constexpr int LANES = xad::forge::ForgeBackend::VECTOR_WIDTH;
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
 
-    double inputLanes[LANES];
-    double outputAdjoints[LANES] = {1.0};
-    double outputs[LANES];
-    std::vector<std::array<double, LANES>> inputGradients(numInputs);
+    double output;
+    std::vector<double> inputGradients(numInputs * LANES);
 
     double setInputsTotal = 0.0;
     double forwardBackwardTotal = 0.0;
@@ -131,29 +129,29 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
         auto setStart = std::chrono::steady_clock::now();
 
         // delta
-        inputLanes[0] = market.delta;
-        backend.setInputLanes(0, inputLanes);
+        double deltaVal = market.delta;
+        backend.setInput(0, &deltaVal);
 
         // lambda
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
-            inputLanes[0] = market.lambda[i];
-            backend.setInputLanes(1 + i, inputLanes);
+            double lambdaVal = market.lambda[i];
+            backend.setInput(1 + i, &lambdaVal);
         }
 
         // L0
         for (size_t i = 0; i < market.L0.size(); ++i)
         {
-            inputLanes[0] = market.L0[i];
-            backend.setInputLanes(1 + market.lambda.size() + i, inputLanes);
+            double L0Val = market.L0[i];
+            backend.setInput(1 + market.lambda.size() + i, &L0Val);
         }
 
         // samples
         size_t sampleOffset = 1 + market.lambda.size() + market.L0.size();
         for (size_t i = 0; i < numSamples; ++i)
         {
-            inputLanes[0] = allSamples[path][i];
-            backend.setInputLanes(sampleOffset + i, inputLanes);
+            double sampleVal = allSamples[path][i];
+            backend.setInput(sampleOffset + i, &sampleVal);
         }
 
         auto setEnd = std::chrono::steady_clock::now();
@@ -161,7 +159,7 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
 
         // Forward + backward (combined)
         auto fwdBwdStart = std::chrono::steady_clock::now();
-        backend.forwardAndBackward(outputAdjoints, outputs, inputGradients);
+        backend.forwardAndBackward(&output, inputGradients.data());
         auto fwdBwdEnd = std::chrono::steady_clock::now();
         forwardBackwardTotal += std::chrono::duration<double, std::milli>(fwdBwdEnd - fwdBwdStart).count();
 
@@ -172,12 +170,12 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
 
         // Accumulate
         auto accStart = std::chrono::steady_clock::now();
-        res.price += outputs[0];
-        res.d_delta += inputGradients[0][0];
+        res.price += output;
+        res.d_delta += inputGradients[0];
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
-            res.d_lambda[i] += inputGradients[1 + i][0];
-            res.d_L0[i] += inputGradients[1 + market.lambda.size() + i][0];
+            res.d_lambda[i] += inputGradients[1 + i];
+            res.d_L0[i] += inputGradients[1 + market.lambda.size() + i];
         }
         auto accEnd = std::chrono::steady_clock::now();
         accumulateTotal += std::chrono::duration<double, std::milli>(accEnd - accStart).count();
@@ -272,8 +270,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
 
     std::vector<double> inputBatch(BATCH_SIZE);
     std::vector<double> outputBatch(BATCH_SIZE);
-    std::vector<double> adjointBatch(BATCH_SIZE, 1.0);
-    std::vector<std::array<double, BATCH_SIZE>> inputGradients(numInputs);
+    std::vector<double> inputGradients(numInputs * BATCH_SIZE);
 
     double setInputsTotal = 0.0;
     double forwardBackwardTotal = 0.0;  // AVX does forward+backward together
@@ -290,20 +287,20 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
 
         for (int lane = 0; lane < BATCH_SIZE; ++lane)
             inputBatch[lane] = market.delta;
-        avxBackend.setInputLanes(0, inputBatch.data());
+        avxBackend.setInput(0, inputBatch.data());
 
         for (size_t k = 0; k < market.lambda.size(); ++k)
         {
             for (int lane = 0; lane < BATCH_SIZE; ++lane)
                 inputBatch[lane] = market.lambda[k];
-            avxBackend.setInputLanes(1 + k, inputBatch.data());
+            avxBackend.setInput(1 + k, inputBatch.data());
         }
 
         for (size_t k = 0; k < market.L0.size(); ++k)
         {
             for (int lane = 0; lane < BATCH_SIZE; ++lane)
                 inputBatch[lane] = market.L0[k];
-            avxBackend.setInputLanes(1 + market.lambda.size() + k, inputBatch.data());
+            avxBackend.setInput(1 + market.lambda.size() + k, inputBatch.data());
         }
 
         size_t sampleOffset = 1 + market.lambda.size() + market.L0.size();
@@ -314,7 +311,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
                 int pathIdx = batchStart + lane;
                 inputBatch[lane] = (pathIdx < numPaths) ? allSamples[pathIdx][m] : 0.0;
             }
-            avxBackend.setInputLanes(sampleOffset + m, inputBatch.data());
+            avxBackend.setInput(sampleOffset + m, inputBatch.data());
         }
 
         auto setEnd = std::chrono::steady_clock::now();
@@ -322,7 +319,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
 
         // Forward + Backward (combined in AVX backend)
         auto fwdBwdStart = std::chrono::steady_clock::now();
-        avxBackend.forwardAndBackward(adjointBatch.data(), outputBatch.data(), inputGradients);
+        avxBackend.forwardAndBackward(outputBatch.data(), inputGradients.data());
         auto fwdBwdEnd = std::chrono::steady_clock::now();
         forwardBackwardTotal += std::chrono::duration<double, std::milli>(fwdBwdEnd - fwdBwdStart).count();
 
@@ -332,18 +329,18 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
         auto getEnd = std::chrono::steady_clock::now();
         getGradientsTotal += std::chrono::duration<double, std::milli>(getEnd - getStart).count();
 
-        // Accumulate
+        // Accumulate (inputGradients is now flat: [input0_lane0, input0_lane1, ..., input1_lane0, ...])
         auto accStart = std::chrono::steady_clock::now();
         for (int lane = 0; lane < actualBatchSize; ++lane)
         {
             res.price += outputBatch[lane];
-            res.d_delta += inputGradients[0][lane];
+            res.d_delta += inputGradients[0 * BATCH_SIZE + lane];
 
             for (size_t k = 0; k < market.lambda.size(); ++k)
-                res.d_lambda[k] += inputGradients[1 + k][lane];
+                res.d_lambda[k] += inputGradients[(1 + k) * BATCH_SIZE + lane];
 
             for (size_t k = 0; k < market.L0.size(); ++k)
-                res.d_L0[k] += inputGradients[1 + market.lambda.size() + k][lane];
+                res.d_L0[k] += inputGradients[(1 + market.lambda.size() + k) * BATCH_SIZE + lane];
         }
         auto accEnd = std::chrono::steady_clock::now();
         accumulateTotal += std::chrono::duration<double, std::milli>(accEnd - accStart).count();
@@ -454,49 +451,47 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     constexpr int LANES = xad::forge::ForgeBackend::VECTOR_WIDTH;
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
 
-    double inputLanes[LANES];
-    double outputAdjoints[LANES] = {1.0};
-    double outputs[LANES];
-    std::vector<std::array<double, LANES>> inputGradients(numInputs);
+    double output;
+    std::vector<double> inputGradients(numInputs * LANES);
 
     for (int path = 0; path < numPaths; ++path)
     {
         // Set delta
-        inputLanes[0] = market.delta;
-        backend.setInputLanes(0, inputLanes);
+        double deltaVal = market.delta;
+        backend.setInput(0, &deltaVal);
 
         // Set lambda
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
-            inputLanes[0] = market.lambda[i];
-            backend.setInputLanes(1 + i, inputLanes);
+            double lambdaVal = market.lambda[i];
+            backend.setInput(1 + i, &lambdaVal);
         }
 
         // Set L0
         for (size_t i = 0; i < market.L0.size(); ++i)
         {
-            inputLanes[0] = market.L0[i];
-            backend.setInputLanes(1 + market.lambda.size() + i, inputLanes);
+            double L0Val = market.L0[i];
+            backend.setInput(1 + market.lambda.size() + i, &L0Val);
         }
 
         // Set random samples for this path
         size_t sampleOffset = 1 + market.lambda.size() + market.L0.size();
         for (size_t i = 0; i < numSamples; ++i)
         {
-            inputLanes[0] = allSamples[path][i];
-            backend.setInputLanes(sampleOffset + i, inputLanes);
+            double sampleVal = allSamples[path][i];
+            backend.setInput(sampleOffset + i, &sampleVal);
         }
 
         // Forward + backward (combined)
-        backend.forwardAndBackward(outputAdjoints, outputs, inputGradients);
+        backend.forwardAndBackward(&output, inputGradients.data());
 
         // Accumulate results
-        res.price += outputs[0];
-        res.d_delta += inputGradients[0][0];
+        res.price += output;
+        res.d_delta += inputGradients[0];
         for (size_t i = 0; i < market.lambda.size(); ++i)
         {
-            res.d_lambda[i] += inputGradients[1 + i][0];
-            res.d_L0[i] += inputGradients[1 + market.lambda.size() + i][0];
+            res.d_lambda[i] += inputGradients[1 + i];
+            res.d_L0[i] += inputGradients[1 + market.lambda.size() + i];
         }
     }
 
@@ -599,8 +594,7 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
 
     std::vector<double> inputBatch(BATCH_SIZE);
     std::vector<double> outputBatch(BATCH_SIZE);
-    std::vector<double> adjointBatch(BATCH_SIZE, 1.0);
-    std::vector<std::array<double, BATCH_SIZE>> inputGradients(numInputs);
+    std::vector<double> inputGradients(numInputs * BATCH_SIZE);
 
     for (int batch = 0; batch < numBatches; ++batch)
     {
@@ -610,14 +604,14 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
         // Set delta (same for all paths)
         for (int lane = 0; lane < BATCH_SIZE; ++lane)
             inputBatch[lane] = market.delta;
-        avxBackend.setInputLanes(0, inputBatch.data());
+        avxBackend.setInput(0, inputBatch.data());
 
         // Set lambda (same for all paths)
         for (size_t k = 0; k < market.lambda.size(); ++k)
         {
             for (int lane = 0; lane < BATCH_SIZE; ++lane)
                 inputBatch[lane] = market.lambda[k];
-            avxBackend.setInputLanes(1 + k, inputBatch.data());
+            avxBackend.setInput(1 + k, inputBatch.data());
         }
 
         // Set L0 (same for all paths)
@@ -625,7 +619,7 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
         {
             for (int lane = 0; lane < BATCH_SIZE; ++lane)
                 inputBatch[lane] = market.L0[k];
-            avxBackend.setInputLanes(1 + market.lambda.size() + k, inputBatch.data());
+            avxBackend.setInput(1 + market.lambda.size() + k, inputBatch.data());
         }
 
         // Set random samples (different for each path in batch)
@@ -637,23 +631,23 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
                 int pathIdx = batchStart + lane;
                 inputBatch[lane] = (pathIdx < numPaths) ? allSamples[pathIdx][m] : 0.0;
             }
-            avxBackend.setInputLanes(sampleOffset + m, inputBatch.data());
+            avxBackend.setInput(sampleOffset + m, inputBatch.data());
         }
 
         // Execute forward + backward
-        avxBackend.forwardAndBackward(adjointBatch.data(), outputBatch.data(), inputGradients);
+        avxBackend.forwardAndBackward(outputBatch.data(), inputGradients.data());
 
-        // Accumulate results
+        // Accumulate results (inputGradients is flat: [input0_lane0, input0_lane1, ..., input1_lane0, ...])
         for (int lane = 0; lane < actualBatchSize; ++lane)
         {
             res.price += outputBatch[lane];
-            res.d_delta += inputGradients[0][lane];
+            res.d_delta += inputGradients[0 * BATCH_SIZE + lane];
 
             for (size_t k = 0; k < market.lambda.size(); ++k)
-                res.d_lambda[k] += inputGradients[1 + k][lane];
+                res.d_lambda[k] += inputGradients[(1 + k) * BATCH_SIZE + lane];
 
             for (size_t k = 0; k < market.L0.size(); ++k)
-                res.d_L0[k] += inputGradients[1 + market.lambda.size() + k][lane];
+                res.d_L0[k] += inputGradients[(1 + market.lambda.size() + k) * BATCH_SIZE + lane];
         }
     }
 

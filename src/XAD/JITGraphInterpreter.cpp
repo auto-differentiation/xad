@@ -44,8 +44,10 @@ namespace xad
 
 struct JITGraphInterpreter::Impl
 {
-    std::vector<double> nodeValues;
-    std::vector<double> nodeAdjoints;
+    const JITGraph* graph = nullptr;  // Stored from compile()
+    std::vector<double> inputValues;  // Current input values (set via setInput)
+    std::vector<double> nodeValues;   // Forward pass intermediate values
+    std::vector<double> nodeAdjoints; // Backward pass adjoints
 };
 
 JITGraphInterpreter::JITGraphInterpreter()
@@ -57,57 +59,82 @@ JITGraphInterpreter::~JITGraphInterpreter() = default;
 
 void JITGraphInterpreter::compile(const JITGraph& graph)
 {
+    impl_->graph = &graph;
+    impl_->inputValues.resize(graph.input_ids.size());
     impl_->nodeValues.resize(graph.nodeCount());
     impl_->nodeAdjoints.resize(graph.nodeCount());
 }
 
-void JITGraphInterpreter::forward(const JITGraph& graph,
-                                  const double* inputs, std::size_t numInputs,
-                                  double* outputs, std::size_t numOutputs)
+void JITGraphInterpreter::reset()
 {
-    if (numInputs != graph.input_ids.size())
-        throw std::runtime_error("Input count mismatch");
-    if (numOutputs != graph.output_ids.size())
-        throw std::runtime_error("Output count mismatch");
+    impl_->graph = nullptr;
+    impl_->inputValues.clear();
+    impl_->nodeValues.clear();
+    impl_->nodeAdjoints.clear();
+}
 
-    impl_->nodeValues.resize(graph.nodeCount());
+std::size_t JITGraphInterpreter::numInputs() const
+{
+    return impl_->graph ? impl_->graph->input_ids.size() : 0;
+}
 
-    for (std::size_t i = 0; i < numInputs; ++i)
-        impl_->nodeValues[graph.input_ids[i]] = inputs[i];
+std::size_t JITGraphInterpreter::numOutputs() const
+{
+    return impl_->graph ? impl_->graph->output_ids.size() : 0;
+}
 
+void JITGraphInterpreter::setInput(std::size_t inputIndex, const double* values)
+{
+    if (!impl_->graph)
+        throw std::runtime_error("Backend not compiled");
+    if (inputIndex >= impl_->graph->input_ids.size())
+        throw std::runtime_error("Input index out of range");
+
+    impl_->inputValues[inputIndex] = values[0];
+}
+
+void JITGraphInterpreter::forward(double* outputs)
+{
+    if (!impl_->graph)
+        throw std::runtime_error("Backend not compiled");
+
+    const JITGraph& graph = *impl_->graph;
+
+    // Load input values into node values
+    for (std::size_t i = 0; i < graph.input_ids.size(); ++i)
+        impl_->nodeValues[graph.input_ids[i]] = impl_->inputValues[i];
+
+    // Evaluate all nodes
     for (std::size_t i = 0; i < graph.nodeCount(); ++i)
-        evaluateNode(graph, static_cast<uint32_t>(i));
+        evaluateNode(static_cast<uint32_t>(i));
 
-    for (std::size_t i = 0; i < numOutputs; ++i)
+    // Collect outputs (scalar: 1 value per output)
+    for (std::size_t i = 0; i < graph.output_ids.size(); ++i)
         outputs[i] = impl_->nodeValues[graph.output_ids[i]];
 }
 
-void JITGraphInterpreter::forwardAndBackward(const JITGraph& graph,
-                                             const double* inputs, std::size_t numInputs,
-                                             const double* outputAdjoints, std::size_t numOutputs,
-                                             double* outputs,
-                                             double* inputAdjoints)
+void JITGraphInterpreter::forwardAndBackward(double* outputs, double* inputGradients)
 {
+    if (!impl_->graph)
+        throw std::runtime_error("Backend not compiled");
+
+    const JITGraph& graph = *impl_->graph;
+
     // Run forward pass
-    forward(graph, inputs, numInputs, outputs, numOutputs);
+    forward(outputs);
 
-    // Run backward pass
+    // Run backward pass - seed output adjoints to 1.0
     impl_->nodeAdjoints.assign(graph.nodeCount(), 0.0);
+    for (std::size_t i = 0; i < graph.output_ids.size(); ++i)
+        impl_->nodeAdjoints[graph.output_ids[i]] = 1.0;
 
-    for (std::size_t i = 0; i < numOutputs; ++i)
-        impl_->nodeAdjoints[graph.output_ids[i]] = outputAdjoints[i];
-
+    // Propagate adjoints backward
     for (std::size_t i = graph.nodeCount(); i > 0; --i)
-        propagateAdjoint(graph, static_cast<uint32_t>(i - 1));
+        propagateAdjoint(static_cast<uint32_t>(i - 1));
 
-    for (std::size_t i = 0; i < numInputs; ++i)
-        inputAdjoints[i] = impl_->nodeAdjoints[graph.input_ids[i]];
-}
-
-void JITGraphInterpreter::reset()
-{
-    impl_->nodeValues.clear();
-    impl_->nodeAdjoints.clear();
+    // Collect input gradients (scalar: 1 value per input)
+    for (std::size_t i = 0; i < graph.input_ids.size(); ++i)
+        inputGradients[i] = impl_->nodeAdjoints[graph.input_ids[i]];
 }
 
 double JITGraphInterpreter::invSqrtPi()
@@ -115,8 +142,9 @@ double JITGraphInterpreter::invSqrtPi()
     return 2.0 / std::sqrt(M_PI);
 }
 
-void JITGraphInterpreter::evaluateNode(const JITGraph& graph, uint32_t nodeId)
+void JITGraphInterpreter::evaluateNode(uint32_t nodeId)
 {
+    const JITGraph& graph = *impl_->graph;
     std::vector<double>& nodeValues = impl_->nodeValues;
     const auto& node = graph.nodes[nodeId];
     JITOpCode op = static_cast<JITOpCode>(node.op);
@@ -235,8 +263,9 @@ void JITGraphInterpreter::evaluateNode(const JITGraph& graph, uint32_t nodeId)
     nodeValues[nodeId] = result;
 }
 
-void JITGraphInterpreter::propagateAdjoint(const JITGraph& graph, uint32_t nodeId)
+void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
 {
+    const JITGraph& graph = *impl_->graph;
     std::vector<double>& nodeValues = impl_->nodeValues;
     std::vector<double>& nodeAdjoints = impl_->nodeAdjoints;
     double adj = nodeAdjoints[nodeId];
