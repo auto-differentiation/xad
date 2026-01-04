@@ -216,53 +216,21 @@ class JITCompiler
 
     uint32_t recordConstant(double value) { return graph_.addConstant(value); }
 
-    //=========================================================================
-    // Compilation
-    //=========================================================================
-
-    /**
-     * Compile the recorded graph.
-     * Must be called after recording and before execution methods.
-     */
+    /// Compile the recorded graph. Must be called before execution methods.
     void compile() { backend_->compile(graph_); }
 
-    //=========================================================================
-    // Query (delegates to backend)
-    //=========================================================================
-
-    /// Get the vector width from the backend (1 for scalar, 4 for AVX2, etc.)
     std::size_t vectorWidth() const { return backend_->vectorWidth(); }
-
-    /// Get the number of inputs in the compiled graph
     std::size_t numInputs() const { return backend_->numInputs(); }
-
-    /// Get the number of outputs in the compiled graph
     std::size_t numOutputs() const { return backend_->numOutputs(); }
 
-    //=========================================================================
-    // Execution API
-    //=========================================================================
-
-    /**
-     * Set input values.
-     * @param inputIndex Index of the input (0 to numInputs()-1).
-     * @param values Array of vectorWidth() doubles. For scalar backends,
-     *        pass a pointer to a single double.
-     */
     void setInput(std::size_t inputIndex, const double* values)
     {
         backend_->setInput(inputIndex, values);
     }
 
-    /**
-     * Execute forward pass only.
-     * @param outputs Array of numOutputs() * vectorWidth() doubles.
-     *
-     * Uses the registered input pointers to get current input values.
-     */
+    /// Execute forward pass using registered input pointers.
     void forward(double* outputs)
     {
-        // Set inputs from registered pointers
         for (std::size_t i = 0; i < inputValues_.size(); ++i)
         {
             double value = *inputValues_[i];
@@ -271,26 +239,17 @@ class JITCompiler
         backend_->forward(outputs);
     }
 
-    /**
-     * Execute forward and backward passes combined.
-     * @param outputs Array of numOutputs() * vectorWidth() doubles.
-     * @param inputGradients Array of numInputs() * vectorWidth() doubles.
-     */
     void forwardAndBackward(double* outputs, double* inputGradients)
     {
         backend_->forwardAndBackward(outputs, inputGradients);
     }
 
-    /**
-     * Compute adjoints using registered input pointers and derivative storage.
-     * Convenience method that uses the registered input pointers.
-     */
+    /// Compute adjoints using registered input pointers.
     void computeAdjoints()
     {
         std::size_t nInputs = graph_.input_ids.size();
         std::size_t nOutputs = graph_.output_ids.size();
 
-        // Set inputs from registered pointers
         for (std::size_t i = 0; i < inputValues_.size(); ++i)
         {
             double value = *inputValues_[i];
@@ -301,7 +260,6 @@ class JITCompiler
         std::vector<double> inputGradients(nInputs);
         backend_->forwardAndBackward(outputs.data(), inputGradients.data());
 
-        // Store gradients in derivatives_ array
         derivatives_.resize(graph_.nodeCount(), derivative_type());
         for (std::size_t i = 0; i < nInputs; ++i)
             derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputGradients[i]);

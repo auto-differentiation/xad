@@ -39,19 +39,13 @@ namespace xad
 class JITGraphInterpreter : public JITBackend
 {
   public:
-    static constexpr std::size_t VECTOR_WIDTH = 1;  // Scalar interpreter
-
     JITGraphInterpreter();
     ~JITGraphInterpreter() override;
-
-    //=========================================================================
-    // JITBackend interface
-    //=========================================================================
 
     void compile(const JITGraph& graph) override;
     void reset() override;
 
-    std::size_t vectorWidth() const override { return VECTOR_WIDTH; }
+    std::size_t vectorWidth() const override { return 1; }
     std::size_t numInputs() const override;
     std::size_t numOutputs() const override;
 
