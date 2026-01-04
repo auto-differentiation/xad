@@ -112,11 +112,10 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
     timing.compileMs = std::chrono::duration<double, std::milli>(compileEnd - compileStart).count();
 
     // --- Execution Phase (per path) ---
-    constexpr int LANES = xad::forge::ForgeBackend::VECTOR_WIDTH;
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
 
     double output;
-    std::vector<double> inputGradients(numInputs * LANES);
+    std::vector<double> inputGradients(numInputs);
 
     double setInputsTotal = 0.0;
     double forwardBackwardTotal = 0.0;
@@ -448,11 +447,10 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     // Phase 2: Execute compiled graph for all paths
     // =========================================================================
 
-    constexpr int LANES = xad::forge::ForgeBackend::VECTOR_WIDTH;
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
 
     double output;
-    std::vector<double> inputGradients(numInputs * LANES);
+    std::vector<double> inputGradients(numInputs);
 
     for (int path = 0; path < numPaths; ++path)
     {
