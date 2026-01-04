@@ -132,7 +132,7 @@ int main()
         jit.compile();
 
         double out = 0.0;
-        jit.forward(&out, 1);
+        jit.forward(&out);
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
         std::cout << "JIT recording with input:  x=1  y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
@@ -140,7 +140,7 @@ int main()
 
         x = 3.0;
         jit.clearDerivatives();
-        jit.forward(&out, 1);
+        jit.forward(&out);
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
         std::cout << "JIT run with input: x=3  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot())
@@ -202,7 +202,7 @@ int main()
 
         x = 1.0;
         jit.clearDerivatives();
-        jit.forward(&out, 1);
+        jit.forward(&out);
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
         std::cout << "JIT run with input: x=1  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
@@ -210,7 +210,7 @@ int main()
 
         x = 3.0;
         jit.clearDerivatives();
-        jit.forward(&out, 1);
+        jit.forward(&out);
         jit.setDerivative(y.getSlot(), 1.0);
         jit.computeAdjoints();
         std::cout << "JIT run with input: x=3  result: y=" << out << "  dy/dx=" << jit.getDerivative(x.getSlot()) << "\n";
