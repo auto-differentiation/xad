@@ -257,9 +257,17 @@ class JITCompiler
     /**
      * Execute forward pass only.
      * @param outputs Array of numOutputs() * vectorWidth() doubles.
+     *
+     * Uses the registered input pointers to get current input values.
      */
     void forward(double* outputs)
     {
+        // Set inputs from registered pointers
+        for (std::size_t i = 0; i < inputValues_.size(); ++i)
+        {
+            double value = *inputValues_[i];
+            backend_->setInput(i, &value);
+        }
         backend_->forward(outputs);
     }
 
