@@ -233,7 +233,7 @@ TEST(JITCompiler, canUseNewRecording)
     jit.compile();
 
     double output1;
-    jit.forward(&output1, 1);
+    jit.forward(&output1);
     EXPECT_DOUBLE_EQ(5.0, output1);
 
     // New recording with same inputs
@@ -243,7 +243,7 @@ TEST(JITCompiler, canUseNewRecording)
     jit.compile();
 
     double output2;
-    jit.forward(&output2, 1);
+    jit.forward(&output2);
     EXPECT_DOUBLE_EQ(6.0, output2);
 }
 
@@ -361,21 +361,6 @@ TEST(JITCompiler, setActiveThrowsWhenAlreadyActive)
             xad::JITCompiler<double> jit2;  // Tries to activate, should throw
         },
         xad::OutOfRange);
-}
-
-TEST(JITCompiler, forwardThrowsOnOutputMismatch)
-{
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD x = 2.0;
-    jit.registerInput(x);
-    AD y = x * x;
-    jit.registerOutput(y);
-    jit.compile();
-
-    double outputs[2];  // Wrong size - we only have 1 output
-    EXPECT_THROW(jit.forward(outputs, 2), xad::OutOfRange);
 }
 
 TEST(JITCompiler, clearAll)
