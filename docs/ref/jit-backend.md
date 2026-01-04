@@ -29,17 +29,36 @@ Backends are responsible for:
 
 Prepare the backend for executing the given graph.
 
+#### `vectorWidth`
+
+`#!c++ virtual std::size_t vectorWidth() const = 0;`
+
+Returns the number of parallel evaluations per execution (1 for scalar backends, 4 for AVX2).
+
+#### `numInputs` / `numOutputs`
+
+`#!c++ virtual std::size_t numInputs() const = 0;`
+`#!c++ virtual std::size_t numOutputs() const = 0;`
+
+Return the number of inputs/outputs in the compiled graph.
+
+#### `setInput`
+
+`#!c++ virtual void setInput(std::size_t inputIndex, const double* values) = 0;`
+
+Set input values for an input variable. The `values` array must contain `vectorWidth()` elements.
+
 #### `forward`
 
-`#!c++ virtual void forward(const JITGraph& graph, const double* inputs, std::size_t numInputs, double* outputs, std::size_t numOutputs) = 0;`
+`#!c++ virtual void forward(double* outputs) = 0;`
 
-Run a forward pass.
+Run a forward pass. The `outputs` array must have space for `numOutputs() * vectorWidth()` elements.
 
 #### `forwardAndBackward`
 
-`#!c++ virtual void forwardAndBackward(const JITGraph& graph, const double* inputs, std::size_t numInputs, const double* outputAdjoints, std::size_t numOutputs, double* outputs, double* inputAdjoints) = 0;`
+`#!c++ virtual void forwardAndBackward(double* outputs, double* inputGradients) = 0;`
 
-Run forward and backward, producing input adjoints for the given output adjoints.
+Run forward and backward passes combined. The `outputs` array must have space for `numOutputs() * vectorWidth()` elements, and `inputGradients` must have space for `numInputs() * vectorWidth()` elements.
 
 #### `reset`
 
