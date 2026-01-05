@@ -167,7 +167,7 @@ jobs:
           cat benchmark_results.md
 
       - name: Upload Results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-results
           path: benchmark_results.md
@@ -179,7 +179,7 @@ jobs:
 
       - name: Upload PR number
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: pr-number
           path: pr_number.txt
