@@ -37,6 +37,94 @@
 #include <cstring>
 
 // ============================================================================
+// Helper Functions (reduce code duplication)
+// ============================================================================
+
+namespace
+{
+
+/// Generate random samples for all Monte Carlo paths
+inline std::vector<std::vector<double>> generateSamples(int numPaths, size_t numSamples,
+                                                        unsigned long long seed)
+{
+    std::mt19937 gen(seed);
+    std::normal_distribution<double> dist(0., 1.);
+
+    std::vector<std::vector<double>> allSamples(numPaths);
+    for (int path = 0; path < numPaths; ++path)
+    {
+        allSamples[path].resize(numSamples);
+        std::generate(begin(allSamples[path]), end(allSamples[path]), [&]() { return dist(gen); });
+    }
+    return allSamples;
+}
+
+/// Initialize results structure with proper sizes
+inline Results initResults(const MarketParameters& market)
+{
+    Results res;
+    res.price = 0.;
+    res.d_lambda.resize(market.lambda.size());
+    res.d_delta = 0.0;
+    res.d_L0.resize(market.L0.size());
+    return res;
+}
+
+/// Average results over number of paths
+inline void averageResults(Results& res, int numPaths)
+{
+    res.price /= numPaths;
+    res.d_delta /= numPaths;
+    for (size_t i = 0; i < res.d_lambda.size(); ++i)
+    {
+        res.d_lambda[i] /= numPaths;
+        res.d_L0[i] /= numPaths;
+    }
+}
+
+/// Set scalar backend inputs for one path
+inline void setScalarInputs(xad::JITBackend& backend, const MarketParameters& market,
+                            const std::vector<double>& pathSamples)
+{
+    double deltaVal = market.delta;
+    backend.setInput(0, &deltaVal);
+
+    for (size_t i = 0; i < market.lambda.size(); ++i)
+    {
+        double lambdaVal = market.lambda[i];
+        backend.setInput(1 + i, &lambdaVal);
+    }
+
+    for (size_t i = 0; i < market.L0.size(); ++i)
+    {
+        double L0Val = market.L0[i];
+        backend.setInput(1 + market.lambda.size() + i, &L0Val);
+    }
+
+    size_t sampleOffset = 1 + market.lambda.size() + market.L0.size();
+    for (size_t i = 0; i < pathSamples.size(); ++i)
+    {
+        double sampleVal = pathSamples[i];
+        backend.setInput(sampleOffset + i, &sampleVal);
+    }
+}
+
+/// Accumulate scalar results from one path
+inline void accumulateScalarResults(Results& res, double output,
+                                    const std::vector<double>& inputGradients, size_t lambdaSize)
+{
+    res.price += output;
+    res.d_delta += inputGradients[0];
+    for (size_t i = 0; i < lambdaSize; ++i)
+    {
+        res.d_lambda[i] += inputGradients[1 + i];
+        res.d_L0[i] += inputGradients[1 + lambdaSize + i];
+    }
+}
+
+}  // namespace
+
+// ============================================================================
 // Performance Decomposition Functions
 // ============================================================================
 
@@ -45,40 +133,23 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
                                          int numPaths, unsigned long long seed)
 {
     using JitAD = xad::AD;
+    const size_t numSamples = market.lambda.size() / 2;
 
     TimingDecomposition timing;
     timing.numPaths = numPaths;
 
     auto totalStart = std::chrono::steady_clock::now();
 
-    std::mt19937 gen(seed);
-    std::normal_distribution<double> dist(0., 1.);
+    // Use helpers for common setup
+    auto allSamples = generateSamples(numPaths, numSamples, seed);
+    Results res = initResults(market);
 
-    const size_t numSamples = market.lambda.size() / 2;
-
-    // Pre-generate all random samples
-    std::vector<std::vector<double>> allSamples(numPaths);
-    for (int path = 0; path < numPaths; ++path)
-    {
-        allSamples[path].resize(numSamples);
-        std::generate(begin(allSamples[path]), end(allSamples[path]),
-                      [&]() { return dist(gen); });
-    }
-
+    // JIT graph recording (kept inline - requires local vectors to remain in scope)
     std::vector<JitAD> L, tmp1, tmp2;
     std::vector<JitAD> lambda, L0;
     std::vector<JitAD> jit_samples(numSamples);
-
-    Results res;
-    res.price = 0.;
-    res.d_lambda.resize(market.lambda.size());
-    res.d_delta = 0.0;
-    res.d_L0.resize(market.L0.size());
-
     xad::JITCompiler<double, 1> jit;
-
-    JitAD delta;
-    JitAD v;
+    JitAD delta, v;
 
     // --- Compilation Phase ---
     auto compileStart = std::chrono::steady_clock::now();
@@ -104,7 +175,6 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    // Compile with ForgeBackend
     xad::forge::ForgeBackend backend;
     backend.compile(jit.getGraph());
 
@@ -113,7 +183,6 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
 
     // --- Execution Phase (per path) ---
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
-
     double output;
     std::vector<double> inputGradients(numInputs);
 
@@ -124,64 +193,32 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
 
     for (int path = 0; path < numPaths; ++path)
     {
-        // Set inputs
+        // Set inputs (timed)
         auto setStart = std::chrono::steady_clock::now();
-
-        // delta
-        double deltaVal = market.delta;
-        backend.setInput(0, &deltaVal);
-
-        // lambda
-        for (size_t i = 0; i < market.lambda.size(); ++i)
-        {
-            double lambdaVal = market.lambda[i];
-            backend.setInput(1 + i, &lambdaVal);
-        }
-
-        // L0
-        for (size_t i = 0; i < market.L0.size(); ++i)
-        {
-            double L0Val = market.L0[i];
-            backend.setInput(1 + market.lambda.size() + i, &L0Val);
-        }
-
-        // samples
-        size_t sampleOffset = 1 + market.lambda.size() + market.L0.size();
-        for (size_t i = 0; i < numSamples; ++i)
-        {
-            double sampleVal = allSamples[path][i];
-            backend.setInput(sampleOffset + i, &sampleVal);
-        }
-
+        setScalarInputs(backend, market, allSamples[path]);
         auto setEnd = std::chrono::steady_clock::now();
         setInputsTotal += std::chrono::duration<double, std::milli>(setEnd - setStart).count();
 
-        // Forward + backward (combined)
+        // Forward + backward (timed)
         auto fwdBwdStart = std::chrono::steady_clock::now();
         backend.forwardAndBackward(&output, inputGradients.data());
         auto fwdBwdEnd = std::chrono::steady_clock::now();
         forwardBackwardTotal += std::chrono::duration<double, std::milli>(fwdBwdEnd - fwdBwdStart).count();
 
-        // Get gradients (already retrieved)
+        // Get gradients (already retrieved in forwardAndBackward)
         auto getStart = std::chrono::steady_clock::now();
         auto getEnd = std::chrono::steady_clock::now();
         getGradientsTotal += std::chrono::duration<double, std::milli>(getEnd - getStart).count();
 
-        // Accumulate
+        // Accumulate (timed)
         auto accStart = std::chrono::steady_clock::now();
-        res.price += output;
-        res.d_delta += inputGradients[0];
-        for (size_t i = 0; i < market.lambda.size(); ++i)
-        {
-            res.d_lambda[i] += inputGradients[1 + i];
-            res.d_L0[i] += inputGradients[1 + market.lambda.size() + i];
-        }
+        accumulateScalarResults(res, output, inputGradients, market.lambda.size());
         auto accEnd = std::chrono::steady_clock::now();
         accumulateTotal += std::chrono::duration<double, std::milli>(accEnd - accStart).count();
     }
 
     timing.setInputsMs = setInputsTotal;
-    timing.forwardMs = forwardBackwardTotal;  // Forward+backward combined
+    timing.forwardMs = forwardBackwardTotal;
     timing.backwardMs = 0.0;  // Included in forwardMs
     timing.getGradientsMs = getGradientsTotal;
     timing.accumulateMs = accumulateTotal;
@@ -197,40 +234,23 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
                                              int numPaths, unsigned long long seed)
 {
     using JitAD = xad::AD;
+    const size_t numSamples = market.lambda.size() / 2;
 
     TimingDecomposition timing;
     timing.numPaths = numPaths;
 
     auto totalStart = std::chrono::steady_clock::now();
 
-    std::mt19937 gen(seed);
-    std::normal_distribution<double> dist(0., 1.);
+    // Use helpers for common setup
+    auto allSamples = generateSamples(numPaths, numSamples, seed);
+    Results res = initResults(market);
 
-    const size_t numSamples = market.lambda.size() / 2;
-
-    // Pre-generate all random samples
-    std::vector<std::vector<double>> allSamples(numPaths);
-    for (int path = 0; path < numPaths; ++path)
-    {
-        allSamples[path].resize(numSamples);
-        std::generate(begin(allSamples[path]), end(allSamples[path]),
-                      [&]() { return dist(gen); });
-    }
-
+    // JIT graph recording (kept inline - requires local vectors to remain in scope)
     std::vector<JitAD> L, tmp1, tmp2;
     std::vector<JitAD> lambda, L0;
     std::vector<JitAD> jit_samples(numSamples);
-
-    Results res;
-    res.price = 0.;
-    res.d_lambda.resize(market.lambda.size());
-    res.d_delta = 0.0;
-    res.d_L0.resize(market.L0.size());
-
     xad::JITCompiler<double, 1> jit;
-
-    JitAD delta;
-    JitAD v;
+    JitAD delta, v;
 
     // --- Compilation Phase ---
     auto compileStart = std::chrono::steady_clock::now();
@@ -263,6 +283,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
     timing.compileMs = std::chrono::duration<double, std::milli>(compileEnd - compileStart).count();
 
     // --- Execution Phase (batched) ---
+    // AVX batched input setting kept inline - different data layout from scalar
     constexpr int BATCH_SIZE = xad::forge::ForgeBackendAVX::VECTOR_WIDTH;
     const int numBatches = (numPaths + BATCH_SIZE - 1) / BATCH_SIZE;
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
@@ -272,7 +293,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
     std::vector<double> inputGradients(numInputs * BATCH_SIZE);
 
     double setInputsTotal = 0.0;
-    double forwardBackwardTotal = 0.0;  // AVX does forward+backward together
+    double forwardBackwardTotal = 0.0;
     double getGradientsTotal = 0.0;
     double accumulateTotal = 0.0;
 
@@ -281,7 +302,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
         int batchStart = batch * BATCH_SIZE;
         int actualBatchSize = std::min(BATCH_SIZE, numPaths - batchStart);
 
-        // Set inputs
+        // Set inputs (timed)
         auto setStart = std::chrono::steady_clock::now();
 
         for (int lane = 0; lane < BATCH_SIZE; ++lane)
@@ -316,19 +337,18 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
         auto setEnd = std::chrono::steady_clock::now();
         setInputsTotal += std::chrono::duration<double, std::milli>(setEnd - setStart).count();
 
-        // Forward + Backward (combined in AVX backend)
+        // Forward + Backward (timed)
         auto fwdBwdStart = std::chrono::steady_clock::now();
         avxBackend.forwardAndBackward(outputBatch.data(), inputGradients.data());
         auto fwdBwdEnd = std::chrono::steady_clock::now();
         forwardBackwardTotal += std::chrono::duration<double, std::milli>(fwdBwdEnd - fwdBwdStart).count();
 
-        // Get gradients (already in inputGradients from forwardAndBackward)
+        // Get gradients (already retrieved in forwardAndBackward)
         auto getStart = std::chrono::steady_clock::now();
-        // Gradients are already retrieved in forwardAndBackward call
         auto getEnd = std::chrono::steady_clock::now();
         getGradientsTotal += std::chrono::duration<double, std::milli>(getEnd - getStart).count();
 
-        // Accumulate (inputGradients is now flat: [input0_lane0, input0_lane1, ..., input1_lane0, ...])
+        // Accumulate (timed) - AVX layout: [input0_lane0..3, input1_lane0..3, ...]
         auto accStart = std::chrono::steady_clock::now();
         for (int lane = 0; lane < actualBatchSize; ++lane)
         {
@@ -346,7 +366,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
     }
 
     timing.setInputsMs = setInputsTotal;
-    timing.forwardMs = forwardBackwardTotal;  // Forward+backward combined for AVX
+    timing.forwardMs = forwardBackwardTotal;
     timing.backwardMs = 0.0;  // Included in forwardMs for AVX
     timing.getGradientsMs = getGradientsTotal;
     timing.accumulateMs = accumulateTotal;
@@ -364,189 +384,21 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
 Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                           int numPaths, unsigned long long seed, JITStats* stats)
 {
-    // Use xad::AD directly (not bound to global tape) for JIT operations
     using JitAD = xad::AD;
-
-    std::mt19937 gen(seed);
-    std::normal_distribution<double> dist(0., 1.);
-
     const size_t numSamples = market.lambda.size() / 2;
 
-    // Pre-generate all random samples for all paths
-    // This allows us to set them as JIT inputs each path
-    std::vector<std::vector<double>> allSamples(numPaths);
-    for (int path = 0; path < numPaths; ++path)
-    {
-        allSamples[path].resize(numSamples);
-        std::generate(begin(allSamples[path]), end(allSamples[path]),
-                      [&]() { return dist(gen); });
-    }
+    // Use helpers for common setup
+    auto allSamples = generateSamples(numPaths, numSamples, seed);
+    Results res = initResults(market);
 
-    // AD types for JIT - these persist across paths
-    std::vector<JitAD> L, tmp1, tmp2;
-    std::vector<JitAD> lambda, L0;
-    std::vector<JitAD> jit_samples(numSamples);  // Random samples as AD inputs
-
-    Results res;
-    res.price = 0.;
-    res.d_lambda.resize(market.lambda.size());
-    res.d_delta = 0.0;
-    res.d_L0.resize(market.L0.size());
-
-    // Create JIT compiler for graph recording
-    xad::JITCompiler<double, 1> jit;
-
-    JitAD delta;
-    JitAD v;
-
-    auto compileStart = std::chrono::steady_clock::now();
-
-    // =========================================================================
-    // Phase 1: Record and compile the computation graph (first path only)
-    // =========================================================================
-
-    // Assign and register market inputs
-    delta = market.delta;
-    lambda.assign(begin(market.lambda), end(market.lambda));
-    L0.assign(begin(market.L0), end(market.L0));
-
-    jit.registerInput(delta);
-    jit.registerInputs(lambda);
-    jit.registerInputs(L0);
-
-    // Register random samples as JIT inputs - this is crucial!
-    // Each path will update these values before forward pass
-    for (size_t i = 0; i < numSamples; ++i)
-    {
-        jit_samples[i] = JitAD(allSamples[0][i]);  // Initialize with first path's samples
-        jit.registerInput(jit_samples[i]);
-    }
-
-    jit.newRecording();
-
-    // Generate the path using JIT-compatible path_gen with AD samples
-    L.assign(begin(L0), end(L0));
-    path_gen_jit(delta, L, lambda, jit_samples);
-
-    // Price portfolio using JIT-compatible value_portfolio with ABool::If
-    v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
-    jit.registerOutput(v);
-
-    // Compile with ForgeBackend
-    xad::forge::ForgeBackend backend;
-    backend.compile(jit.getGraph());
-
-    auto compileEnd = std::chrono::steady_clock::now();
-    if (stats)
-    {
-        stats->compileTimeMs =
-            std::chrono::duration<double, std::milli>(compileEnd - compileStart).count();
-    }
-
-    // =========================================================================
-    // Phase 2: Execute compiled graph for all paths
-    // =========================================================================
-
-    const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
-
-    double output;
-    std::vector<double> inputGradients(numInputs);
-
-    for (int path = 0; path < numPaths; ++path)
-    {
-        // Set delta
-        double deltaVal = market.delta;
-        backend.setInput(0, &deltaVal);
-
-        // Set lambda
-        for (size_t i = 0; i < market.lambda.size(); ++i)
-        {
-            double lambdaVal = market.lambda[i];
-            backend.setInput(1 + i, &lambdaVal);
-        }
-
-        // Set L0
-        for (size_t i = 0; i < market.L0.size(); ++i)
-        {
-            double L0Val = market.L0[i];
-            backend.setInput(1 + market.lambda.size() + i, &L0Val);
-        }
-
-        // Set random samples for this path
-        size_t sampleOffset = 1 + market.lambda.size() + market.L0.size();
-        for (size_t i = 0; i < numSamples; ++i)
-        {
-            double sampleVal = allSamples[path][i];
-            backend.setInput(sampleOffset + i, &sampleVal);
-        }
-
-        // Forward + backward (combined)
-        backend.forwardAndBackward(&output, inputGradients.data());
-
-        // Accumulate results
-        res.price += output;
-        res.d_delta += inputGradients[0];
-        for (size_t i = 0; i < market.lambda.size(); ++i)
-        {
-            res.d_lambda[i] += inputGradients[1 + i];
-            res.d_L0[i] += inputGradients[1 + market.lambda.size() + i];
-        }
-    }
-
-    // Averaging
-    res.price /= numPaths;
-    res.d_delta /= numPaths;
-    for (size_t i = 0; i < market.lambda.size(); ++i)
-    {
-        res.d_lambda[i] /= numPaths;
-        res.d_L0[i] /= numPaths;
-    }
-
-    return res;
-}
-
-Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketParameters& market,
-                              int numPaths, unsigned long long seed, JITStats* stats)
-{
-    // Use xad::AD directly (not bound to global tape) for JIT operations
-    using JitAD = xad::AD;
-
-    std::mt19937 gen(seed);
-    std::normal_distribution<double> dist(0., 1.);
-
-    const size_t numSamples = market.lambda.size() / 2;
-
-    // Pre-generate all random samples for all paths
-    std::vector<std::vector<double>> allSamples(numPaths);
-    for (int path = 0; path < numPaths; ++path)
-    {
-        allSamples[path].resize(numSamples);
-        std::generate(begin(allSamples[path]), end(allSamples[path]),
-                      [&]() { return dist(gen); });
-    }
-
-    // AD types for JIT graph recording
+    // JIT graph recording (kept inline - requires local vectors to remain in scope)
     std::vector<JitAD> L, tmp1, tmp2;
     std::vector<JitAD> lambda, L0;
     std::vector<JitAD> jit_samples(numSamples);
-
-    Results res;
-    res.price = 0.;
-    res.d_lambda.resize(market.lambda.size());
-    res.d_delta = 0.0;
-    res.d_L0.resize(market.L0.size());
-
-    // Create JIT compiler for graph recording
     xad::JITCompiler<double, 1> jit;
-
-    JitAD delta;
-    JitAD v;
+    JitAD delta, v;
 
     auto compileStart = std::chrono::steady_clock::now();
-
-    // =========================================================================
-    // Phase 1: Record the computation graph
-    // =========================================================================
 
     delta = market.delta;
     lambda.assign(begin(market.lambda), end(market.lambda));
@@ -569,7 +421,72 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    // Compile with AVX backend
+    xad::forge::ForgeBackend backend;
+    backend.compile(jit.getGraph());
+
+    auto compileEnd = std::chrono::steady_clock::now();
+    if (stats)
+    {
+        stats->compileTimeMs =
+            std::chrono::duration<double, std::milli>(compileEnd - compileStart).count();
+    }
+
+    // Execute compiled graph for all paths using helpers
+    const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
+    double output;
+    std::vector<double> inputGradients(numInputs);
+
+    for (int path = 0; path < numPaths; ++path)
+    {
+        setScalarInputs(backend, market, allSamples[path]);
+        backend.forwardAndBackward(&output, inputGradients.data());
+        accumulateScalarResults(res, output, inputGradients, market.lambda.size());
+    }
+
+    averageResults(res, numPaths);
+    return res;
+}
+
+Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketParameters& market,
+                              int numPaths, unsigned long long seed, JITStats* stats)
+{
+    using JitAD = xad::AD;
+    const size_t numSamples = market.lambda.size() / 2;
+
+    // Use helpers for common setup
+    auto allSamples = generateSamples(numPaths, numSamples, seed);
+    Results res = initResults(market);
+
+    // JIT graph recording (kept inline - requires local vectors to remain in scope)
+    std::vector<JitAD> L, tmp1, tmp2;
+    std::vector<JitAD> lambda, L0;
+    std::vector<JitAD> jit_samples(numSamples);
+    xad::JITCompiler<double, 1> jit;
+    JitAD delta, v;
+
+    auto compileStart = std::chrono::steady_clock::now();
+
+    delta = market.delta;
+    lambda.assign(begin(market.lambda), end(market.lambda));
+    L0.assign(begin(market.L0), end(market.L0));
+
+    jit.registerInput(delta);
+    jit.registerInputs(lambda);
+    jit.registerInputs(L0);
+
+    for (size_t i = 0; i < numSamples; ++i)
+    {
+        jit_samples[i] = JitAD(allSamples[0][i]);
+        jit.registerInput(jit_samples[i]);
+    }
+
+    jit.newRecording();
+
+    L.assign(begin(L0), end(L0));
+    path_gen_jit(delta, L, lambda, jit_samples);
+    v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
+    jit.registerOutput(v);
+
     xad::forge::ForgeBackendAVX avxBackend(false);
     avxBackend.compile(jit.getGraph());
 
@@ -580,14 +497,10 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
             std::chrono::duration<double, std::milli>(compileEnd - compileStart).count();
     }
 
-    // =========================================================================
-    // Phase 2: Execute compiled AVX kernel for all paths (4 at a time)
-    // =========================================================================
-
+    // Execute compiled AVX kernel for all paths (4 at a time)
+    // AVX batched input setting kept inline - different data layout from scalar
     constexpr int BATCH_SIZE = xad::forge::ForgeBackendAVX::VECTOR_WIDTH;
     const int numBatches = (numPaths + BATCH_SIZE - 1) / BATCH_SIZE;
-
-    // Total inputs: 1 (delta) + lambda.size() + L0.size() + numSamples
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
 
     std::vector<double> inputBatch(BATCH_SIZE);
@@ -632,10 +545,9 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
             avxBackend.setInput(sampleOffset + m, inputBatch.data());
         }
 
-        // Execute forward + backward
         avxBackend.forwardAndBackward(outputBatch.data(), inputGradients.data());
 
-        // Accumulate results (inputGradients is flat: [input0_lane0, input0_lane1, ..., input1_lane0, ...])
+        // Accumulate results (inputGradients layout: [input0_lane0..3, input1_lane0..3, ...])
         for (int lane = 0; lane < actualBatchSize; ++lane)
         {
             res.price += outputBatch[lane];
@@ -649,14 +561,6 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
         }
     }
 
-    // Averaging
-    res.price /= numPaths;
-    res.d_delta /= numPaths;
-    for (size_t i = 0; i < market.lambda.size(); ++i)
-    {
-        res.d_lambda[i] /= numPaths;
-        res.d_L0[i] /= numPaths;
-    }
-
+    averageResults(res, numPaths);
     return res;
 }
