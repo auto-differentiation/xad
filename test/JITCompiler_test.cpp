@@ -554,9 +554,11 @@ TEST(JITCompiler, passThroughMethods)
     EXPECT_EQ(2u, jit.numInputs());
     EXPECT_EQ(1u, jit.numOutputs());
 
-    // Test setInput pass-through
+    // Test setInput pass-through (must set ALL inputs before forwardAndBackward)
     double newVal = 5.0;
+    double bVal = 3.0;
     jit.setInput(0, &newVal);
+    jit.setInput(1, &bVal);
 
     // Test forwardAndBackward pass-through
     double output, inputGradients[2];
