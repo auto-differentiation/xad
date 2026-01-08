@@ -1183,5 +1183,30 @@ TEST(JITGraphInterpreter, queryMethods)
     EXPECT_EQ(1u, interp.numOutputs());
 }
 
+// =============================================================================
+// Exception path tests for coverage
+// =============================================================================
+
+TEST(JITGraphInterpreter, setInputThrowsWhenNotCompiled)
+{
+    xad::JITGraphInterpreter interp;
+    double input = 5.0;
+    EXPECT_THROW(interp.setInput(0, &input), std::runtime_error);
+}
+
+TEST(JITGraphInterpreter, forwardThrowsWhenNotCompiled)
+{
+    xad::JITGraphInterpreter interp;
+    double output;
+    EXPECT_THROW(interp.forward(&output), std::runtime_error);
+}
+
+TEST(JITGraphInterpreter, forwardAndBackwardThrowsWhenNotCompiled)
+{
+    xad::JITGraphInterpreter interp;
+    double output, inputAdjoint;
+    EXPECT_THROW(interp.forwardAndBackward(&output, &inputAdjoint), std::runtime_error);
+}
+
 
 #endif  // XAD_ENABLE_JIT

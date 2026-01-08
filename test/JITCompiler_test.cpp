@@ -533,6 +533,51 @@ TEST(JITAReal, vectorModeDoesNotUseJitFallback)
     EXPECT_THROW((void)v.derivative(), xad::NoTapeException);
 }
 
+// =============================================================================
+// Pass-through method tests for coverage
+// =============================================================================
+
+TEST(JITCompiler, passThroughMethods)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 2.0, b = 3.0;
+    jit.registerInput(a);
+    jit.registerInput(b);
+    AD c = a * b;
+    jit.registerOutput(c);
+    jit.compile();
+
+    // Test pass-through accessors
+    EXPECT_EQ(1u, jit.vectorWidth());
+    EXPECT_EQ(2u, jit.numInputs());
+    EXPECT_EQ(1u, jit.numOutputs());
+
+    // Test setInput pass-through
+    double newVal = 5.0;
+    jit.setInput(0, &newVal);
+
+    // Test forwardAndBackward pass-through
+    double output, inputGradients[2];
+    jit.forwardAndBackward(&output, inputGradients);
+    EXPECT_DOUBLE_EQ(15.0, output);  // 5 * 3
+}
+
+TEST(JITCompiler, constGetGraph)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 2.0;
+    jit.registerInput(a);
+    jit.registerOutput(a);
+
+    const auto& constJit = jit;
+    const auto& graph = constJit.getGraph();
+    EXPECT_EQ(1u, graph.input_ids.size());
+    EXPECT_EQ(1u, graph.output_ids.size());
+}
 
 // =============================================================================
 // Additional JITGraph tests
