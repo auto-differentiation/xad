@@ -49,6 +49,7 @@ add_executable(LiborSwaptionPricerJIT
     ../LiborFunctions.hpp
     ../LiborPricers.hpp
     ../LiborPricers.cpp
+    ../PlatformInfo.hpp
 )
 
 # Link to xad (use target name based on context)

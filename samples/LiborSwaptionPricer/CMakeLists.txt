@@ -30,6 +30,7 @@ xad_add_sample(LiborSwaptionPricer
     LiborFunctions.hpp
     LiborPricers.hpp
     LiborPricers.cpp
+    PlatformInfo.hpp
     main.cpp
   TEST_ARGS
     100
@@ -43,6 +44,7 @@ xad_add_sample(LiborSwaptionPricerBenchmark
     LiborFunctions.hpp
     LiborPricers.hpp
     LiborPricers.cpp
+    PlatformInfo.hpp
     benchmark.cpp
   TEST_ARGS
     --quick
