@@ -4,8 +4,8 @@
 
 JIT backends execute a recorded [`JITGraph`](jit-graph.md). XAD exposes:
 
-- `JITBackend`: abstract execution interface
-- `JITGraphInterpreter`: reference backend that interprets the graph
+- `JITBackend<Scalar>`: abstract execution interface
+- `JITGraphInterpreter<Scalar>`: reference backend that interprets the graph
 
 !!! note "Compile-time feature flag"
 
@@ -13,7 +13,14 @@ JIT backends execute a recorded [`JITGraph`](jit-graph.md). XAD exposes:
 
 ## `JITBackend`
 
-`#!c++ class JITBackend`
+`#!c++ template <class Scalar> class JITBackend`
+
+Abstract base class for JIT execution backends. The `Scalar` template parameter specifies the floating-point type used for computations and must match the type used by `JITCompiler<Real, N>`:
+
+- `JITBackend<double>` for use with `JITCompiler<double, N>`
+- `JITBackend<float>` for use with `JITCompiler<float, N>`
+
+Most applications use `double` precision. The `float` option is available for performance-sensitive applications where single precision is sufficient.
 
 Backends are responsible for:
 
@@ -44,19 +51,19 @@ Return the number of inputs/outputs in the compiled graph.
 
 #### `setInput`
 
-`#!c++ virtual void setInput(std::size_t inputIndex, const double* values) = 0;`
+`#!c++ virtual void setInput(std::size_t inputIndex, const Scalar* values) = 0;`
 
 Set input values for an input variable. The `values` array must contain `vectorWidth()` elements.
 
 #### `forward`
 
-`#!c++ virtual void forward(double* outputs) = 0;`
+`#!c++ virtual void forward(Scalar* outputs) = 0;`
 
 Run a forward pass. The `outputs` array must have space for `numOutputs() * vectorWidth()` elements.
 
 #### `forwardAndBackward`
 
-`#!c++ virtual void forwardAndBackward(double* outputs, double* inputGradients) = 0;`
+`#!c++ virtual void forwardAndBackward(Scalar* outputs, Scalar* inputGradients) = 0;`
 
 Run forward and backward passes combined. The `outputs` array must have space for `numOutputs() * vectorWidth()` elements, and `inputGradients` must have space for `numInputs() * vectorWidth()` elements.
 
@@ -68,10 +75,27 @@ Reset any cached backend state.
 
 ## `JITGraphInterpreter`
 
-`#!c++ class JITGraphInterpreter : public JITBackend`
+`#!c++ template <class Scalar> class JITGraphInterpreter : public JITBackend<Scalar>`
 
 Reference backend that interprets the graph directly. It is mainly intended as:
 
 - a correctness reference implementation
 - a simple fallback backend
 - a baseline for testing and debugging
+
+### Example Usage
+
+```cpp
+// Double precision (most common)
+xad::JITCompiler<double, 1> jit;
+// ... record graph ...
+jit.compile();  // Uses JITGraphInterpreter<double> by default
+
+// Or with explicit backend
+auto backend = std::make_unique<xad::JITGraphInterpreter<double>>();
+xad::JITCompiler<double, 1> jit(std::move(backend));
+
+// Single precision
+auto backend_f = std::make_unique<xad::JITGraphInterpreter<float>>();
+xad::JITCompiler<float, 1> jit_f(std::move(backend_f));
+```
