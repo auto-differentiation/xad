@@ -234,7 +234,7 @@ TEST(JITGraphInterpreter, squareOpCode)
     uint32_t sq = graph.addUnary(xad::JITOpCode::Square, inp);
     graph.markOutput(sq);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 3.0;
@@ -252,7 +252,7 @@ TEST(JITGraphInterpreter, squareAdjoint)
     uint32_t sq = graph.addUnary(xad::JITOpCode::Square, inp);
     graph.markOutput(sq);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 3.0;
@@ -273,7 +273,7 @@ TEST(JITGraphInterpreter, recipOpCode)
     uint32_t rec = graph.addUnary(xad::JITOpCode::Recip, inp);
     graph.markOutput(rec);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 4.0;
@@ -291,7 +291,7 @@ TEST(JITGraphInterpreter, recipAdjoint)
     uint32_t rec = graph.addUnary(xad::JITOpCode::Recip, inp);
     graph.markOutput(rec);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 2.0;
@@ -313,7 +313,7 @@ TEST(JITGraphInterpreter, smoothAbsOpCode)
     uint32_t sa = graph.addBinary(xad::JITOpCode::SmoothAbs, inp, c);
     graph.markOutput(sa);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     // Test in the smooth region (|x| < c)
@@ -342,7 +342,7 @@ TEST(JITGraphInterpreter, smoothAbsNegative)
     uint32_t sa = graph.addBinary(xad::JITOpCode::SmoothAbs, inp, c);
     graph.markOutput(sa);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     // Test negative value in smooth region
@@ -371,7 +371,7 @@ TEST(JITGraphInterpreter, smoothAbsAdjoint)
     uint32_t sa = graph.addBinary(xad::JITOpCode::SmoothAbs, inp, c);
     graph.markOutput(sa);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     // Test adjoint in smooth region (positive x)
@@ -420,7 +420,7 @@ TEST(JITGraphInterpreter, cmpLTOpCode)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLT, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 3.0;
@@ -443,7 +443,7 @@ TEST(JITGraphInterpreter, cmpLEOpCode)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLE, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -466,7 +466,7 @@ TEST(JITGraphInterpreter, cmpGTOpCode)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGT, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 7.0;
@@ -489,7 +489,7 @@ TEST(JITGraphInterpreter, cmpGEOpCode)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGE, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -512,7 +512,7 @@ TEST(JITGraphInterpreter, cmpEQOpCode)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpEQ, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -535,7 +535,7 @@ TEST(JITGraphInterpreter, cmpNEOpCode)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpNE, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 4.0;
@@ -562,7 +562,7 @@ TEST(JITGraphInterpreter, cmpLTAdjoint)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLT, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 3.0;
@@ -583,7 +583,7 @@ TEST(JITGraphInterpreter, cmpLEAdjoint)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLE, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -604,7 +604,7 @@ TEST(JITGraphInterpreter, cmpGTAdjoint)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGT, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 7.0;
@@ -625,7 +625,7 @@ TEST(JITGraphInterpreter, cmpGEAdjoint)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGE, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -646,7 +646,7 @@ TEST(JITGraphInterpreter, cmpEQAdjoint)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpEQ, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -667,7 +667,7 @@ TEST(JITGraphInterpreter, cmpNEAdjoint)
     uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpNE, a, b);
     graph.markOutput(cmp);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 4.0;
@@ -693,7 +693,7 @@ TEST(JITGraphInterpreter, ifOpCodeTrueBranch)
     uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double output;
@@ -710,7 +710,7 @@ TEST(JITGraphInterpreter, ifOpCodeFalseBranch)
     uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double output;
@@ -728,7 +728,7 @@ TEST(JITGraphInterpreter, ifOpCodeAdjointTrueBranch)
     uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -751,7 +751,7 @@ TEST(JITGraphInterpreter, ifOpCodeAdjointFalseBranch)
     uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -776,7 +776,7 @@ TEST(JITGraphInterpreter, modOpCode)
     uint32_t result = graph.addBinary(xad::JITOpCode::Mod, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 7.5;
@@ -794,7 +794,7 @@ TEST(JITGraphInterpreter, modAdjoint)
     uint32_t result = graph.addBinary(xad::JITOpCode::Mod, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double inputs[2] = {7.5, 3.0};
@@ -817,7 +817,7 @@ TEST(JITGraphInterpreter, copysignOpCode)
     uint32_t result = graph.addBinary(xad::JITOpCode::Copysign, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -840,7 +840,7 @@ TEST(JITGraphInterpreter, copysignAdjoint)
     uint32_t result = graph.addBinary(xad::JITOpCode::Copysign, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     // Test with positive b
@@ -870,7 +870,7 @@ TEST(JITGraphInterpreter, frexpOpCode)
     uint32_t result = graph.addUnary(xad::JITOpCode::Frexp, a);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 8.0;
@@ -890,7 +890,7 @@ TEST(JITGraphInterpreter, frexpAdjoint)
     uint32_t result = graph.addUnary(xad::JITOpCode::Frexp, a);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 8.0;
@@ -912,7 +912,7 @@ TEST(JITGraphInterpreter, modfOpCode)
     uint32_t result = graph.addUnary(xad::JITOpCode::Modf, a);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 3.75;
@@ -932,7 +932,7 @@ TEST(JITGraphInterpreter, modfAdjoint)
     uint32_t result = graph.addUnary(xad::JITOpCode::Modf, a);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 3.75;
@@ -953,7 +953,7 @@ TEST(JITGraphInterpreter, remquoOpCode)
     uint32_t result = graph.addBinary(xad::JITOpCode::Remquo, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 7.5;
@@ -974,7 +974,7 @@ TEST(JITGraphInterpreter, remquoAdjoint)
     uint32_t result = graph.addBinary(xad::JITOpCode::Remquo, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double inputs[2] = {7.5, 3.0};
@@ -1001,7 +1001,7 @@ TEST(JITGraphInterpreter, smoothAbsCDerivative)
     uint32_t sa = graph.addBinary(xad::JITOpCode::SmoothAbs, x, c);
     graph.markOutput(sa);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     // Test in smooth region (positive x)
@@ -1043,7 +1043,7 @@ TEST(JITGraphInterpreter, minEqualValues)
     uint32_t result = graph.addBinary(xad::JITOpCode::Min, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double inputs[2] = {5.0, 5.0};  // Equal values
@@ -1067,7 +1067,7 @@ TEST(JITGraphInterpreter, maxEqualValues)
     uint32_t result = graph.addBinary(xad::JITOpCode::Max, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double inputs[2] = {5.0, 5.0};  // Equal values
@@ -1090,7 +1090,7 @@ TEST(JITGraphInterpreter, ldexpAdjoint)
     uint32_t result = graph.addNode(xad::JITOpCode::Ldexp, a, 0, 0, 3.0);  // ldexp(a, 3) = a * 8
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 2.0;
@@ -1112,7 +1112,7 @@ TEST(JITGraphInterpreter, powAdjointWithZeroBase)
     uint32_t result = graph.addBinary(xad::JITOpCode::Pow, a, b);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double inputs[2] = {2.0, 3.0};  // 2^3 = 8
@@ -1135,7 +1135,7 @@ TEST(JITGraphInterpreter, reset)
     uint32_t result = graph.addUnary(xad::JITOpCode::Neg, inp);
     graph.markOutput(result);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -1159,7 +1159,7 @@ TEST(JITGraphInterpreter, setInputOutOfRange)
     uint32_t c = graph.addConstant(1.0);
     graph.markOutput(c);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     double input = 5.0;
@@ -1175,7 +1175,7 @@ TEST(JITGraphInterpreter, queryMethods)
     uint32_t c = graph.addConstant(1.0);
     graph.markOutput(c);
 
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     interp.compile(graph);
 
     EXPECT_EQ(1u, interp.vectorWidth());
@@ -1189,21 +1189,21 @@ TEST(JITGraphInterpreter, queryMethods)
 
 TEST(JITGraphInterpreter, setInputThrowsWhenNotCompiled)
 {
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     double input = 5.0;
     EXPECT_THROW(interp.setInput(0, &input), std::runtime_error);
 }
 
 TEST(JITGraphInterpreter, forwardThrowsWhenNotCompiled)
 {
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     double output;
     EXPECT_THROW(interp.forward(&output), std::runtime_error);
 }
 
 TEST(JITGraphInterpreter, forwardAndBackwardThrowsWhenNotCompiled)
 {
-    xad::JITGraphInterpreter interp;
+    xad::JITGraphInterpreter<double> interp;
     double output, inputAdjoint;
     EXPECT_THROW(interp.forwardAndBackward(&output, &inputAdjoint), std::runtime_error);
 }

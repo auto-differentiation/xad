@@ -42,22 +42,26 @@
 namespace xad
 {
 
-struct JITGraphInterpreter::Impl
+template <class Scalar>
+struct JITGraphInterpreter<Scalar>::Impl
 {
     const JITGraph* graph = nullptr;  // Stored from compile()
-    std::vector<double> inputValues;  // Current input values (set via setInput)
-    std::vector<double> nodeValues;   // Forward pass intermediate values
-    std::vector<double> nodeAdjoints; // Backward pass adjoints
+    std::vector<Scalar> inputValues;  // Current input values (set via setInput)
+    std::vector<Scalar> nodeValues;   // Forward pass intermediate values
+    std::vector<Scalar> nodeAdjoints; // Backward pass adjoints
 };
 
-JITGraphInterpreter::JITGraphInterpreter()
+template <class Scalar>
+JITGraphInterpreter<Scalar>::JITGraphInterpreter()
     : impl_(new Impl())
 {
 }
 
-JITGraphInterpreter::~JITGraphInterpreter() = default;
+template <class Scalar>
+JITGraphInterpreter<Scalar>::~JITGraphInterpreter() = default;
 
-void JITGraphInterpreter::compile(const JITGraph& graph)
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::compile(const JITGraph& graph)
 {
     impl_->graph = &graph;
     impl_->inputValues.resize(graph.input_ids.size());
@@ -65,7 +69,8 @@ void JITGraphInterpreter::compile(const JITGraph& graph)
     impl_->nodeAdjoints.resize(graph.nodeCount());
 }
 
-void JITGraphInterpreter::reset()
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::reset()
 {
     impl_->graph = nullptr;
     impl_->inputValues.clear();
@@ -73,17 +78,20 @@ void JITGraphInterpreter::reset()
     impl_->nodeAdjoints.clear();
 }
 
-std::size_t JITGraphInterpreter::numInputs() const
+template <class Scalar>
+std::size_t JITGraphInterpreter<Scalar>::numInputs() const
 {
     return impl_->graph ? impl_->graph->input_ids.size() : 0;
 }
 
-std::size_t JITGraphInterpreter::numOutputs() const
+template <class Scalar>
+std::size_t JITGraphInterpreter<Scalar>::numOutputs() const
 {
     return impl_->graph ? impl_->graph->output_ids.size() : 0;
 }
 
-void JITGraphInterpreter::setInput(std::size_t inputIndex, const double* values)
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::setInput(std::size_t inputIndex, const Scalar* values)
 {
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
@@ -93,7 +101,8 @@ void JITGraphInterpreter::setInput(std::size_t inputIndex, const double* values)
     impl_->inputValues[inputIndex] = values[0];
 }
 
-void JITGraphInterpreter::forward(double* outputs)
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::forward(Scalar* outputs)
 {
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
@@ -113,7 +122,8 @@ void JITGraphInterpreter::forward(double* outputs)
         outputs[i] = impl_->nodeValues[graph.output_ids[i]];
 }
 
-void JITGraphInterpreter::forwardAndBackward(double* outputs, double* inputGradients)
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::forwardAndBackward(Scalar* outputs, Scalar* inputGradients)
 {
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
@@ -124,9 +134,9 @@ void JITGraphInterpreter::forwardAndBackward(double* outputs, double* inputGradi
     forward(outputs);
 
     // Run backward pass - seed output adjoints to 1.0
-    impl_->nodeAdjoints.assign(graph.nodeCount(), 0.0);
+    impl_->nodeAdjoints.assign(graph.nodeCount(), Scalar(0));
     for (std::size_t i = 0; i < graph.output_ids.size(); ++i)
-        impl_->nodeAdjoints[graph.output_ids[i]] = 1.0;
+        impl_->nodeAdjoints[graph.output_ids[i]] = Scalar(1);
 
     // Propagate adjoints backward
     for (std::size_t i = graph.nodeCount(); i > 0; --i)
@@ -137,25 +147,27 @@ void JITGraphInterpreter::forwardAndBackward(double* outputs, double* inputGradi
         inputGradients[i] = impl_->nodeAdjoints[graph.input_ids[i]];
 }
 
-double JITGraphInterpreter::invSqrtPi()
+template <class Scalar>
+Scalar JITGraphInterpreter<Scalar>::invSqrtPi()
 {
-    return 2.0 / std::sqrt(M_PI);
+    return Scalar(2) / std::sqrt(Scalar(M_PI));
 }
 
-void JITGraphInterpreter::evaluateNode(uint32_t nodeId)
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
 {
     const JITGraph& graph = *impl_->graph;
-    std::vector<double>& nodeValues = impl_->nodeValues;
+    std::vector<Scalar>& nodeValues = impl_->nodeValues;
     const auto& node = graph.nodes[nodeId];
     JITOpCode op = static_cast<JITOpCode>(node.op);
     uint32_t a = node.a;
     uint32_t b = node.b;
     double imm = node.imm;
 
-    double va = (a < nodeValues.size()) ? nodeValues[a] : 0.0;
-    double vb = (b < nodeValues.size()) ? nodeValues[b] : 0.0;
+    Scalar va = (a < nodeValues.size()) ? nodeValues[a] : Scalar(0);
+    Scalar vb = (b < nodeValues.size()) ? nodeValues[b] : Scalar(0);
 
-    double result = 0.0;
+    Scalar result = Scalar(0);
 
     switch (op)
     {
@@ -165,7 +177,7 @@ void JITGraphInterpreter::evaluateNode(uint32_t nodeId)
             std::size_t idx = static_cast<std::size_t>(imm);
             if (idx >= graph.const_pool.size())
                 throw std::runtime_error("const_pool index out of bounds");
-            result = graph.const_pool[idx];
+            result = static_cast<Scalar>(graph.const_pool[idx]);
             break;
         }
         case JITOpCode::Add: result = va + vb; break;
@@ -175,7 +187,7 @@ void JITGraphInterpreter::evaluateNode(uint32_t nodeId)
         case JITOpCode::Neg: result = -va; break;
         case JITOpCode::Abs: result = std::abs(va); break;
         case JITOpCode::Square: result = va * va; break;
-        case JITOpCode::Recip: result = 1.0 / va; break;
+        case JITOpCode::Recip: result = Scalar(1) / va; break;
         case JITOpCode::Sqrt: result = std::sqrt(va); break;
         case JITOpCode::Exp: result = std::exp(va); break;
         case JITOpCode::Log: result = std::log(va); break;
@@ -228,7 +240,7 @@ void JITGraphInterpreter::evaluateNode(uint32_t nodeId)
         }
         case JITOpCode::Modf:
         {
-            double intpart;
+            Scalar intpart;
             result = std::modf(va, &intpart);
             // Store integer part somewhere if needed
             break;
@@ -239,23 +251,23 @@ void JITGraphInterpreter::evaluateNode(uint32_t nodeId)
             // Smooth abs: if |x| > c return |x|, else smooth function
             if (std::abs(va) > vb)
                 result = std::abs(va);
-            else if (va < 0.0)
-                result = va * va * (2.0 / vb + va / (vb * vb));
+            else if (va < Scalar(0))
+                result = va * va * (Scalar(2) / vb + va / (vb * vb));
             else
-                result = va * va * (2.0 / vb - va / (vb * vb));
+                result = va * va * (Scalar(2) / vb - va / (vb * vb));
             break;
         }
-        case JITOpCode::CmpLT: result = (va < vb) ? 1.0 : 0.0; break;
-        case JITOpCode::CmpLE: result = (va <= vb) ? 1.0 : 0.0; break;
-        case JITOpCode::CmpGT: result = (va > vb) ? 1.0 : 0.0; break;
-        case JITOpCode::CmpGE: result = (va >= vb) ? 1.0 : 0.0; break;
-        case JITOpCode::CmpEQ: result = (va == vb) ? 1.0 : 0.0; break;
-        case JITOpCode::CmpNE: result = (va != vb) ? 1.0 : 0.0; break;
+        case JITOpCode::CmpLT: result = (va < vb) ? Scalar(1) : Scalar(0); break;
+        case JITOpCode::CmpLE: result = (va <= vb) ? Scalar(1) : Scalar(0); break;
+        case JITOpCode::CmpGT: result = (va > vb) ? Scalar(1) : Scalar(0); break;
+        case JITOpCode::CmpGE: result = (va >= vb) ? Scalar(1) : Scalar(0); break;
+        case JITOpCode::CmpEQ: result = (va == vb) ? Scalar(1) : Scalar(0); break;
+        case JITOpCode::CmpNE: result = (va != vb) ? Scalar(1) : Scalar(0); break;
         case JITOpCode::If:
         {
             const uint32_t c = node.c;
-            const double vc = (c < nodeValues.size()) ? nodeValues[c] : 0.0;
-            result = (va != 0.0) ? vb : vc;
+            const Scalar vc = (c < nodeValues.size()) ? nodeValues[c] : Scalar(0);
+            result = (va != Scalar(0)) ? vb : vc;
             break;
         }
         default: throw std::runtime_error("Unknown opcode");
@@ -263,22 +275,23 @@ void JITGraphInterpreter::evaluateNode(uint32_t nodeId)
     nodeValues[nodeId] = result;
 }
 
-void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
 {
     const JITGraph& graph = *impl_->graph;
-    std::vector<double>& nodeValues = impl_->nodeValues;
-    std::vector<double>& nodeAdjoints = impl_->nodeAdjoints;
-    double adj = nodeAdjoints[nodeId];
-    if (adj == 0.0) return;
+    std::vector<Scalar>& nodeValues = impl_->nodeValues;
+    std::vector<Scalar>& nodeAdjoints = impl_->nodeAdjoints;
+    Scalar adj = nodeAdjoints[nodeId];
+    if (adj == Scalar(0)) return;
 
     const auto& node = graph.nodes[nodeId];
     JITOpCode op = static_cast<JITOpCode>(node.op);
     uint32_t a = node.a;
     uint32_t b = node.b;
 
-    double va = (a < nodeValues.size()) ? nodeValues[a] : 0.0;
-    double vb = (b < nodeValues.size()) ? nodeValues[b] : 0.0;
-    double vResult = nodeValues[nodeId];
+    Scalar va = (a < nodeValues.size()) ? nodeValues[a] : Scalar(0);
+    Scalar vb = (b < nodeValues.size()) ? nodeValues[b] : Scalar(0);
+    Scalar vResult = nodeValues[nodeId];
 
     switch (op)
     {
@@ -306,16 +319,16 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             break;
         case JITOpCode::Abs:
             // Match XAD's derivative: (a > 0) - (a < 0), which is 0 at a=0
-            nodeAdjoints[a] += adj * ((va > 0.0) ? 1.0 : ((va < 0.0) ? -1.0 : 0.0));
+            nodeAdjoints[a] += adj * ((va > Scalar(0)) ? Scalar(1) : ((va < Scalar(0)) ? Scalar(-1) : Scalar(0)));
             break;
         case JITOpCode::Square:
-            nodeAdjoints[a] += adj * 2.0 * va;
+            nodeAdjoints[a] += adj * Scalar(2) * va;
             break;
         case JITOpCode::Recip:
             nodeAdjoints[a] -= adj / (va * va);
             break;
         case JITOpCode::Sqrt:
-            nodeAdjoints[a] += adj / (2.0 * vResult);
+            nodeAdjoints[a] += adj / (Scalar(2) * vResult);
             break;
         case JITOpCode::Exp:
             nodeAdjoints[a] += adj * vResult;
@@ -331,18 +344,18 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             break;
         case JITOpCode::Tan:
         {
-            double cosv = std::cos(va);
+            Scalar cosv = std::cos(va);
             nodeAdjoints[a] += adj / (cosv * cosv);
         }
         break;
         case JITOpCode::Asin:
-            nodeAdjoints[a] += adj / std::sqrt(1.0 - va * va);
+            nodeAdjoints[a] += adj / std::sqrt(Scalar(1) - va * va);
             break;
         case JITOpCode::Acos:
-            nodeAdjoints[a] -= adj / std::sqrt(1.0 - va * va);
+            nodeAdjoints[a] -= adj / std::sqrt(Scalar(1) - va * va);
             break;
         case JITOpCode::Atan:
-            nodeAdjoints[a] += adj / (1.0 + va * va);
+            nodeAdjoints[a] += adj / (Scalar(1) + va * va);
             break;
         case JITOpCode::Sinh:
             nodeAdjoints[a] += adj * std::cosh(va);
@@ -352,13 +365,13 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             break;
         case JITOpCode::Tanh:
         {
-            double t = std::tanh(va);
-            nodeAdjoints[a] += adj * (1.0 - t * t);
+            Scalar t = std::tanh(va);
+            nodeAdjoints[a] += adj * (Scalar(1) - t * t);
         }
         break;
         case JITOpCode::Pow:
-            nodeAdjoints[a] += adj * vb * std::pow(va, vb - 1.0);
-            if (va > 0.0)
+            nodeAdjoints[a] += adj * vb * std::pow(va, vb - Scalar(1));
+            if (va > Scalar(0))
                 nodeAdjoints[b] += adj * vResult * std::log(va);
             break;
         case JITOpCode::Min:
@@ -368,8 +381,8 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
                 nodeAdjoints[b] += adj;
             else  // va == vb
             {
-                nodeAdjoints[a] += adj * 0.5;
-                nodeAdjoints[b] += adj * 0.5;
+                nodeAdjoints[a] += adj * Scalar(0.5);
+                nodeAdjoints[b] += adj * Scalar(0.5);
             }
             break;
         case JITOpCode::Max:
@@ -379,8 +392,8 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
                 nodeAdjoints[b] += adj;
             else  // va == vb
             {
-                nodeAdjoints[a] += adj * 0.5;
-                nodeAdjoints[b] += adj * 0.5;
+                nodeAdjoints[a] += adj * Scalar(0.5);
+                nodeAdjoints[b] += adj * Scalar(0.5);
             }
             break;
         case JITOpCode::Mod:
@@ -389,7 +402,7 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             break;
         case JITOpCode::Atan2:
         {
-            double denom = va * va + vb * vb;
+            Scalar denom = va * va + vb * vb;
             nodeAdjoints[a] += adj * vb / denom;
             nodeAdjoints[b] -= adj * va / denom;
         }
@@ -398,7 +411,7 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
         case JITOpCode::Ceil:
             break;
         case JITOpCode::Cbrt:
-            nodeAdjoints[a] += adj / (3.0 * vResult * vResult);
+            nodeAdjoints[a] += adj / (Scalar(3) * vResult * vResult);
             break;
         case JITOpCode::Erf:
             nodeAdjoints[a] += adj * invSqrtPi() * std::exp(-va * va);
@@ -410,25 +423,25 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             nodeAdjoints[a] += adj * std::exp(va);
             break;
         case JITOpCode::Log1p:
-            nodeAdjoints[a] += adj / (1.0 + va);
+            nodeAdjoints[a] += adj / (Scalar(1) + va);
             break;
         case JITOpCode::Log10:
-            nodeAdjoints[a] += adj / (va * std::log(10.0));
+            nodeAdjoints[a] += adj / (va * std::log(Scalar(10)));
             break;
         case JITOpCode::Log2:
-            nodeAdjoints[a] += adj / (va * std::log(2.0));
+            nodeAdjoints[a] += adj / (va * std::log(Scalar(2)));
             break;
         case JITOpCode::Asinh:
-            nodeAdjoints[a] += adj / std::sqrt(va * va + 1.0);
+            nodeAdjoints[a] += adj / std::sqrt(va * va + Scalar(1));
             break;
         case JITOpCode::Acosh:
-            nodeAdjoints[a] += adj / std::sqrt(va * va - 1.0);
+            nodeAdjoints[a] += adj / std::sqrt(va * va - Scalar(1));
             break;
         case JITOpCode::Atanh:
-            nodeAdjoints[a] += adj / (1.0 - va * va);
+            nodeAdjoints[a] += adj / (Scalar(1) - va * va);
             break;
         case JITOpCode::Exp2:
-            nodeAdjoints[a] += adj * std::log(2.0) * vResult;
+            nodeAdjoints[a] += adj * std::log(Scalar(2)) * vResult;
             break;
         case JITOpCode::Trunc:
         case JITOpCode::Round:
@@ -439,7 +452,7 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             int quo;
             XAD_UNUSED_VARIABLE(std::remquo(va, vb, &quo));
             nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * quo;
+            nodeAdjoints[b] -= adj * Scalar(quo);
         }
         break;
         case JITOpCode::Remquo:
@@ -447,7 +460,7 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             int quo;
             XAD_UNUSED_VARIABLE(std::remquo(va, vb, &quo));
             nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * quo;
+            nodeAdjoints[b] -= adj * Scalar(quo);
         }
         break;
         case JITOpCode::Hypot:
@@ -462,7 +475,7 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
         {
             double imm = node.imm;
             int exp = static_cast<int>(imm);
-            nodeAdjoints[a] += adj * (1 << exp);
+            nodeAdjoints[a] += adj * Scalar(1 << exp);
         }
         break;
         case JITOpCode::Frexp:
@@ -470,7 +483,7 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             // Derivative is 1 / 2^exp, but we need to recompute frexp
             int exp;
             std::frexp(va, &exp);
-            nodeAdjoints[a] += adj / (1 << exp);
+            nodeAdjoints[a] += adj / Scalar(1 << exp);
         }
         break;
         case JITOpCode::Modf:
@@ -479,30 +492,30 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             break;
         case JITOpCode::Copysign:
             // d/da copysign(a, b) = sign(b)
-            nodeAdjoints[a] += adj * ((vb >= 0.0) ? 1.0 : -1.0);
+            nodeAdjoints[a] += adj * ((vb >= Scalar(0)) ? Scalar(1) : Scalar(-1));
             // d/db copysign(a, b) = 0
             break;
         case JITOpCode::SmoothAbs:
         {
-            double dval;
+            Scalar dval;
             if (va > vb)
-                dval = 1.0;
+                dval = Scalar(1);
             else if (va < -vb)
-                dval = -1.0;
-            else if (va < 0.0)
-                dval = va / (vb * vb) * (3.0 * va + 4.0 * vb);
+                dval = Scalar(-1);
+            else if (va < Scalar(0))
+                dval = va / (vb * vb) * (Scalar(3) * va + Scalar(4) * vb);
             else
-                dval = -va / (vb * vb) * (3.0 * va - 4.0 * vb);
+                dval = -va / (vb * vb) * (Scalar(3) * va - Scalar(4) * vb);
             nodeAdjoints[a] += adj * dval;
 
             // Derivative w.r.t. c (second parameter)
-            double dcval;
+            Scalar dcval;
             if (va > vb || va < -vb)
-                dcval = 0.0;
-            else if (va < 0.0)
-                dcval = -2.0 * va * va * (vb + va) / (vb * vb * vb);
+                dcval = Scalar(0);
+            else if (va < Scalar(0))
+                dcval = Scalar(-2) * va * va * (vb + va) / (vb * vb * vb);
             else
-                dcval = -2.0 * va * va * (vb - va) / (vb * vb * vb);
+                dcval = Scalar(-2) * va * va * (vb - va) / (vb * vb * vb);
             nodeAdjoints[b] += adj * dcval;
         }
         break;
@@ -515,7 +528,7 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             break;
         case JITOpCode::If:
         {
-            if (va != 0.0)
+            if (va != Scalar(0))
                 nodeAdjoints[b] += adj;
             else
                 nodeAdjoints[node.c] += adj;
@@ -525,6 +538,10 @@ void JITGraphInterpreter::propagateAdjoint(uint32_t nodeId)
             break;
     }
 }
+
+// Explicit instantiations
+template class JITGraphInterpreter<float>;
+template class JITGraphInterpreter<double>;
 
 }  // namespace xad
 

@@ -45,8 +45,12 @@ namespace xad
  * The vectorWidth() method returns how many parallel evaluations are performed:
  * 1 for scalar backends, or more for SIMD backends (e.g., 4 for AVX2).
  *
+ * The template parameter Scalar specifies the floating-point type used for
+ * inputs, outputs, and gradients (typically float or double).
+ *
  * See JITGraphInterpreter for a reference implementation.
  */
+template <class Scalar>
 class JITBackend
 {
   public:
@@ -68,13 +72,13 @@ class JITBackend
     virtual std::size_t numOutputs() const = 0;
 
     /// Set input values for an input variable (vectorWidth() values).
-    virtual void setInput(std::size_t inputIndex, const double* values) = 0;
+    virtual void setInput(std::size_t inputIndex, const Scalar* values) = 0;
 
     /// Execute forward pass only. Output array must have numOutputs() * vectorWidth() elements.
-    virtual void forward(double* outputs) = 0;
+    virtual void forward(Scalar* outputs) = 0;
 
     /// Execute forward and backward passes. Output adjoints are seeded to 1.0.
-    virtual void forwardAndBackward(double* outputs, double* inputGradients) = 0;
+    virtual void forwardAndBackward(Scalar* outputs, Scalar* inputGradients) = 0;
 };
 
 }  // namespace xad

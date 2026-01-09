@@ -83,7 +83,7 @@ inline void averageResults(Results& res, int numPaths)
 }
 
 /// Set scalar backend inputs for one path
-inline void setScalarInputs(xad::JITBackend& backend, const MarketParameters& market,
+inline void setScalarInputs(xad::JITBackend<double>& backend, const MarketParameters& market,
                             const std::vector<double>& pathSamples)
 {
     double deltaVal = market.delta;

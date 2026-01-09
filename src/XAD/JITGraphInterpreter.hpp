@@ -36,7 +36,18 @@
 namespace xad
 {
 
-class JITGraphInterpreter : public JITBackend
+/**
+ * @brief Reference JITBackend implementation that interprets a JITGraph.
+ *
+ * This is a simple interpreter-based backend that evaluates the computation
+ * graph node by node. It serves as a reference implementation and fallback
+ * when no native code generation backend is available.
+ *
+ * The template parameter Scalar specifies the floating-point type used for
+ * computation (typically float or double).
+ */
+template <class Scalar>
+class JITGraphInterpreter : public JITBackend<Scalar>
 {
   public:
     JITGraphInterpreter();
@@ -49,18 +60,22 @@ class JITGraphInterpreter : public JITBackend
     std::size_t numInputs() const override;
     std::size_t numOutputs() const override;
 
-    void setInput(std::size_t inputIndex, const double* values) override;
-    void forward(double* outputs) override;
-    void forwardAndBackward(double* outputs, double* inputGradients) override;
+    void setInput(std::size_t inputIndex, const Scalar* values) override;
+    void forward(Scalar* outputs) override;
+    void forwardAndBackward(Scalar* outputs, Scalar* inputGradients) override;
 
   private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 
-    static double invSqrtPi();
+    static Scalar invSqrtPi();
     void evaluateNode(uint32_t nodeId);
     void propagateAdjoint(uint32_t nodeId);
 };
+
+// Declare external explicit instantiations
+extern template class JITGraphInterpreter<float>;
+extern template class JITGraphInterpreter<double>;
 
 }  // namespace xad
 

@@ -61,7 +61,7 @@ class JITCompiler
 
     // Default constructor - uses interpreter backend
     explicit JITCompiler(bool activate = true)
-        : backend_(std::unique_ptr<JITGraphInterpreter>(new JITGraphInterpreter()))
+        : backend_(std::unique_ptr<JITGraphInterpreter<Real>>(new JITGraphInterpreter<Real>()))
     {
         if (activate)
         {
@@ -72,7 +72,7 @@ class JITCompiler
     }
 
     // Constructor with custom backend
-    explicit JITCompiler(std::unique_ptr<JITBackend> backend, bool activate = true)
+    explicit JITCompiler(std::unique_ptr<JITBackend<Real>> backend, bool activate = true)
         : backend_(std::move(backend))
     {
         if (activate)
@@ -87,7 +87,7 @@ class JITCompiler
 
     /// Set or replace the JIT backend.
     /// Resets any compiled state when the backend is changed.
-    void setBackend(std::unique_ptr<JITBackend> backend)
+    void setBackend(std::unique_ptr<JITBackend<Real>> backend)
     {
         backend_ = std::move(backend);
         if (backend_)
@@ -223,23 +223,23 @@ class JITCompiler
     std::size_t numInputs() const { return backend_->numInputs(); }
     std::size_t numOutputs() const { return backend_->numOutputs(); }
 
-    void setInput(std::size_t inputIndex, const double* values)
+    void setInput(std::size_t inputIndex, const Real* values)
     {
         backend_->setInput(inputIndex, values);
     }
 
     /// Execute forward pass using registered input pointers.
-    void forward(double* outputs)
+    void forward(Real* outputs)
     {
         for (std::size_t i = 0; i < inputValues_.size(); ++i)
         {
-            double value = *inputValues_[i];
+            Real value = *inputValues_[i];
             backend_->setInput(i, &value);
         }
         backend_->forward(outputs);
     }
 
-    void forwardAndBackward(double* outputs, double* inputGradients)
+    void forwardAndBackward(Real* outputs, Real* inputGradients)
     {
         backend_->forwardAndBackward(outputs, inputGradients);
     }
@@ -252,12 +252,12 @@ class JITCompiler
 
         for (std::size_t i = 0; i < inputValues_.size(); ++i)
         {
-            double value = *inputValues_[i];
+            Real value = *inputValues_[i];
             backend_->setInput(i, &value);
         }
 
-        std::vector<double> outputs(nOutputs);
-        std::vector<double> inputGradients(nInputs);
+        std::vector<Real> outputs(nOutputs);
+        std::vector<Real> inputGradients(nInputs);
         backend_->forwardAndBackward(outputs.data(), inputGradients.data());
 
         derivatives_.resize(graph_.nodeCount(), derivative_type());
@@ -312,7 +312,7 @@ class JITCompiler
   private:
     static XAD_THREAD_LOCAL JITCompiler* active_jit_;
     JITGraph graph_;
-    std::unique_ptr<JITBackend> backend_;
+    std::unique_ptr<JITBackend<Real>> backend_;
     std::vector<const Real*> inputValues_;
     std::vector<derivative_type> derivatives_;
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
