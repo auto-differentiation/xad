@@ -85,18 +85,16 @@ Reference backend that interprets the graph directly. It is mainly intended as:
 
 ### Example Usage
 
-```cpp
-// For double backend
-auto backend = std::make_unique<xad::JITGraphInterpreter<double>>();
-xad::JITCompiler<double, 1> jit(std::move(backend));
-// ... record graph ...
-jit.compile();
-```
+For double backend:
 
-```cpp
-// For float backend
-auto backend = std::make_unique<xad::JITGraphInterpreter<float>>();
-xad::JITCompiler<float, 1> jit(std::move(backend));
-// ... record graph ...
-jit.compile();
-```
+    auto backend = std::make_unique<xad::JITGraphInterpreter<double>>();
+    xad::JITCompiler<double, 1> jit(std::move(backend));
+    // ... record graph ...
+    jit.compile();
+
+For float backend:
+
+    auto backend = std::make_unique<xad::JITGraphInterpreter<float>>();
+    xad::JITCompiler<float, 1> jit(std::move(backend));
+    // ... record graph ...
+    jit.compile();
