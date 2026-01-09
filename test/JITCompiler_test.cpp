@@ -450,10 +450,10 @@ TEST(JITCompiler, floatScalarOperations)
 
     jit.compile();
 
-    double output;  // JIT always uses double internally
+    float output;
     jit.forward(&output);
 
-    EXPECT_DOUBLE_EQ(6.0, output);
+    EXPECT_FLOAT_EQ(6.0f, output);
 }
 
 TEST(JITAReal, derivativeFallbackUsesJITWhenNoTape)
