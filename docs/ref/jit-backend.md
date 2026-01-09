@@ -86,16 +86,17 @@ Reference backend that interprets the graph directly. It is mainly intended as:
 ### Example Usage
 
 ```cpp
-// Double precision (most common)
-xad::JITCompiler<double, 1> jit;
-// ... record graph ...
-jit.compile();  // Uses JITGraphInterpreter<double> by default
-
-// Or with explicit backend
+// For double backend
 auto backend = std::make_unique<xad::JITGraphInterpreter<double>>();
 xad::JITCompiler<double, 1> jit(std::move(backend));
+// ... record graph ...
+jit.compile();
+```
 
-// Single precision
-auto backend_f = std::make_unique<xad::JITGraphInterpreter<float>>();
-xad::JITCompiler<float, 1> jit_f(std::move(backend_f));
+```cpp
+// For float backend
+auto backend = std::make_unique<xad::JITGraphInterpreter<float>>();
+xad::JITCompiler<float, 1> jit(std::move(backend));
+// ... record graph ...
+jit.compile();
 ```
