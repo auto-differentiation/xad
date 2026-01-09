@@ -145,7 +145,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_JIT=${{ matrix.xad_jit }} \
-            -DXAD_ENABLE_TESTS=ON \
+            -DXAD_ENABLE_TESTS=OFF \
             -DXAD_SIMD_OPTION=AVX2 \
             -DXAD_NO_THREADLOCAL=ON \
             -DXAD_USE_STRONG_INLINE=ON \
@@ -176,7 +176,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_JIT=ON \
-            -DXAD_ENABLE_TESTS=ON \
+            -DXAD_ENABLE_TESTS=OFF \
             -DXAD_SIMD_OPTION=AVX2 \
             -DXAD_NO_THREADLOCAL=ON \
             -DXAD_USE_STRONG_INLINE=ON \
@@ -279,7 +279,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CXX_STANDARD=17 ^
             -DXAD_ENABLE_JIT=${{ matrix.xad_jit }} ^
-            -DXAD_ENABLE_TESTS=ON ^
+            -DXAD_ENABLE_TESTS=OFF ^
             -DXAD_SIMD_OPTION=AVX2 ^
             -DXAD_NO_THREADLOCAL=ON ^
             -DXAD_USE_STRONG_INLINE=ON ^
@@ -314,7 +314,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CXX_STANDARD=17 ^
             -DXAD_ENABLE_JIT=ON ^
-            -DXAD_ENABLE_TESTS=ON ^
+            -DXAD_ENABLE_TESTS=OFF ^
             -DXAD_SIMD_OPTION=AVX2 ^
             -DXAD_NO_THREADLOCAL=ON ^
             -DXAD_USE_STRONG_INLINE=ON ^
@@ -402,7 +402,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_JIT=ON \
-            -DXAD_ENABLE_TESTS=ON \
+            -DXAD_ENABLE_TESTS=OFF \
             -DXAD_SIMD_OPTION=AVX2 \
             -DXAD_NO_THREADLOCAL=ON \
             -DXAD_USE_STRONG_INLINE=ON \
@@ -432,7 +432,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=17 \
             -DXAD_ENABLE_JIT=ON \
-            -DXAD_ENABLE_TESTS=ON \
+            -DXAD_ENABLE_TESTS=OFF \
             -DXAD_SIMD_OPTION=AVX2 \
             -DXAD_NO_THREADLOCAL=ON \
             -DXAD_USE_STRONG_INLINE=ON \
