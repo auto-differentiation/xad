@@ -61,7 +61,7 @@ class JITCompiler
 
     // Default constructor - uses interpreter backend
     explicit JITCompiler(bool activate = true)
-        : backend_(std::unique_ptr<JITGraphInterpreter>(new JITGraphInterpreter()))
+        : backend_(std::unique_ptr<JITGraphInterpreter<Real>>(new JITGraphInterpreter<Real>()))
     {
         if (activate)
         {
@@ -72,7 +72,7 @@ class JITCompiler
     }
 
     // Constructor with custom backend
-    explicit JITCompiler(std::unique_ptr<JITBackend> backend, bool activate = true)
+    explicit JITCompiler(std::unique_ptr<JITBackend<Real>> backend, bool activate = true)
         : backend_(std::move(backend))
     {
         if (activate)
@@ -87,7 +87,7 @@ class JITCompiler
 
     /// Set or replace the JIT backend.
     /// Resets any compiled state when the backend is changed.
-    void setBackend(std::unique_ptr<JITBackend> backend)
+    void setBackend(std::unique_ptr<JITBackend<Real>> backend)
     {
         backend_ = std::move(backend);
         if (backend_)
@@ -216,60 +216,53 @@ class JITCompiler
 
     uint32_t recordConstant(double value) { return graph_.addConstant(value); }
 
-    /**
-     * Compile the recorded graph to native code.
-     * Must be called after recording and before forward().
-     */
+    /// Compile the recorded graph. Must be called before execution methods.
     void compile() { backend_->compile(graph_); }
 
-    /**
-     * Execute the compiled kernel with current input values.
-     * compile() must be called before the first forward() call.
-     */
-    void forward(double* outputs, std::size_t numOutputs)
+    std::size_t vectorWidth() const { return backend_->vectorWidth(); }
+    std::size_t numInputs() const { return backend_->numInputs(); }
+    std::size_t numOutputs() const { return backend_->numOutputs(); }
+
+    void setInput(std::size_t inputIndex, const Real* values)
     {
-        if (numOutputs != graph_.output_ids.size())
-            throw OutOfRange("Output count mismatch");
-
-        std::size_t numInputs = graph_.input_ids.size();
-        std::vector<double> inputs(numInputs);
-        for (std::size_t i = 0; i < numInputs; ++i)
-            inputs[i] = *inputValues_[i];
-
-        backend_->forward(graph_, inputs.data(), numInputs, outputs, numOutputs);
+        backend_->setInput(inputIndex, values);
     }
 
-    /**
-     * Compute adjoints (gradients) using reverse-mode AD.
-     * compile() must be called before this.
-     */
+    /// Execute forward pass using registered input pointers.
+    void forward(Real* outputs)
+    {
+        for (std::size_t i = 0; i < inputValues_.size(); ++i)
+        {
+            Real value = *inputValues_[i];
+            backend_->setInput(i, &value);
+        }
+        backend_->forward(outputs);
+    }
+
+    void forwardAndBackward(Real* outputs, Real* inputGradients)
+    {
+        backend_->forwardAndBackward(outputs, inputGradients);
+    }
+
+    /// Compute adjoints using registered input pointers.
     void computeAdjoints()
     {
+        std::size_t nInputs = graph_.input_ids.size();
+        std::size_t nOutputs = graph_.output_ids.size();
 
-        std::size_t numInputs = graph_.input_ids.size();
-        std::size_t numOutputs = graph_.output_ids.size();
-
-        std::vector<double> inputs(numInputs);
-        for (std::size_t i = 0; i < numInputs; ++i)
-            inputs[i] = *inputValues_[i];
-
-        std::vector<double> outputAdjoints(numOutputs, 0.0);
-        for (std::size_t i = 0; i < numOutputs; ++i)
+        for (std::size_t i = 0; i < inputValues_.size(); ++i)
         {
-            uint32_t outId = graph_.output_ids[i];
-            if (outId < derivatives_.size())
-                outputAdjoints[i] = derivatives_[outId];
+            Real value = *inputValues_[i];
+            backend_->setInput(i, &value);
         }
 
-        std::vector<double> outputs(numOutputs);
-        std::vector<double> inputAdjoints(numInputs);
-        backend_->forwardAndBackward(graph_, inputs.data(), numInputs,
-                                     outputAdjoints.data(), numOutputs,
-                                     outputs.data(), inputAdjoints.data());
+        std::vector<Real> outputs(nOutputs);
+        std::vector<Real> inputGradients(nInputs);
+        backend_->forwardAndBackward(outputs.data(), inputGradients.data());
 
         derivatives_.resize(graph_.nodeCount(), derivative_type());
-        for (std::size_t i = 0; i < numInputs; ++i)
-            derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputAdjoints[i]);
+        for (std::size_t i = 0; i < nInputs; ++i)
+            derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputGradients[i]);
     }
 
     derivative_type& derivative(slot_type s)
@@ -319,7 +312,7 @@ class JITCompiler
   private:
     static XAD_THREAD_LOCAL JITCompiler* active_jit_;
     JITGraph graph_;
-    std::unique_ptr<JITBackend> backend_;
+    std::unique_ptr<JITBackend<Real>> backend_;
     std::vector<const Real*> inputValues_;
     std::vector<derivative_type> derivatives_;
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access

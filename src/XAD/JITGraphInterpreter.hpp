@@ -36,34 +36,46 @@
 namespace xad
 {
 
-class JITGraphInterpreter : public JITBackend
+/**
+ * @brief Reference JITBackend implementation that interprets a JITGraph.
+ *
+ * This is a simple interpreter-based backend that evaluates the computation
+ * graph node by node. It serves as a reference implementation and fallback
+ * when no native code generation backend is available.
+ *
+ * The template parameter Scalar specifies the floating-point type used for
+ * computation (typically float or double).
+ */
+template <class Scalar>
+class JITGraphInterpreter : public JITBackend<Scalar>
 {
   public:
     JITGraphInterpreter();
     ~JITGraphInterpreter() override;
 
     void compile(const JITGraph& graph) override;
-
-    void forward(const JITGraph& graph,
-                 const double* inputs, std::size_t numInputs,
-                 double* outputs, std::size_t numOutputs) override;
-
-    void forwardAndBackward(const JITGraph& graph,
-                            const double* inputs, std::size_t numInputs,
-                            const double* outputAdjoints, std::size_t numOutputs,
-                            double* outputs,
-                            double* inputAdjoints) override;
-
     void reset() override;
+
+    std::size_t vectorWidth() const override { return 1; }
+    std::size_t numInputs() const override;
+    std::size_t numOutputs() const override;
+
+    void setInput(std::size_t inputIndex, const Scalar* values) override;
+    void forward(Scalar* outputs) override;
+    void forwardAndBackward(Scalar* outputs, Scalar* inputGradients) override;
 
   private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 
-    static double invSqrtPi();
-    void evaluateNode(const JITGraph& graph, uint32_t nodeId);
-    void propagateAdjoint(const JITGraph& graph, uint32_t nodeId);
+    static Scalar invSqrtPi();
+    void evaluateNode(uint32_t nodeId);
+    void propagateAdjoint(uint32_t nodeId);
 };
+
+// Declare external explicit instantiations
+extern template class JITGraphInterpreter<float>;
+extern template class JITGraphInterpreter<double>;
 
 }  // namespace xad
 

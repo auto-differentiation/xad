@@ -23,14 +23,32 @@
 #
 ##############################################################################
 
+# Main sample executable (simple demo)
 xad_add_sample(LiborSwaptionPricer
   SOURCES
     LiborData.hpp
     LiborFunctions.hpp
     LiborPricers.hpp
     LiborPricers.cpp
+    PlatformInfo.hpp
     main.cpp
   TEST_ARGS
     100
     test
 )
+
+# Baseline benchmark executable (FD + XAD comparison)
+xad_add_sample(LiborSwaptionPricerBenchmark
+  SOURCES
+    LiborData.hpp
+    LiborFunctions.hpp
+    LiborPricers.hpp
+    LiborPricers.cpp
+    PlatformInfo.hpp
+    benchmark.cpp
+  TEST_ARGS
+    --quick
+)
+
+# Add JIT subfolder if xad-forge is available
+add_subdirectory(JIT)

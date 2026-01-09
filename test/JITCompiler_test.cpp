@@ -126,21 +126,21 @@ TEST(JITCompiler, canSetBackend)
     jit.compile();
 
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(6.0, output);
 
     // Replace backend with a new interpreter
-    jit.setBackend(std::unique_ptr<xad::JITBackend>(new xad::JITGraphInterpreter()));
+    jit.setBackend(std::unique_ptr<xad::JITBackend<double>>(new xad::JITGraphInterpreter<double>()));
 
     // After setBackend, need to recompile since backend was reset
     jit.compile();
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(6.0, output);
 }
 
 TEST(JITCompiler, constructorWithExplicitBackend)
 {
-    auto backend = std::unique_ptr<xad::JITBackend>(new xad::JITGraphInterpreter());
+    auto backend = std::unique_ptr<xad::JITBackend<double>>(new xad::JITGraphInterpreter<double>());
     xad::JITCompiler<double> jit(std::move(backend), true);
 
     using AD = xad::AReal<double, 1>;
@@ -155,7 +155,7 @@ TEST(JITCompiler, constructorWithExplicitBackend)
     jit.compile();
 
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(5.0, output);
 }
 
@@ -193,7 +193,7 @@ TEST(JITCompiler, forwardProducesCorrectValues)
     jit.compile();
 
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
     EXPECT_DOUBLE_EQ(8.0, output);
 }
 
@@ -233,7 +233,7 @@ TEST(JITCompiler, canUseNewRecording)
     jit.compile();
 
     double output1;
-    jit.forward(&output1, 1);
+    jit.forward(&output1);
     EXPECT_DOUBLE_EQ(5.0, output1);
 
     // New recording with same inputs
@@ -243,7 +243,7 @@ TEST(JITCompiler, canUseNewRecording)
     jit.compile();
 
     double output2;
-    jit.forward(&output2, 1);
+    jit.forward(&output2);
     EXPECT_DOUBLE_EQ(6.0, output2);
 }
 
@@ -363,21 +363,6 @@ TEST(JITCompiler, setActiveThrowsWhenAlreadyActive)
         xad::OutOfRange);
 }
 
-TEST(JITCompiler, forwardThrowsOnOutputMismatch)
-{
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD x = 2.0;
-    jit.registerInput(x);
-    AD y = x * x;
-    jit.registerOutput(y);
-    jit.compile();
-
-    double outputs[2];  // Wrong size - we only have 1 output
-    EXPECT_THROW(jit.forward(outputs, 2), xad::OutOfRange);
-}
-
 TEST(JITCompiler, clearAll)
 {
     xad::JITCompiler<double> jit;
@@ -465,10 +450,10 @@ TEST(JITCompiler, floatScalarOperations)
 
     jit.compile();
 
-    double output;  // JIT always uses double internally
-    jit.forward(&output, 1);
+    float output;
+    jit.forward(&output);
 
-    EXPECT_DOUBLE_EQ(6.0, output);
+    EXPECT_FLOAT_EQ(6.0f, output);
 }
 
 TEST(JITAReal, derivativeFallbackUsesJITWhenNoTape)
@@ -548,6 +533,53 @@ TEST(JITAReal, vectorModeDoesNotUseJitFallback)
     EXPECT_THROW((void)v.derivative(), xad::NoTapeException);
 }
 
+// =============================================================================
+// Pass-through method tests for coverage
+// =============================================================================
+
+TEST(JITCompiler, passThroughMethods)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 2.0, b = 3.0;
+    jit.registerInput(a);
+    jit.registerInput(b);
+    AD c = a * b;
+    jit.registerOutput(c);
+    jit.compile();
+
+    // Test pass-through accessors
+    EXPECT_EQ(1u, jit.vectorWidth());
+    EXPECT_EQ(2u, jit.numInputs());
+    EXPECT_EQ(1u, jit.numOutputs());
+
+    // Test setInput pass-through (must set ALL inputs before forwardAndBackward)
+    double newVal = 5.0;
+    double bVal = 3.0;
+    jit.setInput(0, &newVal);
+    jit.setInput(1, &bVal);
+
+    // Test forwardAndBackward pass-through
+    double output, inputGradients[2];
+    jit.forwardAndBackward(&output, inputGradients);
+    EXPECT_DOUBLE_EQ(15.0, output);  // 5 * 3
+}
+
+TEST(JITCompiler, constGetGraph)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD a = 2.0;
+    jit.registerInput(a);
+    jit.registerOutput(a);
+
+    const auto& constJit = jit;
+    const auto& graph = constJit.getGraph();
+    EXPECT_EQ(1u, graph.input_ids.size());
+    EXPECT_EQ(1u, graph.output_ids.size());
+}
 
 // =============================================================================
 // Additional JITGraph tests

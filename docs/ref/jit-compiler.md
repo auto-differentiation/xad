@@ -33,7 +33,7 @@
     jit.compile();
 
     double out = 0.0;
-    jit.forward(&out, 1);
+    jit.forward(&out);
 
 ## Recording control (TLS)
 
@@ -97,7 +97,7 @@ Starts a new recording using the existing registered inputs.
 
 ### `forward`
 
-`#!c++ void forward(double* outputs, std::size_t numOutputs)`
+`#!c++ void forward(double* outputs)`
 
 Executes the forward pass and fills the output array.
 

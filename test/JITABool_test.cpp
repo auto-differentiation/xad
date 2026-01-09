@@ -239,7 +239,7 @@ TEST(JITABool, ifWithJITRecording)
 
     jit.compile();
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
 
     EXPECT_DOUBLE_EQ(4.0, output);  // x < 5, so trueVal = 2*2 = 4
 }
@@ -262,7 +262,7 @@ TEST(JITABool, ifWithJITRecordingFalseBranch)
 
     jit.compile();
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
 
     EXPECT_DOUBLE_EQ(30.0, output);  // x >= 5, so falseVal = 10*3 = 30
 }
@@ -339,7 +339,7 @@ TEST(JITABool, ifWithConstantOperands)
 
     jit.compile();
     double output;
-    jit.forward(&output, 1);
+    jit.forward(&output);
 
     EXPECT_DOUBLE_EQ(100.0, output);  // x < 5, so trueVal = 100
 }
