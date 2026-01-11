@@ -14,7 +14,8 @@ It provides forward and adjoint (reverse) mode automatic differentiation via ope
 * Minimal memory footprint
 * Straightforward integration into existing C++ codebases
 
-For Monte Carlo and other repetitive workloads, XAD also offers optional JIT backend support, enabling record-once / replay-many execution for additional performance boost.
+For Monte Carlo and other repetitive workloads, XAD also offers optional JIT backend support,
+enabling record-once / replay-many execution for additional performance boost.
 
 <p align="center" dir="auto">
     <a href="https://github.com/auto-differentiation/xad/releases/latest">
@@ -41,8 +42,9 @@ For Monte Carlo and other repetitive workloads, XAD also offers optional JIT bac
 - **Vector mode**: Compute multiple derivatives at once.
 - **Checkpointing Support**: Efficient tape memory management for large-scale applications.
 - **External Function Interface**: Seamlessly connect with external libraries.
-- **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page)
-- **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many workflows - with or without automatic differentiation. See [samples/jit_tutorial](samples/jit_tutorial).
+- **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page).
+- **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many.
+  workflows - with or without automatic differentiation. See [samples/jit_tutorial](samples/jit_tutorial).
 
 ## Example
 
