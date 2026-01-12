@@ -592,7 +592,7 @@ jobs:
           cat benchmark_results.md
 
       - name: Upload Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-jit-compare
           path: benchmark_results.md
