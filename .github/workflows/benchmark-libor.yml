@@ -101,13 +101,13 @@ jobs:
           free -h
 
       - name: Checkout XAD
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: xad
 
       - name: Checkout Forge
         if: matrix.forge
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.FORGE_REPO }}
           ref: ${{ env.FORGE_BRANCH }}
@@ -115,7 +115,7 @@ jobs:
 
       - name: Checkout xad-forge
         if: matrix.forge
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
           ref: ${{ env.XAD_FORGE_BRANCH }}
@@ -233,13 +233,13 @@ jobs:
 
     steps:
       - name: Checkout XAD
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: xad
 
       - name: Checkout Forge
         if: matrix.forge
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.FORGE_REPO }}
           ref: ${{ env.FORGE_BRANCH }}
@@ -247,7 +247,7 @@ jobs:
 
       - name: Checkout xad-forge
         if: matrix.forge
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
           ref: ${{ env.XAD_FORGE_BRANCH }}
@@ -362,19 +362,19 @@ jobs:
           free -h
 
       - name: Checkout XAD
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: xad
 
       - name: Checkout Forge
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.FORGE_REPO }}
           ref: ${{ env.FORGE_BRANCH }}
           path: forge
 
       - name: Checkout xad-forge
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ env.XAD_FORGE_REPO }}
           ref: ${{ env.XAD_FORGE_BRANCH }}
@@ -462,7 +462,7 @@ jobs:
           lsmem
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
