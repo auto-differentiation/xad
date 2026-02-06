@@ -5,17 +5,17 @@ All notable changes to XAD will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [2.0.0] - 2026-02-06
 
 ### Added
 
+- **JIT Backend Support**: Infrastructure for pluggable JIT backends, enabling record-once/replay-many workflows - with or without automatic differentiation. ([#190](https://github.com/auto-differentiation/xad/pull/190) by @da-roth)
+- **Overhead Benchmarking**: Benchmarks overhead of enabling JIT support without using it on each PR ([#190](https://github.com/auto-differentiation/xad/pull/190) by @da-roth).
+- **JIT Sample Benchmark**: Benchmarking Libor Swaption sample with FD, tape-based AAD, and JIT AAD on each PR ([#192](https://github.com/auto-differentiation/xad/pull/192) by @da-roth)
+
 ### Changed
 
-### Deprecated
-
-### Removed
-
-### Fixed
+- **Improved CI/CD Pipelines**: Various smaller fixes and improvements
 
 
 ## [1.8.0] - 2025-08-05
@@ -199,7 +199,7 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/xad/compare/v1.8.0...HEAD
+[2.0.0]: https://github.com/auto-differentiation/xad/compare/v1.8.0...v2.0.0
 
 [1.8.0]: https://github.com/auto-differentiation/xad/compare/v1.7.0...v1.8.0
 
