@@ -101,5 +101,5 @@ Please report bugs and issues via the
 ## Related Projects
 
 - [XAD-Py](https://github.com/auto-differentiation/xad-py): XAD in Python.
-- [QuantLib-Risks](https://github.com/auto-differentiation/QuantLib-Risks-Cpp): AAD integration in [QuantLib](https://github.com/lballabio/QuantLib).
+- [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD): AAD integration in [QuantLib](https://github.com/lballabio/QuantLib).
 - [xad-forge](https://github.com/da-roth/xad-forge): Forge JIT backends for XAD.
