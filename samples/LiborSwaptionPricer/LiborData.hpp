@@ -8,7 +8,7 @@
    The code is an adapted version of Prof. Mike Giles, available here:
    https://people.maths.ox.ac.uk/~gilesm/codes/libor_AD/testlinadj.cpp
 
-   Copyright (C) 2010-2025 Xcelerit Computing Ltd.
+   Copyright (C) 2010-2026 Xcelerit Computing Ltd.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
