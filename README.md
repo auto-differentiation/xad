@@ -43,8 +43,6 @@ enabling record-once / replay-many execution for additional performance boost.
 - **Checkpointing Support**: Efficient tape memory management for large-scale applications.
 - **External Function Interface**: Seamlessly connect with external libraries.
 - **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page).
-- **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many.
-  workflows - with or without automatic differentiation. See [samples/jit_tutorial](samples/jit_tutorial).
 
 ## Example
 
@@ -102,4 +100,3 @@ Please report bugs and issues via the
 
 - [XAD-Py](https://github.com/auto-differentiation/xad-py): XAD in Python.
 - [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD): AAD integration in [QuantLib](https://github.com/lballabio/QuantLib).
-- [xad-forge](https://github.com/da-roth/xad-forge): Forge JIT backends for XAD.
