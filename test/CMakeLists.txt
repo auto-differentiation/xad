@@ -59,7 +59,7 @@ if (XAD_ENABLE_EIGEN_TESTS)
     list(APPEND testfiles Eigen_test.cpp)
 endif()
 
-if (XAD_ENABLE_JIT)
+if (XAD_ENABLE_CODEGEN)
     list(APPEND testfiles
         JITCompiler_test.cpp
         JITExprTraits_test.cpp
@@ -69,6 +69,7 @@ if (XAD_ENABLE_JIT)
         JITExpressionMath_test.cpp
     )
 endif()
+
 
 if (CMAKE_COMPILER_IS_GNUCC)
     set_source_files_properties(ExpressionsConversion_test.cpp

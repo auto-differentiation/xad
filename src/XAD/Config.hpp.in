@@ -49,5 +49,7 @@
 // Reduce memory usage in the tape, at a slight performance cost
 #cmakedefine XAD_REDUCED_MEMORY
 
-// Enable JIT compilation support (record-once, compile-once, evaluate-many)
+// Enable codegen (JIT compilation) support
+#cmakedefine XAD_ENABLE_CODEGEN
+// Internal: set when codegen is enabled
 #cmakedefine XAD_ENABLE_JIT

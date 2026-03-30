@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   These functions use Forge JIT compilation for accelerated AAD computation.
+   These functions use Codegen JIT compilation for accelerated AAD computation.
 
    Copyright (C) 2010-2026 Xcelerit Computing Ltd.
 
@@ -58,13 +58,13 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
                                              const MarketParameters& market,
                                              int numPaths, unsigned long long seed = 12354);
 
-/// Price with first-order sensitivities, using AAD with Forge JIT compilation
+/// Price with first-order sensitivities, using AAD with Codegen JIT compilation
 /// The computation graph is compiled once on the first path and reused.
 /// @param stats Optional pointer to receive JIT compilation statistics
 Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParameters& market,
                           int numPaths, unsigned long long seed = 12354, JITStats* stats = nullptr);
 
-/// Price with first-order sensitivities, using Forge JIT with AVX2 SIMD
+/// Price with first-order sensitivities, using Codegen JIT with AVX2 SIMD
 /// Processes 4 Monte Carlo paths per kernel execution using AVX2 instructions.
 /// @param stats Optional pointer to receive JIT compilation statistics
 Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketParameters& market,

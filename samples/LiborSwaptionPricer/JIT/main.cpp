@@ -8,8 +8,8 @@
    APPROACHES TESTED:
      FD      - Finite Differences (bump-and-revalue)
      XAD     - XAD tape-based reverse-mode AAD
-     JIT     - Forge JIT-compiled native code (scalar)
-     JIT-AVX - Forge JIT + AVX2 SIMD (4 paths/instruction)
+     JIT     - Codegen JIT-compiled native code (scalar)
+     JIT-AVX - Codegen JIT + AVX2 SIMD (4 paths/instruction)
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -148,7 +148,7 @@ void printUsage(const char* progName)
     std::cout << "  --quick           Run quick benchmark (fewer iterations, fewer path counts)\n";
     std::cout << "  --decomposition   Run performance decomposition analysis (10K paths)\n";
     std::cout << "\nThis benchmark compares AD approaches for LIBOR swaption pricing.\n";
-    std::cout << "Build: Full benchmark with Forge JIT\n";
+    std::cout << "Build: Full benchmark with Codegen JIT\n";
 }
 
 // ============================================================================
@@ -209,7 +209,7 @@ void printDecomposition(const SwaptionPortfolio& portfolio, const MarketParamete
     // =========================================================================
     // JIT Scalar Decomposition
     // =========================================================================
-    std::cout << "\n  JIT SCALAR (Forge)\n";
+    std::cout << "\n  JIT SCALAR (Codegen)\n";
     std::cout << std::string(80, '-') << "\n";
 
     auto jitTiming = runDecompositionJIT(portfolio, market, numPaths, seed);
@@ -238,7 +238,7 @@ void printDecomposition(const SwaptionPortfolio& portfolio, const MarketParamete
     // =========================================================================
     // JIT-AVX Decomposition
     // =========================================================================
-    std::cout << "\n  JIT-AVX (Forge + AVX2 SIMD)\n";
+    std::cout << "\n  JIT-AVX (Codegen + AVX2 SIMD)\n";
     std::cout << std::string(80, '-') << "\n";
 
     auto avxTiming = runDecompositionJIT_AVX(portfolio, market, numPaths, seed);
@@ -390,8 +390,8 @@ int main(int argc, char** argv)
     std::cout << std::string(80, '-') << "\n";
     std::cout << "  FD       Finite Differences (bump-and-revalue, paths <= " << FD_MAX_PATHS << " only)\n";
     std::cout << "  XAD      XAD tape-based reverse-mode AAD\n";
-    std::cout << "  JIT      Forge JIT-compiled native code\n";
-    std::cout << "  JIT-AVX  Forge JIT + AVX2 SIMD (4 paths/instruction)\n";
+    std::cout << "  JIT      Codegen JIT-compiled native code\n";
+    std::cout << "  JIT-AVX  Codegen JIT + AVX2 SIMD (4 paths/instruction)\n";
 
     // =========================================================================
     // Run Benchmarks

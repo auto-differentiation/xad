@@ -14,8 +14,10 @@ It provides forward and adjoint (reverse) mode automatic differentiation via ope
 * Minimal memory footprint
 * Straightforward integration into existing C++ codebases
 
-For Monte Carlo and other repetitive workloads, XAD also offers optional JIT backend support,
-enabling record-once / replay-many execution for additional performance boost.
+For Monte Carlo and other repetitive workloads, XAD also provides an abstract JIT backend interface,
+enabling record-once / replay-many execution for additional performance.
+A high-performance native code generation backend (xad-codegen) is available under a separate commercial license --
+[contact us](https://www.xcelerit.com/xad-enterprise-support) for more information.
 
 <p align="center" dir="auto">
     <a href="https://github.com/auto-differentiation/xad/releases/latest">
@@ -43,8 +45,9 @@ enabling record-once / replay-many execution for additional performance boost.
 - **Checkpointing Support**: Efficient tape memory management for large-scale applications.
 - **External Function Interface**: Seamlessly connect with external libraries.
 - **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page).
-- **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many.
-  workflows - with or without automatic differentiation. See [samples/jit_tutorial](samples/jit_tutorial).
+- **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many
+  workflows. See [samples/jit_tutorial](samples/jit_tutorial). A native code generation backend is available
+  separately under commercial license.
 
 ## Example
 
@@ -102,4 +105,4 @@ Please report bugs and issues via the
 
 - [XAD-Py](https://github.com/auto-differentiation/xad-py): XAD in Python.
 - [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD): AAD integration in [QuantLib](https://github.com/lballabio/QuantLib).
-- [xad-forge](https://github.com/da-roth/xad-forge): Forge JIT backends for XAD.
+- **xad-codegen**: High-performance native code generation backend for XAD (commercial license -- [contact us](https://www.xcelerit.com/xad-enterprise-support)).
