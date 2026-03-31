@@ -311,7 +311,7 @@ jobs:
           lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ env.GITHUB_WORKSPACE }}/test/*" "${{ env.GITHUB_WORKSPACE }}/samples/*" --output-file ./coverage/lcov.info
       - name: upload coverage results
         if: ${{ matrix.coverage }}
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           flag-name: linux-${{ matrix.compiler }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
@@ -602,7 +602,7 @@ jobs:
           lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --ignore-errors inconsistent --output-file ./coverage/lcov.info
       - name: upload coverage results
         if: ${{ matrix.coverage }}
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           flag-name: macos-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}
@@ -630,7 +630,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls Finished
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           parallel-finished: true
@@ -646,5 +646,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v7
         with:
-          name: Event File
+          name: Event-File
           path: ${{ github.event_path }}
