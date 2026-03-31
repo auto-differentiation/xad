@@ -50,5 +50,5 @@ xad_add_sample(LiborSwaptionPricerBenchmark
     --quick
 )
 
-# Add JIT subfolder if xad-forge is available
+# Add JIT subfolder if codegen is available
 add_subdirectory(JIT)

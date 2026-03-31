@@ -5,7 +5,7 @@
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
 
-   These functions use Forge JIT compilation for accelerated AAD computation.
+   These functions use Codegen JIT compilation for accelerated AAD computation.
 
    Copyright (C) 2010-2026 Xcelerit Computing Ltd.
 
@@ -28,8 +28,8 @@
 #include "LiborFunctionsJIT.hpp"
 
 #include <XAD/XAD.hpp>
-#include <xad-forge/ForgeBackend.hpp>
-#include <xad-forge/ForgeBackendAVX.hpp>
+#include <xad/CodegenBackend.hpp>
+#include <xad/CodegenBackendAVX.hpp>
 
 #include <random>
 #include <chrono>
@@ -175,7 +175,7 @@ TimingDecomposition runDecompositionJIT(const SwaptionPortfolio& portfolio,
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    xad::forge::ForgeBackend<double> backend;
+    xad::codegen::CodegenBackend<double> backend;
     backend.compile(jit.getGraph());
 
     auto compileEnd = std::chrono::steady_clock::now();
@@ -276,7 +276,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    xad::forge::ForgeBackendAVX<double> avxBackend(false);
+    xad::codegen::CodegenBackendAVX<double> avxBackend(false);
     avxBackend.compile(jit.getGraph());
 
     auto compileEnd = std::chrono::steady_clock::now();
@@ -284,7 +284,7 @@ TimingDecomposition runDecompositionJIT_AVX(const SwaptionPortfolio& portfolio,
 
     // --- Execution Phase (batched) ---
     // AVX batched input setting kept inline - different data layout from scalar
-    constexpr int BATCH_SIZE = xad::forge::ForgeBackendAVX<double>::VECTOR_WIDTH;
+    constexpr int BATCH_SIZE = xad::codegen::CodegenBackendAVX<double>::VECTOR_WIDTH;
     const int numBatches = (numPaths + BATCH_SIZE - 1) / BATCH_SIZE;
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
 
@@ -421,7 +421,7 @@ Results pricePortfolioJIT(const SwaptionPortfolio& portfolio, const MarketParame
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    xad::forge::ForgeBackend<double> backend;
+    xad::codegen::CodegenBackend<double> backend;
     backend.compile(jit.getGraph());
 
     auto compileEnd = std::chrono::steady_clock::now();
@@ -487,7 +487,7 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
     v = value_portfolio_jit(delta, portfolio.maturities, portfolio.swaprates, L, tmp1, tmp2);
     jit.registerOutput(v);
 
-    xad::forge::ForgeBackendAVX<double> avxBackend(false);
+    xad::codegen::CodegenBackendAVX<double> avxBackend(false);
     avxBackend.compile(jit.getGraph());
 
     auto compileEnd = std::chrono::steady_clock::now();
@@ -499,7 +499,7 @@ Results pricePortfolioJIT_AVX(const SwaptionPortfolio& portfolio, const MarketPa
 
     // Execute compiled AVX kernel for all paths (4 at a time)
     // AVX batched input setting kept inline - different data layout from scalar
-    constexpr int BATCH_SIZE = xad::forge::ForgeBackendAVX<double>::VECTOR_WIDTH;
+    constexpr int BATCH_SIZE = xad::codegen::CodegenBackendAVX<double>::VECTOR_WIDTH;
     const int numBatches = (numPaths + BATCH_SIZE - 1) / BATCH_SIZE;
     const size_t numInputs = 1 + market.lambda.size() + market.L0.size() + numSamples;
 

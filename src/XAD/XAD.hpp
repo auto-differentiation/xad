@@ -50,8 +50,14 @@
 #include <XAD/Vec.hpp>
 #include <XAD/Version.hpp>
 
-// JIT compilation support (optional, controlled by XAD_ENABLE_JIT)
-#ifdef XAD_ENABLE_JIT
+// JIT compilation support (optional, controlled by XAD_ENABLE_CODEGEN / XAD_ENABLE_JIT)
+#ifdef XAD_ENABLE_CODEGEN
 #include <XAD/JITCompiler.hpp>
 #include <XAD/ABool.hpp>
+#endif
+
+// Codegen native backends (available when XAD_ENABLE_CODEGEN is ON)
+#ifdef XAD_ENABLE_CODEGEN
+#include "xad/CodegenBackend.hpp"
+#include "xad/CodegenBackendAVX.hpp"
 #endif

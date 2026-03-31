@@ -144,8 +144,8 @@ set(public_headers
     ${CMAKE_CURRENT_BINARY_DIR}/XAD/GenerateMode.hpp
 )
 
-# JIT compilation support headers (optional)
-if(XAD_ENABLE_JIT)
+# JIT/Codegen compilation support headers (optional)
+if(XAD_ENABLE_CODEGEN)
     list(APPEND public_headers
         XAD/JITCompiler.hpp
         XAD/JITGraph.hpp
@@ -163,8 +163,8 @@ if (MSVC)
     list(APPEND srcfiles ${PROJECT_SOURCE_DIR}/XAD.natvis)
 endif()
 
-# JIT TLS storage (required when XAD_ENABLE_JIT is ON)
-if(XAD_ENABLE_JIT)
+# JIT TLS storage (required when codegen/JIT is ON)
+if(XAD_ENABLE_CODEGEN)
     list(APPEND srcfiles
         XAD/JITGraphInterpreter.cpp
         XAD/JITCompilerTLS.cpp
@@ -177,6 +177,11 @@ target_include_directories(xad PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
     "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>"
 )
+# Link codegen when enabled
+if(XAD_ENABLE_CODEGEN)
+    target_link_libraries(xad PUBLIC xad_codegen)
+endif()
+
 set_target_properties(xad PROPERTIES VERSION "${XAD_VERSION}")
 
 # Install targets

@@ -3,12 +3,12 @@
 #  Cmake file for LiborSwaptionPricer JIT Benchmark
 #
 #  This builds the JIT-accelerated version of the LIBOR swaption pricer
-#  using Forge JIT compilation backend.
+#  using Codegen JIT compilation backend.
 #
 #  Requires:
 #  - XAD with JIT enabled (XAD_ENABLE_JIT=ON)
-#  - xad-forge library
-#  - Forge C API
+#  - codegen library
+#  - Codegen C API
 #
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
@@ -30,13 +30,9 @@
 #
 ##############################################################################
 
-# Try to find xad-forge
-if(NOT TARGET XADForge::xad-forge)
-    find_package(xad-forge QUIET)
-endif()
-
-if(NOT TARGET XADForge::xad-forge)
-    message(STATUS "xad-forge not found - skipping LiborSwaptionPricerJIT")
+# Requires XAD_ENABLE_CODEGEN
+if(NOT XAD_ENABLE_CODEGEN)
+    message(STATUS "XAD_ENABLE_CODEGEN not enabled - skipping LiborSwaptionPricerJIT")
     return()
 endif()
 
@@ -64,7 +60,6 @@ endif()
 target_link_libraries(LiborSwaptionPricerJIT
     PRIVATE
         ${XAD_TARGET}
-        XADForge::xad-forge
 )
 
 target_include_directories(LiborSwaptionPricerJIT
