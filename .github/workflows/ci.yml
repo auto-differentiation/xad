@@ -15,7 +15,6 @@ jobs:
         standard: ["11", "17"]
         memory: ["default", "lowmem"]
         jit: [OFF]
-        coverage: [false]
         include:
           - config: Debug
             sccache: "false"
@@ -159,7 +158,6 @@ jobs:
         standard: [c++11, c++17]
         memory: ["default", "lowmem"]
         jit: [OFF]
-        coverage: [false]
         exclude:
           - config: Debug
             reuse_slots: ON
@@ -181,16 +179,23 @@ jobs:
             config: Debug
           - version: "13"
             config: Debug
+          # GCC 11 Debug c++11 default is handled by the coverage include below
+          - version: "11"
+            config: Debug
+            standard: c++11
+            memory: default
         include:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
-          # Coverage job (requires Debug, GCC 11)
-          - jit: OFF
+          # Coverage job: uses compiler key as unique differentiator
+          # (not in base matrix, so creates a standalone job)
+          - version: "11"
             config: Debug
-            version: "11"
             reuse_slots: OFF
             standard: c++11
             memory: default
+            jit: OFF
+            compiler: gcc-11-coverage
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-lgcov"
@@ -348,7 +353,6 @@ jobs:
         standard: ["11", "17"]
         memory: ["default", "lowmem"]
         jit: [OFF]
-        coverage: [false]
         include:
           - version: "11"
             cxx: clang++
@@ -504,7 +508,6 @@ jobs:
         standard: [c++11, c++17]
         memory: ["default", "lowmem"]
         jit: [OFF]
-        coverage: [false]
         include:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON

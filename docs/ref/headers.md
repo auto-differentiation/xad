@@ -26,7 +26,7 @@ There are four additional headers provided that can be included on demand:
 
 ## Optional JIT headers
 
-When XAD is compiled with `XAD_ENABLE_JIT`, additional JIT headers are available:
+When XAD is compiled with `XAD_ENABLE_CODEGEN`, additional JIT headers are available:
 
 * `XAD/JITCompiler.hpp` - JIT recorder/executor (see [JITCompiler](jit-compiler.md)).
 * `XAD/JITGraph.hpp` - Graph representation (see [JITGraph](jit-graph.md)).

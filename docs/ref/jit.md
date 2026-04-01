@@ -5,7 +5,7 @@ When enabled, XAD expressions can be recorded into a compact `JITGraph` and exec
 
 !!! note "Compile-time feature flag"
 
-    The JIT API is only available when XAD is compiled with `XAD_ENABLE_JIT`.
+    The JIT API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`.
     This is a compile-time configuration (it is compiled into the library).
 
 ## Main building blocks
