@@ -636,18 +636,31 @@ jobs:
     needs: [ build_and_test_gcc, build_and_test_macos ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Wait for Coveralls to process uploads
-        run: sleep 30
       - name: Coveralls Finished
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           parallel-finished: true
-      - name: Rerun coverage workaround
-        # from https://github.com/lemurheavy/coveralls-public/issues/1653#issuecomment-1251587119
+      - name: Rerun coverage with retry
+        # Coveralls ingests uploads asynchronously - the parallel-finished webhook
+        # often fires before all jobs are indexed, resulting in 0% coverage.
+        # Retry rerun_build until all jobs are accounted for.
+        # See: https://github.com/lemurheavy/coveralls-public/issues/1653
+        #      https://github.com/lemurheavy/coveralls-public/issues/1786
         run: |
-          curl --location --request GET 'https://coveralls.io/rerun_build?repo_token=${{ secrets.COVERALLS_REPO_TOKEN }}&build_num=${{ github.run_id }}'
+          EXPECTED_JOBS=5
+          for i in 1 2 3 4 5; do
+            sleep 30
+            RESPONSE=$(curl -s --location \
+              'https://coveralls.io/rerun_build?repo_token=${{ secrets.COVERALLS_REPO_TOKEN }}&build_num=${{ github.run_id }}')
+            JOBS=$(echo "$RESPONSE" | jq -r '.jobs // 0')
+            echo "Attempt $i: $RESPONSE (jobs=$JOBS)"
+            if [ "$JOBS" -ge "$EXPECTED_JOBS" ]; then
+              echo "All $JOBS jobs accounted for."
+              exit 0
+            fi
+          done
+          echo "::warning::Only $JOBS of $EXPECTED_JOBS coverage jobs found after retries"
 
   event_file:
     name: Event File
