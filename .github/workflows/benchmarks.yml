@@ -166,7 +166,7 @@ jobs:
       - name: Compile
         run: |
           cd QuantLib/build
-          cmake --build .
+          cmake --build . --target quantlib-test-suite AdjointBermudanSwaption
       - name: Test QuantLib
         if: github.event_name == 'pull_request'
         run: |
