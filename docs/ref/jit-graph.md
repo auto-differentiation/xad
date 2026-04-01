@@ -12,7 +12,7 @@ It consists of:
 
 !!! note "Compile-time feature flag"
 
-    This API is only available when XAD is compiled with `XAD_ENABLE_JIT`.
+    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`.
 
 ## `JITOpCode`
 

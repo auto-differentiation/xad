@@ -179,20 +179,27 @@ jobs:
             config: Debug
           - version: "13"
             config: Debug
+          # GCC 11 Debug c++11 default is handled by the coverage include below
+          - version: "11"
+            config: Debug
+            standard: c++11
+            memory: default
         include:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
-          # JIT-enabled builds: Release, C++11, all compiler versions
-          # Coverage job (requires Debug)
-          # - jit: ON  # codegen requires commercial license
-          #   config: Debug
-          #   version: "11"
-          #   reuse_slots: OFF
-          #   standard: c++11
-          #   memory: default
-          #   coverage: true
-          #   coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
-          #   coverage_ld_flags: "-lgcov"
+          # Coverage job: uses compiler key as unique differentiator
+          # (not in base matrix, so creates a standalone job)
+          - version: "11"
+            config: Debug
+            reuse_slots: OFF
+            standard: c++11
+            memory: default
+            jit: OFF
+            compiler: gcc-11-coverage
+            coverage: true
+            coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
+            coverage_ld_flags: "-lgcov"
+          # JIT-enabled builds (commented out - codegen requires commercial license)
           # All GCC versions
           # - jit: ON  # codegen requires commercial license
           #   config: Release
@@ -648,3 +655,4 @@ jobs:
         with:
           name: Event File
           path: ${{ github.event_path }}
+          overwrite: true
