@@ -30,7 +30,7 @@ A high-performance native code generation backend (xad-codegen) is available und
         <img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/xad/ci.yml?label=Build&logo" alt="Build Status" style="max-width: 100%;">
     </a>
     <a href="https://coveralls.io/github/auto-differentiation/xad?branch=main">
-        <img src="https://coveralls.io/repos/github/auto-differentiation/xad/badge.svg?branch=main" alt="Coverage" style="max-width: 100%;">
+        <img src="https://coveralls.io/repos/github/auto-differentiation/xad/badge.svg?branch=main&v=2" alt="Coverage" style="max-width: 100%;">
     </a>
     <a href="https://www.codacy.com/gh/auto-differentiation/xad/dashboard">
         <img src="https://img.shields.io/codacy/grade/1826d0a6c8ce4feb81ef3b482d65c7b4?logo=codacy&label=Quality%20%28Codacy%29" alt="Codacy Quality" style="max-width: 100%;">
