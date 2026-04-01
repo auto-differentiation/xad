@@ -636,6 +636,9 @@ jobs:
     needs: [ build_and_test_gcc, build_and_test_macos ]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+      - name: Wait for Coveralls to process uploads
+        run: sleep 30
       - name: Coveralls Finished
         uses: coverallsapp/github-action@v2
         with:
