@@ -4,7 +4,7 @@
   </a>
 </p>
 
-# XAD: Fast, easy automatic differentiation in C++
+# XAD: The fastest automatic differentiation library for C++
 
 XAD is a high-performance C++ automatic differentiation library designed for large-scale, performance-critical systems.
 
@@ -16,8 +16,6 @@ It provides forward and adjoint (reverse) mode automatic differentiation via ope
 
 For Monte Carlo and other repetitive workloads, XAD also provides an abstract JIT backend interface,
 enabling record-once / replay-many execution for additional performance.
-A high-performance native code generation backend (xad-codegen) is available under a separate commercial license --
-[contact us](https://www.xcelerit.com/xad-enterprise-support) for more information.
 
 <p align="center" dir="auto">
     <a href="https://github.com/auto-differentiation/xad/releases/latest">
@@ -37,7 +35,6 @@ A high-performance native code generation backend (xad-codegen) is available und
     </a>
 </p>
 
-
 ## Key Features
 
 - **Forward & Reverse (Adjoint) Mode**: Supports any order using operator overloading.
@@ -49,10 +46,18 @@ A high-performance native code generation backend (xad-codegen) is available und
   workflows. See [samples/jit_tutorial](samples/jit_tutorial). A native code generation backend is available
   separately under commercial license.
 
+## Ecosystem
+
+| Repository | Description |
+|---|---|
+| [xad-py](https://github.com/auto-differentiation/xad-py) | Python bindings for XAD |
+| [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD) | Full QuantLib integration — compute all Greeks at once, up to 3 orders of magnitude faster than bump-and-reval |
+| [QuantLib-Risks-Py](https://github.com/auto-differentiation/QuantLib-Risks-Py) | QuantLib risks from Python |
+| [xad-codegen](https://www.xcelerit.com/xad-enterprise-support) | Native code generation backend — maximum throughput (commercial) |
+
 ## Example
 
 Calculate first-order derivatives of an arbitrary function with two inputs and one output using XAD in adjoint mode.
-
 ```c++
 Adouble x0 = 1.3;              // initialise inputs
 Adouble x1 = 5.2;
@@ -70,7 +75,6 @@ cout << "dy/dx0=" << derivative(x0) << "\n"
 ## Getting Started
 
 Build XAD from source using CMake:
-
 ```bash
 git clone https://github.com/auto-differentiation/xad.git
 cd xad
@@ -100,9 +104,3 @@ discussion in our
 
 Please report bugs and issues via the
 [**GitHub Issue Tracker**](https://github.com/auto-differentiation/xad/issues).
-
-## Related Projects
-
-- [XAD-Py](https://github.com/auto-differentiation/xad-py): XAD in Python.
-- [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD): AAD integration in [QuantLib](https://github.com/lballabio/QuantLib).
-- **xad-codegen**: High-performance native code generation backend for XAD (commercial license -- [contact us](https://www.xcelerit.com/xad-enterprise-support)).
