@@ -54,6 +54,7 @@ enabling record-once / replay-many execution for additional performance.
 | [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD) | Full QuantLib integration — compute all Greeks at once, up to 3 orders of magnitude faster than bump-and-reval |
 | [QuantLib-Risks-Py](https://github.com/auto-differentiation/QuantLib-Risks-Py) | QuantLib risks from Python |
 | [xad-codegen](https://www.xcelerit.com/xad-enterprise-support) | Native code generation backend — maximum throughput (commercial) |
+| [AAD Training](https://www.xcelerit.com/solutions/training-aad) | Hands-on AAD training for quants and quant developers - delivered to dozens of tier 1 banks and financial services firms |
 
 ## Example
 
