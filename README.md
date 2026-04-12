@@ -43,8 +43,7 @@ enabling record-once / replay-many execution for additional performance.
 - **External Function Interface**: Seamlessly connect with external libraries.
 - **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page).
 - **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many
-  workflows. See [samples/jit_tutorial](samples/jit_tutorial). A native code generation backend is available
-  separately under commercial license.
+  workflows. See [samples/jit_tutorial](samples/jit_tutorial).
 
 ## Benchmarks
 
