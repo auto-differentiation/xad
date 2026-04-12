@@ -46,6 +46,18 @@ enabling record-once / replay-many execution for additional performance.
   workflows. See [samples/jit_tutorial](samples/jit_tutorial). A native code generation backend is available
   separately under commercial license.
 
+## Benchmarks
+
+Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://github.com/rjhogan/Adept-2), [autodiff](https://github.com/autodiff/autodiff), and finite differences on four quant-finance workloads (Intel Xeon Platinum 8488C, GCC 13.3, `-O3 -mavx2 -mfma`):
+
+<p align="center">
+  <a href="https://github.com/auto-differentiation/ad-benchmarks">
+    <img src="https://raw.githubusercontent.com/auto-differentiation/ad-benchmarks/main/results/chart.svg" alt="Benchmark chart" width="100%">
+  </a>
+</p>
+
+Full methodology, source code, and reproducible CSV: **[auto-differentiation/ad-benchmarks](https://github.com/auto-differentiation/ad-benchmarks)**
+
 ## Ecosystem
 
 | Repository | Description |
