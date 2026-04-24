@@ -1,13 +1,12 @@
 name: Benchmarks
 on:
-  #pull_request:
-    # types: [opened, reopened, synchronize, labeled, unlabeled ]
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
   workflow_dispatch:
 
 jobs:
   libor:
-    # if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
-    if: false
+    if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: Libor Swaption Sample
     runs-on: ubuntu-latest
     container:
@@ -113,7 +112,7 @@ jobs:
           echo "result=| ${REF_TIME}s | ${OUT_TIME}s | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
 
   quantlib:
-    if: false
+    if: contains(github.event.pull_request.labels.*.name, 'benchmarks') || github.event_name == 'workflow_dispatch'
     name: QuantLib Samples
     runs-on: ubuntu-latest
     container: ghcr.io/lballabio/quantlib-devenv:noble-1.85.0
@@ -139,7 +138,7 @@ jobs:
         with:
           path: QuantLibAAD
           repository: auto-differentiation/QuantLibAAD
-          ref: a1fcf4f0fab0a464710c249aa76871421675babd
+          ref: main
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -167,7 +166,7 @@ jobs:
       - name: Compile
         run: |
           cd QuantLib/build
-          cmake --build .
+          cmake --build . --target quantlib-test-suite AdjointBermudanSwaption
       - name: Test QuantLib
         if: github.event_name == 'pull_request'
         run: |
@@ -320,10 +319,9 @@ jobs:
           echo "result=| ${REF_TIME}ms | ${OUT_TIME}ms | ${PERCENTAGE}% |" >> "$GITHUB_OUTPUT"
 
   update-runid:
-    if: false
+    if: github.event_name == 'workflow_dispatch'
     name: Update Run-id
     runs-on: ubuntu-latest
-    # if: github.event_name == 'workflow_dispatch'
     needs:
       - quantlib
       - libor
@@ -339,10 +337,9 @@ jobs:
 
 
   collect:
-    if: false
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'benchmarks')
     name: Collect Results
     runs-on: ubuntu-latest
-    # if: github.event_name == 'pull_request'
     needs:
       - quantlib
       - libor
@@ -363,20 +360,17 @@ jobs:
           echo "| [Bermudan Swaption (200 repetitions)](https://github.com/auto-differentiation/QuantLibAAD/blob/main/Examples/AdjointBermudanSwaption/AdjointBermudanSwaptionXAD.cpp) $BERMUDAN" >> results.md
           echo "| [testPathwiseGreeks](https://github.com/lballabio/QuantLib/blob/v1.35/test-suite/marketmodel.cpp#L2090)  $TESTSUITE" >> results.md
 
-      - name: Find Comment
-        uses: peter-evans/find-comment@v4
-        if: github.event_name == 'pull_request'
-        id: fc
+      - name: Save PR number
+        run: echo "${{ github.event.pull_request.number }}" > pr_number.txt
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v7
         with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: Performance Results
-      - name: Post or update PR comment
-        id: pr-comment
-        if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v5
+          name: benchmark-results
+          path: results.md
+
+      - name: Upload PR number
+        uses: actions/upload-artifact@v7
         with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body-path: results.md
-          edit-mode: replace
+          name: pr-number
+          path: pr_number.txt
