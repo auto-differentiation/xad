@@ -212,25 +212,25 @@ struct AReal
 
     XAD_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
     {
-        if (auto* s = tape_type::getActive())
+        // check the slot before the thread-local tape lookup, so that copies
+        // of passive variables (the common case when no tape is recording)
+        // avoid the TLS access entirely
+        if (XAD_UNLIKELY(o.shouldRecord()))
         {
-            if (o.shouldRecord())
+            if (auto* s = tape_type::getActive())
             {
                 slot_ = s->registerVariable();
                 pushAll<1>(s, o);
                 s->pushLhs(slot_);
             }
-        }
 #ifdef XAD_ENABLE_JIT
-        else if (getActiveJit() != nullptr)
-        {
-            if (o.shouldRecord())
+            else if (getActiveJit() != nullptr)
             {
                 // Copy the slot directly - preserves JIT dependency chain
                 slot_ = o.slot_;
             }
-        }
 #endif
+        }
         this->a_ = o.getValue();
     }
 
@@ -254,8 +254,10 @@ struct AReal
 
     XAD_INLINE ~AReal()
     {
-        if (auto tape = tape_type::getActive())
-            if (slot_ != INVALID_SLOT)
+        // slot check first: passive variables (no tape ever active) skip the
+        // thread-local tape lookup entirely
+        if (XAD_UNLIKELY(slot_ != INVALID_SLOT))
+            if (auto tape = tape_type::getActive())
                 tape->unregisterVariable(slot_);
     }
 
@@ -264,9 +266,11 @@ struct AReal
     XAD_INLINE AReal& operator=(nested_type x)
     {
         this->a_ = x;
-        auto tape = tape_type::getActive();
-        if (tape && slot_ != INVALID_SLOT)
-            tape->pushLhs(slot_);
+        if (XAD_UNLIKELY(slot_ != INVALID_SLOT))
+        {
+            if (auto tape = tape_type::getActive())
+                tape->pushLhs(slot_);
+        }
         return *this;
     }
 
@@ -521,26 +525,25 @@ struct ADVar
 template <class Scalar, std::size_t M>
 XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
-    if (auto* s = tape_type::getActive())
+    // slot checks before the thread-local tape lookup, so that assignments
+    // between passive variables avoid the TLS access entirely
+    if (XAD_UNLIKELY(o.shouldRecord() || this->shouldRecord()))
     {
-        if (o.shouldRecord() || this->shouldRecord())
+        if (auto* s = tape_type::getActive())
         {
             if (slot_ == INVALID_SLOT)
                 slot_ = s->registerVariable();
             pushAll<1>(s, o);
             s->pushLhs(slot_);
         }
-    }
 #ifdef XAD_ENABLE_JIT
-    else if (getActiveJit() != nullptr)
-    {
-        if (o.shouldRecord() || this->shouldRecord())
+        else if (getActiveJit() != nullptr)
         {
             // Copy the slot directly - preserves JIT dependency chain
             slot_ = o.slot_;
         }
-    }
 #endif
+    }
     this->a_ = o.getValue();
     return *this;
 }
@@ -551,22 +554,23 @@ XAD_INLINE AReal<Scalar, M>::AReal(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
     : base_type(expr.getValue()), slot_(INVALID_SLOT)
 {
-    tape_type* s = tape_type::getActive();
-    if (s)
+    // check the expression's record flags before the thread-local tape
+    // lookup, so that purely passive expressions avoid the TLS access
+    if (XAD_UNLIKELY(expr.shouldRecord()))
     {
-        if (expr.shouldRecord())
+        if (tape_type* s = tape_type::getActive())
         {
             slot_ = s->registerVariable();
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             s->pushLhs(slot_);
         }
-    }
 #ifdef XAD_ENABLE_JIT
-    else
-    {
-        this->tryRecordJitFromExprCtor(expr, std::integral_constant<bool, jit_supported>());
-    }
+        else
+        {
+            this->tryRecordJitFromExprCtor(expr, std::integral_constant<bool, jit_supported>());
+        }
 #endif
+    }
 }
 
 template <class Scalar, std::size_t M>
@@ -574,10 +578,11 @@ template <class Expr>
 XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
 {
-    tape_type* s = tape_type::getActive();
-    if (s)
+    // check the record flags before the thread-local tape lookup, so that
+    // assignments of purely passive expressions avoid the TLS access
+    if (XAD_UNLIKELY(expr.shouldRecord() || this->shouldRecord()))
     {
-        if (expr.shouldRecord() || this->shouldRecord())
+        if (tape_type* s = tape_type::getActive())
         {
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             // only register this variable after evaluating the expression, as this
@@ -587,13 +592,13 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
                 slot_ = s->registerVariable();
             s->pushLhs(slot_);
         }
-    }
 #ifdef XAD_ENABLE_JIT
-    else
-    {
-        this->tryRecordJitFromExprAssign(expr, std::integral_constant<bool, jit_supported>());
-    }
+        else
+        {
+            this->tryRecordJitFromExprAssign(expr, std::integral_constant<bool, jit_supported>());
+        }
 #endif
+    }
     this->a_ = expr.getValue();
     return *this;
 }
