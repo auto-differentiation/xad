@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reduced passive-mode overhead of `AReal`: constructors, assignments, and the
+  destructor now check the variable/expression record flags before the
+  thread-local active-tape lookup, so code using AD types without a tape
+  skips the TLS access on every operation
+
 ### Deprecated
 
 ### Removed

@@ -28,6 +28,7 @@ set(testfiles
     ChunkContainer_test.cpp
     TestHelpers.hpp
     Tape_test.cpp
+    ARealPassive_test.cpp
     Expressions_test.cpp
     ExpressionsConversion_test.cpp
     ExpressionMath1_test.cpp

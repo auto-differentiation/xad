@@ -223,6 +223,63 @@ TEST(JITGraphInterpreter, adjointsForComplexExpression)
     EXPECT_NEAR(6.0, jit.getDerivative(y.getSlot()), 1e-10);
 }
 
+// Tape recording followed by JIT recording in the same scope must give
+// consistent, combinable results - a regression test for the recording
+// branches in AReal's constructors and assignments.
+TEST(JITGraphInterpreter, tapeThenJitCombinedGivesCorrectResult)
+{
+    using AD = xad::AReal<double, 1>;
+    const double x0 = 2.0, y0 = 3.0;
+
+    // phase 1: two operations on a tape, rollback, get derivatives
+    // v = x*y + x
+    double v0, dvdx, dvdy;
+    {
+        xad::Tape<double> tape;
+        AD x = x0, y = y0;
+        tape.registerInput(x);
+        tape.registerInput(y);
+        tape.newRecording();
+        AD u = x * y;
+        AD v = u + x;
+        tape.registerOutput(v);
+        derivative(v) = 1.0;
+        tape.computeAdjoints();
+        v0 = v.getValue();        // 8
+        dvdx = derivative(x);     // y + 1 = 4
+        dvdy = derivative(y);     // x = 2
+        EXPECT_DOUBLE_EQ(8.0, v0);
+        EXPECT_DOUBLE_EQ(4.0, dvdx);
+        EXPECT_DOUBLE_EQ(2.0, dvdy);
+    }
+    ASSERT_EQ(nullptr, xad::Tape<double>::getActive());
+
+    // phase 2: switch to JIT (interpreter backend) for two more operations
+    // r = a*a + a, evaluated at a = v0
+    double r0, drda;
+    {
+        xad::JITCompiler<double> jit;
+        AD a = v0;
+        jit.registerInput(a);
+        AD w = a * a;
+        AD r = w + a;
+        jit.registerOutput(r);
+        jit.compile();
+        jit.forward(&r0);
+        EXPECT_DOUBLE_EQ(v0 * v0 + v0, r0);  // 72
+        jit.setDerivative(r.getSlot(), 1.0);
+        jit.computeAdjoints();
+        drda = jit.getDerivative(a.getSlot());
+        EXPECT_NEAR(2.0 * v0 + 1.0, drda, 1e-10);  // 17
+    }
+    ASSERT_EQ(nullptr, xad::JITCompiler<double>::getActive());
+
+    // combine: f(x,y) = r(v(x,y)) - chain rule across the two recordings
+    EXPECT_NEAR((2.0 * v0 + 1.0) * dvdx, drda * dvdx, 1e-10);  // df/dx = 68
+    EXPECT_NEAR(68.0, drda * dvdx, 1e-10);
+    EXPECT_NEAR(34.0, drda * dvdy, 1e-10);  // df/dy
+}
+
 // =============================================================================
 // ABool tests
 // =============================================================================
