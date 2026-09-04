@@ -607,6 +607,13 @@ jobs:
           lcov --no-external --capture --directory ${{ github.workspace }} --output-file ./tmp/lcov_run.info
           lcov --add-tracefile ./tmp/lcov_base.info --add-tracefile ./tmp/lcov_run.info  --ignore-errors inconsistent  --output-file ./tmp/lcov_total.info
           lcov --remove ./tmp/lcov_total.info "$PWD/*" "${{ github.workspace }}/test/*" "${{ github.workspace }}/samples/*" --ignore-errors inconsistent --output-file ./coverage/lcov.info
+      - name: trust coveralls homebrew tap
+        # Homebrew >= 6 (June 2026) refuses formulae from untrusted third-party
+        # taps; the Coveralls action installs its reporter from one on macOS
+        if: ${{ matrix.coverage }}
+        run: |
+          brew tap coverallsapp/coveralls --quiet
+          brew trust coverallsapp/coveralls || true  # no-op on Homebrew < 6
       - name: upload coverage results
         if: ${{ matrix.coverage }}
         uses: coverallsapp/github-action@v2
