@@ -456,8 +456,15 @@ struct AReal
         DerivInfo<tape_type, Size> info;
 
         // Write the partials straight into the tape where they fit, which is
-        // all but the rare statement that straddles a chunk boundary.
-        auto* direct = t->tryReserveOperations(Size);
+        // all but the rare statement that straddles a chunk boundary. Tape
+        // memory holds no constructed element until one is appended, so writing
+        // by assignment is only valid for a trivially copyable value type. In
+        // higher order modes it is an active type, whose assignment reads a slot
+        // that has never been set and records onto the inner tape, so those keep
+        // the staging buffer.
+        typename DerivInfo<tape_type, Size>::pair_type* direct = nullptr;
+        if (std::is_trivially_copyable<typename tape_type::value_type>::value)
+            direct = t->tryReserveOperations(Size);
         info.dst = direct != nullptr ? direct : info.local;
 
         expr.calc_derivatives(info, *t);

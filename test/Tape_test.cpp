@@ -272,6 +272,8 @@ TEST(Tape, canDeriveStatements)
     // s.printStatus();
 }
 
+#ifndef XAD_REDUCED_MEMORY
+
 TEST(Tape, canPushOperationsIntoReservedSpace)
 {
     xad::Tape<double> s;
@@ -321,6 +323,8 @@ TEST(Tape, canCommitFewerOperationsThanReserved)
 
     EXPECT_DOUBLE_EQ(2.0, s.getDerivative(x1s));
 }
+
+#endif
 
 TEST(Tape, canPushOperationsAsPairs)
 {
