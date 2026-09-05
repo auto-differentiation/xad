@@ -25,6 +25,8 @@
 #pragma once
 #include <XAD/Macros.hpp>
 
+#include <utility>
+
 namespace xad
 {
 
@@ -33,9 +35,13 @@ namespace xad
 template <typename TapeType, int N>
 struct DerivInfo
 {
+    using pair_type = std::pair<typename TapeType::value_type, typename TapeType::slot_type>;
+
     unsigned index = 0;
-    typename TapeType::value_type multipliers[N];
-    typename TapeType::slot_type slots[N];
+    // Points either into the tape (the common case) or at the local buffer below,
+    // at a chunk boundary and has to be copied in afterwards.
+    pair_type* dst = nullptr;
+    pair_type local[N];
 };
 
 /// Represents a generic expression, for the Scalar base type.

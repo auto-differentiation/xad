@@ -272,6 +272,80 @@ TEST(Tape, canDeriveStatements)
     // s.printStatus();
 }
 
+TEST(Tape, canPushOperationsIntoReservedSpace)
+{
+    xad::Tape<double> s;
+    using slot_type = xad::Tape<double>::slot_type;
+
+    auto x1s = s.registerVariable();
+    auto x2s = s.registerVariable();
+    s.newRecording();
+
+    auto zs = s.registerVariable();
+    std::pair<double, slot_type>* dst = s.tryReserveOperations(2);
+    ASSERT_NE(nullptr, dst);
+    dst[0] = {2.0, x1s};
+    dst[1] = {3.0, x2s};
+    s.commitOperations(2);
+    s.pushLhs(zs);
+
+    EXPECT_EQ(2U, s.getNumOperations());
+    EXPECT_EQ(1U, s.getNumStatements());
+
+    s.setDerivative(zs, 1.0);
+    s.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(2.0, s.getDerivative(x1s));
+    EXPECT_DOUBLE_EQ(3.0, s.getDerivative(x2s));
+}
+
+TEST(Tape, canCommitFewerOperationsThanReserved)
+{
+    xad::Tape<double> s;
+    using slot_type = xad::Tape<double>::slot_type;
+
+    auto x1s = s.registerVariable();
+    s.newRecording();
+
+    auto zs = s.registerVariable();
+    std::pair<double, slot_type>* dst = s.tryReserveOperations(4);
+    ASSERT_NE(nullptr, dst);
+    dst[0] = {2.0, x1s};
+    s.commitOperations(1);
+    s.pushLhs(zs);
+
+    EXPECT_EQ(1U, s.getNumOperations());
+
+    s.setDerivative(zs, 1.0);
+    s.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(2.0, s.getDerivative(x1s));
+}
+
+TEST(Tape, canPushOperationsAsPairs)
+{
+    xad::Tape<double> s;
+    using slot_type = xad::Tape<double>::slot_type;
+
+    auto x1s = s.registerVariable();
+    auto x2s = s.registerVariable();
+    s.newRecording();
+
+    auto zs = s.registerVariable();
+    std::pair<double, slot_type> ops[] = {{2.0, x1s}, {3.0, x2s}};
+    s.pushAllPairs(ops, 2);
+    s.pushLhs(zs);
+
+    EXPECT_EQ(2U, s.getNumOperations());
+    EXPECT_EQ(1U, s.getNumStatements());
+
+    s.setDerivative(zs, 1.0);
+    s.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(2.0, s.getDerivative(x1s));
+    EXPECT_DOUBLE_EQ(3.0, s.getDerivative(x2s));
+}
+
 TEST(Tape, canRestartRecording)
 {
     xad::Tape<double> s;

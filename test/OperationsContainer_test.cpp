@@ -26,6 +26,8 @@
 #include <XAD/OperationsContainerPaired.hpp>
 #include <gmock/gmock.h>
 
+#include <utility>
+
 using namespace testing;
 
 struct NullAlignedAllocator {
@@ -113,6 +115,44 @@ TYPED_TEST(OperationsContainerTest, canAppendElementsMultiChunk)
     {
         EXPECT_THAT(c[i], Pair(static_cast<double>(i % 9 + 1), i % 9 + 1));
     }
+}
+
+TYPED_TEST(OperationsContainerTest, canAppendPairs)
+{
+    auto c = TypeParam();
+
+    std::pair<double, int> p[] = {{1.0, 3}, {2.0, 4}, {3.0, 5}};
+    c.append_n_pairs(p, 3);
+
+    EXPECT_THAT(c.size(), Eq(3));
+    EXPECT_THAT(c[0], Pair(1.0, 3));
+    EXPECT_THAT(c[1], Pair(2.0, 4));
+    EXPECT_THAT(c[2], Pair(3.0, 5));
+}
+
+TYPED_TEST(OperationsContainerTest, canAppendPairsAcrossChunkBoundary)
+{
+    auto c = TypeParam();
+
+    std::pair<double, int> p[] = {{1.0, 1}, {2.0, 2}, {3.0, 3}, {4.0, 4}, {5.0, 5}, {6.0, 6}};
+    c.append_n_pairs(p, 6);
+
+    EXPECT_THAT(c.size(), Eq(6));
+    for (unsigned i = 0; i < 6; ++i)
+    {
+        EXPECT_THAT(c[i], Pair(static_cast<double>(i + 1), static_cast<int>(i + 1)));
+    }
+}
+
+TYPED_TEST(OperationsContainerTest, canAppendNoPairs)
+{
+    auto c = TypeParam();
+
+    std::pair<double, int> p[] = {{1.0, 1}};
+    c.append_n_pairs(p, 0);
+
+    EXPECT_THAT(c.size(), Eq(0));
+    EXPECT_THAT(c.empty(), IsTrue());
 }
 
 TYPED_TEST(OperationsContainerTest, canPushBack)
@@ -276,4 +316,80 @@ TYPED_TEST(OperationsContainerTest2, callsConstructOnResize)
     c.resize(3);
 
     EXPECT_THAT(TestStruct::items, Eq(3));
+}
+
+TEST(OperationsContainerPairedTestReserve, givesWritableSpaceWithinChunk)
+{
+    auto c = xad::OperationsContainerPaired<double, int, 4>();
+
+    auto* dst = c.try_reserve(3);
+    ASSERT_THAT(dst, NotNull());
+    dst[0] = {1.0, 3};
+    dst[1] = {2.0, 4};
+    dst[2] = {3.0, 5};
+    c.commit(3);
+
+    EXPECT_THAT(c.size(), Eq(3));
+    EXPECT_THAT(c[0], Pair(1.0, 3));
+    EXPECT_THAT(c[1], Pair(2.0, 4));
+    EXPECT_THAT(c[2], Pair(3.0, 5));
+}
+
+TEST(OperationsContainerPairedTestReserve, canCommitFewerThanReserved)
+{
+    auto c = xad::OperationsContainerPaired<double, int, 4>();
+
+    auto* dst = c.try_reserve(3);
+    ASSERT_THAT(dst, NotNull());
+    dst[0] = {1.0, 3};
+    c.commit(1);
+
+    EXPECT_THAT(c.size(), Eq(1));
+    EXPECT_THAT(c[0], Pair(1.0, 3));
+}
+
+TEST(OperationsContainerPairedTestReserve, declinesWhenRunCrossesChunkBoundary)
+{
+    auto c = xad::OperationsContainerPaired<double, int, 4>();
+    c.push_back(1.0, 1);
+    c.push_back(2.0, 2);
+
+    EXPECT_THAT(c.try_reserve(3), IsNull());
+    EXPECT_THAT(c.try_reserve(2), NotNull());
+}
+
+TEST(OperationsContainerPairedTestReserve, declinesWhenChunkIsFull)
+{
+    auto c = xad::OperationsContainerPaired<double, int, 4>();
+    for (int i = 0; i < 4; ++i)
+    {
+        c.push_back(static_cast<double>(i), i);
+    }
+
+    EXPECT_THAT(c.try_reserve(1), IsNull());
+}
+
+TEST(OperationsContainerPairedTestReserve, reservedSpaceContinuesAfterExistingElements)
+{
+    auto c = xad::OperationsContainerPaired<double, int, 4>();
+    c.push_back(1.0, 1);
+
+    auto* dst = c.try_reserve(2);
+    ASSERT_THAT(dst, NotNull());
+    dst[0] = {2.0, 2};
+    dst[1] = {3.0, 3};
+    c.commit(2);
+
+    EXPECT_THAT(c.size(), Eq(3));
+    EXPECT_THAT(c[0], Pair(1.0, 1));
+    EXPECT_THAT(c[1], Pair(2.0, 2));
+    EXPECT_THAT(c[2], Pair(3.0, 3));
+}
+
+TEST(OperationsContainerTestReserve, declinesAsElementsAreNotStoredAsPairs)
+{
+    auto c = xad::OperationsContainer<double, int, 4>();
+
+    EXPECT_THAT(c.try_reserve(1), IsNull());
+    EXPECT_THAT(c.try_reserve(0), IsNull());
 }

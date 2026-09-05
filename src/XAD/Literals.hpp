@@ -376,8 +376,7 @@ struct AReal
     XAD_FORCE_INLINE void pushRhs(DerivInfo<tape_type, Size>& info, const Scalar& mul,
                                   slot_type slot) const
     {
-        info.multipliers[info.index] = mul;
-        info.slots[info.index++] = slot;
+        info.dst[info.index++] = {mul, slot};
     }
 
     template <int Size>
@@ -456,9 +455,17 @@ struct AReal
     {
         DerivInfo<tape_type, Size> info;
 
+        // Write the partials straight into the tape where they fit, which is
+        // all but the rare statement that straddles a chunk boundary.
+        auto* direct = t->tryReserveOperations(Size);
+        info.dst = direct != nullptr ? direct : info.local;
+
         expr.calc_derivatives(info, *t);
 
-        t->pushAll(info.multipliers, info.slots, info.index);
+        if (XAD_VERY_LIKELY(direct != nullptr))
+            t->commitOperations(info.index);
+        else
+            t->pushAllPairs(info.local, info.index);
     }
 
     template <class T, std::size_t d__cnt>

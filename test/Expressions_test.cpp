@@ -70,6 +70,35 @@ TEST(Expressions, basic)
     EXPECT_DOUBLE_EQ(2.0, derivative(b));
 }
 
+TEST(Expressions, manyVariablesInOneStatement)
+{
+    xad::Tape<double> s;
+    xad::AD a(1.0), b(2.0), c(3.0), d(4.0);
+
+    s.registerInput(a);
+    s.registerInput(b);
+    s.registerInput(c);
+    s.registerInput(d);
+    s.newRecording();
+
+    xad::AD y = a * b + c * d + a * c + b * d + a * d + b * c;
+
+    static_assert(
+        xad::ExprTraits<decltype(a * b + c * d + a * c + b * d + a * d + b * c)>::numVariables ==
+            12,
+        "wrong number of variables");
+
+    s.registerOutput(y);
+    derivative(y) = 1.0;
+    s.computeAdjoints();
+
+    EXPECT_DOUBLE_EQ(35.0, value(y));
+    EXPECT_DOUBLE_EQ(9.0, derivative(a));
+    EXPECT_DOUBLE_EQ(8.0, derivative(b));
+    EXPECT_DOUBLE_EQ(7.0, derivative(c));
+    EXPECT_DOUBLE_EQ(6.0, derivative(d));
+}
+
 TEST(Expressions, basic_fwd)
 {
     xad::FAD a = 1.0;
