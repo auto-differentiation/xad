@@ -250,12 +250,6 @@ class Tape
 
     XAD_FORCE_INLINE void commitOperations(unsigned n) { operations_.commit(n); }
 
-    template <class PairIt>
-    XAD_FORCE_INLINE void pushAllPairs(PairIt pairs, unsigned n)
-    {
-        operations_.append_n_pairs(pairs, n);
-    }
-
     // capacity
     size_type getNumVariables() const;
     size_type getNumOperations() const;

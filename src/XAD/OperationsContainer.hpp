@@ -148,11 +148,6 @@ class OperationsContainer
 
     XAD_FORCE_INLINE void commit(size_type) {}
 
-    XAD_FORCE_INLINE void append_n_pairs(const std::pair<T, S>* pairs, size_type n)
-    {
-        for (size_type i = 0; i < n; ++i) push_back(pairs[i].first, pairs[i].second);
-    }
-
     template <class MulIt, class SlotIt>
     XAD_FORCE_INLINE void append_n(MulIt muls, SlotIt slots, size_type n)
     {

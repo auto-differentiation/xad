@@ -105,7 +105,7 @@ class OperationsContainerPaired
     }
 
     // Reserve space for a run of n entries in the current chunk, so callers can
-    // write their partials straight into the tape. 
+    // write their partials straight into the tape.
     // Returns nullptr when the run would cross a chunk boundary.
     XAD_FORCE_INLINE std::pair<T, S>* try_reserve(size_type n)
     {
@@ -115,13 +115,6 @@ class OperationsContainerPaired
     }
 
     XAD_FORCE_INLINE void commit(size_type n) { idx_ += n; }
-
-    // Fallback for chunk boundary: the caller staged
-    // the pairs, so append them the same way append_n would.
-    XAD_FORCE_INLINE void append_n_pairs(const std::pair<T, S>* pairs, size_type n)
-    {
-        for (size_type i = 0; i < n; ++i) push_back(pairs[i].first, pairs[i].second);
-    }
 
     XAD_FORCE_INLINE void push_back_unsafe(T multiplier, S slot)
     {

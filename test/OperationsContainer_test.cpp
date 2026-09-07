@@ -117,44 +117,6 @@ TYPED_TEST(OperationsContainerTest, canAppendElementsMultiChunk)
     }
 }
 
-TYPED_TEST(OperationsContainerTest, canAppendPairs)
-{
-    auto c = TypeParam();
-
-    std::pair<double, int> p[] = {{1.0, 3}, {2.0, 4}, {3.0, 5}};
-    c.append_n_pairs(p, 3);
-
-    EXPECT_THAT(c.size(), Eq(3));
-    EXPECT_THAT(c[0], Pair(1.0, 3));
-    EXPECT_THAT(c[1], Pair(2.0, 4));
-    EXPECT_THAT(c[2], Pair(3.0, 5));
-}
-
-TYPED_TEST(OperationsContainerTest, canAppendPairsAcrossChunkBoundary)
-{
-    auto c = TypeParam();
-
-    std::pair<double, int> p[] = {{1.0, 1}, {2.0, 2}, {3.0, 3}, {4.0, 4}, {5.0, 5}, {6.0, 6}};
-    c.append_n_pairs(p, 6);
-
-    EXPECT_THAT(c.size(), Eq(6));
-    for (unsigned i = 0; i < 6; ++i)
-    {
-        EXPECT_THAT(c[i], Pair(static_cast<double>(i + 1), static_cast<int>(i + 1)));
-    }
-}
-
-TYPED_TEST(OperationsContainerTest, canAppendNoPairs)
-{
-    auto c = TypeParam();
-
-    std::pair<double, int> p[] = {{1.0, 1}};
-    c.append_n_pairs(p, 0);
-
-    EXPECT_THAT(c.size(), Eq(0));
-    EXPECT_THAT(c.empty(), IsTrue());
-}
-
 TYPED_TEST(OperationsContainerTest, canPushBack)
 {
     auto c = TypeParam();

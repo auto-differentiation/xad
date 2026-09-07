@@ -326,30 +326,6 @@ TEST(Tape, canCommitFewerOperationsThanReserved)
 
 #endif
 
-TEST(Tape, canPushOperationsAsPairs)
-{
-    xad::Tape<double> s;
-    using slot_type = xad::Tape<double>::slot_type;
-
-    auto x1s = s.registerVariable();
-    auto x2s = s.registerVariable();
-    s.newRecording();
-
-    auto zs = s.registerVariable();
-    std::pair<double, slot_type> ops[] = {{2.0, x1s}, {3.0, x2s}};
-    s.pushAllPairs(ops, 2);
-    s.pushLhs(zs);
-
-    EXPECT_EQ(2U, s.getNumOperations());
-    EXPECT_EQ(1U, s.getNumStatements());
-
-    s.setDerivative(zs, 1.0);
-    s.computeAdjoints();
-
-    EXPECT_DOUBLE_EQ(2.0, s.getDerivative(x1s));
-    EXPECT_DOUBLE_EQ(3.0, s.getDerivative(x2s));
-}
-
 TEST(Tape, canRestartRecording)
 {
     xad::Tape<double> s;

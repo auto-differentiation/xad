@@ -372,23 +372,21 @@ struct AReal
   public:
 #endif
 
-    template <int Size>
-    XAD_FORCE_INLINE void pushRhs(DerivInfo<tape_type, Size>& info, const Scalar& mul,
-                                  slot_type slot) const
+    template <class Info>
+    XAD_FORCE_INLINE void pushRhs(Info& info, const Scalar& mul, slot_type slot) const
     {
-        info.dst[info.index++] = {mul, slot};
+        info.add(mul, slot);
     }
 
-    template <int Size>
-    XAD_FORCE_INLINE void calc_derivatives(DerivInfo<tape_type, Size>& info, tape_type&,
-                                           const Scalar& mul) const
+    template <class Info>
+    XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type&, const Scalar& mul) const
     {
         if (slot_ != INVALID_SLOT)
             pushRhs(info, mul, slot_);
     }
 
-    template <int Size>
-    XAD_FORCE_INLINE void calc_derivatives(DerivInfo<tape_type, Size>& info, tape_type&) const
+    template <class Info>
+    XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type&) const
     {
         if (slot_ != INVALID_SLOT)
             pushRhs(info, Scalar(1), slot_);
@@ -450,29 +448,36 @@ struct AReal
 #endif
 
   private:
+    // Stage the partials in stack arrays, then append them to the tape in one
+    // batch. The arrays are locals, so the compiler can keep them in registers.
+    template <int Size, typename Expr>
+    XAD_FORCE_INLINE void pushStaged(tape_type* t, const Expr& expr) const
+    {
+        DerivInfo<tape_type, Size> info;
+        expr.calc_derivatives(info, *t);
+        t->pushAll(info.multipliers, info.slots, info.index);
+    }
+
+    // Write the partials into the tape as they are computed, saving the copy.
+    // Falls back to staging when the run would cross a chunk boundary, and for
+    // value types that are not trivially copyable.
     template <int Size, typename Expr>
     XAD_FORCE_INLINE void pushAll(tape_type* t, const Expr& expr) const
     {
-        DerivInfo<tape_type, Size> info;
-
-        // Write the partials straight into the tape where they fit, which is
-        // all but the rare statement that straddles a chunk boundary. Tape
-        // memory holds no constructed element until one is appended, so writing
-        // by assignment is only valid for a trivially copyable value type. In
-        // higher order modes it is an active type, whose assignment reads a slot
-        // that has never been set and records onto the inner tape, so those keep
-        // the staging buffer.
-        typename DerivInfo<tape_type, Size>::pair_type* direct = nullptr;
-        if (std::is_trivially_copyable<typename tape_type::value_type>::value)
-            direct = t->tryReserveOperations(Size);
-        info.dst = direct != nullptr ? direct : info.local;
-
+        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
+        {
+            pushStaged<Size>(t, expr);
+            return;
+        }
+        DerivInfoDirect<tape_type> info;
+        info.dst = t->tryReserveOperations(Size);
+        if (XAD_VERY_UNLIKELY(info.dst == nullptr))
+        {
+            pushStaged<Size>(t, expr);
+            return;
+        }
         expr.calc_derivatives(info, *t);
-
-        if (XAD_VERY_LIKELY(direct != nullptr))
-            t->commitOperations(info.index);
-        else
-            t->pushAllPairs(info.local, info.index);
+        t->commitOperations(info.index);
     }
 
     template <class T, std::size_t d__cnt>
@@ -503,15 +508,14 @@ struct ADVar
 
     XAD_INLINE const Scalar& value() const { return ar_.value(); }
 
-    template <int Size>
-    XAD_INLINE void calc_derivatives(DerivInfo<tape_type, Size>& info, tape_type& s,
-                                     const Scalar& mul) const
+    template <class Info>
+    XAD_INLINE void calc_derivatives(Info& info, tape_type& s, const Scalar& mul) const
     {
         ar_.calc_derivatives(info, s, mul);
     }
 
-    template <int Size>
-    XAD_INLINE void calc_derivatives(DerivInfo<tape_type, Size>& info, tape_type& s) const
+    template <class Info>
+    XAD_INLINE void calc_derivatives(Info& info, tape_type& s) const
     {
         ar_.calc_derivative(info, s);
     }
