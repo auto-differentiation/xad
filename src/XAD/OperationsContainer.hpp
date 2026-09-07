@@ -141,6 +141,13 @@ class OperationsContainer
         ++idx_;
     }
 
+    // This container keeps multipliers and slots in separate arrays, so it cannot
+    // hand out a contiguous run of pairs to write into. Returning null here means
+    // callers stage into their own buffer and append.
+    XAD_FORCE_INLINE std::pair<T, S>* try_reserve(size_type) { return nullptr; }
+
+    XAD_FORCE_INLINE void commit(size_type) {}
+
     template <class MulIt, class SlotIt>
     XAD_FORCE_INLINE void append_n(MulIt muls, SlotIt slots, size_type n)
     {
