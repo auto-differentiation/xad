@@ -184,7 +184,7 @@ class ChunkContainer
     }
 
     template <class... Args>
-    void emplace_back(Args&&... args)
+    XAD_FORCE_INLINE void emplace_back(Args&&... args)
     {
         if (XAD_VERY_UNLIKELY(idx_ == chunk_size))
         {
