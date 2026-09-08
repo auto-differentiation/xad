@@ -25,6 +25,8 @@
 #pragma once
 #include <XAD/Macros.hpp>
 
+#include <utility>
+
 namespace xad
 {
 
@@ -36,6 +38,27 @@ struct DerivInfo
     unsigned index = 0;
     typename TapeType::value_type multipliers[N];
     typename TapeType::slot_type slots[N];
+
+    XAD_INLINE void add(const typename TapeType::value_type& m, typename TapeType::slot_type slot)
+    {
+        multipliers[index] = m;
+        slots[index++] = slot;
+    }
+};
+
+// same, but writing straight into the tape instead of a local buffer
+template <typename TapeType>
+struct DerivInfoDirect
+{
+    using pair_type = std::pair<typename TapeType::value_type, typename TapeType::slot_type>;
+
+    unsigned index = 0;
+    pair_type* dst = nullptr;
+
+    XAD_INLINE void add(const typename TapeType::value_type& m, typename TapeType::slot_type slot)
+    {
+        dst[index++] = pair_type(m, slot);
+    }
 };
 
 /// Represents a generic expression, for the Scalar base type.
@@ -89,16 +112,15 @@ struct Expression
     XAD_INLINE explicit operator bool() const { return value() != Scalar(0); }
 
     /// calculate the derivatives, given a tape object
-    template <class Tape, int Size>
-    XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s) const
+    template <class Info, class Tape>
+    XAD_INLINE void calc_derivatives(Info& info, Tape& s) const
     {
         derived().calc_derivatives(info, s, Scalar(1));
     }
 
     /// calculate the derivatives, given tape and multiplier
-    template <class Tape, int Size>
-    XAD_INLINE void calc_derivatives(DerivInfo<Tape, Size>& info, Tape& s,
-                                     const Scalar& multiplier) const
+    template <class Info, class Tape>
+    XAD_INLINE void calc_derivatives(Info& info, Tape& s, const Scalar& multiplier) const
     {
         derived().calc_derivatives(info, s, multiplier);
     }

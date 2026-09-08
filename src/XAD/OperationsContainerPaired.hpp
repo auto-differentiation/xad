@@ -104,6 +104,18 @@ class OperationsContainerPaired
         push_back_unsafe(multiplier, slot);
     }
 
+    // Reserve space for a run of n entries in the current chunk, so callers can
+    // write their partials straight into the tape.
+    // Returns nullptr when the run would cross a chunk boundary.
+    XAD_FORCE_INLINE std::pair<T, S>* try_reserve(size_type n)
+    {
+        if (XAD_VERY_UNLIKELY(idx_ + n > ChunkSize))
+            return nullptr;
+        return chunk(chunk_) + idx_;
+    }
+
+    XAD_FORCE_INLINE void commit(size_type n) { idx_ += n; }
+
     XAD_FORCE_INLINE void push_back_unsafe(T multiplier, S slot)
     {
         if (XAD_VERY_UNLIKELY(idx_ == ChunkSize))

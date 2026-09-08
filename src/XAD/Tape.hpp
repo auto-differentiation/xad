@@ -36,6 +36,7 @@
 #include <list>
 #include <stack>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace xad
@@ -209,7 +210,7 @@ class Tape
     void popCallback();
 
     // internal tape recording
-    slot_type registerVariable()
+    XAD_INLINE slot_type registerVariable()
     {
         ++currentRec_->numDerivatives_;
 #ifdef XAD_TAPE_REUSE_SLOTS
@@ -242,6 +243,13 @@ class Tape
         operations_.append_n(multipliers, slots, n);
     }
 
+    XAD_FORCE_INLINE std::pair<value_type, slot_type>* tryReserveOperations(unsigned n)
+    {
+        return operations_.try_reserve(n);
+    }
+
+    XAD_FORCE_INLINE void commitOperations(unsigned n) { operations_.commit(n); }
+
     // capacity
     size_type getNumVariables() const;
     size_type getNumOperations() const;
@@ -263,7 +271,7 @@ class Tape
   private:
     void computeAdjointsToImpl(position_type pos, position_type start);
     void initDerivatives();
-    slot_type registerVariableAtEnd()
+    XAD_INLINE slot_type registerVariableAtEnd()
     {
         ++currentRec_->iDerivative_;
         currentRec_->maxDerivative_ =

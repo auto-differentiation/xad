@@ -82,7 +82,7 @@ jobs:
             config: Debug
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: setup
         run: |
           choco install -y ninja sccache
@@ -253,15 +253,49 @@ jobs:
     container:
       image: ghcr.io/foonathan/gcc:${{ matrix.version }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Use debian archive repos
-        if: matrix.version == '7' || matrix.version == '8'
         run: |
             set -e
-            sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list
-            sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list
-            sed -i 's|http://deb.debian.org/debian buster-updates|http://archive.debian.org/debian buster-updates|g' /etc/apt/sources.list
-            echo 'Acquire::Check-Valid-Until "false";' | tee /etc/apt/apt.conf.d/99no-check-valid-until
+            # End-of-life Debian releases are moved off deb.debian.org and
+            # security.debian.org onto archive.debian.org. While that move is in
+            # progress the mirrors serve an index listing files they no longer
+            # hold, so apt fails with 404 on a subset of packages that varies
+            # between runs. Point archived releases at archive.debian.org.
+            codename=$(. /etc/os-release 2>/dev/null && echo "${VERSION_CODENAME:-}")
+            lists=/etc/apt/sources.list
+            for f in /etc/apt/sources.list.d/*.list; do
+              if [ -e "$f" ]; then lists="$lists $f"; fi
+            done
+            case "$codename" in
+              jessie|stretch|buster)
+                # fully archived, security included under <codename>/updates
+                sed -i \
+                  -e 's|http://[a-z.]*debian\.org/debian-security|http://archive.debian.org/debian-security|g' \
+                  -e 's|http://[a-z.]*debian\.org/debian|http://archive.debian.org/debian|g' \
+                  $lists
+                ;;
+              bullseye)
+                # main is archived but debian-security has no bullseye suite yet.
+                # Drop security first, before any rewriting, because the entry may
+                # be spelled deb.debian.org/debian-security and would otherwise be
+                # rewritten to an archive path that does not exist. The build tools
+                # installed below all live in main.
+                sed -i -e '/debian-security/d' -e '/security\.debian\.org/d' $lists
+                sed -i -e 's|http://[a-z.]*debian\.org/debian|http://archive.debian.org/debian|g' $lists
+                ;;
+              *)
+                # still supported: leave the mirrors alone
+                echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/99retries
+                exit 0
+                ;;
+            esac
+            # archived releases keep no -updates suite
+            sed -i '/-updates/d' $lists
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            # and retry just in case
+            echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/99retries
+            cat $lists
       - name: Setup tools
         run: |
           apt-get update
@@ -443,7 +477,51 @@ jobs:
     container:
       image: ghcr.io/foonathan/clang:${{ matrix.version }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
+      - name: Use debian archive repos
+        run: |
+            set -e
+            # End-of-life Debian releases are moved off deb.debian.org and
+            # security.debian.org onto archive.debian.org. While that move is in
+            # progress the mirrors serve an index listing files they no longer
+            # hold, so apt fails with 404 on a subset of packages that varies
+            # between runs. Point archived releases at archive.debian.org.
+            # Detected from the running image rather than the compiler version,
+            # so a release ageing out needs no change here.
+            codename=$(. /etc/os-release 2>/dev/null && echo "${VERSION_CODENAME:-}")
+            lists=/etc/apt/sources.list
+            for f in /etc/apt/sources.list.d/*.list; do
+              if [ -e "$f" ]; then lists="$lists $f"; fi
+            done
+            case "$codename" in
+              jessie|stretch|buster)
+                # fully archived, security included under <codename>/updates
+                sed -i \
+                  -e 's|http://[a-z.]*debian\.org/debian-security|http://archive.debian.org/debian-security|g' \
+                  -e 's|http://[a-z.]*debian\.org/debian|http://archive.debian.org/debian|g' \
+                  $lists
+                ;;
+              bullseye)
+                # main is archived but debian-security has no bullseye suite yet.
+                # Drop security first, before any rewriting, because the entry may
+                # be spelled deb.debian.org/debian-security and would otherwise be
+                # rewritten to an archive path that does not exist. The build tools
+                # installed below all live in main.
+                sed -i -e '/debian-security/d' -e '/security\.debian\.org/d' $lists
+                sed -i -e 's|http://[a-z.]*debian\.org/debian|http://archive.debian.org/debian|g' $lists
+                ;;
+              *)
+                # still supported: leave the mirrors alone
+                echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/99retries
+                exit 0
+                ;;
+            esac
+            # archived releases keep no -updates suite
+            sed -i '/-updates/d' $lists
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            # a 404 mid-transition is transient often enough to be worth retrying
+            echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/99retries
+            cat $lists
       - name: setup
         run: |
           apt-get update
@@ -562,7 +640,7 @@ jobs:
           git clone --branch v1.14 https://github.com/linux-test-project/lcov.git
           cd lcov
           sudo make install
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
