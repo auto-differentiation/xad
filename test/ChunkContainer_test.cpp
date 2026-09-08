@@ -22,6 +22,12 @@
 
 ******************************************************************************/
 
+#if defined(__GNUC__) && !defined(__clang__)
+// too_large_throws_bad_alloc instantiates a container with a deliberately
+// absurd chunk size; GCC flags the resulting allocation call in the header
+#pragma GCC diagnostic ignored "-Walloc-size-larger-than="
+#endif
+
 #include <XAD/ChunkContainer.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -96,14 +102,11 @@ TEST(ChunkContainer, uninitialized_extend)
     for (std::size_t j = 0; j < container::chunk_size - 4 + 10; ++j) EXPECT_EQ(int(j), chk[j]);
 }
 
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 12
 // we're only comparing pointer addresses in the tests below to verify move
 // behaviour, but GCC 12 sees this as use-after-free and flags warnings
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Walloc-size-larger-than"
-#if __GNUC__ >= 12
 #pragma GCC diagnostic ignored "-Wuse-after-free"
-#endif
 #endif
 
 TEST(ChunkContainer, move_construct)
@@ -136,7 +139,7 @@ TEST(ChunkContainer, move_assign)
     EXPECT_THAT(addr, Ne(addr2));
 }
 
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
 #endif
 

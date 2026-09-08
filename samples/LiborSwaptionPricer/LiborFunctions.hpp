@@ -50,7 +50,7 @@ void path_gen(const ADT& delta, std::vector<ADT>& L, const std::vector<ADT>& lam
         ADT v = 0.0;
         for (size_t i = n + 1; i < L.size(); i++)
         {
-            ADT lam = lambda[i - n - 1];
+            const ADT& lam = lambda[i - n - 1];
             ADT con1 = delta * lam;
             v += (con1 * L[i]) / (1.0 + delta * L[i]);
             L[i] *= exp(con1 * v + lam * (sqez - 0.5 * con1));
