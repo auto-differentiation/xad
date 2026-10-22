@@ -142,6 +142,56 @@ XAD_DIRECT_FMA(ARealDirect)
 
 #undef XAD_DIRECT_FMA
 
+// fma with AReal / FReal and built-in arithmetic operands, for the same reason
+#define XAD_ACTIVE_FMA(Active)                                                                     \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value &&           \
+                                              detail::is_builtin_arithmetic<U>::value>::type>      \
+    XAD_INLINE auto fma(const Active<Scalar, N>& a, const T& b, const U& c) -> decltype(a * b + c) \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value &&           \
+                                              detail::is_builtin_arithmetic<U>::value>::type>      \
+    XAD_INLINE auto fma(const T& a, const Active<Scalar, N>& b, const U& c) -> decltype(a * b + c) \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value &&           \
+                                              detail::is_builtin_arithmetic<U>::value>::type>      \
+    XAD_INLINE auto fma(const T& a, const U& b, const Active<Scalar, N>& c) -> decltype(a * b + c) \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value>::type>      \
+    XAD_INLINE auto fma(const Active<Scalar, N>& a, const Active<Scalar, N>& b, const T& c)        \
+        -> decltype(a * b + c)                                                                     \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value>::type>      \
+    XAD_INLINE auto fma(const Active<Scalar, N>& a, const T& b, const Active<Scalar, N>& c)        \
+        -> decltype(a * b + c)                                                                     \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value>::type>      \
+    XAD_INLINE auto fma(const T& a, const Active<Scalar, N>& b, const Active<Scalar, N>& c)        \
+        -> decltype(a * b + c)                                                                     \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }
+
+XAD_ACTIVE_FMA(AReal)
+XAD_ACTIVE_FMA(FReal)
+
+#undef XAD_ACTIVE_FMA
+
 /////////// comparisons - they just return bool
 
 // comparisons of direct mode types with anything other than the same direct type or its scalar
