@@ -165,10 +165,28 @@ XAD_INLINE xad::FReal<T, N> copysign(const xad::FReal<T, N> x, const xad::FReal<
 
 #endif
 
+template <class Scalar, std::size_t N>
+inline std::string to_string(const xad::ARealDirect<Scalar, N>& _Val);
+
+template <class Scalar, std::size_t N>
+inline std::string to_string(const xad::FRealDirect<Scalar, N>& _Val);
+
 template <class Scalar, class Derived, class Deriv>
 inline std::string to_string(const xad::Expression<Scalar, Derived, Deriv>& _Val)
 {
     return to_string(value(_Val));
+}
+
+template <class Scalar, std::size_t N>
+inline std::string to_string(const xad::ARealDirect<Scalar, N>& _Val)
+{
+    return to_string(xad::value(_Val));
+}
+
+template <class Scalar, std::size_t N>
+inline std::string to_string(const xad::FRealDirect<Scalar, N>& _Val)
+{
+    return to_string(xad::value(_Val));
 }
 
 }  // namespace std

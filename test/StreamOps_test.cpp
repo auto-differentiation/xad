@@ -34,10 +34,10 @@ class Streams : public ::testing::Test
 {
 };
 
-typedef ::testing::Types<xad::AReal<double>, xad::FReal<double>, xad::AReal<float>,
-                         xad::FReal<float>, xad::AReal<xad::AReal<double>>,
-                         xad::AReal<xad::FReal<double>>, xad::FReal<xad::AReal<double>>,
-                         xad::FReal<xad::FReal<double>>>
+typedef ::testing::Types<
+    xad::AReal<double>, xad::FReal<double>, xad::AReal<float>, xad::FReal<float>,
+    xad::AReal<xad::AReal<double>>, xad::AReal<xad::FReal<double>>, xad::FReal<xad::AReal<double>>,
+    xad::FReal<xad::FReal<double>>, xad::ARealDirect<double>, xad::FRealDirect<double>>
     test_types;
 
 TYPED_TEST_SUITE(Streams, test_types);

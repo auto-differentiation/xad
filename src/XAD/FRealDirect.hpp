@@ -25,6 +25,7 @@
 #pragma once
 
 #include <XAD/Macros.hpp>
+#include <XAD/RealDirect.hpp>
 #include <XAD/Traits.hpp>
 
 namespace xad
@@ -47,6 +48,7 @@ struct FRealDirect : public RealDirect<FReal<Scalar, N>, FRealDirect<Scalar, N>>
     }
 
     XAD_INLINE DerivativeType &derivative() { return this->base().derivative(); }
+    XAD_INLINE const DerivativeType &derivative() const { return this->base().derivative(); }
     XAD_INLINE DerivativeType getDerivative() const { return this->base().derivative(); }
 };
 
