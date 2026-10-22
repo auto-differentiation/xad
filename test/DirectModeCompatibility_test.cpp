@@ -484,3 +484,37 @@ TEST(DirectModeHigherOrder, MaxMinAtTiesWithDirectInnerType)
     EXPECT_THAT(derivative(value(y)), DoubleEq(derivative(value(yref))));
     EXPECT_THAT(derivative(value(y)), DoubleEq(0.5 + 2.0 * 0.5));
 }
+
+// ------------------- complex numbers
+
+TYPED_TEST(DirectModeCompatibilityAdj, TapeRegistrationComplex)
+{
+    typedef TypeParam T;
+    xad::Tape<double> tape;
+    std::complex<T> z(T(2.0), T(1.0));
+    tape.registerInput(z);
+    tape.newRecording();
+    std::complex<T> w = z * z;
+    tape.registerOutput(w);
+    xad::derivative(w.real()) = 1.0;
+    tape.computeAdjoints();
+    // d(re(z^2))/d(re z) = 2 re z, d(re(z^2))/d(im z) = -2 im z
+    EXPECT_THAT(xad::derivative(z.real()), DoubleEq(4.0));
+    EXPECT_THAT(xad::derivative(z.imag()), DoubleEq(-2.0));
+}
+
+TYPED_TEST(DirectModeCompatibility, ComplexInitialisationAndMixedOperands)
+{
+    typedef TypeParam T;
+    std::unique_ptr<xad::Tape<double>> tape;
+    if (xad::ExprTraits<T>::isReverse)
+        tape.reset(new xad::Tape<double>());
+    std::complex<T> z = 0.0;
+    EXPECT_THAT(xad::value(z.real()), DoubleEq(0.0));
+    z = 1.0;
+    EXPECT_THAT(xad::value(z.real()), DoubleEq(1.0));
+    T x = 2.0;
+    std::complex<T> w = std::pow(z * x + 1.0, x) * 2.0 + x;
+    EXPECT_THAT(xad::value(w.real()), DoubleNear(20.0, 1e-12));
+    EXPECT_THAT(xad::value(w.imag()), DoubleNear(0.0, 1e-12));
+}

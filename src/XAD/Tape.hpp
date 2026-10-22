@@ -138,6 +138,14 @@ class Tape
 
     XAD_INLINE void registerInput(ARealDirect<Real, N>& inp) { registerInput(inp.base()); }
 
+    XAD_INLINE void registerInput(std::complex<ARealDirect<Real, N>>& inp)
+    {
+        // same layout as complex<active_type>: real and imaginary parts are consecutive
+        auto reim_ptr = reinterpret_cast<ARealDirect<Real, N>*>(&inp);
+        registerInput(reim_ptr[0]);
+        registerInput(reim_ptr[1]);
+    }
+
     XAD_INLINE void registerOutput(active_type& outp)
     {
         if (!outp.shouldRecord())
@@ -148,6 +156,14 @@ class Tape
     }
 
     XAD_INLINE void registerOutput(ARealDirect<Real, N>& outp) { registerOutput(outp.base()); }
+
+    XAD_INLINE void registerOutput(std::complex<ARealDirect<Real, N>>& outp)
+    {
+        // same layout as complex<active_type>: real and imaginary parts are consecutive
+        auto reim_ptr = reinterpret_cast<ARealDirect<Real, N>*>(&outp);
+        registerOutput(reim_ptr[0]);
+        registerOutput(reim_ptr[1]);
+    }
 
     XAD_INLINE void registerOutput(std::complex<active_type>& outp)
     {
