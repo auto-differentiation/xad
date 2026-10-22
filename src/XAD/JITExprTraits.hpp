@@ -109,6 +109,8 @@ template <class S, class T> struct IsScalarFirstOp<scalar_remquo1_op<S, T>> : st
 template <class S, class T> struct IsScalarFirstOp<scalar_hypot1_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_nextafter1_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_smooth_abs1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_max1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_min1_op<S, T>> : std::true_type {};
 
 // Helper to record scalar value as constant
 inline uint32_t recordJITConstant(JITGraph& graph, double value)

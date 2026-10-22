@@ -174,21 +174,21 @@ modf(const AReal<Scalar, M>& x, T* iptr)
 // and we need to avoid conflicts with the standard versions
 
 template <class Scalar, class Expr, class DerivativeType>
-XAD_INLINE UnaryExpr<Scalar, scalar_max_op<Scalar, Scalar>, Expr, DerivativeType>(max)(
+XAD_INLINE UnaryExpr<Scalar, scalar_max1_op<Scalar, Scalar>, Expr, DerivativeType>(max)(
     Scalar a2, const Expression<Scalar, Expr, DerivativeType>& b2)
 {
-    return UnaryExpr<Scalar, scalar_max_op<Scalar, Scalar>, Expr, DerivativeType>(
-        b2.derived(), scalar_max_op<Scalar, Scalar>(a2));
+    return UnaryExpr<Scalar, scalar_max1_op<Scalar, Scalar>, Expr, DerivativeType>(
+        b2.derived(), scalar_max1_op<Scalar, Scalar>(a2));
 }
 
 template <class Scalar, class Expr, class T, class DerivativeType>
 XAD_INLINE typename std::enable_if<
     std::is_same<T, typename ExprTraits<Expr>::nested_type>::value,
-    UnaryExpr<Scalar, scalar_max_op<Scalar, Scalar>, Expr,
+    UnaryExpr<Scalar, scalar_max1_op<Scalar, Scalar>, Expr,
               DerivativeType>>::type(max)(T a2, const Expression<Scalar, Expr, DerivativeType>& b2)
 {
-    return UnaryExpr<Scalar, scalar_max_op<Scalar, Scalar>, Expr, DerivativeType>(
-        b2.derived(), scalar_max_op<Scalar, Scalar>(a2));
+    return UnaryExpr<Scalar, scalar_max1_op<Scalar, Scalar>, Expr, DerivativeType>(
+        b2.derived(), scalar_max1_op<Scalar, Scalar>(a2));
 }
 
 template <class T, class AT, std::size_t M = 1>
@@ -197,12 +197,12 @@ XAD_INLINE typename std::enable_if<
         std::is_same<AReal<typename ExprTraits<AT>::scalar_type, M>, AT>::value,
     UnaryExpr<
         typename ExprTraits<AT>::scalar_type,
-        scalar_max_op<typename ExprTraits<AT>::scalar_type, typename ExprTraits<AT>::scalar_type>,
+        scalar_max1_op<typename ExprTraits<AT>::scalar_type, typename ExprTraits<AT>::scalar_type>,
         ADVar<typename ExprTraits<AT>::scalar_type, M>>>::type(max)(T a3, const AT& b3)
 {
     using Scalar = typename ExprTraits<AT>::scalar_type;
-    return UnaryExpr<Scalar, scalar_max_op<Scalar, Scalar>, ADVar<Scalar, M>>(
-        ADVar<Scalar, M>(b3), scalar_max_op<Scalar, Scalar>(a3));
+    return UnaryExpr<Scalar, scalar_max1_op<Scalar, Scalar>, ADVar<Scalar, M>>(
+        ADVar<Scalar, M>(b3), scalar_max1_op<Scalar, Scalar>(a3));
 }
 
 
@@ -233,27 +233,29 @@ XAD_INLINE typename std::enable_if<
         scalar_max_op<typename ExprTraits<AT>::scalar_type, typename ExprTraits<AT>::scalar_type>,
         ADVar<typename ExprTraits<AT>::scalar_type, N>>>::type(max)(const AT& a1, T b1)
 {
-    return max(b1, a1);
+    using Scalar = typename ExprTraits<AT>::scalar_type;
+    return UnaryExpr<Scalar, scalar_max_op<Scalar, Scalar>, ADVar<Scalar, N>>(
+        ADVar<Scalar, N>(a1), scalar_max_op<Scalar, Scalar>(b1));
 }
 
 
 
 template <class Scalar, class Expr, class DerivativeType>
-XAD_INLINE UnaryExpr<Scalar, scalar_min_op<Scalar, Scalar>, Expr, DerivativeType>(min)(
+XAD_INLINE UnaryExpr<Scalar, scalar_min1_op<Scalar, Scalar>, Expr, DerivativeType>(min)(
     Scalar a2, const Expression<Scalar, Expr, DerivativeType>& b2)
 {
-    return UnaryExpr<Scalar, scalar_min_op<Scalar, Scalar>, Expr, DerivativeType>(
-        b2.derived(), scalar_min_op<Scalar, Scalar>(a2));
+    return UnaryExpr<Scalar, scalar_min1_op<Scalar, Scalar>, Expr, DerivativeType>(
+        b2.derived(), scalar_min1_op<Scalar, Scalar>(a2));
 }
 
 template <class Scalar, class Expr, class T, class DerivativeType>
 XAD_INLINE typename std::enable_if<
     std::is_same<T, typename ExprTraits<Expr>::nested_type>::value,
-    UnaryExpr<Scalar, scalar_min_op<Scalar, Scalar>, Expr,
+    UnaryExpr<Scalar, scalar_min1_op<Scalar, Scalar>, Expr,
               DerivativeType>>::type(min)(T a2, const Expression<Scalar, Expr, DerivativeType>& b2)
 {
-    return UnaryExpr<Scalar, scalar_min_op<Scalar, Scalar>, Expr, DerivativeType>(
-        b2.derived(), scalar_min_op<Scalar, Scalar>(a2));
+    return UnaryExpr<Scalar, scalar_min1_op<Scalar, Scalar>, Expr, DerivativeType>(
+        b2.derived(), scalar_min1_op<Scalar, Scalar>(a2));
 }
 
 template <class T, class AT, std::size_t M = 1>
@@ -262,12 +264,12 @@ XAD_INLINE typename std::enable_if<
         std::is_same<AReal<typename ExprTraits<AT>::scalar_type, M>, AT>::value,
     UnaryExpr<
         typename ExprTraits<AT>::scalar_type,
-        scalar_min_op<typename ExprTraits<AT>::scalar_type, typename ExprTraits<AT>::scalar_type>,
+        scalar_min1_op<typename ExprTraits<AT>::scalar_type, typename ExprTraits<AT>::scalar_type>,
         ADVar<typename ExprTraits<AT>::scalar_type, M>>>::type(min)(T a3, const AT& b3)
 {
     using Scalar = typename ExprTraits<AT>::scalar_type;
-    return UnaryExpr<Scalar, scalar_min_op<Scalar, Scalar>, ADVar<Scalar, M>>(
-        ADVar<Scalar, M>(b3), scalar_min_op<Scalar, Scalar>(a3));
+    return UnaryExpr<Scalar, scalar_min1_op<Scalar, Scalar>, ADVar<Scalar, M>>(
+        ADVar<Scalar, M>(b3), scalar_min1_op<Scalar, Scalar>(a3));
 }
 
 
@@ -298,7 +300,10 @@ XAD_INLINE typename std::enable_if<
         scalar_min_op<typename ExprTraits<AT>::scalar_type, typename ExprTraits<AT>::scalar_type>,
         ADVar<typename ExprTraits<AT>::scalar_type>, typename AT::derivatives_type>>::type(min)(const AT& a1, T b1)
 {
-    return min(b1, a1);
+    using Scalar = typename ExprTraits<AT>::scalar_type;
+    return UnaryExpr<Scalar, scalar_min_op<Scalar, Scalar>, ADVar<Scalar>,
+                     typename AT::derivatives_type>(ADVar<Scalar>(a1),
+                                                    scalar_min_op<Scalar, Scalar>(b1));
 }
 
 XAD_UNARY_BINSCAL(fmax, scalar_fmax_op)

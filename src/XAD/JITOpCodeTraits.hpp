@@ -103,6 +103,8 @@ template <class, class> struct scalar_max_op;
 template <class, class> struct scalar_min_op;
 template <class, class> struct scalar_fmax_op;
 template <class, class> struct scalar_fmin_op;
+template <class, class> struct scalar_max1_op;
+template <class, class> struct scalar_min1_op;
 template <class, class> struct scalar_fmod1_op;
 template <class, class> struct scalar_fmod2_op;
 template <class, class> struct scalar_atan21_op;
@@ -196,6 +198,8 @@ template <class S, class T> struct JITOpCodeFor<scalar_max_op<S, T>> { static co
 template <class S, class T> struct JITOpCodeFor<scalar_min_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Min; };
 template <class S, class T> struct JITOpCodeFor<scalar_fmax_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Max; };
 template <class S, class T> struct JITOpCodeFor<scalar_fmin_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Min; };
+template <class S, class T> struct JITOpCodeFor<scalar_max1_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Max; };
+template <class S, class T> struct JITOpCodeFor<scalar_min1_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Min; };
 template <class S, class T> struct JITOpCodeFor<scalar_fmod1_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Mod; };
 template <class S, class T> struct JITOpCodeFor<scalar_fmod2_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Mod; };
 template <class S, class T> struct JITOpCodeFor<scalar_atan21_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Atan2; };
