@@ -78,13 +78,14 @@ std::vector<std::vector<T>> computeJacobian(
     return computeJacobian(vec, foo, codomain, Tape<T>::getActive());
 }
 
-// adj iterator
-template <typename RowIterator, typename T>
-void computeJacobian(const std::vector<AReal<T>> &vec,
-                     std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
-                     RowIterator first, RowIterator last,
-                     std::size_t codomain = 0U,
-                     Tape<T> *tape = Tape<T>::getActive())
+namespace detail
+{
+
+// adjoint mode implementation, used for AReal and ARealDirect
+template <typename RowIterator, typename Active, typename T>
+void computeJacobianAdj(const std::vector<Active> &vec,
+                        std::function<std::vector<Active>(std::vector<Active> &)> foo,
+                        RowIterator first, RowIterator last, std::size_t codomain, Tape<T> *tape)
 {
     if (static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != vec.size())
         throw OutOfRange("Iterator allocated space doesn't equal codomain");
@@ -121,6 +122,71 @@ void computeJacobian(const std::vector<AReal<T>> &vec,
     }
 }
 
+}  // namespace detail
+
+// adj iterator
+template <typename RowIterator, typename T>
+void computeJacobian(const std::vector<AReal<T>> &vec,
+                     std::function<std::vector<AReal<T>>(std::vector<AReal<T>> &)> foo,
+                     RowIterator first, RowIterator last,
+                     std::size_t codomain = 0U,
+                     Tape<T> *tape = Tape<T>::getActive())
+{
+    detail::computeJacobianAdj(vec, foo, first, last, codomain, tape);
+}
+
+// direct adj 2d vector
+template <typename T>
+std::vector<std::vector<T>> computeJacobian(
+    const std::vector<ARealDirect<T>> &vec,
+    std::function<std::vector<ARealDirect<T>>(std::vector<ARealDirect<T>> &)> foo,
+    std::size_t codomain, Tape<T> *tape)
+{
+    auto v(vec);
+    codomain = (codomain == 0) ? foo(v).size() : codomain;
+    std::vector<std::vector<T>> matrix(codomain, std::vector<T>(v.size(), 0.0));
+    computeJacobian(vec, foo, begin(matrix), end(matrix), codomain, tape);
+    return matrix;
+}
+
+// direct adj 2d vector !tape & !codomain
+template <typename T>
+std::vector<std::vector<T>> computeJacobian(
+    const std::vector<ARealDirect<T>> &vec,
+    std::function<std::vector<ARealDirect<T>>(std::vector<ARealDirect<T>> &)> foo)
+{
+    return computeJacobian(vec, foo, 0U, Tape<T>::getActive());
+}
+
+// direct adj 2d vector tape & !codomain
+template <typename T>
+std::vector<std::vector<T>> computeJacobian(
+    const std::vector<ARealDirect<T>> &vec,
+    std::function<std::vector<ARealDirect<T>>(std::vector<ARealDirect<T>> &)> foo, Tape<T> *tape)
+{
+    return computeJacobian(vec, foo, 0U, tape);
+}
+
+// direct adj 2d vector !tape & codomain
+template <typename T>
+std::vector<std::vector<T>> computeJacobian(
+    const std::vector<ARealDirect<T>> &vec,
+    std::function<std::vector<ARealDirect<T>>(std::vector<ARealDirect<T>> &)> foo,
+    std::size_t codomain)
+{
+    return computeJacobian(vec, foo, codomain, Tape<T>::getActive());
+}
+
+// direct adj iterator
+template <typename RowIterator, typename T>
+void computeJacobian(const std::vector<ARealDirect<T>> &vec,
+                     std::function<std::vector<ARealDirect<T>>(std::vector<ARealDirect<T>> &)> foo,
+                     RowIterator first, RowIterator last, std::size_t codomain = 0U,
+                     Tape<T> *tape = Tape<T>::getActive())
+{
+    detail::computeJacobianAdj(vec, foo, first, last, codomain, tape);
+}
+
 // fwd 2d vector
 template <typename T>
 std::vector<std::vector<T>> computeJacobian(
@@ -135,12 +201,14 @@ std::vector<std::vector<T>> computeJacobian(
     return matrix;
 }
 
-// fwd iterator
-template <typename RowIterator, typename T>
-void computeJacobian(const std::vector<FReal<T>> &vec,
-                     std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo,
-                     RowIterator first, RowIterator last,
-                     std::size_t codomain = 0U)
+namespace detail
+{
+
+// forward mode implementation, used for FReal and FRealDirect
+template <typename RowIterator, typename Active>
+void computeJacobianFwd(const std::vector<Active> &vec,
+                        std::function<std::vector<Active>(std::vector<Active> &)> foo,
+                        RowIterator first, RowIterator last, std::size_t codomain)
 {
     if (static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != vec.size())
         throw OutOfRange("Iterator allocated space doesn't equal codomain");
@@ -173,5 +241,40 @@ void computeJacobian(const std::vector<FReal<T>> &vec,
             *col = derivative(y[j]);
         }
     }
+}
+
+}  // namespace detail
+
+// fwd iterator
+template <typename RowIterator, typename T>
+void computeJacobian(const std::vector<FReal<T>> &vec,
+                     std::function<std::vector<FReal<T>>(std::vector<FReal<T>> &)> foo,
+                     RowIterator first, RowIterator last,
+                     std::size_t codomain = 0U)
+{
+    detail::computeJacobianFwd(vec, foo, first, last, codomain);
+}
+
+// direct fwd 2d vector
+template <typename T>
+std::vector<std::vector<T>> computeJacobian(
+    const std::vector<FRealDirect<T>> &vec,
+    std::function<std::vector<FRealDirect<T>>(std::vector<FRealDirect<T>> &)> foo,
+    std::size_t codomain = 0U)
+{
+    auto v(vec);
+    codomain = (codomain == 0) ? foo(v).size() : codomain;
+    std::vector<std::vector<T>> matrix(codomain, std::vector<T>(v.size(), 0.0));
+    computeJacobian(vec, foo, begin(matrix), end(matrix), codomain);
+    return matrix;
+}
+
+// direct fwd iterator
+template <typename RowIterator, typename T>
+void computeJacobian(const std::vector<FRealDirect<T>> &vec,
+                     std::function<std::vector<FRealDirect<T>>(std::vector<FRealDirect<T>> &)> foo,
+                     RowIterator first, RowIterator last, std::size_t codomain = 0U)
+{
+    detail::computeJacobianFwd(vec, foo, first, last, codomain);
 }
 }  // namespace xad
