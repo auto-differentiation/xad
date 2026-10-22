@@ -92,6 +92,56 @@ XAD_INLINE auto fma(const T1& a, const T2& b, const T3& c) -> decltype(a * b + c
     return a * b + c;
 }
 
+// more specialised than the generic fma above and than promoting std::fma templates (MSVC's)
+#define XAD_DIRECT_FMA(Direct)                                                                     \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<!detail::is_direct<T>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const T& a, const Direct<Scalar, N>& b,                       \
+                                     const Direct<Scalar, N>& c)                                   \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<!detail::is_direct<T>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const Direct<Scalar, N>& a, const T& b,                       \
+                                     const Direct<Scalar, N>& c)                                   \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<!detail::is_direct<T>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const Direct<Scalar, N>& a, const Direct<Scalar, N>& b,       \
+                                     const T& c)                                                   \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<!detail::is_direct<T>::value &&                      \
+                                              !detail::is_direct<U>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const T& a, const U& b, const Direct<Scalar, N>& c)           \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<!detail::is_direct<T>::value &&                      \
+                                              !detail::is_direct<U>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const T& a, const Direct<Scalar, N>& b, const U& c)           \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<!detail::is_direct<T>::value &&                      \
+                                              !detail::is_direct<U>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const Direct<Scalar, N>& a, const T& b, const U& c)           \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }
+
+XAD_DIRECT_FMA(FRealDirect)
+XAD_DIRECT_FMA(ARealDirect)
+
+#undef XAD_DIRECT_FMA
+
 /////////// comparisons - they just return bool
 
 // comparisons of direct mode types with anything other than the same direct type or its scalar
