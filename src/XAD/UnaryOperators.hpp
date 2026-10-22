@@ -70,6 +70,8 @@ XAD_UNARY_BINSCAL1(operator/, scalar_div1_op)
 XAD_UNARY_BINSCAL2(operator/, scalar_div2_op)
 XAD_UNARY_BINSCAL1(pow, scalar_pow1_op)
 XAD_UNARY_BINSCAL2(pow, scalar_pow2_op)
+XAD_FREAL_BINSCAL1(pow, scalar_pow1_op)
+XAD_FREAL_BINSCAL2(pow, scalar_pow2_op)
 XAD_UNARY_BINSCAL1(smooth_abs, scalar_smooth_abs1_op)
 XAD_UNARY_BINSCAL2(smooth_abs, scalar_smooth_abs2_op)
 
@@ -91,12 +93,20 @@ smooth_abs(const AReal<Scalar, M>& a)
 
 XAD_UNARY_BINSCAL1(fmod, scalar_fmod1_op)
 XAD_UNARY_BINSCAL2(fmod, scalar_fmod2_op)
+XAD_FREAL_BINSCAL1(fmod, scalar_fmod1_op)
+XAD_FREAL_BINSCAL2(fmod, scalar_fmod2_op)
 XAD_UNARY_BINSCAL1(atan2, scalar_atan21_op)
 XAD_UNARY_BINSCAL2(atan2, scalar_atan22_op)
+XAD_FREAL_BINSCAL1(atan2, scalar_atan21_op)
+XAD_FREAL_BINSCAL2(atan2, scalar_atan22_op)
 XAD_UNARY_BINSCAL1(nextafter, scalar_nextafter1_op)
 XAD_UNARY_BINSCAL2(nextafter, scalar_nextafter2_op)
+XAD_FREAL_BINSCAL1(nextafter, scalar_nextafter1_op)
+XAD_FREAL_BINSCAL2(nextafter, scalar_nextafter2_op)
 XAD_UNARY_BINSCAL1(hypot, scalar_hypot1_op)
 XAD_UNARY_BINSCAL2(hypot, scalar_hypot2_op)
+XAD_FREAL_BINSCAL1(hypot, scalar_hypot1_op)
+XAD_FREAL_BINSCAL2(hypot, scalar_hypot2_op)
 
 // pown (integral exponents)
 template <class Scalar, class Expr, class DerivativeType>
@@ -302,7 +312,11 @@ XAD_INLINE typename std::enable_if<
 }
 
 XAD_UNARY_BINSCAL(fmax, scalar_fmax_op)
+XAD_FREAL_BINSCAL1(fmax, scalar_fmax_op)
+XAD_FREAL_BINSCAL2(fmax, scalar_fmax_op)
 XAD_UNARY_BINSCAL(fmin, scalar_fmin_op)
+XAD_FREAL_BINSCAL1(fmin, scalar_fmin_op)
+XAD_FREAL_BINSCAL2(fmin, scalar_fmin_op)
 
 /////////// Math functions
 
@@ -354,6 +368,8 @@ XAD_MAKE_FPCLASSIFY_FUNC_RET(long long, llround, using std::llround)
 
 XAD_UNARY_BINSCAL1(remainder, scalar_remainder1_op)
 XAD_UNARY_BINSCAL2(remainder, scalar_remainder2_op)
+XAD_FREAL_BINSCAL1(remainder, scalar_remainder1_op)
+XAD_FREAL_BINSCAL2(remainder, scalar_remainder2_op)
 
 template <class Scalar, class Expr, class T2, class DerivativeType>
 XAD_INLINE typename std::enable_if<
@@ -562,6 +578,8 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived, DerivativeT
 #undef XAD_UNARY_BINSCAL
 #undef XAD_UNARY_BINSCAL1
 #undef XAD_UNARY_BINSCAL2
+#undef XAD_FREAL_BINSCAL1
+#undef XAD_FREAL_BINSCAL2
 #undef XAD_MAKE_UNARY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC_RET

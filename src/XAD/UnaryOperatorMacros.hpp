@@ -141,6 +141,53 @@ struct ADVar;
     XAD_UNARY_BINSCAL1(_op, func)                                                                  \
     XAD_UNARY_BINSCAL2(_op, func)
 
+// exact matches, as for AReal above, so promoting std math templates (MSVC's) are not chosen
+#define XAD_FREAL_BINSCAL1(_op, func)                                                              \
+    template <class Scalar, class T, std::size_t N>                                                \
+    XAD_INLINE typename std::enable_if<                                                            \
+        std::is_arithmetic<T>::value && std::is_fundamental<T>::value &&                           \
+            !std::is_same<T, typename ExprTraits<Scalar>::nested_type>::value,                     \
+        UnaryExpr<Scalar, func<Scalar, T>, FReal<Scalar, N>,                                       \
+                  typename FReal<Scalar, N>::derivative_type>>::type(_op)(const T& a,              \
+                                                                          const FReal<Scalar, N>&  \
+                                                                              b)                   \
+    {                                                                                              \
+        return UnaryExpr<Scalar, func<Scalar, T>, FReal<Scalar, N>,                                \
+                         typename FReal<Scalar, N>::derivative_type>(b, func<Scalar, T>(a));       \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE UnaryExpr<Scalar, func<Scalar, typename ExprTraits<Scalar>::nested_type>,           \
+                         FReal<Scalar, N>, typename FReal<Scalar, N>::derivative_type>(_op)(       \
+        typename ExprTraits<Scalar>::nested_type a, const FReal<Scalar, N>& b)                     \
+    {                                                                                              \
+        return UnaryExpr<Scalar, func<Scalar, typename ExprTraits<Scalar>::nested_type>,           \
+                         FReal<Scalar, N>, typename FReal<Scalar, N>::derivative_type>(            \
+            b, func<Scalar, typename ExprTraits<Scalar>::nested_type>(a));                         \
+    }
+
+#define XAD_FREAL_BINSCAL2(_op, func)                                                              \
+    template <class Scalar, class T, std::size_t N>                                                \
+    XAD_INLINE typename std::enable_if<                                                            \
+        std::is_arithmetic<T>::value && std::is_fundamental<T>::value &&                           \
+            !std::is_same<T, typename ExprTraits<Scalar>::nested_type>::value,                     \
+        UnaryExpr<Scalar, func<Scalar, T>, FReal<Scalar, N>,                                       \
+                  typename FReal<Scalar, N>::derivative_type>>::type(_op)(const FReal<Scalar, N>&  \
+                                                                              a,                   \
+                                                                          const T& b)              \
+    {                                                                                              \
+        return UnaryExpr<Scalar, func<Scalar, T>, FReal<Scalar, N>,                                \
+                         typename FReal<Scalar, N>::derivative_type>(a, func<Scalar, T>(b));       \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE UnaryExpr<Scalar, func<Scalar, typename ExprTraits<Scalar>::nested_type>,           \
+                         FReal<Scalar, N>, typename FReal<Scalar, N>::derivative_type>(_op)(       \
+        const FReal<Scalar, N>& a, typename ExprTraits<Scalar>::nested_type b)                     \
+    {                                                                                              \
+        return UnaryExpr<Scalar, func<Scalar, typename ExprTraits<Scalar>::nested_type>,           \
+                         FReal<Scalar, N>, typename FReal<Scalar, N>::derivative_type>(            \
+            a, func<Scalar, typename ExprTraits<Scalar>::nested_type>(b));                         \
+    }
+
 #define XAD_MAKE_UNARY_FUNC(func)                                                                  \
     template <class Scalar, class Expr, class DerivativeType>                                      \
     XAD_INLINE UnaryExpr<Scalar, func##_op<Scalar>, Expr, DerivativeType>(func)(                   \
