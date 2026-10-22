@@ -139,9 +139,12 @@ class StdCompatibilityTempl : public ::testing::Test
 {
 };
 
-typedef ::testing::Types<xad::AD, xad::FAD, xad::AReal<xad::AReal<double>>,
-                         xad::FReal<xad::AReal<double>>, xad::AReal<xad::FReal<double>>,
-                         xad::FReal<xad::FReal<double>>>
+typedef ::testing::Types<
+    xad::AD, xad::FAD, xad::AReal<xad::AReal<double>>, xad::FReal<xad::AReal<double>>,
+    xad::AReal<xad::FReal<double>>, xad::FReal<xad::FReal<double>>, xad::ADD, xad::FDD,
+    xad::ARealDirect<xad::FRealDirect<double>>, xad::FRealDirect<xad::FRealDirect<double>>,
+    xad::ARealDirect<xad::FReal<double>>, xad::FRealDirect<xad::AReal<double>>,
+    xad::FReal<xad::FRealDirect<double>>>
     test_types;
 
 TYPED_TEST_SUITE(StdCompatibilityTempl, test_types);
@@ -394,4 +397,21 @@ TEST(StdCompatibility, CopysignWindowsFReal)
     EXPECT_EQ(xad::value(r6), -1.2);
     EXPECT_EQ(xad::value(r7), -1.2);
     EXPECT_EQ(xad::value(r8), -1.2);
+}
+
+TEST(StdCompatibility, UseWithRandomDistributionDirect)
+{
+    std::normal_distribution<xad::ADD> dst(1.0, 2.0);
+    std::normal_distribution<xad::FDD> dst2(1.0, 2.0);
+
+    EXPECT_THAT(dst.mean().value(), DoubleEq(1.0));
+    EXPECT_THAT(dst2.stddev().value(), DoubleEq(2.0));
+}
+
+TEST(StdCompatibility, UseInVectorAndFillDirect)
+{
+    std::vector<xad::ADD> v(3);
+    std::fill(v.begin(), v.end(), xad::ADD(1.));
+
+    EXPECT_THAT(xad::value(v[2]), DoubleEq(1.0));
 }

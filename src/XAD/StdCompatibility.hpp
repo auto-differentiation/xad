@@ -190,6 +190,16 @@ struct numeric_limits<xad::FReal<T, N>> : std::numeric_limits<T>
 {
 };
 
+template <class T, std::size_t N>
+struct numeric_limits<xad::ARealDirect<T, N>> : std::numeric_limits<T>
+{
+};
+
+template <class T, std::size_t N>
+struct numeric_limits<xad::FRealDirect<T, N>> : std::numeric_limits<T>
+{
+};
+
 }  // namespace std
 
 // hashing for active types
@@ -214,6 +224,24 @@ struct hash<xad::FReal<T, N>>
     }
 };
 
+template <class T, std::size_t N>
+struct hash<xad::ARealDirect<T, N>>
+{
+    std::size_t operator()(xad::ARealDirect<T, N> const& s) const noexcept
+    {
+        return std::hash<T>{}(xad::value(s));
+    }
+};
+
+template <class T, std::size_t N>
+struct hash<xad::FRealDirect<T, N>>
+{
+    std::size_t operator()(xad::FRealDirect<T, N> const& s) const noexcept
+    {
+        return std::hash<T>{}(xad::value(s));
+    }
+};
+
 // type traits
 // libc++ 21 marks the standard type traits [[clang::no_specializations]],
 // which raises -Winvalid-specialization (a default-error warning) on the
@@ -233,6 +261,14 @@ struct is_floating_point<xad::FReal<T, N>> : std::is_floating_point<T>
 {
 };
 template <class T, std::size_t N>
+struct is_floating_point<xad::ARealDirect<T, N>> : std::is_floating_point<T>
+{
+};
+template <class T, std::size_t N>
+struct is_floating_point<xad::FRealDirect<T, N>> : std::is_floating_point<T>
+{
+};
+template <class T, std::size_t N>
 struct is_arithmetic<xad::AReal<T, N>> : std::is_arithmetic<T>
 {
 };
@@ -241,11 +277,27 @@ struct is_arithmetic<xad::FReal<T, N>> : std::is_arithmetic<T>
 {
 };
 template <class T, std::size_t N>
+struct is_arithmetic<xad::ARealDirect<T, N>> : std::is_arithmetic<T>
+{
+};
+template <class T, std::size_t N>
+struct is_arithmetic<xad::FRealDirect<T, N>> : std::is_arithmetic<T>
+{
+};
+template <class T, std::size_t N>
 struct is_signed<xad::AReal<T, N>> : std::is_signed<T>
 {
 };
 template <class T, std::size_t N>
 struct is_signed<xad::FReal<T, N>> : std::is_signed<T>
+{
+};
+template <class T, std::size_t N>
+struct is_signed<xad::ARealDirect<T, N>> : std::is_signed<T>
+{
+};
+template <class T, std::size_t N>
+struct is_signed<xad::FRealDirect<T, N>> : std::is_signed<T>
 {
 };
 template <class T, std::size_t N>
@@ -264,9 +316,21 @@ template <class T, std::size_t N>
 struct is_fundamental<xad::FReal<T, N>> : std::false_type
 {
 };
+template <class T, std::size_t N>
+struct is_fundamental<xad::ARealDirect<T, N>> : std::false_type
+{
+};
+template <class T, std::size_t N>
+struct is_fundamental<xad::FRealDirect<T, N>> : std::false_type
+{
+};
 #if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
 template <class T, std::size_t N>
 struct is_trivially_copyable<xad::FReal<T, N>> : std::is_trivially_copyable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_trivially_copyable<xad::FRealDirect<T, N>> : std::is_trivially_copyable<T>
 {
 };
 #endif
@@ -279,11 +343,27 @@ struct is_scalar<xad::FReal<T, N>> : std::false_type
 {
 };
 template <class T, std::size_t N>
+struct is_scalar<xad::ARealDirect<T, N>> : std::false_type
+{
+};
+template <class T, std::size_t N>
+struct is_scalar<xad::FRealDirect<T, N>> : std::false_type
+{
+};
+template <class T, std::size_t N>
 struct is_compound<xad::AReal<T, N>> : std::true_type
 {
 };
 template <class T, std::size_t N>
 struct is_compound<xad::FReal<T, N>> : std::true_type
+{
+};
+template <class T, std::size_t N>
+struct is_compound<xad::ARealDirect<T, N>> : std::true_type
+{
+};
+template <class T, std::size_t N>
+struct is_compound<xad::FRealDirect<T, N>> : std::true_type
 {
 };
 
@@ -333,11 +413,47 @@ struct is_compound<xad::FReal<T, N>> : std::true_type
     template <>                                                                                    \
     inline constexpr bool name_v<xad::FReal<xad::FReal<long double, M>, N>> = value
 
+// direct mode types, first order and all second order combinations involving a direct type
+#define XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, ...)                                           \
+    template <>                                                                                    \
+    inline constexpr bool name_v<__VA_ARGS__> = value
+
+#define XAD_TEMPLATE_TRAIT_FUNC_DIRECT_FIRST(name_v, N, value)                                     \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::ARealDirect<double, N>);                      \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::ARealDirect<float, N>);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::ARealDirect<long double, N>);                 \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::FRealDirect<double, N>);                      \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::FRealDirect<float, N>);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::FRealDirect<long double, N>)
+
+#define XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, Outer, Inner, N, M, value)                          \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::Outer<xad::Inner<double, M>, N>);             \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::Outer<xad::Inner<float, M>, N>);              \
+    XAD_TEMPLATE_TRAIT_FUNC_TYPE(name_v, value, xad::Outer<xad::Inner<long double, M>, N>)
+
+#define XAD_TEMPLATE_TRAIT_FUNC_DIRECT_SECOND(name_v, N, M, value)                                 \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, ARealDirect, AReal, N, M, value);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, ARealDirect, FReal, N, M, value);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, ARealDirect, ARealDirect, N, M, value);                 \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, ARealDirect, FRealDirect, N, M, value);                 \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, FRealDirect, AReal, N, M, value);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, FRealDirect, FReal, N, M, value);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, FRealDirect, ARealDirect, N, M, value);                 \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, FRealDirect, FRealDirect, N, M, value);                 \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, AReal, ARealDirect, N, M, value);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, AReal, FRealDirect, N, M, value);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, FReal, ARealDirect, N, M, value);                       \
+    XAD_TEMPLATE_TRAIT_FUNC_NESTED(name_v, FReal, FRealDirect, N, M, value)
+
 #define XAD_TEMPLATE_TRAIT_FUNC1(name_v, N, value)                                                 \
     XAD_TEMPLATE_TRAIT_FUNC_FIRST(name_v, N, value);                                               \
     XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 1, value);                                           \
     XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 2, value);                                           \
-    XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 4, value)
+    XAD_TEMPLATE_TRAIT_FUNC_SECOND(name_v, N, 4, value);                                           \
+    XAD_TEMPLATE_TRAIT_FUNC_DIRECT_FIRST(name_v, N, value);                                        \
+    XAD_TEMPLATE_TRAIT_FUNC_DIRECT_SECOND(name_v, N, 1, value);                                    \
+    XAD_TEMPLATE_TRAIT_FUNC_DIRECT_SECOND(name_v, N, 2, value);                                    \
+    XAD_TEMPLATE_TRAIT_FUNC_DIRECT_SECOND(name_v, N, 4, value)
 
 #define XAD_TEMPLATE_TRAIT_FUNC(name_v, value)                                                     \
     XAD_TEMPLATE_TRAIT_FUNC1(name_v, 1, value);                                                    \
@@ -355,6 +471,10 @@ XAD_TEMPLATE_TRAIT_FUNC(is_compound_v, true);
 #undef XAD_TEMPLATE_TRAIT_FUNC1
 #undef XAD_TEMPLATE_TRAIT_FUNC_FIRST
 #undef XAD_TEMPLATE_TRAIT_FUNC_SECOND
+#undef XAD_TEMPLATE_TRAIT_FUNC_DIRECT_FIRST
+#undef XAD_TEMPLATE_TRAIT_FUNC_DIRECT_SECOND
+#undef XAD_TEMPLATE_TRAIT_FUNC_NESTED
+#undef XAD_TEMPLATE_TRAIT_FUNC_TYPE
 
 template <>
 inline constexpr bool is_trivially_copyable_v<xad::FReal<double, 1>> = true;
@@ -380,6 +500,43 @@ template <>
 inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FReal<float>>> = true;
 template <>
 inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FReal<long double>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<double, 1>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<double, 2>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<double, 4>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<float, 1>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<float, 2>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<float, 4>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<long double, 1>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<long double, 2>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<long double, 4>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<xad::FRealDirect<double>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<xad::FRealDirect<float>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<xad::FRealDirect<long double>>> =
+    true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<xad::FReal<double>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<xad::FReal<float>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FRealDirect<xad::FReal<long double>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FRealDirect<double>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FRealDirect<float>>> = true;
+template <>
+inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FRealDirect<long double>>> = true;
 
 #endif
 
@@ -496,6 +653,42 @@ template <>
 _XAD_INLINE_VAR constexpr bool
     _Is_any_of_v<xad::FReal<xad::FReal<long double>>, float, double, long double> = true;
 
+#define XAD_DIRECT_IS_ANY_OF(...)                                                                  \
+    template <>                                                                                    \
+    _XAD_INLINE_VAR constexpr bool _Is_any_of_v<__VA_ARGS__, float, double, long double> = true
+
+#define XAD_DIRECT_IS_ANY_OF_SCALARS(Outer, N)                                                     \
+    XAD_DIRECT_IS_ANY_OF(xad::Outer<double, N>);                                                   \
+    XAD_DIRECT_IS_ANY_OF(xad::Outer<float, N>);                                                    \
+    XAD_DIRECT_IS_ANY_OF(xad::Outer<long double, N>)
+
+#define XAD_DIRECT_IS_ANY_OF_NESTED(Outer, Inner)                                                  \
+    XAD_DIRECT_IS_ANY_OF(xad::Outer<xad::Inner<double>>);                                          \
+    XAD_DIRECT_IS_ANY_OF(xad::Outer<xad::Inner<float>>);                                           \
+    XAD_DIRECT_IS_ANY_OF(xad::Outer<xad::Inner<long double>>)
+
+XAD_DIRECT_IS_ANY_OF_SCALARS(ARealDirect, 1);
+XAD_DIRECT_IS_ANY_OF_SCALARS(ARealDirect, 2);
+XAD_DIRECT_IS_ANY_OF_SCALARS(ARealDirect, 4);
+XAD_DIRECT_IS_ANY_OF_SCALARS(FRealDirect, 1);
+XAD_DIRECT_IS_ANY_OF_SCALARS(FRealDirect, 2);
+XAD_DIRECT_IS_ANY_OF_SCALARS(FRealDirect, 4);
+XAD_DIRECT_IS_ANY_OF_NESTED(ARealDirect, AReal);
+XAD_DIRECT_IS_ANY_OF_NESTED(ARealDirect, FReal);
+XAD_DIRECT_IS_ANY_OF_NESTED(ARealDirect, ARealDirect);
+XAD_DIRECT_IS_ANY_OF_NESTED(ARealDirect, FRealDirect);
+XAD_DIRECT_IS_ANY_OF_NESTED(FRealDirect, AReal);
+XAD_DIRECT_IS_ANY_OF_NESTED(FRealDirect, FReal);
+XAD_DIRECT_IS_ANY_OF_NESTED(FRealDirect, ARealDirect);
+XAD_DIRECT_IS_ANY_OF_NESTED(FRealDirect, FRealDirect);
+XAD_DIRECT_IS_ANY_OF_NESTED(AReal, ARealDirect);
+XAD_DIRECT_IS_ANY_OF_NESTED(AReal, FRealDirect);
+XAD_DIRECT_IS_ANY_OF_NESTED(FReal, ARealDirect);
+XAD_DIRECT_IS_ANY_OF_NESTED(FReal, FRealDirect);
+
+#undef XAD_DIRECT_IS_ANY_OF_NESTED
+#undef XAD_DIRECT_IS_ANY_OF_SCALARS
+#undef XAD_DIRECT_IS_ANY_OF
 #undef _XAD_INLINE_VAR
 
 #endif
@@ -510,6 +703,16 @@ struct __libcpp_random_is_valid_realtype<xad::AReal<T, N>> : true_type
 
 template <typename T, std::size_t N>
 struct __libcpp_random_is_valid_realtype<xad::FReal<T, N>> : true_type
+{
+};
+
+template <typename T, std::size_t N>
+struct __libcpp_random_is_valid_realtype<xad::ARealDirect<T, N>> : true_type
+{
+};
+
+template <typename T, std::size_t N>
+struct __libcpp_random_is_valid_realtype<xad::FRealDirect<T, N>> : true_type
 {
 };
 
