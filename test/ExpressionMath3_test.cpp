@@ -26,6 +26,9 @@
 #include <XAD/XAD.hpp>
 #include <gtest/gtest.h>
 #include "TestHelpers.hpp"
+#include <algorithm>
+#include <cmath>
+#include <limits>
 
 LOCAL_TEST_FUNCTOR2(nextafterADAD, nextafter(x1, x2))
 TEST(ExpressionsMath, nextafterADAD)
@@ -326,6 +329,49 @@ TEST(ExpressionsMath, minExprScalar)
     mathTest_all(1.1, 0.7, 0.0, 0.0, minExprScalar);
     mathTest_all(0.3, 2.0 * 0.3, 2.0, 0.0, minExprScalar);
 }
+
+namespace
+{
+// min/max must give the same values as std::min/std::max, including the argument order,
+// which matters when one of the arguments is NaN
+template <class AD>
+void checkMinMaxLikeStd()
+{
+    using xad::value;
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    auto same = [](double actual, double expected)
+    { return (std::isnan(actual) && std::isnan(expected)) || actual == expected; };
+    for (double a : {nan, 1.0})
+    {
+        for (double b : {nan, 1.0, 2.0})
+        {
+            AD x = a, y = b;
+            EXPECT_TRUE(same(value(max(x, y)), std::max(a, b))) << a << ", " << b;
+            EXPECT_TRUE(same(value(min(x, y)), std::min(a, b))) << a << ", " << b;
+            EXPECT_TRUE(same(value(max(x, b)), std::max(a, b))) << a << ", " << b;
+            EXPECT_TRUE(same(value(min(x, b)), std::min(a, b))) << a << ", " << b;
+            EXPECT_TRUE(same(value(max(a, y)), std::max(a, b))) << a << ", " << b;
+            EXPECT_TRUE(same(value(min(a, y)), std::min(a, b))) << a << ", " << b;
+            EXPECT_TRUE(same(value(max(2.0 * x, 2.0 * b)), std::max(2.0 * a, 2.0 * b)))
+                << a << ", " << b;
+            EXPECT_TRUE(same(value(min(2.0 * x, 2.0 * b)), std::min(2.0 * a, 2.0 * b)))
+                << a << ", " << b;
+            EXPECT_TRUE(same(value(max(2.0 * a, 2.0 * y)), std::max(2.0 * a, 2.0 * b)))
+                << a << ", " << b;
+            EXPECT_TRUE(same(value(min(2.0 * a, 2.0 * y)), std::min(2.0 * a, 2.0 * b)))
+                << a << ", " << b;
+            EXPECT_TRUE(same(value(max(2.0 * x, 2.0 * y)), std::max(2.0 * a, 2.0 * b)))
+                << a << ", " << b;
+            EXPECT_TRUE(same(value(min(2.0 * x, 2.0 * y)), std::min(2.0 * a, 2.0 * b)))
+                << a << ", " << b;
+        }
+    }
+}
+}  // namespace
+
+TEST(ExpressionsMath, minMaxNaNLikeStdAReal) { checkMinMaxLikeStd<xad::AReal<double>>(); }
+
+TEST(ExpressionsMath, minMaxNaNLikeStdFReal) { checkMinMaxLikeStd<xad::FReal<double>>(); }
 
 LOCAL_TEST_FUNCTOR2(sminADAD, smooth_min(x1, x2))
 TEST(ExpressionsMath, sminADAD)
