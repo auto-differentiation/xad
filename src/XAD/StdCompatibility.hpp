@@ -163,13 +163,6 @@ XAD_INLINE xad::FReal<T, N> copysign(const xad::FReal<T, N> x, const xad::FReal<
     return ::xad::copysign(x, xad::value(y));
 }
 
-template <class T, std::size_t N>
-XAD_INLINE T copysign(const T& x, const xad::ARealDirect<T, N>& y)
-{
-    using std::copysign;
-    return copysign(x, value(y));
-}
-
 template <class T, class T2, std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> copysign(const T2& x, const xad::ARealDirect<T, N>& y)
 {
@@ -194,13 +187,6 @@ XAD_INLINE xad::ARealDirect<T, N> copysign(const xad::ARealDirect<T, N> x,
                                            const xad::ARealDirect<T, N>& y)
 {
     return ::xad::copysign(x, xad::value(y));
-}
-
-template <class T, std::size_t N>
-XAD_INLINE T copysign(const T& x, const xad::FRealDirect<T, N>& y)
-{
-    using std::copysign;
-    return copysign(x, value(y));
 }
 
 template <class T, class T2, std::size_t N>
