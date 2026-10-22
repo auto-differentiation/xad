@@ -1,6 +1,7 @@
 #include <XAD/Complex.hpp>
 #include <XAD/StdCompatibility.hpp>
 #include <XAD/XAD.hpp>
+#include "TestHelpers.hpp"
 #include <cmath>
 #include <complex>
 #include <limits>
@@ -414,4 +415,158 @@ TEST(StdCompatibility, UseInVectorAndFillDirect)
     std::fill(v.begin(), v.end(), xad::ADD(1.));
 
     EXPECT_THAT(xad::value(v[2]), DoubleEq(1.0));
+}
+
+TEST(StdCompatibility, CopysignDirect)
+{
+    xad::ADD x(1.2);
+    xad::ADD y(-0.5);
+    xad::FDD fx(1.2);
+    xad::FDD fy(-0.5);
+
+    EXPECT_EQ(xad::value(std::copysign(1.2, y)), -1.2);
+    EXPECT_EQ(xad::value(std::copysign(x, -0.5)), -1.2);
+    EXPECT_EQ(xad::value(std::copysign(x, y)), -1.2);
+    EXPECT_EQ(xad::value(std::copysign(1.2, fy)), -1.2);
+    EXPECT_EQ(xad::value(std::copysign(fx, -0.5)), -1.2);
+    EXPECT_EQ(xad::value(std::copysign(fx, fy)), -1.2);
+}
+
+// std math on expression and direct mode types, adjoint and forward: values and derivatives
+
+namespace
+{
+
+// checks value against the double version, and the derivative against finite differences
+template <class T, class F>
+void checkStdFunction(F f, double x0, const char* name)
+{
+    std::pair<double, double> res = evalWithDerivative<T>(f, x0);
+    double h = 1e-6;
+    double fd = (f(x0 + h) - f(x0 - h)) / (2 * h);
+    EXPECT_THAT(res.first, DoubleNear(f(x0), 1e-12)) << name << ", value";
+    EXPECT_THAT(res.second, DoubleNear(fd, 1e-6)) << name << ", derivative";
+}
+
+}  // namespace
+
+#define XAD_STD_FUNCTOR(name, expr)                                                                \
+    struct name                                                                                    \
+    {                                                                                              \
+        template <class T>                                                                         \
+        T operator()(const T& x) const                                                             \
+        {                                                                                          \
+            return T(expr);                                                                        \
+        }                                                                                          \
+    }
+
+XAD_STD_FUNCTOR(StdAbs, std::abs(x));
+XAD_STD_FUNCTOR(StdFabs, std::fabs(x));
+XAD_STD_FUNCTOR(StdMinMax, std::min(x, T(0.5 * x)) + std::max(x, T(0.5 * x)));
+XAD_STD_FUNCTOR(StdMaxScalar, std::max(x, 0.1) + std::max(0.1, x) + std::max(x, T(0)));
+XAD_STD_FUNCTOR(StdMinScalar, std::min(x, 0.1) + std::min(0.1, x) + std::min(x, T(1)));
+XAD_STD_FUNCTOR(StdFminFmax, std::fmin(x, 0.1) + std::fmax(0.1, x) + std::fmax(x, T(2.0 * x)));
+XAD_STD_FUNCTOR(StdFma, std::fma(x, x, x) + std::fma(x, 2.0, 1.0));
+XAD_STD_FUNCTOR(StdRounding,
+                x* std::ceil(x) + x * std::floor(x) + x * std::trunc(x) + x * std::round(x));
+XAD_STD_FUNCTOR(StdRemainder, std::remainder(x, 0.15) + std::fmod(x, 0.15) + std::fmod(1.0, x));
+XAD_STD_FUNCTOR(StdNextafter, std::nextafter(x, 1.0));
+XAD_STD_FUNCTOR(StdTrig, std::sin(x) + std::cos(x) + std::tan(x) + std::asin(x) + std::acos(x) +
+                             std::atan(x));
+XAD_STD_FUNCTOR(StdHyperbolic, std::sinh(x) + std::cosh(x) + std::tanh(x) + std::asinh(x) +
+                                   std::atanh(x) + std::acosh(x + 1.0));
+XAD_STD_FUNCTOR(StdAtan2Hypot, std::atan2(x, 0.5) + std::atan2(0.5, x) + std::hypot(x, 0.5) +
+                                   std::hypot(x, T(2.0 * x)));
+XAD_STD_FUNCTOR(StdExpLog, std::exp(x) + std::log(x) + std::log10(x) + std::log2(x) +
+                               std::expm1(x) + std::exp2(x) + std::log1p(x));
+XAD_STD_FUNCTOR(StdRoots, std::sqrt(x) + std::cbrt(x));
+XAD_STD_FUNCTOR(StdPow, std::pow(x, x) + std::pow(x, 2) + std::pow(x, 2.5) + std::pow(2.5, x) +
+                            std::pow(2, x));
+XAD_STD_FUNCTOR(StdErf, std::erf(x) + std::erfc(x));
+XAD_STD_FUNCTOR(StdScaling, std::scalbn(x, 2) + std::ldexp(x, 3));
+XAD_STD_FUNCTOR(StdCopysign, std::copysign(x, -1.0) + std::copysign(x, T(-x)));
+
+struct StdFrexpModf
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        int ex = 0;
+        double ip = 0.0;
+        T y = std::frexp(x + 1.0, &ex);
+        T z = std::modf(x + 2.0, &ip);
+        return T(y + z + ip);
+    }
+};
+
+template <class T>
+class StdCompatibilityMath : public ::testing::Test
+{
+};
+
+typedef ::testing::Types<xad::AD, xad::FAD, xad::ADD, xad::FDD> math_test_types;
+
+TYPED_TEST_SUITE(StdCompatibilityMath, math_test_types);
+
+TYPED_TEST(StdCompatibilityMath, ValuesAndDerivatives)
+{
+    checkStdFunction<TypeParam>(StdAbs(), -0.3, "abs");
+    checkStdFunction<TypeParam>(StdFabs(), -0.3, "fabs");
+    checkStdFunction<TypeParam>(StdMinMax(), 0.3, "min/max");
+    checkStdFunction<TypeParam>(StdMaxScalar(), 0.3, "max scalar");
+    checkStdFunction<TypeParam>(StdMinScalar(), 0.3, "min scalar");
+    checkStdFunction<TypeParam>(StdFminFmax(), 0.3, "fmin/fmax");
+    checkStdFunction<TypeParam>(StdFma(), 0.3, "fma");
+    checkStdFunction<TypeParam>(StdRounding(), 0.3, "rounding");
+    checkStdFunction<TypeParam>(StdRemainder(), 0.4, "remainder/fmod");
+    checkStdFunction<TypeParam>(StdNextafter(), 0.3, "nextafter");
+    checkStdFunction<TypeParam>(StdTrig(), 0.3, "trigonometric");
+    checkStdFunction<TypeParam>(StdHyperbolic(), 0.3, "hyperbolic");
+    checkStdFunction<TypeParam>(StdAtan2Hypot(), 0.3, "atan2/hypot");
+    checkStdFunction<TypeParam>(StdExpLog(), 0.3, "exp/log");
+    checkStdFunction<TypeParam>(StdRoots(), 0.3, "roots");
+    checkStdFunction<TypeParam>(StdPow(), 0.3, "pow");
+    checkStdFunction<TypeParam>(StdErf(), 0.3, "erf");
+    checkStdFunction<TypeParam>(StdScaling(), 0.3, "scalbn/ldexp");
+    checkStdFunction<TypeParam>(StdCopysign(), 0.3, "copysign");
+    checkStdFunction<TypeParam>(StdFrexpModf(), 0.3, "frexp/modf");
+}
+
+TYPED_TEST(StdCompatibilityMath, ClassificationAndIntegerResults)
+{
+    typedef TypeParam T;
+    const double values[] = {0.3,
+                             -0.3,
+                             0.0,
+                             -0.0,
+                             8.5,
+                             std::numeric_limits<double>::infinity(),
+                             -std::numeric_limits<double>::infinity(),
+                             std::numeric_limits<double>::quiet_NaN(),
+                             std::numeric_limits<double>::denorm_min()};
+    for (double d : values)
+    {
+        T x = d;
+        EXPECT_EQ(std::isfinite(x), std::isfinite(d)) << d;
+        EXPECT_EQ(std::isinf(x), std::isinf(d)) << d;
+        EXPECT_EQ(std::isnan(x), std::isnan(d)) << d;
+        EXPECT_EQ(std::isnormal(x), std::isnormal(d)) << d;
+        EXPECT_EQ(std::signbit(x), std::signbit(d)) << d;
+        EXPECT_EQ(std::fpclassify(x), std::fpclassify(d)) << d;
+        if (std::isfinite(d))
+        {
+            EXPECT_EQ(std::lround(x), std::lround(d)) << d;
+            EXPECT_EQ(std::llround(x), std::llround(d)) << d;
+            if (d != 0.0)
+            {
+                EXPECT_EQ(std::ilogb(x), std::ilogb(d)) << d;
+            }
+        }
+    }
+}
+
+TYPED_TEST(StdCompatibilityMath, ToString)
+{
+    TypeParam x = 1.5;
+    EXPECT_EQ(std::to_string(x), std::to_string(1.5));
 }

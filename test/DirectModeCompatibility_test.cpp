@@ -405,3 +405,31 @@ TYPED_TEST(DirectModeCompatibility, ForeignOperatorTemplates)
     EXPECT_EQ(x * ForeignMatrix(), 1);
     EXPECT_EQ(ForeignMatrix() * x, 2);
 }
+
+// ------------------- XAD math functions
+
+namespace
+{
+
+XAD_TEST_FUNCTOR(SmoothAbs, return T(xad::smooth_abs(x) + xad::smooth_abs(x, 0.01)););
+XAD_TEST_FUNCTOR(SmoothMaxMin,
+                 return T(xad::smooth_max(x, T(x * 0.5)) + xad::smooth_min(x, T(x * 0.5))););
+XAD_TEST_FUNCTOR(Pown, return T(xad::pown(x, 3)););
+XAD_TEST_FUNCTOR(Scalbn, return T(xad::scalbn(x, 3)););
+XAD_TEST_FUNCTOR(Copysign, return T(xad::copysign(x, -1.0) + xad::copysign(x, T(-x)) +
+                                    xad::copysign(1.5, -x) * x););
+
+}  // namespace
+
+TYPED_TEST(DirectModeCompatibility, XadFunctions)
+{
+    double x = -0.3;
+    checkFunction<TypeParam>(SmoothAbs(), x, 0.3 + 0.3, -2.0);
+    checkFunction<TypeParam>(Pown(), x, x * x * x, 3.0 * x * x);
+    checkFunction<TypeParam>(Scalbn(), x, 8.0 * x, 8.0);
+    // copysign(x, -1) = x, copysign(x, -x) = -x, copysign(1.5, -x) = 1.5 for x < 0
+    checkFunction<TypeParam>(Copysign(), x, x - x + 1.5 * x, 1.0 - 1.0 + 1.5);
+    checkFunction<TypeParam>(SmoothMaxMin(), 0.3, 0.3 + 0.15, 1.5);
+    TypeParam y = 8.5;
+    EXPECT_EQ(xad::ilogb(y), std::ilogb(8.5));
+}

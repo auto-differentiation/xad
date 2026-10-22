@@ -183,16 +183,19 @@ struct ADVar;
     template <class Scalar, std::size_t N>                                                         \
     XAD_INLINE ret(func)(const FReal<Scalar, N>& x)                                                \
     {                                                                                              \
+        using;                                                                                     \
         return func(x.value());                                                                    \
     }                                                                                              \
     template <class Scalar, std::size_t N>                                                         \
     XAD_INLINE ret(func)(const xad::FRealDirect<Scalar, N>& x)                                     \
     {                                                                                              \
+        using;                                                                                     \
         return func(x.value());                                                                    \
     }                                                                                              \
     template <class Scalar, std::size_t N>                                                         \
     XAD_INLINE ret(func)(const xad::ARealDirect<Scalar, N>& x)                                     \
     {                                                                                              \
+        using;                                                                                     \
         return func(x.value());                                                                    \
     }                                                                                              \
     template <class Scalar, class Expr, class Op, class DerivativeType>                            \

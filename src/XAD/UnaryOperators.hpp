@@ -508,6 +508,39 @@ XAD_INLINE Scalar copysign(float x, const ARealDirect<Scalar, N>& y)
     return copysign(x, value(y));
 }
 
+// direct mode functions the generic macros above don't cover, delegating to AReal / FReal
+#define XAD_DIRECT_MATH_FUNCS(Direct, Base)                                                        \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE Direct<Scalar, N> smooth_abs(const Direct<Scalar, N>& x)                            \
+    {                                                                                              \
+        return {Base<Scalar, N>(smooth_abs(x.base()))};                                            \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE Direct<Scalar, N> pown(const Direct<Scalar, N>& x, int y)                           \
+    {                                                                                              \
+        return {Base<Scalar, N>(pown(x.base(), y))};                                               \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE Direct<Scalar, N> scalbn(const Direct<Scalar, N>& x, int exp)                       \
+    {                                                                                              \
+        return {Base<Scalar, N>(scalbn(x.base(), exp))};                                           \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE int ilogb(const Direct<Scalar, N>& x)                                               \
+    {                                                                                              \
+        return ilogb(x.base());                                                                    \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T2>                                               \
+    XAD_INLINE Direct<Scalar, N> copysign(const Direct<Scalar, N>& x, const T2& y)                 \
+    {                                                                                              \
+        return {Base<Scalar, N>(copysign(x.base(), y))};                                           \
+    }
+
+XAD_DIRECT_MATH_FUNCS(FRealDirect, FReal)
+XAD_DIRECT_MATH_FUNCS(ARealDirect, AReal)
+
+#undef XAD_DIRECT_MATH_FUNCS
+
 template <class Scalar, class Derived, class DerivativeType>
 XAD_INLINE double copysign(double x, const Expression<Scalar, Derived, DerivativeType>& y)
 {
