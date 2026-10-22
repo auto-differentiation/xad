@@ -294,3 +294,114 @@ TYPED_TEST(DirectModeCompatibility, Hashing)
     TypeParam x = 42.5;
     EXPECT_EQ(h(x), std::hash<double>()(42.5));
 }
+
+// ------------------- comparisons
+
+namespace
+{
+
+// a type with an implicit conversion operator, like QuantLib's Null<Real>
+template <class T>
+struct ConvertsTo
+{
+    operator T() const { return T(42.0); }
+};
+
+}  // namespace
+
+TYPED_TEST(DirectModeCompatibility, Comparisons)
+{
+    typedef TypeParam T;
+    T x = 0.5, y = 1.5;
+
+    // cppcheck-suppress knownConditionTrueFalse
+    EXPECT_TRUE(x < y && y > x && x <= y && y >= x && x != y && !(x == y));
+    // cppcheck-suppress knownConditionTrueFalse
+    EXPECT_TRUE(x < 1.0 && x > 0.0 && x <= 0.5 && x >= 0.5 && x == 0.5 && x != 1.0);
+    // cppcheck-suppress knownConditionTrueFalse
+    EXPECT_TRUE(0.0 < x && 1.0 > x && 0.5 <= x && 0.5 >= x && 0.5 == x && 1.0 != x);
+    // integer literals and other built-in types
+    // cppcheck-suppress knownConditionTrueFalse
+    EXPECT_TRUE(x < 1 && x > 0 && x <= 1 && x >= 0 && !(x == 0) && x != 0);
+    // cppcheck-suppress knownConditionTrueFalse
+    EXPECT_TRUE(0 < x && 1 > x && 0 <= x && 1 >= x && !(0 == x) && 0 != x);
+    // cppcheck-suppress [knownConditionTrueFalse, redundantCondition]
+    EXPECT_TRUE(x < 1.0f && x > 0.0f && x < 1L && x < 1u && x < std::size_t(1));
+    // expressions
+    // cppcheck-suppress knownConditionTrueFalse
+    EXPECT_TRUE(x < y * 2.0 && y * 2.0 > x && x + y == y + x);
+    // types with an implicit conversion operator
+    T n = ConvertsTo<T>();
+    EXPECT_TRUE(n == ConvertsTo<T>() && ConvertsTo<T>() == n && x != ConvertsTo<T>());
+    EXPECT_TRUE(x < ConvertsTo<T>() && ConvertsTo<T>() > y);
+}
+
+namespace
+{
+
+// a type with an implicit conversion to double, but not to the active types
+struct ConvertsToDouble
+{
+    operator double() const { return 2.0; }
+};
+
+}  // namespace
+
+TYPED_TEST(DirectModeCompatibility, ArithmeticWithConvertibleTypes)
+{
+    typedef TypeParam T;
+    std::unique_ptr<xad::Tape<double>> tape;
+    if (xad::ExprTraits<T>::isReverse)
+        tape.reset(new xad::Tape<double>());
+    T x = 0.5;
+    T y1 = x + ConvertsTo<T>();
+    T y2 = ConvertsTo<T>() * x;
+    T y3 = std::max(x, ConvertsTo<T>());
+    T y4 = x * ConvertsToDouble();
+    EXPECT_THAT(xad::value(y1), DoubleEq(42.5));
+    EXPECT_THAT(xad::value(y2), DoubleEq(21.0));
+    EXPECT_THAT(xad::value(y3), DoubleEq(42.0));
+    EXPECT_THAT(xad::value(y4), DoubleEq(1.0));
+}
+
+TYPED_TEST(DirectModeCompatibility, ConstructionFromConvertibleTypes)
+{
+    typedef TypeParam T;
+    ConvertsTo<T> c;
+    ConvertsToDouble d;
+    T x(c);
+    T y = c;
+    T z(d);
+    EXPECT_THAT(xad::value(x), DoubleEq(42.0));
+    EXPECT_THAT(xad::value(y), DoubleEq(42.0));
+    EXPECT_THAT(xad::value(z), DoubleEq(2.0));
+}
+
+namespace
+{
+
+// a class with its own generic operator templates (as in matrix libraries): XAD's must not compete
+struct ForeignMatrix
+{
+};
+
+template <class T>
+int operator*(const T&, const ForeignMatrix&)
+{
+    return 1;
+}
+
+template <class T>
+int operator*(const ForeignMatrix&, const T&)
+{
+    return 2;
+}
+
+}  // namespace
+
+TYPED_TEST(DirectModeCompatibility, ForeignOperatorTemplates)
+{
+    TypeParam x = 1.0;
+    EXPECT_EQ(x * ForeignMatrix(), 1);
+    EXPECT_EQ(ForeignMatrix() * x, 2);
+}

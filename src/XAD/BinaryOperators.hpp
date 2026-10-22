@@ -94,6 +94,49 @@ XAD_INLINE auto fma(const T1& a, const T2& b, const T3& c) -> decltype(a * b + c
 
 /////////// comparisons - they just return bool
 
+// comparisons of direct mode types with anything other than the same direct type or its scalar
+#define XAD_DIRECT_COMPARE_OPERATOR(op, Direct)                                                    \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE typename std::enable_if<detail::is_builtin_arithmetic<T>::value, bool>::type        \
+    operator op(const Direct<Scalar, N>& a, const T& b)                                            \
+    {                                                                                              \
+        return value(a) op static_cast<typename ExprTraits<Scalar>::nested_type>(b);               \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE typename std::enable_if<detail::is_builtin_arithmetic<T>::value, bool>::type        \
+    operator op(const T& a, const Direct<Scalar, N>& b)                                            \
+    {                                                                                              \
+        return static_cast<typename ExprTraits<Scalar>::nested_type>(a) op value(b);               \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE typename std::enable_if<ExprTraits<T>::isExpr, bool>::type operator op(             \
+        const Direct<Scalar, N>& a, const T& b)                                                    \
+    {                                                                                              \
+        return value(a) op b;                                                                      \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE typename std::enable_if<ExprTraits<T>::isExpr, bool>::type operator op(             \
+        const T& a, const Direct<Scalar, N>& b)                                                    \
+    {                                                                                              \
+        return a op value(b);                                                                      \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_convertible_operand<Direct<Scalar, N>, T>::value,   \
+                                bool>::type                                                        \
+        operator op(const Direct<Scalar, N>& a, const T& b)                                        \
+    {                                                                                              \
+        return a op Direct<Scalar, N>(b);                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_convertible_operand<Direct<Scalar, N>, T>::value,   \
+                                bool>::type                                                        \
+        operator op(const T& a, const Direct<Scalar, N>& b)                                        \
+    {                                                                                              \
+        return Direct<Scalar, N>(a) op b;                                                          \
+    }
+
 #define XAD_COMPARE_OPERATOR(op)                                                                   \
     template <class Scalar, class Expr1, class Expr2, class DerivativeType>                        \
     XAD_INLINE bool operator op(const Expression<Scalar, Expr1, DerivativeType>& a,                \
@@ -154,30 +197,8 @@ XAD_INLINE auto fma(const T1& a, const T2& b, const T3& c) -> decltype(a * b + c
         return value(a) op b;                                                                      \
     }                                                                                              \
                                                                                                    \
-    template <class Scalar, class Expr, std::size_t N>                                             \
-    XAD_INLINE bool operator op(typename ExprTraits<Scalar>::nested_type a,                        \
-                                const FRealDirect<Scalar, N>& b)                                   \
-    {                                                                                              \
-        return a op value(b);                                                                      \
-    }                                                                                              \
-    template <class Scalar, class Expr, std::size_t N>                                             \
-    XAD_INLINE bool operator op(const FRealDirect<Scalar, N>& a,                                   \
-                                typename ExprTraits<Scalar>::nested_type b)                        \
-    {                                                                                              \
-        return value(a) op b;                                                                      \
-    }                                                                                              \
-    template <class Scalar, class Expr, std::size_t N>                                             \
-    XAD_INLINE bool operator op(typename ExprTraits<Scalar>::nested_type a,                        \
-                                const ARealDirect<Scalar, N>& b)                                   \
-    {                                                                                              \
-        return a op value(b);                                                                      \
-    }                                                                                              \
-    template <class Scalar, class Expr, std::size_t N>                                             \
-    XAD_INLINE bool operator op(const ARealDirect<Scalar, N>& a,                                   \
-                                typename ExprTraits<Scalar>::nested_type b)                        \
-    {                                                                                              \
-        return value(a) op b;                                                                      \
-    }                                                                                              \
+    XAD_DIRECT_COMPARE_OPERATOR(op, FRealDirect)                                                   \
+    XAD_DIRECT_COMPARE_OPERATOR(op, ARealDirect)                                                   \
                                                                                                    \
     template <class Scalar, class Expr, class DerivativeType>                                      \
     XAD_INLINE bool operator op(typename ExprTraits<Expr>::nested_type a,                          \
@@ -330,4 +351,5 @@ XAD_INLINE xad::ARealDirect<T, N> modf(const xad::ARealDirect<T, N>& a, T* b)
 
 #undef XAD_BINARY_OPERATOR
 #undef XAD_COMPARE_OPERATOR
+#undef XAD_DIRECT_COMPARE_OPERATOR
 }  // namespace xad

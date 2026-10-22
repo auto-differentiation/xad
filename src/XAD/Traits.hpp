@@ -88,6 +88,55 @@ struct float_or_double<double> : public std::true_type
 {
 };
 
+template <class, std::size_t>
+struct ARealDirect;
+template <class, std::size_t>
+struct FRealDirect;
+
+namespace detail
+{
+
+template <class T>
+struct is_direct : public std::false_type
+{
+};
+
+template <class T, std::size_t N>
+struct is_direct<ARealDirect<T, N>> : public std::true_type
+{
+};
+
+template <class T, std::size_t N>
+struct is_direct<FRealDirect<T, N>> : public std::true_type
+{
+};
+
+// built-in arithmetic types (is_fundamental: StdCompatibility.hpp makes active types arithmetic)
+template <class T>
+struct is_builtin_arithmetic
+    : public std::integral_constant<bool,
+                                    std::is_arithmetic<T>::value && std::is_fundamental<T>::value>
+{
+};
+
+// operands forwarded to the underlying AReal / FReal: built-in arithmetic types, expressions
+template <class T>
+struct direct_operand
+    : public std::integral_constant<bool, is_builtin_arithmetic<T>::value || ExprTraits<T>::isExpr>
+{
+};
+
+// other operands that convert implicitly to the direct mode type D (e.g. a type with a
+// conversion operator, like QuantLib's Null<Real>)
+template <class D, class T>
+struct direct_convertible_operand
+    : public std::integral_constant<bool, !direct_operand<T>::value && !is_direct<T>::value &&
+                                              std::is_convertible<const T&, D>::value>
+{
+};
+
+}  // namespace detail
+
 template <class T, std::size_t N>
 struct DerivativesTraits
 {
