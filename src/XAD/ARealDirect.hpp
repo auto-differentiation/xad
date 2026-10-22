@@ -44,13 +44,19 @@ struct ARealDirect : public RealDirect<AReal<Scalar, N>, ARealDirect<Scalar, N>>
     typedef RealDirect<AReal<Scalar, N>, ARealDirect<Scalar, N>> base_class;
     using base_class::base_class;
 
+    static constexpr slot_type INVALID_SLOT = tape_type::INVALID_SLOT;
+
     XAD_INLINE void setDerivative(const derivative_type &a) { this->base().setDerivative(a); }
 
     XAD_INLINE void setAdjoint(const derivative_type &a) { this->base().setDerivative(a); }
 
+    XAD_INLINE derivative_type getAdjoint() const { return this->base().getAdjoint(); }
+
     XAD_INLINE slot_type getSlot() const { return this->base().getSlot(); }
 
-    XAD_INLINE bool shouldRecord() { return this->base().shouldRecord(); }
+    XAD_INLINE tape_type *getTape() const { return this->base().getTape(); }
+
+    XAD_INLINE bool shouldRecord() const { return this->base().shouldRecord(); }
 };
 
 template <class T, std::size_t N>

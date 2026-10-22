@@ -26,6 +26,7 @@
 
 #include <XAD/XAD.hpp>
 #include <gtest/gtest.h>
+#include <utility>
 
 #ifndef M_PI
 #define M_PI 3.141592653589793238462643383279502884197169399
@@ -37,6 +38,37 @@ inline void compareFinite(double xref, double xact, const std::string& msg = "")
         EXPECT_EQ(xad::fpclassify(xref), xad::fpclassify(xact)) << msg;
     else
         EXPECT_NEAR(xref, xact, 1e-10) << msg;
+}
+
+// value and dy/dx of f(x0) for any first-order active type T
+template <class T, class F>
+inline std::pair<double, double> evalWithDerivative(F f, double x0, std::true_type)
+{
+    typename T::tape_type tape;
+    T x = x0;
+    tape.registerInput(x);
+    tape.newRecording();
+    T y = f(x);
+    tape.registerOutput(y);
+    xad::derivative(y) = 1.0;
+    tape.computeAdjoints();
+    return std::make_pair(double(xad::value(y)), double(xad::derivative(x)));
+}
+
+template <class T, class F>
+inline std::pair<double, double> evalWithDerivative(F f, double x0, std::false_type)
+{
+    T x = x0;
+    xad::derivative(x) = 1.0;
+    T y = f(x);
+    return std::make_pair(double(xad::value(y)), double(xad::derivative(y)));
+}
+
+template <class T, class F>
+inline std::pair<double, double> evalWithDerivative(F f, double x0)
+{
+    return evalWithDerivative<T>(f, x0,
+                                 std::integral_constant<bool, xad::ExprTraits<T>::isReverse>());
 }
 
 template <class F>

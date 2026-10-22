@@ -51,7 +51,7 @@ template <class T, std::size_t N = 1>
 struct adjd
 {
     typedef Tape<T, N> tape_type;
-    typedef typename tape_type::active_type active_type;
+    typedef ARealDirect<T, N> active_type;
     typedef T passive_type;
     typedef passive_type value_type;
 };
@@ -84,7 +84,7 @@ struct fwd_adj
     typedef T value_type;
 };
 
-template <class T, std::size_t N, std::size_t M = 1>
+template <class T, std::size_t N = 1, std::size_t M = 1>
 struct fwdd_adj
 {
     typedef FRealDirect<T, N> inner_type;

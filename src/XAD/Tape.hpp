@@ -136,6 +136,8 @@ class Tape
         registerInput(reim_ptr[1]);
     }
 
+    XAD_INLINE void registerInput(ARealDirect<Real, N>& inp) { registerInput(inp.base()); }
+
     XAD_INLINE void registerOutput(active_type& outp)
     {
         if (!outp.shouldRecord())
@@ -144,6 +146,8 @@ class Tape
             pushLhs(outp.slot_);
         }
     }
+
+    XAD_INLINE void registerOutput(ARealDirect<Real, N>& outp) { registerOutput(outp.base()); }
 
     XAD_INLINE void registerOutput(std::complex<active_type>& outp)
     {
@@ -167,6 +171,11 @@ class Tape
     }
 
     XAD_INLINE void registerOutputs(std::vector<active_type>& v)
+    {
+        for (auto& x : v) registerOutput(x);
+    }
+
+    XAD_INLINE void registerOutputs(std::vector<ARealDirect<Real, N>>& v)
     {
         for (auto& x : v) registerOutput(x);
     }

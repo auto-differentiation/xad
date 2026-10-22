@@ -52,6 +52,7 @@ set(testfiles
     FRealDirect_test.cpp
     FReal_test.cpp
     ARealDirect_test.cpp
+    DirectModeCompatibility_test.cpp
     DirectModeBenchmark.cpp
 )
 
