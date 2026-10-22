@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Second-order tapes dropped zero-valued adjoints that carried a second-order part
+
 
 ## [2.0.0] - 2026-02-06
 

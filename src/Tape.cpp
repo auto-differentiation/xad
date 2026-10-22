@@ -530,6 +530,64 @@ void Tape<T, N>::computeAdjointsTo(position_type pos)
         computeAdjointsToImpl(pos, start);
 }
 
+namespace detail
+{
+
+// zero in all orders: a zero value can still carry a tangent (FReal) or tape dependency (AReal)
+template <class T>
+XAD_INLINE bool isZeroAdjoint(const T& a);
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const Vec<T, N>& a);
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const FReal<T, N>& a);
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const FRealDirect<T, N>& a);
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const AReal<T, N>& a);
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const ARealDirect<T, N>& a);
+
+template <class T>
+XAD_INLINE bool isZeroAdjoint(const T& a)
+{
+    return a == T();
+}
+
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const Vec<T, N>& a)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        if (!isZeroAdjoint(a[i]))
+            return false;
+    return true;
+}
+
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const FReal<T, N>& a)
+{
+    return isZeroAdjoint(a.value()) && isZeroAdjoint(a.derivative());
+}
+
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const FRealDirect<T, N>& a)
+{
+    return isZeroAdjoint(a.base());
+}
+
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const AReal<T, N>& a)
+{
+    return !a.shouldRecord() && isZeroAdjoint(a.value());
+}
+
+template <class T, std::size_t N>
+XAD_INLINE bool isZeroAdjoint(const ARealDirect<T, N>& a)
+{
+    return isZeroAdjoint(a.base());
+}
+
+}  // namespace detail
+
 template <class T, std::size_t N>
 void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
 {
@@ -562,7 +620,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             auto st = *it;
             auto a = derivatives_[st.second];
             derivatives_[st.second] = derivative_type();
-            if (a != derivative_type())
+            if (!detail::isZeroAdjoint(a))
             {
                 operations_.for_each(it[-1].first, st.first, [&](const T& mul, slot_type slot)
                                      { derivatives_[slot] += mul * a; });
@@ -575,7 +633,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             auto st = chunk_it[0][endidx];
             auto a = derivatives_[st.second];
             derivatives_[st.second] = derivative_type();
-            if (a != derivative_type())
+            if (!detail::isZeroAdjoint(a))
             {
                 operations_.for_each(prevendpoint, st.first, [&](const T& mul, slot_type slot)
                                      { derivatives_[slot] += mul * a; });

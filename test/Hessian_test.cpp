@@ -417,3 +417,27 @@ TEST(HessianTest, OutOfBoundsDomainSizeMismatch)
 
     EXPECT_THROW(launch(input, func, begin(jacobian), end(jacobian)), xad::OutOfRange);
 }
+
+// zero-valued adjoints at a stationary point still carry second-order information
+TEST(HessianTest, StationaryPointWithIntermediatesForwardAdjoint)
+{
+    typedef xad::fwd_adj<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> input = {0.0, 0.0};
+
+    auto foo = [](std::vector<AD> &x) -> AD
+    {
+        AD u = x[0] + 1.0;
+        u = u - 1.0;
+        AD v = x[1] * 1.0;
+        return u * u + u * v;
+    };
+
+    std::vector<std::vector<double>> expected_hessian = {{2.0, 1.0}, {1.0, 0.0}};
+
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(input, foo);
+
+    for (unsigned int i = 0; i < expected_hessian.size(); i++)
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
+}
