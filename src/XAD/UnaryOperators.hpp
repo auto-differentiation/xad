@@ -481,28 +481,32 @@ XAD_INLINE typename ExprTraits<Derived>::value_type copysign(
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE Scalar copysign(double x, const FRealDirect<Scalar, N>& y)
+XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(double x,
+                                                             const FRealDirect<Scalar, N>& y)
 {
     using std::copysign;
     return copysign(x, value(y));
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE Scalar copysign(float x, const FRealDirect<Scalar, N>& y)
+XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(float x,
+                                                             const FRealDirect<Scalar, N>& y)
 {
     using std::copysign;
     return copysign(x, value(y));
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE Scalar copysign(double x, const ARealDirect<Scalar, N>& y)
+XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(double x,
+                                                             const ARealDirect<Scalar, N>& y)
 {
     using std::copysign;
     return copysign(x, value(y));
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE Scalar copysign(float x, const ARealDirect<Scalar, N>& y)
+XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(float x,
+                                                             const ARealDirect<Scalar, N>& y)
 {
     using std::copysign;
     return copysign(x, value(y));

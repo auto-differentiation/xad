@@ -433,3 +433,54 @@ TYPED_TEST(DirectModeCompatibility, XadFunctions)
     TypeParam y = 8.5;
     EXPECT_EQ(xad::ilogb(y), std::ilogb(8.5));
 }
+
+// ------------------- higher order: mixed scalars, literals, limits and traits
+
+TEST(DirectModeHigherOrder, HigherOrderMixedScalars)
+{
+    typedef xad::fwdd_adjd<double>::active_type AD;
+    xad::fwdd_adjd<double>::tape_type tape;
+    AD x = 0.7;
+    tape.registerInput(x);
+    derivative(value(x)) = 1.0;
+    tape.newRecording();
+    AD y = std::max(x, 0.5) * x + std::pow(x, 2) + 2 * x - (x < 1 ? x : AD(1.0));
+    tape.registerOutput(y);
+    value(derivative(y)) = 1.0;
+    tape.computeAdjoints();
+    // y = x^2 + x^2 + 2x - x = 2x^2 + x
+    EXPECT_THAT(value(value(y)), DoubleNear(2.0 * 0.49 + 0.7, 1e-12));
+    EXPECT_THAT(value(derivative(x)), DoubleNear(4.0 * 0.7 + 1.0, 1e-12));
+    EXPECT_THAT(derivative(derivative(x)), DoubleNear(4.0, 1e-12));
+}
+
+TEST(DirectModeHigherOrder, HigherOrderLimitsAndTraits)
+{
+    typedef xad::fwdd_fwdd<double>::active_type T;
+#if !defined(_MSC_VER) || _MSC_VER < 1941
+    static_assert(std::is_floating_point<T>::value, "floating point");
+#endif
+    EXPECT_EQ(std::numeric_limits<T>::max(), std::numeric_limits<double>::max());
+    EXPECT_EQ(std::numeric_limits<T>::epsilon(), std::numeric_limits<double>::epsilon());
+    T x = 2.0;
+    value(derivative(x)) = 1.0;
+    derivative(value(x)) = 1.0;
+    T y = x * x * 3 + 1;
+    EXPECT_TRUE(y > 1 && y == 13.0);
+    EXPECT_THAT(derivative(derivative(y)), DoubleEq(6.0));
+}
+
+TEST(DirectModeHigherOrder, MaxMinAtTiesWithDirectInnerType)
+{
+    // at ties, max and min split the derivative equally, as for FReal<FReal<double>>
+    typedef xad::FReal<xad::FRealDirect<double>> T;
+    typedef xad::FReal<xad::FReal<double>> Tref;
+    T x1 = 1.7, x2 = 1.7;
+    Tref r1 = 1.7, r2 = 1.7;
+    derivative(value(x1)) = 1.0;
+    derivative(value(r1)) = 1.0;
+    T y = max(x1, x2) + 2.0 * min(x1, x2);
+    Tref yref = max(r1, r2) + 2.0 * min(r1, r2);
+    EXPECT_THAT(derivative(value(y)), DoubleEq(derivative(value(yref))));
+    EXPECT_THAT(derivative(value(y)), DoubleEq(0.5 + 2.0 * 0.5));
+}

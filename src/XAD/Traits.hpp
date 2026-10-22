@@ -135,6 +135,18 @@ struct direct_convertible_operand
 {
 };
 
+// float, double and active types based on them (higher-order direct mode)
+template <class T>
+struct direct_scalar : public float_or_double<typename ExprTraits<T>::nested_type>
+{
+};
+
+// active types: expressions (AReal, FReal, ...) and direct mode types
+template <class T>
+struct is_active : public std::integral_constant<bool, ExprTraits<T>::isExpr || is_direct<T>::value>
+{
+};
+
 }  // namespace detail
 
 template <class T, std::size_t N>

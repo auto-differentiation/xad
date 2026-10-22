@@ -247,39 +247,45 @@ XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar, N>, FReal<Scalar,
         a, b, remquo_op<Scalar>(quo));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> remquo(const xad::FRealDirect<T, N>& a,
                                          const xad::FRealDirect<T, N>& b, int* c)
 {
     return xad::FReal<T, N>(remquo(a.base(), b.base(), c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> remquo(const xad::FRealDirect<T, N>& a, const T& b, int* c)
 {
     return xad::FReal<T, N>(remquo(a.base(), b, c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> remquo(const T& a, const xad::FRealDirect<T, N>& b, int* c)
 {
     return xad::FReal<T, N>(remquo(a, b.base(), c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> remquo(const xad::ARealDirect<T, N>& a,
                                          const xad::ARealDirect<T, N>& b, int* c)
 {
     return xad::AReal<T, N>(remquo(a.base(), b.base(), c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> remquo(const xad::ARealDirect<T, N>& a, const T& b, int* c)
 {
     return xad::AReal<T, N>(remquo(a.base(), b, c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> remquo(const T& a, const xad::ARealDirect<T, N>& b, int* c)
 {
     return xad::AReal<T, N>(remquo(a, b.base(), c));
@@ -301,54 +307,93 @@ remquo(const Expression<Scalar, Expr>& a, const typename ExprTraits<Expr>::value
         a.derived(), typename ExprTraits<Expr>::value_type(b), remquo_op<Scalar>(quo));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> frexp(const xad::FRealDirect<T, N>& a, int* exp)
 {
     return xad::FReal<T, N>(frexp(a.base(), exp));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> ldexp(const xad::FRealDirect<T, N>& a, int b)
 {
     return xad::FReal<T, N>(ldexp(a.base(), b));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> modf(const xad::FRealDirect<T, N>& a, xad::FRealDirect<T, N>* b)
 {
     return xad::FReal<T, N>(modf(a.base(), &b->base()));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> modf(const xad::FRealDirect<T, N>& a, T* b)
 {
     return xad::FReal<T, N>(modf(a.base(), b));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> frexp(const xad::ARealDirect<T, N>& a, int* exp)
 {
     return xad::AReal<T, N>(frexp(a.base(), exp));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> ldexp(const xad::ARealDirect<T, N>& a, int b)
 {
     return xad::AReal<T, N>(ldexp(a.base(), b));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> modf(const xad::ARealDirect<T, N>& a, xad::ARealDirect<T, N>* b)
 {
     return xad::AReal<T, N>(modf(a.base(), &b->base()));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> modf(const xad::ARealDirect<T, N>& a, T* b)
 {
     return xad::AReal<T, N>(modf(a.base(), b));
 }
 
+// higher-order direct mode types: the scalar arguments are the passive (nested) type
+#define XAD_DIRECT_NESTED_FUNCS(Direct, Base)                                                      \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_scalar<T>::value && !std::is_fundamental<T>::value, \
+                                xad::Direct<T, N>>::type                                           \
+        remquo(const xad::Direct<T, N>& a, typename ExprTraits<T>::nested_type b, int* c)          \
+    {                                                                                              \
+        return xad::Base<T, N>(remquo(a.base(), b, c));                                            \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_scalar<T>::value && !std::is_fundamental<T>::value, \
+                                xad::Direct<T, N>>::type                                           \
+        remquo(typename ExprTraits<T>::nested_type a, const xad::Direct<T, N>& b, int* c)          \
+    {                                                                                              \
+        return xad::Base<T, N>(remquo(a, b.base(), c));                                            \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_scalar<T>::value && !std::is_fundamental<T>::value, \
+                                xad::Direct<T, N>>::type                                           \
+        modf(const xad::Direct<T, N>& a, typename ExprTraits<T>::nested_type* b)                   \
+    {                                                                                              \
+        return xad::Base<T, N>(modf(a.base(), b));                                                 \
+    }
+
+XAD_DIRECT_NESTED_FUNCS(FRealDirect, FReal)
+XAD_DIRECT_NESTED_FUNCS(ARealDirect, AReal)
+
+#undef XAD_DIRECT_NESTED_FUNCS
 #undef XAD_BINARY_OPERATOR
 #undef XAD_COMPARE_OPERATOR
 #undef XAD_DIRECT_COMPARE_OPERATOR
