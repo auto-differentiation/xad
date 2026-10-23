@@ -582,7 +582,7 @@ jobs:
       fail-fast: false
       matrix:
         config: [Release, Debug]
-        os: [macos-14, macos-latest]
+        os: [macos-15, macos-latest]
         standard: [c++11, c++17]
         memory: ["default", "lowmem"]
         jit: [OFF]
@@ -590,11 +590,11 @@ jobs:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
           - config: Release
-            os: macos-14
+            os: macos-15
             compiler: default
             coverage: false
           - config: Debug
-            os: macos-14
+            os: macos-15
             compiler: default
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
