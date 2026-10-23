@@ -34,7 +34,9 @@ using namespace ::testing;
 typedef xad::AReal<double> dblAAD;
 typedef dblAAD::tape_type tape_type;
 typedef xad::FReal<double> dblFAD;
-typedef ::testing::Types<dblAAD, dblFAD> test_types;
+typedef xad::ARealDirect<double> dblAADD;
+typedef xad::FRealDirect<double> dblFADD;
+typedef ::testing::Types<dblAAD, dblFAD, dblAADD, dblFADD> test_types;
 
 struct ValueAndDerivatives
 {
@@ -64,14 +66,11 @@ std::complex<double> calcReference(F func, const std::complex<T>& in)
 }
 
 template <class T>
-class ComplexADTest;
-
-template <>
-class ComplexADTest<dblFAD> : public ::testing::Test
+class ComplexADTestFwd : public ::testing::Test
 {
   protected:
     template <class F>
-    ValueAndDerivatives calcDerivatives(F func, std::complex<dblFAD> in)
+    ValueAndDerivatives calcDerivatives(F func, std::complex<T> in)
     {
         ValueAndDerivatives ret;
         // standard reference
@@ -79,7 +78,7 @@ class ComplexADTest<dblFAD> : public ::testing::Test
 
         // first d_real
         in.setDerivative(1.0, 0.0);
-        std::complex<dblFAD> out = func(in);
+        std::complex<T> out = func(in);
         ret.value1 = value(out);
         ret.d_real = derivative(out);
 
@@ -92,12 +91,12 @@ class ComplexADTest<dblFAD> : public ::testing::Test
     }
 };
 
-template <>
-class ComplexADTest<dblAAD> : public ::testing::Test
+template <class T>
+class ComplexADTestAdj : public ::testing::Test
 {
   protected:
     template <class F>
-    ValueAndDerivatives calcDerivatives(F func, std::complex<dblAAD> in)
+    ValueAndDerivatives calcDerivatives(F func, std::complex<T> in)
     {
         ValueAndDerivatives ret;
 
@@ -106,7 +105,7 @@ class ComplexADTest<dblAAD> : public ::testing::Test
 
         tape.registerInput(in);
         tape.newRecording();
-        std::complex<dblAAD> out = func(in);
+        std::complex<T> out = func(in);
         tape.registerOutput(out);
         ret.value1 = value(out);
         ret.value2 = ret.value1;
@@ -131,6 +130,13 @@ class ComplexADTest<dblAAD> : public ::testing::Test
         return ret;
     }
     tape_type tape;
+};
+
+// the same tests run for the expression-template types and the direct mode types
+template <class T>
+class ComplexADTest : public std::conditional<xad::ExprTraits<T>::isReverse, ComplexADTestAdj<T>,
+                                              ComplexADTestFwd<T>>::type
+{
 };
 
 // because we can't use C++14 auto lambdas, we need this macro for all functions below

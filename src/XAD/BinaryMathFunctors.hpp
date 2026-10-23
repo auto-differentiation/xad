@@ -110,14 +110,14 @@ struct max_op
 {
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const
     {
-        if (!ExprTraits<Scalar>::isExpr)
+        if (!detail::is_active<Scalar>::value)
             return (a < b) ? b : a;
         else
             return (a + b + abs(a - b)) / Scalar(2);
     }
     XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
     {
-        if (!ExprTraits<Scalar>::isExpr)
+        if (!detail::is_active<Scalar>::value)
         {
             if (b < a)
                 return Scalar(1);
@@ -134,7 +134,7 @@ struct max_op
     }
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
     {
-        if (!ExprTraits<Scalar>::isExpr)
+        if (!detail::is_active<Scalar>::value)
         {
             if (b < a)
                 return Scalar();
@@ -158,14 +158,14 @@ struct min_op
 {
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const
     {
-        if (!ExprTraits<Scalar>::isExpr)
+        if (!detail::is_active<Scalar>::value)
             return (b < a) ? b : a;  // as std::min, which matters for NaN
         else
             return (a + b - abs(a - b)) / Scalar(2);
     }
     XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
     {
-        if (!ExprTraits<Scalar>::isExpr)
+        if (!detail::is_active<Scalar>::value)
         {
             if (a < b)
                 return Scalar(1);
@@ -182,7 +182,7 @@ struct min_op
     }
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
     {
-        if (!ExprTraits<Scalar>::isExpr)
+        if (!detail::is_active<Scalar>::value)
         {
             if (a < b)
                 return Scalar();

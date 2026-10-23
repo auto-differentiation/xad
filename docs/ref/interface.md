@@ -33,12 +33,14 @@ and `N` adds the option of having a vector of derivatives of size `N`.
 
 #### `adjd<T, N = 1>`
 
-Mode interface class for first order direct forward mode, where `T` is the underlying scalar type (e.g. `#!c++ double`),
+Mode interface class for first order direct adjoint mode (active type `ARealDirect<T, N>`),
+where `T` is the underlying scalar type (e.g. `#!c++ double`),
 and `N` adds the option of having a vector of derivatives of size `N`.
 
 #### `fwdd<T, N = 1>`
 
-Mode interface class for first order direct adjoint mode, where `T` is the underlying scalar type (e.g. `#!c++ double`),
+Mode interface class for first order direct forward mode (active type `FRealDirect<T, N>`),
+where `T` is the underlying scalar type (e.g. `#!c++ double`),
 and `N` adds the option of having a vector of derivatives of size `N`.
 
 ### Second Order

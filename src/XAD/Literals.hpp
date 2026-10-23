@@ -988,6 +988,73 @@ public:
    using type = xad::FReal<T, N>;
 };
 
+// direct mode types
+#define XAD_DIRECT_PROMOTE(Direct)                                                                 \
+    template <class T, class T1, std::size_t N>                                                    \
+    class __promote<xad::Direct<T, N>, T1>                                                         \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, class T1, std::size_t N>                                                    \
+    class __promote<T1, xad::Direct<T, N>>                                                         \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, std::size_t N>                                                              \
+    class __promote<xad::Direct<T, N>, xad::Direct<T, N>>                                          \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, class T1, class T2, std::size_t N>                                          \
+    class __promote<xad::Direct<T, N>, T1, T2>                                                     \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, class T1, class T2, std::size_t N>                                          \
+    class __promote<T1, xad::Direct<T, N>, T2>                                                     \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, class T1, class T2, std::size_t N>                                          \
+    class __promote<T1, T2, xad::Direct<T, N>>                                                     \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, class T2, std::size_t N>                                                    \
+    class __promote<xad::Direct<T, N>, xad::Direct<T, N>, T2>                                      \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, class T2, std::size_t N>                                                    \
+    class __promote<xad::Direct<T, N>, T2, xad::Direct<T, N>>                                      \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, class T2, std::size_t N>                                                    \
+    class __promote<T2, xad::Direct<T, N>, xad::Direct<T, N>>                                      \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };                                                                                             \
+    template <class T, std::size_t N>                                                              \
+    class __promote<xad::Direct<T, N>, xad::Direct<T, N>, xad::Direct<T, N>>                       \
+    {                                                                                              \
+      public:                                                                                      \
+        using type = xad::Direct<T, N>;                                                            \
+    };
+
+XAD_DIRECT_PROMOTE(ARealDirect)
+XAD_DIRECT_PROMOTE(FRealDirect)
+
+#undef XAD_DIRECT_PROMOTE
 }
 
 #endif

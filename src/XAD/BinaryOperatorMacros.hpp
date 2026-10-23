@@ -66,6 +66,9 @@ struct is_vec<Vec<T, N>> : std::true_type
 
 }  // namespace xad
 
+// blocks function-like macros (e.g. windows.h min/max) but, unlike (name)(args), keeps ADL
+#define XAD_NO_MACRO_EXPANSION
+
 #define XAD_BINARY_OPERATOR(_op, func)                                                             \
     template <class Scalar, class Expr1, class Expr2, class DerivativeType>                        \
     XAD_INLINE BinaryExpr<Scalar, func<Scalar>, Expr1, Expr2, DerivativeType>(_op)(                \
@@ -116,7 +119,8 @@ struct is_vec<Vec<T, N>> : std::true_type
         return BinaryExpr<Scalar, func<Scalar>, FReal<Scalar, N>, FReal<Scalar, N>,                \
                           typename FReal<Scalar, N>::derivative_type>(a2, b2);                     \
     }                                                                                              \
-    template <class Scalar, class = typename std::enable_if<float_or_double<Scalar>::value>::type, \
+    template <class Scalar,                                                                        \
+              class = typename std::enable_if<detail::direct_scalar<Scalar>::value>::type,         \
               std::size_t N>                                                                       \
     XAD_INLINE FRealDirect<Scalar, N>(_op)(const FRealDirect<Scalar, N>& a,                        \
                                            const FRealDirect<Scalar, N>& b)                        \
@@ -124,20 +128,37 @@ struct is_vec<Vec<T, N>> : std::true_type
         return {FReal<Scalar, N>((_op)(a.base(), b.base()))};                                      \
     }                                                                                              \
     template <class Scalar, class T, std::size_t N,                                                \
-              class = typename std::enable_if<float_or_double<Scalar>::value &&                    \
-                                              !is_vec<T>::value>::type>                            \
+              class = typename std::enable_if<detail::direct_scalar<Scalar>::value &&              \
+                                              detail::direct_operand<T>::value>::type>             \
     XAD_INLINE FRealDirect<Scalar, N>(_op)(const FRealDirect<Scalar, N>& a, const T& b)            \
     {                                                                                              \
-        return {FReal<Scalar, N>((_op)(a.base(), b))};                                             \
+        return {FReal<Scalar, N>(_op XAD_NO_MACRO_EXPANSION(a.base(), b))};                        \
     }                                                                                              \
     template <class Scalar, class T, std::size_t N,                                                \
-              class = typename std::enable_if<float_or_double<Scalar>::value &&                    \
-                                              !is_vec<T>::value>::type>                            \
+              class = typename std::enable_if<detail::direct_scalar<Scalar>::value &&              \
+                                              detail::direct_operand<T>::value>::type>             \
     XAD_INLINE FRealDirect<Scalar, N>(_op)(const T& a, const FRealDirect<Scalar, N>& b)            \
     {                                                                                              \
-        return {FReal<Scalar, N>((_op)(a, b.base()))};                                             \
+        return {FReal<Scalar, N>(_op XAD_NO_MACRO_EXPANSION(a, b.base()))};                        \
     }                                                                                              \
-    template <class Scalar, class = typename std::enable_if<float_or_double<Scalar>::value>::type, \
+    template <class Scalar, class T, std::size_t N>                                                \
+    XAD_INLINE typename std::enable_if<                                                            \
+        detail::direct_scalar<Scalar>::value &&                                                    \
+            detail::direct_convertible_operand<FRealDirect<Scalar, N>, T>::value,                  \
+        FRealDirect<Scalar, N>>::type(_op)(const FRealDirect<Scalar, N>& a, const T& b)            \
+    {                                                                                              \
+        return (_op)(a, FRealDirect<Scalar, N>(b));                                                \
+    }                                                                                              \
+    template <class Scalar, class T, std::size_t N>                                                \
+    XAD_INLINE typename std::enable_if<                                                            \
+        detail::direct_scalar<Scalar>::value &&                                                    \
+            detail::direct_convertible_operand<FRealDirect<Scalar, N>, T>::value,                  \
+        FRealDirect<Scalar, N>>::type(_op)(const T& a, const FRealDirect<Scalar, N>& b)            \
+    {                                                                                              \
+        return (_op)(FRealDirect<Scalar, N>(a), b);                                                \
+    }                                                                                              \
+    template <class Scalar,                                                                        \
+              class = typename std::enable_if<detail::direct_scalar<Scalar>::value>::type,         \
               std::size_t N>                                                                       \
     XAD_INLINE ARealDirect<Scalar, N>(_op)(const ARealDirect<Scalar, N>& a,                        \
                                            const ARealDirect<Scalar, N>& b)                        \
@@ -145,16 +166,32 @@ struct is_vec<Vec<T, N>> : std::true_type
         return {AReal<Scalar, N>((_op)(a.base(), b.base()))};                                      \
     }                                                                                              \
     template <class Scalar, class T, std::size_t N,                                                \
-              class = typename std::enable_if<float_or_double<Scalar>::value &&                    \
-                                              !is_vec<T>::value>::type>                            \
+              class = typename std::enable_if<detail::direct_scalar<Scalar>::value &&              \
+                                              detail::direct_operand<T>::value>::type>             \
     XAD_INLINE ARealDirect<Scalar, N>(_op)(const ARealDirect<Scalar, N>& a, const T& b)            \
     {                                                                                              \
-        return {AReal<Scalar, N>((_op)(a.base(), b))};                                             \
+        return {AReal<Scalar, N>(_op XAD_NO_MACRO_EXPANSION(a.base(), b))};                        \
     }                                                                                              \
     template <class Scalar, class T, std::size_t N,                                                \
-              class = typename std::enable_if<float_or_double<Scalar>::value &&                    \
-                                              !is_vec<T>::value>::type>                            \
+              class = typename std::enable_if<detail::direct_scalar<Scalar>::value &&              \
+                                              detail::direct_operand<T>::value>::type>             \
     XAD_INLINE ARealDirect<Scalar, N>(_op)(const T& a, const ARealDirect<Scalar, N>& b)            \
     {                                                                                              \
-        return {AReal<Scalar, N>((_op)(a, b.base()))};                                             \
+        return {AReal<Scalar, N>(_op XAD_NO_MACRO_EXPANSION(a, b.base()))};                        \
+    }                                                                                              \
+    template <class Scalar, class T, std::size_t N>                                                \
+    XAD_INLINE typename std::enable_if<                                                            \
+        detail::direct_scalar<Scalar>::value &&                                                    \
+            detail::direct_convertible_operand<ARealDirect<Scalar, N>, T>::value,                  \
+        ARealDirect<Scalar, N>>::type(_op)(const ARealDirect<Scalar, N>& a, const T& b)            \
+    {                                                                                              \
+        return (_op)(a, ARealDirect<Scalar, N>(b));                                                \
+    }                                                                                              \
+    template <class Scalar, class T, std::size_t N>                                                \
+    XAD_INLINE typename std::enable_if<                                                            \
+        detail::direct_scalar<Scalar>::value &&                                                    \
+            detail::direct_convertible_operand<ARealDirect<Scalar, N>, T>::value,                  \
+        ARealDirect<Scalar, N>>::type(_op)(const T& a, const ARealDirect<Scalar, N>& b)            \
+    {                                                                                              \
+        return (_op)(ARealDirect<Scalar, N>(a), b);                                                \
     }

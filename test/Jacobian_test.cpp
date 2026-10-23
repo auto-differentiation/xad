@@ -528,3 +528,73 @@ TEST(JacobianTest, TapeAndNoCodomainAsArgumentPassed)
 
     EXPECT_NO_THROW(launch(input, func, 3));
 }
+
+TEST(JacobianTest, SimpleAdjointDirect)
+{
+    typedef xad::adjd<double> mode;
+    typedef mode::tape_type tape_type;
+    typedef mode::active_type AD;
+
+    tape_type tape;
+
+    std::vector<AD> input = {3.0, 1.0};
+
+    // f(x) = [ x[0] + sin(x[1]), x[1] * sin(x[0]) ]
+    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
+    { return {x[0] + sin(x[1]), x[1] * sin(x[0])}; };
+
+    std::vector<std::vector<double>> expected_jacobian = {
+        {1.0, cos(value(input[1]))},  //
+        {value(input[1]) * cos(value(input[0])), sin(value(input[0]))}};
+
+    std::vector<std::vector<double>> computed_jacobian =
+        xad::computeJacobian<double>(input, foo, &tape);
+
+    for (unsigned int i = 0; i < expected_jacobian.size(); i++)
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
+
+    // automatic tape and iterator interface
+    tape.deactivate();
+    std::list<std::list<double>> computed_list(2, std::list<double>(2, 0.0));
+    xad::computeJacobian<decltype(begin(computed_list)), double>(input, foo, begin(computed_list),
+                                                                 end(computed_list));
+    auto computed_it = computed_list.begin();
+    for (unsigned int i = 0; i < expected_jacobian.size(); i++, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), expected_jacobian[i]));
+
+    computed_jacobian = xad::computeJacobian<double>(input, foo);
+    for (unsigned int i = 0; i < expected_jacobian.size(); i++)
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
+
+    computed_jacobian = xad::computeJacobian<double>(input, foo, 2U);
+    for (unsigned int i = 0; i < expected_jacobian.size(); i++)
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
+}
+
+TEST(JacobianTest, SimpleForwardDirect)
+{
+    typedef xad::fwdd<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> input = {-2.0, 1.0};
+
+    // f(x) = [ x[0] + sin(x[1]), x[1] * sin(x[0]) ]
+    auto foo = [](std::vector<AD> &x) -> std::vector<AD>
+    { return {x[0] + sin(x[1]), x[1] * sin(x[0])}; };
+
+    std::vector<std::vector<double>> expected_jacobian = {
+        {1.0, cos(value(input[1]))},  //
+        {value(input[1]) * cos(value(input[0])), sin(value(input[0]))}};
+
+    std::vector<std::vector<double>> computed_jacobian = xad::computeJacobian<double>(input, foo);
+
+    for (unsigned int i = 0; i < expected_jacobian.size(); i++)
+        EXPECT_THAT(computed_jacobian[i], Pointwise(DoubleEq(), expected_jacobian[i]));
+
+    std::list<std::list<double>> computed_list(2, std::list<double>(2, 0.0));
+    xad::computeJacobian<decltype(begin(computed_list)), double>(input, foo, begin(computed_list),
+                                                                 end(computed_list));
+    auto computed_it = computed_list.begin();
+    for (unsigned int i = 0; i < expected_jacobian.size(); i++, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), expected_jacobian[i]));
+}

@@ -70,6 +70,8 @@ XAD_UNARY_BINSCAL1(operator/, scalar_div1_op)
 XAD_UNARY_BINSCAL2(operator/, scalar_div2_op)
 XAD_UNARY_BINSCAL1(pow, scalar_pow1_op)
 XAD_UNARY_BINSCAL2(pow, scalar_pow2_op)
+XAD_FREAL_BINSCAL1(pow, scalar_pow1_op)
+XAD_FREAL_BINSCAL2(pow, scalar_pow2_op)
 XAD_UNARY_BINSCAL1(smooth_abs, scalar_smooth_abs1_op)
 XAD_UNARY_BINSCAL2(smooth_abs, scalar_smooth_abs2_op)
 
@@ -91,12 +93,20 @@ smooth_abs(const AReal<Scalar, M>& a)
 
 XAD_UNARY_BINSCAL1(fmod, scalar_fmod1_op)
 XAD_UNARY_BINSCAL2(fmod, scalar_fmod2_op)
+XAD_FREAL_BINSCAL1(fmod, scalar_fmod1_op)
+XAD_FREAL_BINSCAL2(fmod, scalar_fmod2_op)
 XAD_UNARY_BINSCAL1(atan2, scalar_atan21_op)
 XAD_UNARY_BINSCAL2(atan2, scalar_atan22_op)
+XAD_FREAL_BINSCAL1(atan2, scalar_atan21_op)
+XAD_FREAL_BINSCAL2(atan2, scalar_atan22_op)
 XAD_UNARY_BINSCAL1(nextafter, scalar_nextafter1_op)
 XAD_UNARY_BINSCAL2(nextafter, scalar_nextafter2_op)
+XAD_FREAL_BINSCAL1(nextafter, scalar_nextafter1_op)
+XAD_FREAL_BINSCAL2(nextafter, scalar_nextafter2_op)
 XAD_UNARY_BINSCAL1(hypot, scalar_hypot1_op)
 XAD_UNARY_BINSCAL2(hypot, scalar_hypot2_op)
+XAD_FREAL_BINSCAL1(hypot, scalar_hypot1_op)
+XAD_FREAL_BINSCAL2(hypot, scalar_hypot2_op)
 
 // pown (integral exponents)
 template <class Scalar, class Expr, class DerivativeType>
@@ -307,7 +317,11 @@ XAD_INLINE typename std::enable_if<
 }
 
 XAD_UNARY_BINSCAL(fmax, scalar_fmax_op)
+XAD_FREAL_BINSCAL1(fmax, scalar_fmax_op)
+XAD_FREAL_BINSCAL2(fmax, scalar_fmax_op)
 XAD_UNARY_BINSCAL(fmin, scalar_fmin_op)
+XAD_FREAL_BINSCAL1(fmin, scalar_fmin_op)
+XAD_FREAL_BINSCAL2(fmin, scalar_fmin_op)
 
 /////////// Math functions
 
@@ -359,6 +373,8 @@ XAD_MAKE_FPCLASSIFY_FUNC_RET(long long, llround, using std::llround)
 
 XAD_UNARY_BINSCAL1(remainder, scalar_remainder1_op)
 XAD_UNARY_BINSCAL2(remainder, scalar_remainder2_op)
+XAD_FREAL_BINSCAL1(remainder, scalar_remainder1_op)
+XAD_FREAL_BINSCAL2(remainder, scalar_remainder2_op)
 
 template <class Scalar, class Expr, class T2, class DerivativeType>
 XAD_INLINE typename std::enable_if<
@@ -486,32 +502,69 @@ XAD_INLINE typename ExprTraits<Derived>::value_type copysign(
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE Scalar copysign(double x, const FRealDirect<Scalar, N>& y)
+XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(double x,
+                                                             const FRealDirect<Scalar, N>& y)
 {
     using std::copysign;
     return copysign(x, value(y));
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE Scalar copysign(float x, const FRealDirect<Scalar, N>& y)
+XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(float x,
+                                                             const FRealDirect<Scalar, N>& y)
 {
     using std::copysign;
     return copysign(x, value(y));
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE Scalar copysign(double x, const ARealDirect<Scalar, N>& y)
+XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(double x,
+                                                             const ARealDirect<Scalar, N>& y)
 {
     using std::copysign;
     return copysign(x, value(y));
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE Scalar copysign(float x, const ARealDirect<Scalar, N>& y)
+XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(float x,
+                                                             const ARealDirect<Scalar, N>& y)
 {
     using std::copysign;
     return copysign(x, value(y));
 }
+
+// direct mode functions the generic macros above don't cover, delegating to AReal / FReal
+#define XAD_DIRECT_MATH_FUNCS(Direct, Base)                                                        \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE Direct<Scalar, N> smooth_abs(const Direct<Scalar, N>& x)                            \
+    {                                                                                              \
+        return {Base<Scalar, N>(smooth_abs(x.base()))};                                            \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE Direct<Scalar, N> pown(const Direct<Scalar, N>& x, int y)                           \
+    {                                                                                              \
+        return {Base<Scalar, N>(pown(x.base(), y))};                                               \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE Direct<Scalar, N> scalbn(const Direct<Scalar, N>& x, int exp)                       \
+    {                                                                                              \
+        return {Base<Scalar, N>(scalbn(x.base(), exp))};                                           \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE int ilogb(const Direct<Scalar, N>& x)                                               \
+    {                                                                                              \
+        return ilogb(x.base());                                                                    \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T2>                                               \
+    XAD_INLINE Direct<Scalar, N> copysign(const Direct<Scalar, N>& x, const T2& y)                 \
+    {                                                                                              \
+        return {Base<Scalar, N>(copysign(x.base(), y))};                                           \
+    }
+
+XAD_DIRECT_MATH_FUNCS(FRealDirect, FReal)
+XAD_DIRECT_MATH_FUNCS(ARealDirect, AReal)
+
+#undef XAD_DIRECT_MATH_FUNCS
 
 template <class Scalar, class Derived, class DerivativeType>
 XAD_INLINE double copysign(double x, const Expression<Scalar, Derived, DerivativeType>& y)
@@ -530,6 +583,8 @@ XAD_INLINE float copysign(float x, const Expression<Scalar, Derived, DerivativeT
 #undef XAD_UNARY_BINSCAL
 #undef XAD_UNARY_BINSCAL1
 #undef XAD_UNARY_BINSCAL2
+#undef XAD_FREAL_BINSCAL1
+#undef XAD_FREAL_BINSCAL2
 #undef XAD_MAKE_UNARY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC
 #undef XAD_MAKE_FPCLASSIFY_FUNC_RET
