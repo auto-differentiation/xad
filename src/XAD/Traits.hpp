@@ -126,11 +126,11 @@ struct direct_operand
 {
 };
 
-// other operands that convert implicitly to the direct mode type D (e.g. a type with a
-// conversion operator, like QuantLib's Null<Real>)
+// other operands implicitly convertible to D (e.g. QuantLib's Null<Real>); not enums
 template <class D, class T>
 struct direct_convertible_operand
     : public std::integral_constant<bool, !direct_operand<T>::value && !is_direct<T>::value &&
+                                              !std::is_enum<T>::value &&
                                               std::is_convertible<const T&, D>::value>
 {
 };

@@ -454,6 +454,38 @@ TEST(DirectModeHigherOrder, HigherOrderMixedScalars)
     EXPECT_THAT(derivative(derivative(x)), DoubleNear(4.0, 1e-12));
 }
 
+namespace
+{
+enum class Unit
+{
+    Days
+};
+enum PlainUnit
+{
+    Weeks
+};
+template <class T>
+int operator*(const T&, PlainUnit)
+{
+    return 7;
+}
+}  // namespace
+
+// like AReal / FReal, direct types take no enum operands: QuantLib's T * TimeUnit stays unambiguous
+TEST(DirectModeCompatibility, EnumsAreNoOperands)
+{
+    static_assert(!xad::detail::direct_convertible_operand<xad::ARealDirect<double>, Unit>::value,
+                  "scoped enum");
+    static_assert(
+        !xad::detail::direct_convertible_operand<xad::ARealDirect<double>, PlainUnit>::value,
+        "unscoped enum");
+    static_assert(
+        !xad::detail::direct_convertible_operand<xad::FRealDirect<double>, PlainUnit>::value,
+        "unscoped enum");
+    EXPECT_EQ(7, xad::ARealDirect<double>(2.0) * Weeks);
+    EXPECT_EQ(7, xad::FRealDirect<double>(2.0) * Weeks);
+}
+
 TEST(DirectModeHigherOrder, HigherOrderLimitsAndTraits)
 {
     typedef xad::fwdd_fwdd<double>::active_type T;
