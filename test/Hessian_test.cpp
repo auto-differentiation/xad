@@ -417,3 +417,101 @@ TEST(HessianTest, OutOfBoundsDomainSizeMismatch)
 
     EXPECT_THROW(launch(input, func, begin(jacobian), end(jacobian)), xad::OutOfRange);
 }
+
+// zero-valued adjoints at a stationary point still carry second-order information
+TEST(HessianTest, StationaryPointWithIntermediatesForwardAdjoint)
+{
+    typedef xad::fwd_adj<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> input = {0.0, 0.0};
+
+    auto foo = [](std::vector<AD> &x) -> AD
+    {
+        AD u = x[0] + 1.0;
+        u = u - 1.0;
+        AD v = x[1] * 1.0;
+        return u * u + u * v;
+    };
+
+    std::vector<std::vector<double>> expected_hessian = {{2.0, 1.0}, {1.0, 0.0}};
+
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(input, foo);
+
+    for (unsigned int i = 0; i < expected_hessian.size(); i++)
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
+}
+
+TEST(HessianTest, ForwardAdjointDirect)
+{
+    typedef xad::fwdd_adjd<double> mode;
+    typedef mode::active_type AD;
+    typedef mode::tape_type tape_type;
+
+    tape_type tape;
+
+    std::vector<AD> input = {3.0, 2.0};
+
+    // f(x) = x[0]^2 * x[1] + x[1]^3
+    auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] * x[1] + pow(x[1], 3); };
+
+    std::vector<std::vector<double>> expected_hessian = {{4.0, 6.0}, {6.0, 12.0}};
+
+    std::vector<std::vector<double>> computed_hessian =
+        xad::computeHessian<double>(input, foo, &tape);
+
+    for (unsigned int i = 0; i < expected_hessian.size(); i++)
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
+
+    // automatic tape and iterator interface
+    tape.deactivate();
+    std::list<std::list<double>> computed_list(2, std::list<double>(2, 0.0));
+    xad::computeHessian<decltype(begin(computed_list)), double>(input, foo, begin(computed_list),
+                                                                end(computed_list));
+    auto computed_it = computed_list.begin();
+    for (unsigned int i = 0; i < expected_hessian.size(); i++, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), expected_hessian[i]));
+}
+
+TEST(HessianTest, StationaryPointForwardAdjointDirect)
+{
+    // in direct mode every operation is an intermediate variable on tape
+    typedef xad::fwdd_adjd<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> input = {0.0, 0.0};
+
+    auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] + x[0] * x[1]; };
+
+    std::vector<std::vector<double>> expected_hessian = {{2.0, 1.0}, {1.0, 0.0}};
+
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(input, foo);
+
+    for (unsigned int i = 0; i < expected_hessian.size(); i++)
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
+}
+
+TEST(HessianTest, ForwardForwardDirect)
+{
+    typedef xad::fwdd_fwdd<double> mode;
+    typedef mode::active_type AD;
+
+    std::vector<AD> input = {3.0, 2.0};
+
+    // f(x) = x[0]^2 * x[1] + x[1]^3
+    auto foo = [](std::vector<AD> &x) -> AD { return x[0] * x[0] * x[1] + pow(x[1], 3); };
+
+    std::vector<std::vector<double>> expected_hessian = {{4.0, 6.0}, {6.0, 12.0}};
+
+    std::vector<std::vector<double>> computed_hessian = xad::computeHessian<double>(input, foo);
+
+    for (unsigned int i = 0; i < expected_hessian.size(); i++)
+        EXPECT_THAT(computed_hessian[i], Pointwise(DoubleEq(), expected_hessian[i]));
+
+    std::list<std::list<double>> computed_list(2, std::list<double>(2, 0.0));
+    xad::computeHessian<decltype(begin(computed_list)), double>(input, foo, begin(computed_list),
+                                                                end(computed_list));
+    auto computed_it = computed_list.begin();
+    for (unsigned int i = 0; i < expected_hessian.size(); i++, ++computed_it)
+        EXPECT_THAT(*computed_it, Pointwise(DoubleEq(), expected_hessian[i]));
+}

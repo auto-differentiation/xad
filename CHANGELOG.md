@@ -10,13 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
+
 ### Changed
+
+- Direct mode mixed operators accept only arithmetic types, XAD expressions and types convertible to the direct type
+- Direct mode compound assignments return the derived type
+- Expression math tests run on the direct mode types themselves
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- `adjd<T, N>::active_type` is `ARealDirect<T, N>`, as documented
+- `std::numeric_limits` for direct mode types returned 0
+- Direct mode comparisons with integer literals and convertible types
+- Arithmetic for higher-order direct mode types
+- `std::is_convertible` was `true` from any type to a direct mode type
+- Second-order tapes dropped zero-valued adjoints that carried a second-order part
+- `lround`/`llround` for `FReal` did not compile
+- `max`/`min` ties with direct mode inner types
 
 
 ## [2.0.0] - 2026-02-06

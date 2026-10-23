@@ -92,7 +92,150 @@ XAD_INLINE auto fma(const T1& a, const T2& b, const T3& c) -> decltype(a * b + c
     return a * b + c;
 }
 
+// more specialised than the generic fma above and than promoting std::fma templates (MSVC's)
+#define XAD_DIRECT_FMA(Direct)                                                                     \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<!detail::is_direct<T>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const T& a, const Direct<Scalar, N>& b,                       \
+                                     const Direct<Scalar, N>& c)                                   \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<!detail::is_direct<T>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const Direct<Scalar, N>& a, const T& b,                       \
+                                     const Direct<Scalar, N>& c)                                   \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<!detail::is_direct<T>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const Direct<Scalar, N>& a, const Direct<Scalar, N>& b,       \
+                                     const T& c)                                                   \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<!detail::is_direct<T>::value &&                      \
+                                              !detail::is_direct<U>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const T& a, const U& b, const Direct<Scalar, N>& c)           \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<!detail::is_direct<T>::value &&                      \
+                                              !detail::is_direct<U>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const T& a, const Direct<Scalar, N>& b, const U& c)           \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<!detail::is_direct<T>::value &&                      \
+                                              !detail::is_direct<U>::value>::type>                 \
+    XAD_INLINE Direct<Scalar, N> fma(const Direct<Scalar, N>& a, const T& b, const U& c)           \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }
+
+XAD_DIRECT_FMA(FRealDirect)
+XAD_DIRECT_FMA(ARealDirect)
+
+#undef XAD_DIRECT_FMA
+
+// fma with AReal / FReal and built-in arithmetic operands, for the same reason
+#define XAD_ACTIVE_FMA(Active)                                                                     \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value &&           \
+                                              detail::is_builtin_arithmetic<U>::value>::type>      \
+    XAD_INLINE auto fma(const Active<Scalar, N>& a, const T& b, const U& c) -> decltype(a * b + c) \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value &&           \
+                                              detail::is_builtin_arithmetic<U>::value>::type>      \
+    XAD_INLINE auto fma(const T& a, const Active<Scalar, N>& b, const U& c) -> decltype(a * b + c) \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T, class U,                                       \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value &&           \
+                                              detail::is_builtin_arithmetic<U>::value>::type>      \
+    XAD_INLINE auto fma(const T& a, const U& b, const Active<Scalar, N>& c) -> decltype(a * b + c) \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value>::type>      \
+    XAD_INLINE auto fma(const Active<Scalar, N>& a, const Active<Scalar, N>& b, const T& c)        \
+        -> decltype(a * b + c)                                                                     \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value>::type>      \
+    XAD_INLINE auto fma(const Active<Scalar, N>& a, const T& b, const Active<Scalar, N>& c)        \
+        -> decltype(a * b + c)                                                                     \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T,                                                \
+              class = typename std::enable_if<detail::is_builtin_arithmetic<T>::value>::type>      \
+    XAD_INLINE auto fma(const T& a, const Active<Scalar, N>& b, const Active<Scalar, N>& c)        \
+        -> decltype(a * b + c)                                                                     \
+    {                                                                                              \
+        return a * b + c;                                                                          \
+    }
+
+XAD_ACTIVE_FMA(AReal)
+XAD_ACTIVE_FMA(FReal)
+
+#undef XAD_ACTIVE_FMA
+
 /////////// comparisons - they just return bool
+
+// comparisons of direct mode types with anything other than the same direct type or its scalar
+#define XAD_DIRECT_COMPARE_OPERATOR(op, Direct)                                                    \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE typename std::enable_if<detail::is_builtin_arithmetic<T>::value, bool>::type        \
+    operator op(const Direct<Scalar, N>& a, const T& b)                                            \
+    {                                                                                              \
+        return value(a) op static_cast<typename ExprTraits<Scalar>::nested_type>(b);               \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE typename std::enable_if<detail::is_builtin_arithmetic<T>::value, bool>::type        \
+    operator op(const T& a, const Direct<Scalar, N>& b)                                            \
+    {                                                                                              \
+        return static_cast<typename ExprTraits<Scalar>::nested_type>(a) op value(b);               \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE typename std::enable_if<ExprTraits<T>::isExpr, bool>::type operator op(             \
+        const Direct<Scalar, N>& a, const T& b)                                                    \
+    {                                                                                              \
+        return value(a) op b;                                                                      \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE typename std::enable_if<ExprTraits<T>::isExpr, bool>::type operator op(             \
+        const T& a, const Direct<Scalar, N>& b)                                                    \
+    {                                                                                              \
+        return a op value(b);                                                                      \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_convertible_operand<Direct<Scalar, N>, T>::value,   \
+                                bool>::type                                                        \
+        operator op(const Direct<Scalar, N>& a, const T& b)                                        \
+    {                                                                                              \
+        return a op Direct<Scalar, N>(b);                                                          \
+    }                                                                                              \
+    template <class Scalar, std::size_t N, class T>                                                \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_convertible_operand<Direct<Scalar, N>, T>::value,   \
+                                bool>::type                                                        \
+        operator op(const T& a, const Direct<Scalar, N>& b)                                        \
+    {                                                                                              \
+        return Direct<Scalar, N>(a) op b;                                                          \
+    }
 
 #define XAD_COMPARE_OPERATOR(op)                                                                   \
     template <class Scalar, class Expr1, class Expr2, class DerivativeType>                        \
@@ -154,30 +297,8 @@ XAD_INLINE auto fma(const T1& a, const T2& b, const T3& c) -> decltype(a * b + c
         return value(a) op b;                                                                      \
     }                                                                                              \
                                                                                                    \
-    template <class Scalar, class Expr, std::size_t N>                                             \
-    XAD_INLINE bool operator op(typename ExprTraits<Scalar>::nested_type a,                        \
-                                const FRealDirect<Scalar, N>& b)                                   \
-    {                                                                                              \
-        return a op value(b);                                                                      \
-    }                                                                                              \
-    template <class Scalar, class Expr, std::size_t N>                                             \
-    XAD_INLINE bool operator op(const FRealDirect<Scalar, N>& a,                                   \
-                                typename ExprTraits<Scalar>::nested_type b)                        \
-    {                                                                                              \
-        return value(a) op b;                                                                      \
-    }                                                                                              \
-    template <class Scalar, class Expr, std::size_t N>                                             \
-    XAD_INLINE bool operator op(typename ExprTraits<Scalar>::nested_type a,                        \
-                                const ARealDirect<Scalar, N>& b)                                   \
-    {                                                                                              \
-        return a op value(b);                                                                      \
-    }                                                                                              \
-    template <class Scalar, class Expr, std::size_t N>                                             \
-    XAD_INLINE bool operator op(const ARealDirect<Scalar, N>& a,                                   \
-                                typename ExprTraits<Scalar>::nested_type b)                        \
-    {                                                                                              \
-        return value(a) op b;                                                                      \
-    }                                                                                              \
+    XAD_DIRECT_COMPARE_OPERATOR(op, FRealDirect)                                                   \
+    XAD_DIRECT_COMPARE_OPERATOR(op, ARealDirect)                                                   \
                                                                                                    \
     template <class Scalar, class Expr, class DerivativeType>                                      \
     XAD_INLINE bool operator op(typename ExprTraits<Expr>::nested_type a,                          \
@@ -226,39 +347,45 @@ XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar, N>, FReal<Scalar,
         a, b, remquo_op<Scalar>(quo));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> remquo(const xad::FRealDirect<T, N>& a,
                                          const xad::FRealDirect<T, N>& b, int* c)
 {
     return xad::FReal<T, N>(remquo(a.base(), b.base(), c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> remquo(const xad::FRealDirect<T, N>& a, const T& b, int* c)
 {
     return xad::FReal<T, N>(remquo(a.base(), b, c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> remquo(const T& a, const xad::FRealDirect<T, N>& b, int* c)
 {
     return xad::FReal<T, N>(remquo(a, b.base(), c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> remquo(const xad::ARealDirect<T, N>& a,
                                          const xad::ARealDirect<T, N>& b, int* c)
 {
     return xad::AReal<T, N>(remquo(a.base(), b.base(), c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> remquo(const xad::ARealDirect<T, N>& a, const T& b, int* c)
 {
     return xad::AReal<T, N>(remquo(a.base(), b, c));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> remquo(const T& a, const xad::ARealDirect<T, N>& b, int* c)
 {
     return xad::AReal<T, N>(remquo(a, b.base(), c));
@@ -280,54 +407,94 @@ remquo(const Expression<Scalar, Expr>& a, const typename ExprTraits<Expr>::value
         a.derived(), typename ExprTraits<Expr>::value_type(b), remquo_op<Scalar>(quo));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> frexp(const xad::FRealDirect<T, N>& a, int* exp)
 {
     return xad::FReal<T, N>(frexp(a.base(), exp));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> ldexp(const xad::FRealDirect<T, N>& a, int b)
 {
     return xad::FReal<T, N>(ldexp(a.base(), b));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> modf(const xad::FRealDirect<T, N>& a, xad::FRealDirect<T, N>* b)
 {
     return xad::FReal<T, N>(modf(a.base(), &b->base()));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::FRealDirect<T, N> modf(const xad::FRealDirect<T, N>& a, T* b)
 {
     return xad::FReal<T, N>(modf(a.base(), b));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> frexp(const xad::ARealDirect<T, N>& a, int* exp)
 {
     return xad::AReal<T, N>(frexp(a.base(), exp));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> ldexp(const xad::ARealDirect<T, N>& a, int b)
 {
     return xad::AReal<T, N>(ldexp(a.base(), b));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> modf(const xad::ARealDirect<T, N>& a, xad::ARealDirect<T, N>* b)
 {
     return xad::AReal<T, N>(modf(a.base(), &b->base()));
 }
 
-template <class T, class = typename std::enable_if<float_or_double<T>::value>::type, std::size_t N>
+template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
+          std::size_t N>
 XAD_INLINE xad::ARealDirect<T, N> modf(const xad::ARealDirect<T, N>& a, T* b)
 {
     return xad::AReal<T, N>(modf(a.base(), b));
 }
 
+// higher-order direct mode types: the scalar arguments are the passive (nested) type
+#define XAD_DIRECT_NESTED_FUNCS(Direct, Base)                                                      \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_scalar<T>::value && !std::is_fundamental<T>::value, \
+                                xad::Direct<T, N>>::type                                           \
+        remquo(const xad::Direct<T, N>& a, typename ExprTraits<T>::nested_type b, int* c)          \
+    {                                                                                              \
+        return xad::Base<T, N>(remquo(a.base(), b, c));                                            \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_scalar<T>::value && !std::is_fundamental<T>::value, \
+                                xad::Direct<T, N>>::type                                           \
+        remquo(typename ExprTraits<T>::nested_type a, const xad::Direct<T, N>& b, int* c)          \
+    {                                                                                              \
+        return xad::Base<T, N>(remquo(a, b.base(), c));                                            \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE                                                                                     \
+        typename std::enable_if<detail::direct_scalar<T>::value && !std::is_fundamental<T>::value, \
+                                xad::Direct<T, N>>::type                                           \
+        modf(const xad::Direct<T, N>& a, typename ExprTraits<T>::nested_type* b)                   \
+    {                                                                                              \
+        return xad::Base<T, N>(modf(a.base(), b));                                                 \
+    }
+
+XAD_DIRECT_NESTED_FUNCS(FRealDirect, FReal)
+XAD_DIRECT_NESTED_FUNCS(ARealDirect, AReal)
+
+#undef XAD_DIRECT_NESTED_FUNCS
 #undef XAD_BINARY_OPERATOR
 #undef XAD_COMPARE_OPERATOR
+#undef XAD_DIRECT_COMPARE_OPERATOR
 }  // namespace xad

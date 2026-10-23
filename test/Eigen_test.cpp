@@ -22,6 +22,7 @@
 
 ******************************************************************************/
 
+#include <XAD/StdCompatibility.hpp>
 #include <XAD/XAD.hpp>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -494,4 +495,184 @@ TEST(Eigen, MatrixCholesky_Adj)
             EXPECT_NEAR(ad, fd, 1e-7) << "Mismatch at A(" << i << ", " << j << ")";
         }
     }
+}
+
+TEST(Eigen, MatrixInverseAdjDirect)
+{
+    typedef xad::adjd<double> mode;
+    typedef mode::tape_type tape_type;
+    typedef mode::active_type AD;
+
+    constexpr double eps = 1e-6;
+    Eigen::Matrix<double, 2, 2> A0;
+    A0 << 2.0, 1.0, 1.0, 3.0;
+
+    Eigen::Matrix<double, 2, 2> numerical_grad;
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            Eigen::Matrix<double, 2, 2> A_plus = A0;
+            Eigen::Matrix<double, 2, 2> A_minus = A0;
+            A_plus(i, j) += eps;
+            A_minus(i, j) -= eps;
+
+            double f_plus = A_plus.inverse().sum();
+            double f_minus = A_minus.inverse().sum();
+
+            numerical_grad(i, j) = (f_plus - f_minus) / (2 * eps);
+        }
+    }
+
+    Eigen::Matrix<AD, 2, 2> A;
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j) A(i, j) = A0(i, j);
+
+    tape_type tape;
+    tape.registerInputs(A.reshaped().begin(), A.reshaped().end());
+
+    tape.newRecording();
+
+    Eigen::Matrix<AD, 2, 2> B = A.inverse();
+
+    for (AD &Bi : B.reshaped())
+    {
+        tape.registerOutput(Bi);
+        derivative(Bi) = 1.0;
+    }
+
+    tape.computeAdjoints();
+
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            double ad = derivative(A(i, j));
+            double fd = numerical_grad(i, j);
+            EXPECT_NEAR(ad, fd, 1e-5) << "Mismatch at (" << i << ", " << j << ")";
+        }
+    }
+}
+
+TEST(Eigen, MatrixInverseFwdDirect)
+{
+    typedef xad::fwdd<double> mode;
+    typedef mode::active_type AD;
+
+    constexpr double eps = 1e-6;
+    Eigen::Matrix<double, 2, 2> A0;
+    A0 << 2.0, 1.0, 1.0, 3.0;
+
+    Eigen::Matrix<double, 2, 2> numerical_grad;
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            Eigen::Matrix<double, 2, 2> A_plus = A0;
+            Eigen::Matrix<double, 2, 2> A_minus = A0;
+            A_plus(i, j) += eps;
+            A_minus(i, j) -= eps;
+
+            double f_plus = A_plus.inverse().sum();
+            double f_minus = A_minus.inverse().sum();
+
+            numerical_grad(i, j) = (f_plus - f_minus) / (2 * eps);
+        }
+    }
+
+    Eigen::Matrix<AD, 2, 2> A;
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j) A(i, j) = A0(i, j);
+
+    for (AD &Ai : A.reshaped())
+    {
+        derivative(Ai) = 1.0;
+    }
+
+    Eigen::Matrix<AD, 2, 2> B = A.inverse();
+
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            double ad = derivative(B(i, j));
+            double fd = numerical_grad(i, j);
+            EXPECT_NEAR(ad, fd, 1e-5) << "Mismatch at (" << i << ", " << j << ")";
+        }
+    }
+}
+
+TEST(Eigen, CholeskySolveAdjDirect)
+{
+    typedef xad::adjd<double> mode;
+    typedef mode::tape_type tape_type;
+    typedef mode::active_type AD;
+
+    tape_type tape;
+    AD x = 0.5;
+    tape.registerInput(x);
+    tape.newRecording();
+
+    Eigen::Matrix<AD, 2, 2> A;
+    A << 2.0 + x, AD(0.5), AD(0.5), AD(3.0);
+    Eigen::Matrix<AD, 2, 1> b;
+    b << AD(1.0), x;
+    Eigen::LLT<Eigen::Matrix<AD, 2, 2>> llt(A);
+    Eigen::Matrix<AD, 2, 1> s = llt.solve(b);
+    AD y = s(0) + 2.0 * s(1);
+    tape.registerOutput(y);
+    derivative(y) = 1.0;
+    tape.computeAdjoints();
+
+    auto f = [](double xv)
+    {
+        Eigen::Matrix<double, 2, 2> A0;
+        A0 << 2.0 + xv, 0.5, 0.5, 3.0;
+        Eigen::Matrix<double, 2, 1> b0;
+        b0 << 1.0, xv;
+        Eigen::Matrix<double, 2, 1> s0 = A0.llt().solve(b0);
+        return s0(0) + 2.0 * s0(1);
+    };
+    double eps = 1e-6;
+    EXPECT_NEAR(value(y), f(0.5), 1e-12);
+    EXPECT_NEAR(derivative(x), (f(0.5 + eps) - f(0.5 - eps)) / (2 * eps), 1e-6);
+}
+
+TEST(Eigen, SvdAdjDirect)
+{
+    typedef xad::adjd<double> mode;
+    typedef mode::tape_type tape_type;
+    typedef mode::active_type AD;
+
+    tape_type tape;
+    AD x = 0.5;
+    tape.registerInput(x);
+    tape.newRecording();
+
+    Eigen::Matrix<AD, 2, 2> A;
+    A << 2.0 + x, AD(0.5), AD(0.3), 1.0 - x;
+    Eigen::JacobiSVD<Eigen::Matrix<AD, 2, 2>> svd(A);
+    AD y = svd.singularValues()(0) + 2.0 * svd.singularValues()(1);
+    tape.registerOutput(y);
+    derivative(y) = 1.0;
+    tape.computeAdjoints();
+
+    auto f = [](double xv)
+    {
+        Eigen::Matrix<double, 2, 2> A0;
+        A0 << 2.0 + xv, 0.5, 0.3, 1.0 - xv;
+        Eigen::JacobiSVD<Eigen::Matrix<double, 2, 2>> svd0(A0);
+        return svd0.singularValues()(0) + 2.0 * svd0.singularValues()(1);
+    };
+    double eps = 1e-6;
+    EXPECT_NEAR(value(y), f(0.5), 1e-12);
+    EXPECT_NEAR(derivative(x), (f(0.5 + eps) - f(0.5 - eps)) / (2 * eps), 1e-6);
+}
+
+TEST(Eigen, NumTraitsDirect)
+{
+    EXPECT_EQ(Eigen::NumTraits<xad::ADD>::epsilon(), std::numeric_limits<double>::epsilon());
+    EXPECT_EQ(Eigen::NumTraits<xad::FDD>::epsilon(), std::numeric_limits<double>::epsilon());
+    EXPECT_EQ(Eigen::NumTraits<xad::ADD>::highest(), std::numeric_limits<double>::max());
+    EXPECT_EQ(Eigen::NumTraits<xad::FDD>::lowest(), std::numeric_limits<double>::lowest());
 }

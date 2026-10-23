@@ -23,8 +23,10 @@
 ******************************************************************************/
 
 #pragma once
+#include <XAD/ARealDirect.hpp>
 #include <XAD/BinaryOperators.hpp>
 #include <XAD/Expression.hpp>
+#include <XAD/FRealDirect.hpp>
 #include <XAD/Literals.hpp>
 #include <XAD/Traits.hpp>
 #include <XAD/UnaryOperators.hpp>
@@ -286,6 +288,122 @@ class complex<xad::FReal<T, N>>
     using base::operator/=;
 };
 
+// common base for complex numbers of the direct mode types ARealDirect / FRealDirect
+template <class Base, class T>
+class complex<xad::RealDirect<Base, T>> : public xad::detail::complex_impl<T>
+{
+  public:
+    typedef xad::detail::complex_impl<T> base;
+    typedef T value_type;
+
+    complex(const T& areal = T(), const T& aimag = T()) : base(areal, aimag) {}
+
+    XAD_INLINE complex<T>& derived() { return static_cast<complex<T>&>(*this); }
+
+    XAD_INLINE complex<T>& operator+=(const T& other)
+    {
+        base::real() += other;
+        return derived();
+    }
+
+    template <class X>
+    XAD_INLINE complex<T>& operator+=(const std::complex<X>& other)
+    {
+        base::real() += T(other.real());
+        base::imag() += T(other.imag());
+        return derived();
+    }
+
+    XAD_INLINE complex<T>& operator-=(const T& other)
+    {
+        base::real() -= other;
+        return derived();
+    }
+
+    template <class X>
+    XAD_INLINE complex<T>& operator-=(const std::complex<X>& other)
+    {
+        base::real() -= T(other.real());
+        base::imag() -= T(other.imag());
+        return derived();
+    }
+
+    XAD_INLINE complex<T>& operator*=(const T& other)
+    {
+        base::real() *= other;
+        base::imag() *= other;
+        return derived();
+    }
+
+    template <class X>
+    complex<T>& operator*=(const std::complex<X>& other)
+    {
+        T oreal = T(other.real()), oimag = T(other.imag());
+        T real_t = base::real() * oreal - base::imag() * oimag;
+        base::imag(base::real() * oimag + oreal * base::imag());
+        base::real(real_t);
+        return derived();
+    }
+
+    XAD_INLINE complex<T>& operator/=(const T& other)
+    {
+        base::real() /= other;
+        base::imag() /= other;
+        return derived();
+    }
+
+    template <class X>
+    complex<T>& operator/=(const std::complex<X>& other)
+    {
+        T oreal = T(other.real()), oimag = T(other.imag());
+        T den = oreal * oreal + oimag * oimag;
+        T real_t = (base::real() * oreal + base::imag() * oimag) / den;
+        base::imag((base::imag() * oreal - base::real() * oimag) / den);
+        base::real(real_t);
+        return derived();
+    }
+};
+
+#define XAD_COMPLEX_DIRECT_CLASS(Direct, Base)                                                     \
+    template <class T, std::size_t N>                                                              \
+    class complex<xad::Direct<T, N>>                                                               \
+        : public complex<xad::RealDirect<xad::Base<T, N>, xad::Direct<T, N>>>                      \
+    {                                                                                              \
+      public:                                                                                      \
+        typedef complex<xad::RealDirect<xad::Base<T, N>, xad::Direct<T, N>>> base;                 \
+                                                                                                   \
+        XAD_INLINE complex(const xad::Direct<T, N>& areal = xad::Direct<T, N>(),                   \
+                           const xad::Direct<T, N>& aimag = xad::Direct<T, N>())                   \
+            : base(areal, aimag)                                                                   \
+        {                                                                                          \
+        }                                                                                          \
+                                                                                                   \
+        template <class X>                                                                         \
+        XAD_INLINE complex(                                                                        \
+            const X& areal,                                                                        \
+            typename std::enable_if<                                                               \
+                std::is_convertible<const X&, xad::Direct<T, N>>::value>::type* = nullptr)         \
+            : base(xad::Direct<T, N>(areal), xad::Direct<T, N>())                                  \
+        {                                                                                          \
+        }                                                                                          \
+                                                                                                   \
+        template <class X>                                                                         \
+        XAD_INLINE complex(const complex<X>& o)                                                    \
+            : base(xad::Direct<T, N>(o.real()), xad::Direct<T, N>(o.imag()))                       \
+        {                                                                                          \
+        }                                                                                          \
+                                                                                                   \
+        using base::operator+=;                                                                    \
+        using base::operator-=;                                                                    \
+        using base::operator*=;                                                                    \
+        using base::operator/=;                                                                    \
+    };
+
+XAD_COMPLEX_DIRECT_CLASS(ARealDirect, AReal)  // cppcheck-suppress noExplicitConstructor
+XAD_COMPLEX_DIRECT_CLASS(FRealDirect, FReal)  // cppcheck-suppress noExplicitConstructor
+
+#undef XAD_COMPLEX_DIRECT_CLASS
+
 }  // namespace std
 
 namespace xad
@@ -318,6 +436,36 @@ XAD_INLINE std::complex<T> value(const std::complex<AReal<T, N>>& z)
 
 template <class T, std::size_t N>
 XAD_INLINE std::complex<T> value(const std::complex<FReal<T, N>>& z)
+{
+    return std::complex<T>(value(z.real()), value(z.imag()));
+}
+
+template <class T, std::size_t N>
+XAD_INLINE std::complex<T> derivative(const std::complex<ARealDirect<T, N>>& z)
+{
+    static_assert(N == 1,
+                  "Global derivative function is only defined for scalar derivatives - use "
+                  "derivative(z.real()) instead");
+    return std::complex<T>(derivative(z.real()), derivative(z.imag()));
+}
+
+template <class T, std::size_t N>
+XAD_INLINE std::complex<T> derivative(const std::complex<FRealDirect<T, N>>& z)
+{
+    static_assert(N == 1,
+                  "Global derivative function is only defined for scalar derivatives - use "
+                  "derivative(z.real()) instead");
+    return std::complex<T>(derivative(z.real()), derivative(z.imag()));
+}
+
+template <class T, std::size_t N>
+XAD_INLINE std::complex<T> value(const std::complex<ARealDirect<T, N>>& z)
+{
+    return std::complex<T>(value(z.real()), value(z.imag()));
+}
+
+template <class T, std::size_t N>
+XAD_INLINE std::complex<T> value(const std::complex<FRealDirect<T, N>>& z)
 {
     return std::complex<T>(value(z.real()), value(z.imag()));
 }
@@ -2253,6 +2401,369 @@ XAD_INLINE std::complex<xad::FReal<T, N>> atanh(const std::complex<xad::FReal<T,
 {
     return ::xad::detail::atanh_impl(z);
 }
+
+/////////////////////// direct mode types (ARealDirect / FRealDirect)
+
+template <class Base, class T>
+XAD_INLINE T real(const complex<xad::RealDirect<Base, T>>& z)
+{
+    return z.real();
+}
+
+template <class Base, class T>
+XAD_INLINE T& real(complex<xad::RealDirect<Base, T>>& z)
+{
+    return z.real();
+}
+
+template <class Base, class T>
+XAD_INLINE T imag(const complex<xad::RealDirect<Base, T>>& z)
+{
+    return z.imag();
+}
+
+template <class Base, class T>
+XAD_INLINE T& imag(complex<xad::RealDirect<Base, T>>& z)
+{
+    return z.imag();
+}
+
+#define XAD_COMPLEX_DIRECT_BINARY_OP(op, opassign, Direct)                                         \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator op(complex<xad::Direct<T, N>> lhs,              \
+                                                      const complex<xad::Direct<T, N>>& rhs)       \
+    {                                                                                              \
+        lhs opassign rhs;                                                                          \
+        return lhs;                                                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator op(complex<xad::Direct<T, N>> lhs,              \
+                                                      const complex<T>& rhs)                       \
+    {                                                                                              \
+        lhs opassign rhs;                                                                          \
+        return lhs;                                                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator op(const complex<T>& lhs,                       \
+                                                      const complex<xad::Direct<T, N>>& rhs)       \
+    {                                                                                              \
+        complex<xad::Direct<T, N>> z(lhs);                                                         \
+        z opassign rhs;                                                                            \
+        return z;                                                                                  \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator op(complex<xad::Direct<T, N>> lhs,              \
+                                                      const xad::Direct<T, N>& rhs)                \
+    {                                                                                              \
+        lhs opassign rhs;                                                                          \
+        return lhs;                                                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator op(const xad::Direct<T, N>& lhs,                \
+                                                      const complex<xad::Direct<T, N>>& rhs)       \
+    {                                                                                              \
+        complex<xad::Direct<T, N>> z(lhs);                                                         \
+        z opassign rhs;                                                                            \
+        return z;                                                                                  \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator op(complex<xad::Direct<T, N>> lhs,              \
+                                                      const T& rhs)                                \
+    {                                                                                              \
+        lhs opassign xad::Direct<T, N>(rhs);                                                       \
+        return lhs;                                                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator op(const T& lhs,                                \
+                                                      const complex<xad::Direct<T, N>>& rhs)       \
+    {                                                                                              \
+        complex<xad::Direct<T, N>> z(lhs);                                                         \
+        z opassign rhs;                                                                            \
+        return z;                                                                                  \
+    }
+
+#define XAD_COMPLEX_DIRECT_COMPARE(Direct)                                                         \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator==(const complex<xad::Direct<T, N>>& lhs,                              \
+                               const complex<xad::Direct<T, N>>& rhs)                              \
+    {                                                                                              \
+        return lhs.real() == rhs.real() && lhs.imag() == rhs.imag();                               \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator==(const complex<xad::Direct<T, N>>& lhs, const complex<T>& rhs)       \
+    {                                                                                              \
+        return lhs.real() == rhs.real() && lhs.imag() == rhs.imag();                               \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator==(const complex<T>& lhs, const complex<xad::Direct<T, N>>& rhs)       \
+    {                                                                                              \
+        return rhs == lhs;                                                                         \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator==(const complex<xad::Direct<T, N>>& lhs,                              \
+                               const xad::Direct<T, N>& rhs)                                       \
+    {                                                                                              \
+        return lhs.real() == rhs && lhs.imag() == T();                                             \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator==(const xad::Direct<T, N>& lhs,                                       \
+                               const complex<xad::Direct<T, N>>& rhs)                              \
+    {                                                                                              \
+        return rhs == lhs;                                                                         \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator==(const complex<xad::Direct<T, N>>& lhs, const T& rhs)                \
+    {                                                                                              \
+        return lhs.real() == rhs && lhs.imag() == T();                                             \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator==(const T& lhs, const complex<xad::Direct<T, N>>& rhs)                \
+    {                                                                                              \
+        return rhs == lhs;                                                                         \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator!=(const complex<xad::Direct<T, N>>& lhs,                              \
+                               const complex<xad::Direct<T, N>>& rhs)                              \
+    {                                                                                              \
+        return !(lhs == rhs);                                                                      \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator!=(const complex<xad::Direct<T, N>>& lhs, const complex<T>& rhs)       \
+    {                                                                                              \
+        return !(lhs == rhs);                                                                      \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator!=(const complex<T>& lhs, const complex<xad::Direct<T, N>>& rhs)       \
+    {                                                                                              \
+        return !(lhs == rhs);                                                                      \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator!=(const complex<xad::Direct<T, N>>& lhs,                              \
+                               const xad::Direct<T, N>& rhs)                                       \
+    {                                                                                              \
+        return !(lhs == rhs);                                                                      \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator!=(const xad::Direct<T, N>& lhs,                                       \
+                               const complex<xad::Direct<T, N>>& rhs)                              \
+    {                                                                                              \
+        return !(lhs == rhs);                                                                      \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator!=(const complex<xad::Direct<T, N>>& lhs, const T& rhs)                \
+    {                                                                                              \
+        return !(lhs == rhs);                                                                      \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE bool operator!=(const T& lhs, const complex<xad::Direct<T, N>>& rhs)                \
+    {                                                                                              \
+        return !(lhs == rhs);                                                                      \
+    }
+
+#define XAD_COMPLEX_DIRECT_UNARY_FUNC(func)                                                        \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::ARealDirect<T, N>> func(const complex<xad::ARealDirect<T, N>>& z)      \
+    {                                                                                              \
+        return ::xad::detail::func##_impl(z);                                                      \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::FRealDirect<T, N>> func(const complex<xad::FRealDirect<T, N>>& z)      \
+    {                                                                                              \
+        return ::xad::detail::func##_impl(z);                                                      \
+    }
+
+#define XAD_COMPLEX_DIRECT_POW_INT(Direct, I)                                                      \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(const complex<xad::Direct<T, N>>& x, I y)            \
+    {                                                                                              \
+        return ::xad::detail::exp_impl(log(x) * xad::Direct<T, N>(T(y)));                          \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(I x, const complex<xad::Direct<T, N>>& y)            \
+    {                                                                                              \
+        return ::xad::detail::exp_impl(log(xad::Direct<T, N>(T(x))) * y);                          \
+    }
+
+#define XAD_COMPLEX_DIRECT_FUNCS(Direct)                                                           \
+    XAD_COMPLEX_DIRECT_BINARY_OP(+, +=, Direct)                                                    \
+    XAD_COMPLEX_DIRECT_BINARY_OP(-, -=, Direct)                                                    \
+    XAD_COMPLEX_DIRECT_BINARY_OP(*, *=, Direct)                                                    \
+    XAD_COMPLEX_DIRECT_BINARY_OP(/, /=, Direct)                                                    \
+    XAD_COMPLEX_DIRECT_COMPARE(Direct)                                                             \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator+(const complex<xad::Direct<T, N>>& x)           \
+    {                                                                                              \
+        return x;                                                                                  \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> operator-(const complex<xad::Direct<T, N>>& x)           \
+    {                                                                                              \
+        return complex<xad::Direct<T, N>>(-x.real(), -x.imag());                                   \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE xad::Direct<T, N> real(const xad::Direct<T, N>& x)                                  \
+    {                                                                                              \
+        return x;                                                                                  \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE xad::Direct<T, N> imag(const xad::Direct<T, N>&)                                    \
+    {                                                                                              \
+        return xad::Direct<T, N>();                                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE xad::Direct<T, N> abs(const complex<xad::Direct<T, N>>& z)                          \
+    {                                                                                              \
+        return ::xad::detail::abs_impl(z);                                                         \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE xad::Direct<T, N> arg(const complex<xad::Direct<T, N>>& z)                          \
+    {                                                                                              \
+        return ::xad::detail::arg_impl(z);                                                         \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE xad::Direct<T, N> arg(const xad::Direct<T, N>& x)                                   \
+    {                                                                                              \
+        return xad::Direct<T, N>(::xad::detail::arg_impl(x.base()));                               \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE xad::Direct<T, N> norm(const complex<xad::Direct<T, N>>& z)                         \
+    {                                                                                              \
+        return ::xad::detail::norm_impl(z);                                                        \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE xad::Direct<T, N> norm(const xad::Direct<T, N>& x)                                  \
+    {                                                                                              \
+        return x * x;                                                                              \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> conj(const complex<xad::Direct<T, N>>& z)                \
+    {                                                                                              \
+        return complex<xad::Direct<T, N>>(z.real(), -z.imag());                                    \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> conj(const xad::Direct<T, N>& x)                         \
+    {                                                                                              \
+        return complex<xad::Direct<T, N>>(x);                                                      \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> proj(const complex<xad::Direct<T, N>>& z)                \
+    {                                                                                              \
+        if (xad::isinf(z.real()) || xad::isinf(z.imag()))                                          \
+        {                                                                                          \
+            typedef typename xad::ExprTraits<T>::nested_type type;                                 \
+            const type infty = std::numeric_limits<type>::infinity();                              \
+            if (xad::signbit(z.imag()))                                                            \
+                return complex<xad::Direct<T, N>>(infty, -0.0);                                    \
+            else                                                                                   \
+                return complex<xad::Direct<T, N>>(infty, 0.0);                                     \
+        }                                                                                          \
+        else                                                                                       \
+            return z;                                                                              \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> proj(const xad::Direct<T, N>& x)                         \
+    {                                                                                              \
+        return proj(complex<xad::Direct<T, N>>(x));                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> polar(                                                   \
+        const xad::Direct<T, N>& r, const xad::Direct<T, N>& theta = xad::Direct<T, N>())          \
+    {                                                                                              \
+        return ::xad::detail::polar_impl(r, theta);                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> polar(const xad::Direct<T, N>& r, const T& theta)        \
+    {                                                                                              \
+        return ::xad::detail::polar_impl(r, xad::Direct<T, N>(theta));                             \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> polar(const T& r, const xad::Direct<T, N>& theta)        \
+    {                                                                                              \
+        return ::xad::detail::polar_impl(xad::Direct<T, N>(r), theta);                             \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> log(const complex<xad::Direct<T, N>>& z)                 \
+    {                                                                                              \
+        return complex<xad::Direct<T, N>>(log(::xad::detail::abs_impl(z)),                         \
+                                          ::xad::detail::arg_impl(z));                             \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> log10(const complex<xad::Direct<T, N>>& z)               \
+    {                                                                                              \
+        return log(z) * T(0.43429448190325182765112891891661);                                     \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(const complex<xad::Direct<T, N>>& x,                 \
+                                              const complex<xad::Direct<T, N>>& y)                 \
+    {                                                                                              \
+        return ::xad::detail::exp_impl(log(x) * y);                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(const complex<xad::Direct<T, N>>& x,                 \
+                                              const xad::Direct<T, N>& y)                          \
+    {                                                                                              \
+        return ::xad::detail::exp_impl(log(x) * y);                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(const xad::Direct<T, N>& x,                          \
+                                              const complex<xad::Direct<T, N>>& y)                 \
+    {                                                                                              \
+        return ::xad::detail::exp_impl(log(x) * y);                                                \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(const complex<xad::Direct<T, N>>& x,                 \
+                                              const complex<T>& y)                                 \
+    {                                                                                              \
+        return pow(x, complex<xad::Direct<T, N>>(y));                                              \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(const complex<T>& x,                                 \
+                                              const complex<xad::Direct<T, N>>& y)                 \
+    {                                                                                              \
+        return pow(complex<xad::Direct<T, N>>(x), y);                                              \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(const complex<xad::Direct<T, N>>& x, const T& y)     \
+    {                                                                                              \
+        return ::xad::detail::exp_impl(log(x) * xad::Direct<T, N>(y));                             \
+    }                                                                                              \
+    template <class T, std::size_t N>                                                              \
+    XAD_INLINE complex<xad::Direct<T, N>> pow(const T& x, const complex<xad::Direct<T, N>>& y)     \
+    {                                                                                              \
+        return ::xad::detail::exp_impl(log(xad::Direct<T, N>(x)) * y);                             \
+    }                                                                                              \
+    XAD_COMPLEX_DIRECT_POW_INT(Direct, int)                                                        \
+    XAD_COMPLEX_DIRECT_POW_INT(Direct, short)                                                      \
+    XAD_COMPLEX_DIRECT_POW_INT(Direct, long)                                                       \
+    XAD_COMPLEX_DIRECT_POW_INT(Direct, long long)                                                  \
+    XAD_COMPLEX_DIRECT_POW_INT(Direct, unsigned)                                                   \
+    XAD_COMPLEX_DIRECT_POW_INT(Direct, unsigned short)                                             \
+    XAD_COMPLEX_DIRECT_POW_INT(Direct, unsigned long)                                              \
+    XAD_COMPLEX_DIRECT_POW_INT(Direct, unsigned long long)
+
+XAD_COMPLEX_DIRECT_FUNCS(ARealDirect)
+XAD_COMPLEX_DIRECT_FUNCS(FRealDirect)
+
+XAD_COMPLEX_DIRECT_UNARY_FUNC(exp)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(sqrt)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(sin)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(cos)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(tan)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(asin)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(acos)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(atan)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(sinh)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(cosh)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(tanh)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(asinh)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(acosh)
+XAD_COMPLEX_DIRECT_UNARY_FUNC(atanh)
+
+#undef XAD_COMPLEX_DIRECT_FUNCS
+#undef XAD_COMPLEX_DIRECT_POW_INT
+#undef XAD_COMPLEX_DIRECT_UNARY_FUNC
+#undef XAD_COMPLEX_DIRECT_COMPARE
+#undef XAD_COMPLEX_DIRECT_BINARY_OP
 
 }  // namespace std
 
