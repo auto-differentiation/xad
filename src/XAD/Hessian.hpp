@@ -47,12 +47,14 @@ std::vector<std::vector<T>> computeHessian(
     return matrix;
 }
 
-// fwd_adj iterator
-template <typename RowIterator, typename T>
-void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
-                    std::function<AReal<FReal<T>>(std::vector<AReal<FReal<T>>> &)> foo,
-                    RowIterator first, RowIterator last,
-                    Tape<FReal<T>> *tape = Tape<FReal<T>>::getActive())
+namespace detail
+{
+
+// forward over adjoint implementation, used for AReal<FReal<T>> and ARealDirect<FRealDirect<T>>
+template <typename RowIterator, typename Active, typename Inner>
+void computeHessianFwdAdj(const std::vector<Active> &vec,
+                          std::function<Active(std::vector<Active> &)> foo, RowIterator first,
+                          RowIterator last, Tape<Inner> *tape)
 {
     std::size_t domain = vec.size();
 
@@ -61,10 +63,10 @@ void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
-    std::unique_ptr<Tape<FReal<T>>> t;
+    std::unique_ptr<Tape<Inner>> t;
     if (!tape)
     {
-        t = std::unique_ptr<Tape<FReal<T>>>(new Tape<FReal<T>>());
+        t = std::unique_ptr<Tape<Inner>>(new Tape<Inner>());
         tape = t.get();
     }
 
@@ -76,7 +78,7 @@ void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
     {
         derivative(value(v[i])) = 1.0;
         tape->newRecording();
-        AReal<FReal<T>> y = foo(v);
+        Active y = foo(v);
         tape->registerOutput(y);
         value(derivative(y)) = 1.0;
         tape->computeAdjoints();
@@ -90,6 +92,41 @@ void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
     }
 }
 
+}  // namespace detail
+
+// fwd_adj iterator
+template <typename RowIterator, typename T>
+void computeHessian(const std::vector<AReal<FReal<T>>> &vec,
+                    std::function<AReal<FReal<T>>(std::vector<AReal<FReal<T>>> &)> foo,
+                    RowIterator first, RowIterator last,
+                    Tape<FReal<T>> *tape = Tape<FReal<T>>::getActive())
+{
+    detail::computeHessianFwdAdj(vec, foo, first, last, tape);
+}
+
+// fwdd_adjd 2d vector
+template <typename T>
+std::vector<std::vector<T>> computeHessian(
+    const std::vector<ARealDirect<FRealDirect<T>>> &vec,
+    std::function<ARealDirect<FRealDirect<T>>(std::vector<ARealDirect<FRealDirect<T>>> &)> foo,
+    Tape<FRealDirect<T>> *tape = Tape<FRealDirect<T>>::getActive())
+{
+    std::vector<std::vector<T>> matrix(vec.size(), std::vector<T>(vec.size(), 0.0));
+    computeHessian(vec, foo, begin(matrix), end(matrix), tape);
+    return matrix;
+}
+
+// fwdd_adjd iterator
+template <typename RowIterator, typename T>
+void computeHessian(
+    const std::vector<ARealDirect<FRealDirect<T>>> &vec,
+    std::function<ARealDirect<FRealDirect<T>>(std::vector<ARealDirect<FRealDirect<T>>> &)> foo,
+    RowIterator first, RowIterator last,
+    Tape<FRealDirect<T>> *tape = Tape<FRealDirect<T>>::getActive())
+{
+    detail::computeHessianFwdAdj(vec, foo, first, last, tape);
+}
+
 // fwd_fwd 2d vector
 template <typename T>
 std::vector<std::vector<T>> computeHessian(
@@ -101,11 +138,14 @@ std::vector<std::vector<T>> computeHessian(
     return matrix;
 }
 
-// fwd_fwd iterator
-template <typename RowIterator, typename T>
-void computeHessian(const std::vector<FReal<FReal<T>>> &vec,
-                    std::function<FReal<FReal<T>>(std::vector<FReal<FReal<T>>> &)> foo,
-                    RowIterator first, RowIterator last)
+namespace detail
+{
+
+// forward over forward implementation, used for FReal<FReal<T>> and FRealDirect<FRealDirect<T>>
+template <typename RowIterator, typename Active>
+void computeHessianFwdFwd(const std::vector<Active> &vec,
+                          std::function<Active(std::vector<Active> &)> foo, RowIterator first,
+                          RowIterator last)
 {
     std::size_t domain = vec.size();
 
@@ -125,11 +165,43 @@ void computeHessian(const std::vector<FReal<FReal<T>>> &vec,
         for (std::size_t j = 0; j < domain; j++, col++)
         {
             derivative(value(v[j])) = 1.0;
-            FReal<FReal<T>> y = foo(v);
+            Active y = foo(v);
             *col = derivative(derivative(y));
             derivative(value(v[j])) = 0.0;
         }
         value(derivative(v[i])) = 0.0;
     }
+}
+
+}  // namespace detail
+
+// fwd_fwd iterator
+template <typename RowIterator, typename T>
+void computeHessian(const std::vector<FReal<FReal<T>>> &vec,
+                    std::function<FReal<FReal<T>>(std::vector<FReal<FReal<T>>> &)> foo,
+                    RowIterator first, RowIterator last)
+{
+    detail::computeHessianFwdFwd(vec, foo, first, last);
+}
+
+// fwdd_fwdd 2d vector
+template <typename T>
+std::vector<std::vector<T>> computeHessian(
+    const std::vector<FRealDirect<FRealDirect<T>>> &vec,
+    std::function<FRealDirect<FRealDirect<T>>(std::vector<FRealDirect<FRealDirect<T>>> &)> foo)
+{
+    std::vector<std::vector<T>> matrix(vec.size(), std::vector<T>(vec.size(), 0.0));
+    computeHessian(vec, foo, begin(matrix), end(matrix));
+    return matrix;
+}
+
+// fwdd_fwdd iterator
+template <typename RowIterator, typename T>
+void computeHessian(
+    const std::vector<FRealDirect<FRealDirect<T>>> &vec,
+    std::function<FRealDirect<FRealDirect<T>>(std::vector<FRealDirect<FRealDirect<T>>> &)> foo,
+    RowIterator first, RowIterator last)
+{
+    detail::computeHessianFwdFwd(vec, foo, first, last);
 }
 }  // namespace xad
