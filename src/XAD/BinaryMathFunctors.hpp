@@ -159,7 +159,7 @@ struct min_op
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const
     {
         if (!detail::is_active<Scalar>::value)
-            return (a < b) ? a : b;
+            return (b < a) ? b : a;  // as std::min, which matters for NaN
         else
             return (a + b - abs(a - b)) / Scalar(2);
     }

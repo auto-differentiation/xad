@@ -332,6 +332,21 @@ struct scalar_fmax_op : scalar_max_op<Scalar, T2>
     XAD_INLINE explicit scalar_fmax_op(const T2& b) : scalar_max_op<Scalar, T2>(b) {}
 };
 
+// scalar as first argument - keeps the argument order of std::max, which matters for NaN
+template <class Scalar, class T2>
+struct scalar_max1_op
+{
+    XAD_INLINE explicit scalar_max1_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE Scalar operator()(const Scalar& a) const { return max(b_, a); }
+    XAD_INLINE Scalar derivative(const Scalar& a) const
+    {
+        // (1 + ((a-b)>0 - (a-b)<0)) / 2
+        return (Scalar(1) + (Scalar((a - b_) > Scalar()) - Scalar((a - b_) < Scalar()))) /
+               Scalar(2);
+    }
+    Scalar b_;
+};
+
 template <class Scalar, class T2>
 struct scalar_min_op
 {
@@ -350,6 +365,21 @@ template <class Scalar, class T2>
 struct scalar_fmin_op : scalar_min_op<Scalar, T2>
 {
     XAD_INLINE explicit scalar_fmin_op(const T2& b) : scalar_min_op<Scalar, T2>(b) {}
+};
+
+// scalar as first argument - keeps the argument order of std::min, which matters for NaN
+template <class Scalar, class T2>
+struct scalar_min1_op
+{
+    XAD_INLINE explicit scalar_min1_op(const T2& b) : b_(Scalar(b)) {}
+    XAD_INLINE Scalar operator()(const Scalar& a) const { return min(b_, a); }
+    XAD_INLINE Scalar derivative(const Scalar& a) const
+    {
+        // (1 - ((a-b)>0 - (a-b)<0)) / 2
+        return (Scalar(1) - (Scalar((a - b_) > Scalar()) - Scalar((a - b_) < Scalar()))) /
+               Scalar(2);
+    }
+    Scalar b_;
 };
 
 template <class Scalar, class T2>
