@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move-assigning a tape leaked the callbacks it had
 - Destroying a variable of an inactive tape freed its slot on the active tape (fixed with `XAD_TAPE_CHECKS`)
 - `Vec != scalar` was true only if every element differed
+- `xad::fma` matched built-in types, so `std::fma(2, 3, 4)` did not return `double`
 
 
 ## [2.0.0] - 2026-02-06
