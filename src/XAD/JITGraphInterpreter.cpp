@@ -475,15 +475,15 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
         {
             double imm = node.imm;
             int exp = static_cast<int>(imm);
-            nodeAdjoints[a] += adj * Scalar(1 << exp);
+            nodeAdjoints[a] += adj * std::ldexp(Scalar(1), exp);
         }
         break;
         case JITOpCode::Frexp:
         {
-            // Derivative is 1 / 2^exp, but we need to recompute frexp
-            int exp;
+            // Derivative is 2^-exp, but we need to recompute frexp
+            int exp = 0;
             std::frexp(va, &exp);
-            nodeAdjoints[a] += adj / Scalar(1 << exp);
+            nodeAdjoints[a] += adj * std::ldexp(Scalar(1), -exp);
         }
         break;
         case JITOpCode::Modf:

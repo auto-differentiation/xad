@@ -474,9 +474,9 @@ template <class Scalar, class Derived, class Deriv>
 XAD_INLINE typename ExprTraits<Derived>::value_type scalbn(
     const Expression<Scalar, Derived, Deriv>& x, int exp)
 {
-    using std::scalbn;
+    // ldexp, as the radix is 2; x * 2^exp would overflow or underflow on 2^exp alone
     using T = typename ExprTraits<Derived>::value_type;
-    return T(x) * scalbn(1.0, exp);
+    return T(ldexp(x.derived(), exp));
 }
 
 // active sign source: BinaryOperators.hpp

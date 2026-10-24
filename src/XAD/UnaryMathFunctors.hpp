@@ -188,7 +188,11 @@ struct ldexp_op
 {
     XAD_INLINE explicit ldexp_op(int exp) : exp_(exp) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return ldexp(a, exp_); }
-    XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1 << exp_); }
+    XAD_INLINE Scalar derivative(const Scalar&) const
+    {
+        using std::ldexp;
+        return Scalar(ldexp(typename ExprTraits<Scalar>::nested_type(1), exp_));
+    }
     int exp_;
 };
 
@@ -202,7 +206,8 @@ struct frexp_op
         // we assume that operator() and derivative are called in succession and in
         // this order, which is always the case in XAD. Therefore we can read the
         // value in *exp_ here to calculate the derivative
-        return Scalar(1.0) / Scalar(1 << *exp_);
+        using std::ldexp;
+        return Scalar(ldexp(typename ExprTraits<Scalar>::nested_type(1), -*exp_));
     }
     int* exp_;
 };
