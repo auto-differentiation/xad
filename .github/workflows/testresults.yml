@@ -60,8 +60,9 @@ jobs:
 
       - name: Upload badge to Gist
         if: >
+          github.repository == 'auto-differentiation/xad' && (
           github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' ||
-          github.event_name != 'workflow_run' && github.ref == 'refs/heads/main'
+          github.event_name != 'workflow_run' && github.ref == 'refs/heads/main')
         uses: andymckay/append-gist-action@0.3
         with:
           token: ${{ secrets.GIST_TOKEN }}
