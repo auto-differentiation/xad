@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `max`/`min` ties with direct mode inner types
 - Computing adjoints cut the tape at its checkpoint callbacks, so a second `computeAdjoints` (e.g. in `computeJacobian`) gave wrong adjoints
 - A variable a checkpoint callback registered could take the slot of a variable gone before the sweep whose adjoint was still needed, giving wrong adjoints
+- With `XAD_TAPE_REUSE_SLOTS`, `resetTo` looped forever when reusable slots straddled the derivatives kept
 
 
 ## [2.0.0] - 2026-02-06

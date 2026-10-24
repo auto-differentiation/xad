@@ -803,24 +803,15 @@ void Tape<T, N>::resetTo(position_type pos)
         checkpoints_.erase(newend, checkpoints_.end());
     }
 #ifdef XAD_TAPE_REUSE_SLOTS
-    if (!reusable_ranges_.empty())
+    // drop the reusable slots at or above maxDerivative_
+    while (!reusable_ranges_.empty() &&
+           reusable_ranges_.back().second() > currentRec_->maxDerivative_)
     {
-        auto it = reusable_ranges_.end();
-        --it;
-        while (!reusable_ranges_.empty() && it->second() >= currentRec_->maxDerivative_)
-        {
-            if (it->first() >= currentRec_->maxDerivative_)
-            {
-                auto it2 = it;
-                --it2;
-                eraseRange(it);
-                it = it2;
-            }
-            else
-            {
-                it->second(currentRec_->maxDerivative_);
-            }
-        }
+        auto last = std::prev(reusable_ranges_.end());
+        if (last->first() < currentRec_->maxDerivative_)
+            last->second(currentRec_->maxDerivative_);
+        else
+            eraseRange(last);
     }
 #endif
 
