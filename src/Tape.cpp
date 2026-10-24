@@ -36,6 +36,9 @@
 #include <iterator>
 #include <numeric>
 #include <sstream>
+#ifdef XAD_TAPE_CHECKS
+#include <atomic>
+#endif
 
 #if 0
 #define LOG_DEBUG(msg) std::cout << msg << std::endl;
@@ -46,9 +49,25 @@
 namespace xad
 {
 
+#ifdef XAD_TAPE_CHECKS
+namespace
+{
+// unique, also for a tape created where a destroyed one was; 0 is no tape
+unsigned int nextTapeId()
+{
+    static std::atomic<unsigned int> last(0);
+    unsigned int id = ++last;
+    return id != 0 ? id : ++last;
+}
+}  // namespace
+#endif
+
 template <class T, std::size_t N>
 Tape<T, N>::Tape(bool activateNow)
 {
+#ifdef XAD_TAPE_CHECKS
+    id_ = nextTapeId();
+#endif
 
     nestedRecordings_.push(SubRecording(this));
     currentRec_ = &nestedRecordings_.top();
@@ -72,6 +91,10 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       nestedRecordings_(std::move(o.nestedRecordings_)),
       currentRec_(o.currentRec_)
 {
+#ifdef XAD_TAPE_CHECKS
+    id_ = o.id_;
+    o.id_ = nextTapeId();
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
@@ -111,6 +134,10 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 #endif
     nestedRecordings_ = std::move(o.nestedRecordings_);
     currentRec_ = o.currentRec_;
+#ifdef XAD_TAPE_CHECKS
+    id_ = o.id_;
+    o.id_ = nextTapeId();
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif

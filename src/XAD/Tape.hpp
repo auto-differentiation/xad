@@ -134,9 +134,9 @@ class Tape
 
     XAD_INLINE void registerInput(active_type& inp)
     {
-        if (!inp.shouldRecord())  // already registered
+        if (!inp.isOn(this))  // already registered
         {
-            inp.slot_ = registerVariable();
+            inp.registerOn(this);
             pushLhs(inp.slot_);
         }
     }
@@ -160,9 +160,9 @@ class Tape
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (!outp.shouldRecord())
+        if (!outp.isOn(this))
         {
-            outp.slot_ = registerVariable();
+            outp.registerOn(this);
             pushLhs(outp.slot_);
         }
     }
@@ -408,6 +408,13 @@ class Tape
     friend class JITCompiler;
     // the pointer of the JIT that deactivated this tape, to clear when the tape goes
     Tape** jitSuspender_ = nullptr;
+#endif
+#ifdef XAD_TAPE_CHECKS
+    // tells the variables of this tape from those of others, as a slot alone cannot
+    unsigned int id_;
+
+    template <class, std::size_t>
+    friend struct AReal;
 #endif
 };
 

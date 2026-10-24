@@ -54,6 +54,9 @@
 // Reduce memory usage in the tape, at a slight performance cost
 #cmakedefine XAD_REDUCED_MEMORY
 
+// Use and free a variable's slot only on the tape it is registered on (default in Debug builds)
+#cmakedefine XAD_TAPE_CHECKS
+
 // Enable codegen (JIT compilation) support
 #cmakedefine XAD_ENABLE_CODEGEN
 // Internal: set when codegen is enabled

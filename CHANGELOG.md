@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `XAD_OUTLINE_RECORDING` option: one out-of-line call per recorded operation, for faster compiles with `XAD_USE_STRONG_INLINE`
 - `Tape::clearCallbacks()` destroys the callbacks pushed with `pushCallback`, for tapes used for many recordings
+- CMake option `XAD_TAPE_CHECKS` (on in Debug builds): variables use and free slots only on the tape they are registered on
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
 
 ### Changed
@@ -79,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Derivatives of `/`, `atan2`, `asinh` and `acosh` overflowed or underflowed for large or tiny arguments
 - `clearDerivativesAfter` dropped variables registered before its position
 - Move-assigning a tape leaked the callbacks it had
+- Destroying a variable of an inactive tape freed its slot on the active tape (fixed with `XAD_TAPE_CHECKS`)
 
 
 ## [2.0.0] - 2026-02-06

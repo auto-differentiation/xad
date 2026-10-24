@@ -68,6 +68,13 @@ option(XAD_USE_STRONG_INLINE "Use forced inlining for higher performance, at a h
 option(XAD_OUTLINE_RECORDING "Record each operation with one out-of-line call (faster compiles with strong inlining)" OFF)
 option(XAD_ALLOW_INT_CONVERSION "Add real->int conversion operator, potentially missing to track dependencies" ON)
 option(XAD_REDUCED_MEMORY "Reduce memory required for tape, at a slight performance cost" OFF)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(xad_tape_checks_default ON)
+else()
+    set(xad_tape_checks_default OFF)
+endif()
+option(XAD_TAPE_CHECKS "Variables use and free slots only on their own tape (slower, more memory)"
+       ${xad_tape_checks_default})
 option(XAD_ENABLE_CODEGEN "Enable codegen (JIT compilation) support" OFF)
 
 # XAD_ENABLE_JIT is set when CODEGEN is on, for internal headers

@@ -216,7 +216,7 @@ struct AReal
         {
             if (o.shouldRecord())
             {
-                slot_ = s->registerVariable();
+                registerOn(s);
                 pushAll<1>(s, o);
                 s->pushLhs(slot_);
             }
@@ -241,6 +241,7 @@ struct AReal
     XAD_INLINE AReal(AReal&& o) noexcept : base_type(static_cast<base_type&&>(o)), slot_(o.slot_)
     {
         o.slot_ = INVALID_SLOT;
+        swapTape(o);
     }
 
     XAD_INLINE AReal& operator=(AReal&& o) noexcept
@@ -249,13 +250,14 @@ struct AReal
         // object moved from still gets destructor called, so this makes sure that
         // the old slot we had gets destructed
         std::swap(slot_, o.slot_);
+        swapTape(o);
         return *this;
     }
 
     XAD_INLINE ~AReal()
     {
         if (auto tape = tape_type::getActive())
-            if (shouldRecord())
+            if (isOn(tape))
                 tape->unregisterVariable(slot_);
     }
 
@@ -265,7 +267,7 @@ struct AReal
     {
         this->a_ = x;
         auto tape = tape_type::getActive();
-        if (tape && shouldRecord())
+        if (tape && isOn(tape))
             tape->pushLhs(slot_);
         return *this;
     }
@@ -388,16 +390,16 @@ struct AReal
     }
 
     template <class Info>
-    XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type&, const Scalar& mul) const
+    XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type& s, const Scalar& mul) const
     {
-        if (shouldRecord())
+        if (isOn(&s))
             pushRhs(info, mul, slot_);
     }
 
     template <class Info>
-    XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type&) const
+    XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type& s) const
     {
-        if (shouldRecord())
+        if (isOn(&s))
             pushRhs(info, Scalar(1), slot_);
     }
 
@@ -415,7 +417,7 @@ struct AReal
 #endif
             throw NoTapeException();
         }
-        if (!shouldRecord())
+        if (!isOn(t))
         {
             // we return a dummy const ref if not registered on tape - always zero
             static const derivative_type zero = derivative_type();
@@ -437,9 +439,9 @@ struct AReal
             throw NoTapeException();
         }
         // register ourselves if not already done
-        if (!shouldRecord())
+        if (!isOn(t))
         {
-            slot_ = t->registerVariable();
+            registerOn(t);
             t->pushLhs(slot_);
         }
         return t->derivative(slot_);
@@ -495,6 +497,22 @@ struct AReal
         t->commitOperations(info.index);
     }
 
+    XAD_INLINE void registerOn(tape_type* t)
+    {
+        slot_ = t->registerVariable();
+        setTape(t);
+    }
+#ifdef XAD_TAPE_CHECKS
+    // whether slot_ is one of t's, which the slot alone cannot tell
+    XAD_INLINE bool isOn(const tape_type* t) const { return shouldRecord() && tapeId_ == t->id_; }
+    XAD_INLINE void setTape(const tape_type* t) { tapeId_ = t->id_; }
+    XAD_INLINE void swapTape(AReal& o) { std::swap(tapeId_, o.tapeId_); }
+#else
+    XAD_INLINE bool isOn(const tape_type*) const { return shouldRecord(); }
+    XAD_INLINE void setTape(const tape_type*) {}
+    XAD_INLINE void swapTape(AReal&) {}
+#endif
+
     template <class T, std::size_t d__cnt>
     friend class Tape;
 #ifdef XAD_ENABLE_JIT
@@ -504,6 +522,9 @@ struct AReal
     friend class ABool;
 #endif
     typename tape_type::slot_type slot_;
+#ifdef XAD_TAPE_CHECKS
+    unsigned int tapeId_ = 0;  // the tape of slot_
+#endif
 };
 
 // this class wraps AReal<T> and makes sure that no new copies are created on
@@ -559,8 +580,8 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
     {
         if (o.shouldRecord() || this->shouldRecord())
         {
-            if (!shouldRecord())
-                slot_ = s->registerVariable();
+            if (!isOn(s))
+                registerOn(s);
             pushAll<1>(s, o);
             s->pushLhs(slot_);
         }
@@ -594,8 +615,9 @@ XAD_INLINE AReal<Scalar, M>::AReal(
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
             expr.calc_derivatives(info, *s);
             slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
+            setTape(s);
 #else
-            slot_ = s->registerVariable();
+            registerOn(s);
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             s->pushLhs(slot_);
 #endif
@@ -622,14 +644,19 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
             expr.calc_derivatives(info, *s);
+#ifdef XAD_TAPE_CHECKS
+            if (!isOn(s))
+                slot_ = INVALID_SLOT;  // a slot of another tape: register on s
+#endif
             s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
+            setTape(s);
 #else
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             // only register this variable after evaluating the expression, as this
             // variable might appear on the rhs of the equation too and if not yet
             // registered, it doesn't need recording of derivatives
-            if (!shouldRecord())
-                slot_ = s->registerVariable();
+            if (!isOn(s))
+                registerOn(s);
             s->pushLhs(slot_);
 #endif
         }
