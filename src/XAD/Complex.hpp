@@ -35,6 +35,7 @@
 #include <iostream>
 #include <limits>
 #include <type_traits>
+#include <utility>
 
 // Note: The seemingly high number of overloads in this file, containing partially
 // duplicated code, is necessary to make sure all supported compilers pick the overloads
@@ -114,6 +115,9 @@ class complex_impl
     T real_, imag_;
 };
 
+template <class T>
+void complex_div_impl(T& a, T& b, const T& c, const T& d);
+
 }  // namespace detail
 
 }  // namespace xad
@@ -186,10 +190,10 @@ class complex<xad::ADTypeBase<Scalar, T, Deriv>> : public xad::detail::complex_i
     template <class X>
     complex<T>& operator/=(const std::complex<X>& other)
     {
-        T den = T(other.real()) * T(other.real()) + T(other.imag()) * T(other.imag());
-        T real_t = ((base::real() * T(other.real())) + (base::imag() * T(other.imag()))) / den;
-        base::imag((base::imag() * T(other.real()) - base::real() * T(other.imag())) / den);
-        base::real(real_t);
+        // no copies if X is T
+        const T& c = other.real();
+        const T& d = other.imag();
+        ::xad::detail::complex_div_impl(base::real(), base::imag(), c, d);
         return derived();
     }
 };
@@ -355,11 +359,9 @@ class complex<xad::RealDirect<Base, T>> : public xad::detail::complex_impl<T>
     template <class X>
     complex<T>& operator/=(const std::complex<X>& other)
     {
-        T oreal = T(other.real()), oimag = T(other.imag());
-        T den = oreal * oreal + oimag * oimag;
-        T real_t = (base::real() * oreal + base::imag() * oimag) / den;
-        base::imag((base::imag() * oreal - base::real() * oimag) / den);
-        base::real(real_t);
+        const T& c = other.real();
+        const T& d = other.imag();
+        ::xad::detail::complex_div_impl(base::real(), base::imag(), c, d);
         return derived();
     }
 };
@@ -2822,6 +2824,128 @@ XAD_INLINE std::complex<T> scalar_div(const S& s, const std::complex<T>& z)
     std::complex<T> r(s);
     r /= z;
     return r;
+}
+
+// the innermost value, for decisions that must not record; not std::is_arithmetic, which
+// StdCompatibility.hpp makes true for active types
+template <class T>
+XAD_INLINE typename std::enable_if<std::is_same<T, typename xad::ExprTraits<T>::nested_type>::value,
+                                   T>::type
+passive_value(const T& x)
+{
+    return x;
+}
+
+template <class T>
+XAD_INLINE
+    typename std::enable_if<!std::is_same<T, typename xad::ExprTraits<T>::nested_type>::value,
+                            typename xad::ExprTraits<T>::nested_type>::type
+    passive_value(const T& x)
+{
+    return passive_value(xad::value(x));
+}
+
+// x * 2^n, exactly unless the result over- or underflows, for n beyond the exponent range too
+template <class T>
+XAD_INLINE T times_pow2(const T& x, int n)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    return T(x * std::ldexp(nested(1), n / 2) * std::ldexp(nested(1), n - n / 2));
+}
+
+// Smith's algorithm, as GCC's __divdc3: (a + ib) / (c + id) without |c + id|^2
+template <class T>
+XAD_INLINE void smith_div(T& x, T& y, const T& a, const T& b, const T& c, const T& d)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    using std::fabs;
+    const nested tiny = std::numeric_limits<nested>::min();
+    if (fabs(passive_value(c)) < fabs(passive_value(d)))
+    {
+        T ratio = c / d, denom = c * ratio + d;
+        if (fabs(passive_value(ratio)) > tiny)
+        {
+            x = (a * ratio + b) / denom;
+            y = (b * ratio - a) / denom;
+        }
+        else
+        {
+            x = (c * (a / d) + b) / denom;
+            y = (c * (b / d) - a) / denom;
+        }
+    }
+    else
+    {
+        T ratio = d / c, denom = d * ratio + c;
+        if (fabs(passive_value(ratio)) > tiny)
+        {
+            x = (b * ratio + a) / denom;
+            y = (b - a * ratio) / denom;
+        }
+        else
+        {
+            x = (a + d * (b / c)) / denom;
+            y = (b - d * (a / c)) / denom;
+        }
+    }
+}
+
+// copysign(isinf(v) ? 1 : 0, v)
+template <class T>
+XAD_INLINE typename xad::ExprTraits<T>::nested_type inf_to_unit(const T& v)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    const nested u = xad::isinf(v) ? nested(1) : nested(0);
+    return xad::signbit(v) ? -u : u;
+}
+
+// (a + ib) / (c + id) into a and b, as std::complex<double> with GCC
+template <class T>
+void complex_div_impl(T& a, T& b, const T& c, const T& d)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    typedef std::numeric_limits<nested> lim;
+    using std::fabs;
+    T x, y;
+    // a divisor far from 1 is scaled by a power of 2 first, so that nothing below over- or
+    // underflows, including the derivatives -u / v^2 of its divisions
+    const nested mc = fabs(passive_value(c)), md = fabs(passive_value(d)), m = mc < md ? md : mc;
+    if ((m > 0 && m < std::ldexp(nested(1), lim::min_exponent / 2)) ||
+        (m > std::ldexp(nested(1), lim::max_exponent / 2 - 2) && m <= lim::max()))
+    {
+        const int e = std::ilogb(m);
+        smith_div(x, y, a, b, times_pow2(c, -e), times_pow2(d, -e));
+        x = times_pow2(x, -e);
+        y = times_pow2(y, -e);
+    }
+    else
+        smith_div(x, y, a, b, c, d);
+
+    // NaN + iNaN where C99 Annex G (and GCC) recover infinities and zeros
+    if (xad::isnan(x) && xad::isnan(y))
+    {
+        const nested inf = lim::infinity();
+        if (c == 0.0 && d == 0.0 && (!xad::isnan(a) || !xad::isnan(b)))
+        {
+            const nested k = xad::signbit(c) ? -inf : inf;
+            x = k * a;
+            y = k * b;
+        }
+        else if ((xad::isinf(a) || xad::isinf(b)) && xad::isfinite(c) && xad::isfinite(d))
+        {
+            const nested a1 = inf_to_unit(a), b1 = inf_to_unit(b);
+            x = inf * (a1 * c + b1 * d);
+            y = inf * (b1 * c - a1 * d);
+        }
+        else if ((xad::isinf(c) || xad::isinf(d)) && xad::isfinite(a) && xad::isfinite(b))
+        {
+            const nested c1 = inf_to_unit(c), d1 = inf_to_unit(d);
+            x = nested(0) * (a * c1 + b * d1);
+            y = nested(0) * (b * c1 - a * d1);
+        }
+    }
+    a = std::move(x);
+    b = std::move(y);
 }
 
 template <class T>
