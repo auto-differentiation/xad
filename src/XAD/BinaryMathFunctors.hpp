@@ -301,4 +301,20 @@ struct nextafter_op
     XAD_INLINE Scalar derivative_b(const Scalar&, const Scalar&) const { return Scalar(0); }
 };
 
+// copysign(a, b): a or -a by sign bits, signed zeros included
+template <class Scalar>
+struct copysign_op
+{
+    XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const
+    {
+        using std::copysign;
+        return copysign(a, b);
+    }
+    XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
+    {
+        return signbit(a) == signbit(b) ? Scalar(1) : Scalar(-1);
+    }
+    XAD_INLINE Scalar derivative_b(const Scalar&, const Scalar&) const { return Scalar(0); }
+};
+
 }  // namespace xad

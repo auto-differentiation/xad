@@ -479,27 +479,9 @@ XAD_INLINE typename ExprTraits<Derived>::value_type scalbn(
     return T(x) * scalbn(1.0, exp);
 }
 
-template <class Scalar, class Derived, class T2, class DerivativeType>
-XAD_INLINE typename ExprTraits<Derived>::value_type copysign(
-    const Expression<Scalar, Derived, DerivativeType>& x, const T2& y)
-{
-    using T = typename ExprTraits<Derived>::value_type;
-    bool sign = signbit(y);
-    if (x < 0)
-    {
-        if (sign)
-            return T(x);
-        else
-            return T(-x);
-    }
-    else
-    {
-        if (sign)
-            return T(-x);
-        else
-            return T(x);
-    }
-}
+// active sign source: BinaryOperators.hpp
+XAD_UNARY_BINSCAL2(copysign, scalar_copysign2_op)
+XAD_FREAL_BINSCAL2(copysign, scalar_copysign2_op)
 
 template <class Scalar, std::size_t N>
 XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(double x,
@@ -559,6 +541,11 @@ XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(float x,
     XAD_INLINE Direct<Scalar, N> copysign(const Direct<Scalar, N>& x, const T2& y)                 \
     {                                                                                              \
         return {Base<Scalar, N>(copysign(x.base(), y))};                                           \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE Direct<Scalar, N> copysign(const Direct<Scalar, N>& x, const Direct<Scalar, N>& y)  \
+    {                                                                                              \
+        return {Base<Scalar, N>(copysign(x.base(), y.base()))};                                    \
     }
 
 XAD_DIRECT_MATH_FUNCS(FRealDirect, FReal)

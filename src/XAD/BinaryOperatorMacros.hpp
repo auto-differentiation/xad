@@ -70,6 +70,11 @@ struct is_vec<Vec<T, N>> : std::true_type
 #define XAD_NO_MACRO_EXPANSION
 
 #define XAD_BINARY_OPERATOR(_op, func)                                                             \
+    XAD_BINARY_EXPR_OPERATOR(_op, func)                                                            \
+    XAD_BINARY_DIRECT_OPERATOR(_op, func)
+
+// expression, AReal and FReal operands
+#define XAD_BINARY_EXPR_OPERATOR(_op, func)                                                        \
     template <class Scalar, class Expr1, class Expr2, class DerivativeType>                        \
     XAD_INLINE BinaryExpr<Scalar, func<Scalar>, Expr1, Expr2, DerivativeType>(_op)(                \
         const Expression<Scalar, Expr1, DerivativeType>& a1,                                       \
@@ -118,7 +123,10 @@ struct is_vec<Vec<T, N>> : std::true_type
     {                                                                                              \
         return BinaryExpr<Scalar, func<Scalar>, FReal<Scalar, N>, FReal<Scalar, N>,                \
                           typename FReal<Scalar, N>::derivative_type>(a2, b2);                     \
-    }                                                                                              \
+    }
+
+// direct mode operands
+#define XAD_BINARY_DIRECT_OPERATOR(_op, func)                                                      \
     template <class Scalar,                                                                        \
               class = typename std::enable_if<detail::direct_scalar<Scalar>::value>::type,         \
               std::size_t N>                                                                       \

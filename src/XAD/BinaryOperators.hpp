@@ -53,6 +53,8 @@ XAD_BINARY_OPERATOR(atan2, atan2_op)
 XAD_BINARY_OPERATOR(hypot, hypot_op)
 XAD_BINARY_OPERATOR(smooth_abs, smooth_abs_op)
 XAD_BINARY_OPERATOR(nextafter, nextafter_op)
+// direct mode copysign: UnaryOperators.hpp
+XAD_BINARY_EXPR_OPERATOR(copysign, copysign_op)
 
 // same-type expressions: beat std::max/min, which would bake in the branch
 #define XAD_SAME_EXPR_OPERATOR(_op, func)                                                          \
@@ -525,6 +527,8 @@ XAD_DIRECT_NESTED_FUNCS(ARealDirect, AReal)
 
 #undef XAD_DIRECT_NESTED_FUNCS
 #undef XAD_BINARY_OPERATOR
+#undef XAD_BINARY_EXPR_OPERATOR
+#undef XAD_BINARY_DIRECT_OPERATOR
 #undef XAD_COMPARE_OPERATOR
 #undef XAD_DIRECT_COMPARE_OPERATOR
 }  // namespace xad
