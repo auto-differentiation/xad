@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JIT `registerOutput` dropped outputs independent of the inputs, shifting the others
 - `fmod`'s derivative to the divisor used `floor`, not `trunc`: off by one for negative quotients
 - Moving an active tape terminated the program
+- `max`/`min` of two same-type expressions: JIT kept the recorded branch; ties gave all the derivative to the first operand
 
 
 ## [2.0.0] - 2026-02-06
