@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JIT variables assigned a scalar kept their old graph node
 - JIT `computeAdjoints` ignored the output adjoints and seeded 1
 - JIT `derivative()` of an unrecorded variable gave it the slot of the next node
+- JIT interpreter wrote past its buffers for nodes recorded after `compile()`
 
 
 ## [2.0.0] - 2026-02-06
