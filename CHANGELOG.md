@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Direct mode `real op complex` lost a zero imaginary part's sign: wrong side of branch cuts in `asin`, `atanh` etc.
 - Complex `asinh`, `asin` cancelled far from the origin (`asinh(-1e8)` was `-inf`) and near it, and missed special values
 - Complex `acos` of large reals was wrong, differently in each mode, and so were its special values below the real axis
+- Complex `exp`, `sinh`, `cosh`, `tanh` (so `sin`, `cos`, `tan`) overflowed early (NaN parts, `tanh(400)` was NaN) and cancelled near zero
 
 
 ## [2.0.0] - 2026-02-06

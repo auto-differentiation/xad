@@ -2833,6 +2833,37 @@ XAD_INLINE T abs_impl(const std::complex<T>& x)
     return xad::hypot(x.real(), x.imag());
 }
 
+// below this, exp(x) is finite
+template <class Nested>
+XAD_INLINE Nested exp_max_arg()
+{
+    return Nested(int((std::numeric_limits<Nested>::max_exponent - 1) * 0.6931471805599453));
+}
+
+// exp(x) * (kc cos(y), ks sin(y)) for x > exp_max_arg, as glibc's cexp: exp(x) alone overflows
+// (inf * 0 for y = 0), so exp(t) goes into cos and sin first
+template <class T>
+XAD_INLINE std::complex<T> exp_scaled(T x, const T& y, typename xad::ExprTraits<T>::nested_type kc,
+                                      typename xad::ExprTraits<T>::nested_type ks)
+{
+    typedef typename xad::ExprTraits<T>::nested_type nested;
+    const nested t = exp_max_arg<nested>(), et = std::exp(t);
+    // cos'(0) = 0: a constant there keeps inf * 0 out of the adjoint
+    T c = y == 0.0 ? T(kc * et) : T(cos(y) * (kc * et)), s = sin(y) * (ks * et);
+    x = x - t;
+    if (x > t)
+    {
+        x = x - t;
+        c = c * et;
+        s = s * et;
+    }
+    if (x > t)  // the product overflows too
+        return std::complex<T>(c * std::numeric_limits<nested>::max(),
+                               s * std::numeric_limits<nested>::max());
+    T e = exp(x);
+    return std::complex<T>(e * c, e * s);
+}
+
 template <class T>
 XAD_INLINE std::complex<T> exp_impl(const std::complex<T>& z)
 {
@@ -2869,6 +2900,8 @@ XAD_INLINE std::complex<T> exp_impl(const std::complex<T>& z)
             return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
                                    std::numeric_limits<nested>::quiet_NaN());
     }
+    if (z.real() > exp_max_arg<nested>())
+        return exp_scaled(z.real(), z.imag(), 1.0, 1.0);
     T e = ::xad::exp(z.real());
     return std::complex<T>(e * cos(z.imag()), e * sin(z.imag()));
 }
@@ -2915,6 +2948,16 @@ template <class T>
 XAD_INLINE std::complex<T> sinh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (xad::isfinite(z.real()) && xad::isfinite(z.imag()))
+    {
+        // sinh(x) cos(y) + i cosh(x) sin(y), with cosh(x) ~ |sinh(x)| ~ exp(|x|) / 2 where they
+        // overflow
+        if (z.real() > exp_max_arg<nested>())
+            return exp_scaled(z.real(), z.imag(), 0.5, 0.5);
+        if (z.real() < -exp_max_arg<nested>())
+            return exp_scaled(T(-z.real()), z.imag(), -0.5, 0.5);
+        return std::complex<T>(sinh(z.real()) * cos(z.imag()), cosh(z.real()) * sin(z.imag()));
+    }
     auto cls = xad::fpclassify(z.real());
     if (cls == FP_INFINITE && xad::isinf(z.imag()) && z.real() > 0.0 && z.imag() > 0.0)
         return std::complex<T>(std::numeric_limits<nested>::infinity(),
@@ -2933,6 +2976,15 @@ template <class T>
 XAD_INLINE std::complex<T> cosh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
+    if (xad::isfinite(z.real()) && xad::isfinite(z.imag()))
+    {
+        // cosh(x) cos(y) + i sinh(x) sin(y), as sinh_impl
+        if (z.real() > exp_max_arg<nested>())
+            return exp_scaled(z.real(), z.imag(), 0.5, 0.5);
+        if (z.real() < -exp_max_arg<nested>())
+            return exp_scaled(T(-z.real()), z.imag(), 0.5, -0.5);
+        return std::complex<T>(cosh(z.real()) * cos(z.imag()), sinh(z.real()) * sin(z.imag()));
+    }
     auto cls = xad::fpclassify(z.real());
     if (cls == FP_INFINITE && xad::isinf(z.imag()) && z.real() > 0.0 && z.imag() > 0.0)
         return std::complex<T>(std::numeric_limits<nested>::infinity(),
@@ -2976,7 +3028,16 @@ XAD_INLINE std::complex<T> tanh_impl(const std::complex<T>& z)
         return std::complex<T>(1.0, 0.0);
     if (xad::isnan(z.real()) && z.imag() == 0.0)
         return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
-    return sinh(z) / cosh(z);
+    // (tanh(x) + i sin(y) cos(y) sech^2(x)) / (tanh^2(x) + cos^2(y) sech^2(x)), from e = exp(-2|x|)
+    // as tanh(|x|) = -expm1(-2|x|) / (1 + e) and sech^2(x) = 4e / (1 + e)^2: nothing overflows
+    const bool neg = xad::signbit(z.real());
+    T u = z.real() * (neg ? 2.0 : -2.0);
+    T e = exp(u);
+    T th = expm1(u) / (1.0 + e) * (neg ? 1.0 : -1.0);
+    T sech2 = 4.0 * e / ((1.0 + e) * (1.0 + e));
+    T sy = sin(z.imag()), cy = cos(z.imag());
+    T den = th * th + cy * cy * sech2;
+    return std::complex<T>(th / den, sy * cy * sech2 / den);
 }
 
 // asin by Kahan's formulas ("Branch Cuts for Complex Elementary Functions", 1987): nothing cancels
