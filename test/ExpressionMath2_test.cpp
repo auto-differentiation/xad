@@ -347,10 +347,19 @@ LOCAL_TEST_FUNCTOR1(fmodADScalar, xad::fmod(x, 0.5))
 LOCAL_TEST_FUNCTOR1(fmodScalarAD, xad::fmod(1.3, x))
 TEST(ExpressionsMath, fmod_AD)
 {
-    mathTest2_all(1.3, 0.5, std::fmod(1.3, 0.5), 1.0, -std::floor(1.3 / 0.5), 0.0, 0.0, 0.0, 0.0,
+    mathTest2_all(1.3, 0.5, std::fmod(1.3, 0.5), 1.0, -std::trunc(1.3 / 0.5), 0.0, 0.0, 0.0, 0.0,
                   fmodAD);
     mathTest_all(1.3, std::fmod(1.3, 0.5), 1.0, 0.0, fmodADScalar);
-    mathTest_all(0.5, std::fmod(1.3, 0.5), -std::floor(1.3 / 0.5), 0.0, fmodScalarAD);
+    mathTest_all(0.5, std::fmod(1.3, 0.5), -std::trunc(1.3 / 0.5), 0.0, fmodScalarAD);
+}
+
+LOCAL_TEST_FUNCTOR1(fmodNegativeScalarAD, xad::fmod(-1.3, x))
+TEST(ExpressionsMath, fmod_negative_quotient)
+{
+    // fmod truncates the quotient
+    mathTest2_all(-1.3, 0.5, std::fmod(-1.3, 0.5), 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, fmodAD);
+    mathTest2_all(1.3, -0.5, std::fmod(1.3, -0.5), 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, fmodAD);
+    mathTest_all(0.5, std::fmod(-1.3, 0.5), 2.0, 0.0, fmodNegativeScalarAD);
 }
 
 LOCAL_TEST_FUNCTOR2(fmodExprExpr, xad::fmod(2.3 * x1, 2.3 * x2))
@@ -360,14 +369,14 @@ LOCAL_TEST_FUNCTOR1(fmodExprScalar, xad::fmod(2.3 * x, 0.5))
 LOCAL_TEST_FUNCTOR1(fmodScalarExpr, xad::fmod(1.3, 2.3 * x))
 TEST(ExpressionsMath, fmod_Expr)
 {
-    mathTest2_all(1.3, 0.5, std::fmod(2.3 * 1.3, 2.3 * 0.5), 2.3, -2.3 * std::floor(1.3 / 0.5), 0.0,
+    mathTest2_all(1.3, 0.5, std::fmod(2.3 * 1.3, 2.3 * 0.5), 2.3, -2.3 * std::trunc(1.3 / 0.5), 0.0,
                   0.0, 0.0, 0.0, fmodExprExpr);
-    mathTest2_all(1.3, 0.5, std::fmod(1.3, 2.3 * 0.5), 1.0, -2.3 * std::floor(1.3 / 0.5 / 2.3), 0.0,
+    mathTest2_all(1.3, 0.5, std::fmod(1.3, 2.3 * 0.5), 1.0, -2.3 * std::trunc(1.3 / 0.5 / 2.3), 0.0,
                   0.0, 0.0, 0.0, fmodADExpr);
-    mathTest2_all(1.3, 0.5, std::fmod(2.3 * 1.3, 0.5), 2.3, -std::floor(2.3 * 1.3 / 0.5), 0.0, 0.0,
+    mathTest2_all(1.3, 0.5, std::fmod(2.3 * 1.3, 0.5), 2.3, -std::trunc(2.3 * 1.3 / 0.5), 0.0, 0.0,
                   0.0, 0.0, fmodExprAD);
     mathTest_all(1.3, std::fmod(2.3 * 1.3, 0.5), 2.3, 0.0, fmodExprScalar);
-    mathTest_all(0.5, std::fmod(1.3, 2.3 * 0.5), -2.3 * std::floor(1.3 / 0.5 / 2.3), 0.0,
+    mathTest_all(0.5, std::fmod(1.3, 2.3 * 0.5), -2.3 * std::trunc(1.3 / 0.5 / 2.3), 0.0,
                  fmodScalarExpr);
 }
 

@@ -804,9 +804,29 @@ TEST(JITGraphInterpreter, modAdjoint)
     double inputAdjoints[2];
     interp.forwardAndBackward(&output, inputAdjoints);
 
-    // d(fmod(a,b))/da = 1, d(fmod(a,b))/db = -floor(a/b)
+    // d(fmod(a,b))/da = 1, d(fmod(a,b))/db = -trunc(a/b)
     EXPECT_DOUBLE_EQ(1.0, inputAdjoints[0]);
-    EXPECT_DOUBLE_EQ(-std::floor(7.5 / 3.0), inputAdjoints[1]);
+    EXPECT_DOUBLE_EQ(-std::trunc(7.5 / 3.0), inputAdjoints[1]);
+}
+
+TEST(JITGraphInterpreter, modAdjointNegativeQuotient)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addInput();
+    graph.markOutput(graph.addBinary(xad::JITOpCode::Mod, a, b));
+
+    xad::JITGraphInterpreter<double> interp;
+    interp.compile(graph);
+    double inputs[2] = {-7.5, 3.0};
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
+    double output;
+    double inputAdjoints[2];
+    interp.forwardAndBackward(&output, inputAdjoints);
+
+    // fmod truncates the quotient: d/db = -trunc(-2.5)
+    EXPECT_DOUBLE_EQ(2.0, inputAdjoints[1]);
 }
 
 TEST(JITGraphInterpreter, copysignOpCode)

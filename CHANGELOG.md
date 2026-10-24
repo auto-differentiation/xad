@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ChunkContainer` could request misaligned or overflowing allocation sizes
 - JIT graphs merged `-0.0` constants into `0.0`
 - JIT `registerOutput` dropped outputs independent of the inputs, shifting the others
+- `fmod`'s derivative to the divisor used `floor`, not `trunc`: off by one for negative quotients
 
 
 ## [2.0.0] - 2026-02-06
