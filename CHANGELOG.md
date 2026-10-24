@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - With `XAD_TAPE_REUSE_SLOTS`, `resetTo` looped forever when reusable slots straddled the derivatives kept
 - With `XAD_TAPE_REUSE_SLOTS`, slots dropped by `resetTo` could still be handed out
 - `resetTo` did not reuse the slots of variables registered after its position, so a recording rolled back repeatedly grew, and so did the cost of its sweeps
+- With `XAD_TAPE_REUSE_SLOTS`, a slot freed in a nested recording could outlive it and be handed out twice
 
 
 ## [2.0.0] - 2026-02-06
