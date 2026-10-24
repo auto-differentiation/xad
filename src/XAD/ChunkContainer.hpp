@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -90,6 +91,8 @@ class ChunkContainer
         size_type nc = getNumChunks(s);
         if (nc > chunkList_.size())
         {
+            if (chunk_size > (std::numeric_limits<size_type>::max)() / sizeof(value_type))
+                throw std::bad_alloc();  // chunk size in bytes overflows
             size_type d = nc - chunkList_.size();
             for (size_type i = 0; i < d; ++i)
             {

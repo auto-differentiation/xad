@@ -40,6 +40,15 @@ TEST(ChunkContainer, alloc_less_than_alignment)
     void* p1 = xad::detail::AlignedAllocator::aligned_alloc(128, 32);
 
     EXPECT_THAT(p1, NotNull());
+    xad::detail::AlignedAllocator::aligned_free(p1);
+}
+
+TEST(ChunkContainer, alloc_not_multiple_of_alignment)
+{
+    void* p1 = xad::detail::AlignedAllocator::aligned_alloc(128, 129);
+
+    EXPECT_THAT(p1, NotNull());
+    xad::detail::AlignedAllocator::aligned_free(p1);
 }
 
 TEST(ChunkContainer, too_large_throws_bad_alloc)
