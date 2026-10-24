@@ -91,7 +91,7 @@ Registers dependent variables as graph outputs.
 
 `#!c++ void newRecording()`
 
-Starts a new recording using the existing registered inputs.
+Starts a new recording using the existing registered inputs, which must stay alive; `clearAll` drops them.
 
 ## Execution
 

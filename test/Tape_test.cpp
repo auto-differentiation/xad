@@ -106,6 +106,19 @@ TEST(Tape, isMovable)
     EXPECT_FALSE(s3.isActive());
 }
 
+TEST(Tape, movingActiveTapeMovesActivation)
+{
+    xad::Tape<double> s;
+    xad::Tape<double> moved(std::move(s));
+    EXPECT_TRUE(moved.isActive());
+    EXPECT_FALSE(s.isActive());
+
+    xad::Tape<double> assigned(false);
+    assigned = std::move(moved);
+    EXPECT_TRUE(assigned.isActive());
+    EXPECT_FALSE(moved.isActive());
+}
+
 TEST(Tape, canRegisterVariables)
 {
     using xad::Tape;

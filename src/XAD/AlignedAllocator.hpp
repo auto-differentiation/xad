@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -42,6 +43,12 @@ namespace detail
 struct AlignedAllocator {
     static inline void* aligned_alloc(std::size_t alignment, std::size_t size) {
         size = std::max(size, alignment);
+        // aligned_alloc takes a multiple of the alignment
+        if (size % alignment != 0) {
+            if (size > (std::numeric_limits<std::size_t>::max)() - alignment)
+                return nullptr;
+            size += alignment - size % alignment;
+        }
 
     #if defined(_WIN32)
         return ::_aligned_malloc(size, alignment);

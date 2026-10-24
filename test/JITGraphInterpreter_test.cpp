@@ -45,7 +45,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         double output;
         jit.forward(&output);
         EXPECT_DOUBLE_EQ(5.0, output);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test subtract
@@ -59,7 +59,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         double output;
         jit.forward(&output);
         EXPECT_DOUBLE_EQ(2.0, output);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test multiply
@@ -73,7 +73,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         double output;
         jit.forward(&output);
         EXPECT_DOUBLE_EQ(12.0, output);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test divide
@@ -87,7 +87,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         double output;
         jit.forward(&output);
         EXPECT_DOUBLE_EQ(4.0, output);
-        jit.newRecording();
+        jit.clearAll();
     }
 }
 
@@ -106,7 +106,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         double output;
         jit.forward(&output);
         EXPECT_NEAR(std::sin(1.0), output, 1e-10);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test cos
@@ -119,7 +119,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         double output;
         jit.forward(&output);
         EXPECT_NEAR(std::cos(1.0), output, 1e-10);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test exp
@@ -132,7 +132,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         double output;
         jit.forward(&output);
         EXPECT_NEAR(std::exp(2.0), output, 1e-10);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test log
@@ -145,7 +145,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         double output;
         jit.forward(&output);
         EXPECT_NEAR(std::log(2.0), output, 1e-10);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test sqrt
@@ -804,9 +804,29 @@ TEST(JITGraphInterpreter, modAdjoint)
     double inputAdjoints[2];
     interp.forwardAndBackward(&output, inputAdjoints);
 
-    // d(fmod(a,b))/da = 1, d(fmod(a,b))/db = -floor(a/b)
+    // d(fmod(a,b))/da = 1, d(fmod(a,b))/db = -trunc(a/b)
     EXPECT_DOUBLE_EQ(1.0, inputAdjoints[0]);
-    EXPECT_DOUBLE_EQ(-std::floor(7.5 / 3.0), inputAdjoints[1]);
+    EXPECT_DOUBLE_EQ(-std::trunc(7.5 / 3.0), inputAdjoints[1]);
+}
+
+TEST(JITGraphInterpreter, modAdjointNegativeQuotient)
+{
+    xad::JITGraph graph;
+    uint32_t a = graph.addInput();
+    uint32_t b = graph.addInput();
+    graph.markOutput(graph.addBinary(xad::JITOpCode::Mod, a, b));
+
+    xad::JITGraphInterpreter<double> interp;
+    interp.compile(graph);
+    double inputs[2] = {-7.5, 3.0};
+    interp.setInput(0, &inputs[0]);
+    interp.setInput(1, &inputs[1]);
+    double output;
+    double inputAdjoints[2];
+    interp.forwardAndBackward(&output, inputAdjoints);
+
+    // fmod truncates the quotient: d/db = -trunc(-2.5)
+    EXPECT_DOUBLE_EQ(2.0, inputAdjoints[1]);
 }
 
 TEST(JITGraphInterpreter, copysignOpCode)

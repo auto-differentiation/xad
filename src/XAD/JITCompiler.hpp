@@ -176,8 +176,9 @@ class JITCompiler
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (outp.shouldRecord())
-            graph_.markOutput(outp.slot_);
+        if (!outp.shouldRecord())  // independent of the inputs
+            outp.slot_ = graph_.addConstant(outp.value());
+        graph_.markOutput(outp.slot_);
     }
 
     template <class Inner>

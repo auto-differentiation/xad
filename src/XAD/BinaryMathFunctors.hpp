@@ -217,7 +217,7 @@ struct fmod_op
 {
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const { return fmod(a, b); }
     XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar&) const { return Scalar(1); }
-    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const { return -floor(a / b); }
+    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const { return -trunc(a / b); }
 };
 
 template <class Scalar>

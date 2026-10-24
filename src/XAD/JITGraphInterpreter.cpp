@@ -398,7 +398,7 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
             break;
         case JITOpCode::Mod:
             nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * std::floor(va / vb);
+            nodeAdjoints[b] -= adj * std::trunc(va / vb);
             break;
         case JITOpCode::Atan2:
         {

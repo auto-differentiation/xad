@@ -177,7 +177,7 @@ struct fabs_op : abs_op<Scalar>
     };
 
 XAD_MAKE_UNARY_BINFUNCTOR(pow, Scalar(b) * Scalar(pow(a, b - T2(1))), log(b) * v)
-XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), -floor(Scalar(b) / a))
+XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), -trunc(Scalar(b) / a))
 XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b * b)),
                           -Scalar(b) / (a * a + Scalar(b * b)))
 XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
