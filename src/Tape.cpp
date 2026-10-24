@@ -64,6 +64,7 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       derivatives_(std::move(o.derivatives_)),
       checkpoints_(std::move(o.checkpoints_)),
       callbacks_(std::move(o.callbacks_)),
+      positionSlots_(std::move(o.positionSlots_)),
 #ifdef XAD_TAPE_REUSE_SLOTS
       reusable_ranges_(std::move(o.reusable_ranges_)),
       range_index_(std::move(o.range_index_)),
@@ -71,6 +72,9 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       nestedRecordings_(std::move(o.nestedRecordings_)),
       currentRec_(o.currentRec_)
 {
+#ifdef XAD_TAPE_REUSE_SLOTS
+    rebindRangeIterators();
+#endif
     if (o.isActive())
         activate();
     else
@@ -85,12 +89,16 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     derivatives_ = std::move(o.derivatives_);
     checkpoints_ = std::move(o.checkpoints_);
     callbacks_ = std::move(o.callbacks_);
+    positionSlots_ = std::move(o.positionSlots_);
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_ = std::move(o.reusable_ranges_);
     range_index_ = std::move(o.range_index_);
 #endif
     nestedRecordings_ = std::move(o.nestedRecordings_);
     currentRec_ = o.currentRec_;
+#ifdef XAD_TAPE_REUSE_SLOTS
+    rebindRangeIterators();
+#endif
     if (o.isActive())
         activate();
     else
@@ -112,6 +120,7 @@ void Tape<T, N>::clearAll()
     statement_.clear();
     derivatives_.clear();
     checkpoints_.clear();
+    positionSlots_.clear();
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_.clear();
     range_index_.clear();
@@ -221,6 +230,17 @@ void Tape<T, N>::unindexRange(range_list::iterator it)
         range_index_.erase(entry);
 }
 
+// after a move, point the outermost recording at this tape's ranges
+template <class T, std::size_t N>
+void Tape<T, N>::rebindRangeIterators()
+{
+    if (nestedRecordings_.size() != 1)
+        return;
+    currentRec_->startRange_ =
+        reusable_ranges_.empty() ? reusable_ranges_.end() : reusable_ranges_.begin();
+    currentRec_->latestRange_ = reusable_ranges_.end();
+}
+
 template <class T, std::size_t N>
 typename Tape<T, N>::slot_type Tape<T, N>::registerVariableReuseSlots()
 {
@@ -272,7 +292,7 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
             }
         }
     }
-    else  // not at the end of the tape
+    else if (slot < currentRec_->iDerivative_)  // not at the end, nor reused by resetTo
     {
         // unregistering in the middle of the tape requires inserting the slot into a reusable slot
         // list at the right point
@@ -297,9 +317,9 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
 #endif
             if (reusable_ranges_.empty() || slot > reusable_ranges_.back().second())
             {
-                // insert a new range at the end
+                // new range at the end, the recording's first if it has none
                 currentRec_->latestRange_ = insertRange(reusable_ranges_.end(), slot);
-                if (reusable_ranges_.size() == 1)
+                if (currentRec_->startRange_ == reusable_ranges_.end())
                     currentRec_->startRange_ = currentRec_->latestRange_;
             }
             else
@@ -412,6 +432,9 @@ void Tape<T, N>::foldSubrecording()
         std::lower_bound(checkpoints_.begin(), checkpoints_.end(), prev.statementStartPos_,
                          [=](const chkpt_type& ckpt, slot_type pos) { return ckpt.first < pos; });
     checkpoints_.erase(it, checkpoints_.end());
+    positionSlots_.erase(std::lower_bound(positionSlots_.begin(), positionSlots_.end(),
+                                          position_slots_type(prev.statementStartPos_, 0)),
+                         positionSlots_.end());
 #ifdef XAD_TAPE_REUSE_SLOTS
     for (auto range = prev.startRange_; range != reusable_ranges_.end();) range = eraseRange(range);
 #endif
@@ -442,6 +465,8 @@ void Tape<T, N>::newNestedRecording()
     newr.opStartPos_ = slot_type(operations_.size());
     newr.derivativesInitialized_ = false;
     newr.startDerivative_ = currentRec_->maxDerivative_;
+    // above the outer recording's slots, whose adjoints may be pending
+    newr.iDerivative_ = (std::max)(newr.iDerivative_, newr.startDerivative_);
     nestedRecordings_.push(newr);
 
     currentRec_ = &nestedRecordings_.top();
@@ -465,6 +490,7 @@ void Tape<T, N>::newRecording()
     statement_.clear();
     checkpoints_.clear();
     foldSubrecordings();
+    positionSlots_.clear();
     currentRec_->maxDerivative_ = currentRec_->iDerivative_ + 1;
     statement_.push_back(std::make_pair(size_type(operations_.size()), slot_type(INVALID_SLOT)));
     currentRec_->derivativesInitialized_ = false;
@@ -602,18 +628,17 @@ void Tape<T, N>::computeAdjointsTo(position_type pos)
         // std::cout << ""
         computeAdjointsToImpl(end, start);
 
-        // the recording stays for later sweeps, the callback records after it
-        position_type recorded = getPosition();
-
         // keep the prevMax stored, so we can resize the der. vector on a
         // subrecording
         currentRec_->prevMax_ = currentRec_->maxDerivative_;
-
-        cb->computeAdjoint(this);
+        {
+            // a nested recording keeps the callback's variables off slots with pending adjoints
+            ScopedNestedRecording<Tape> nested(this);
+            cb->computeAdjoint(this);
+        }
         currentRec_->prevMax_ = INVALID_SLOT;
         // std::cout << "********Reset to " << end-1 << std::endl;
 
-        resetTo(recorded);  // in case the callback added to the tape
         // clearDerivativesAfter(end-1);
         start = end - 1;  // skip over the checkpoint itself (?)
         LOG_DEBUG("new start=" << start);
@@ -780,7 +805,10 @@ void Tape<T, N>::incrementAdjoint(slot_type slot, const T& x)
 template <class T, std::size_t N>
 typename Tape<T, N>::position_type Tape<T, N>::getPosition() const
 {
-    return static_cast<position_type>(statement_.size() - 1);
+    auto pos = static_cast<position_type>(statement_.size() - 1);
+    while (!positionSlots_.empty() && positionSlots_.back().first >= pos) positionSlots_.pop_back();
+    positionSlots_.push_back(position_slots_type(pos, currentRec_->iDerivative_));
+    return pos;
 }
 
 template <class T, std::size_t N>
@@ -800,24 +828,31 @@ void Tape<T, N>::resetTo(position_type pos)
         LOG_DEBUG("removing " << std::distance(newend, checkpoints_.end()) << " checkpoints");
         checkpoints_.erase(newend, checkpoints_.end());
     }
-#ifdef XAD_TAPE_REUSE_SLOTS
-    if (!reusable_ranges_.empty())
+    // reuse the slots registered after the position, if getPosition gave it out
+    auto mark =
+        std::lower_bound(positionSlots_.begin(), positionSlots_.end(), position_slots_type(pos, 0));
+    if (mark != positionSlots_.end() && mark->first == pos &&
+        pos + 1 >= currentRec_->statementStartPos_)
     {
-        auto it = reusable_ranges_.end();
-        --it;
-        while (!reusable_ranges_.empty() && it->second() >= currentRec_->maxDerivative_)
+        currentRec_->iDerivative_ = (std::min)(currentRec_->iDerivative_, mark->second);
+        ++mark;
+    }
+    positionSlots_.erase(mark, positionSlots_.end());
+#ifdef XAD_TAPE_REUSE_SLOTS
+    // drop the reusable slots at or above maxDerivative_ or the slot counter
+    auto limit = (std::min)(currentRec_->maxDerivative_, currentRec_->iDerivative_);
+    while (!reusable_ranges_.empty() && reusable_ranges_.back().second() > limit)
+    {
+        auto last = std::prev(reusable_ranges_.end());
+        if (last->first() < limit)
+            last->second(limit);
+        else
         {
-            if (it->first() >= currentRec_->maxDerivative_)
-            {
-                auto it2 = it;
-                --it2;
-                eraseRange(it);
-                it = it2;
-            }
-            else
-            {
-                it->second(currentRec_->maxDerivative_);
-            }
+            if (currentRec_->startRange_ == last)
+                currentRec_->startRange_ = reusable_ranges_.end();
+            if (currentRec_->latestRange_ == last)
+                currentRec_->latestRange_ = reusable_ranges_.end();
+            eraseRange(last);
         }
     }
 #endif

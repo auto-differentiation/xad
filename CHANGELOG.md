@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `lround`/`llround` for `FReal` did not compile
 - `max`/`min` ties with direct mode inner types
 - Computing adjoints cut the tape at its checkpoint callbacks, so a second `computeAdjoints` (e.g. in `computeJacobian`) gave wrong adjoints
+- Checkpoint callbacks could reuse a slot whose adjoint was still pending, giving wrong adjoints
+- `resetTo` could hang with `XAD_TAPE_REUSE_SLOTS`
+- Slots dropped by `resetTo` could still be handed out (`XAD_TAPE_REUSE_SLOTS`)
+- `resetTo` kept the slots registered after its position, so repeated rollbacks slowed down
+- A slot freed in a nested recording could be handed out twice (`XAD_TAPE_REUSE_SLOTS`)
+- A moved tape could reuse slots of the tape it was moved from (`XAD_TAPE_REUSE_SLOTS`)
 
 
 ## [2.0.0] - 2026-02-06
