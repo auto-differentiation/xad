@@ -25,6 +25,7 @@
 #pragma once
 
 #include <XAD/Vec.hpp>
+#include <cmath>
 #include <type_traits>
 
 namespace xad
@@ -146,6 +147,93 @@ template <class T>
 struct is_active : public std::integral_constant<bool, ExprTraits<T>::isExpr || is_direct<T>::value>
 {
 };
+
+// Forward mode: a zero tangent adds nothing, even with an infinite or NaN partial (as for a
+// constant operand). Derivatives are computed as usual and redone with tangentTerm if NaN,
+// except for ops whose partials are finite where their arguments are, or which give the
+// tangent themselves (op.tangent).
+template <class Op>
+struct HasFinitePartials : std::false_type
+{
+};
+
+template <class Op>
+struct HasTangentRule : std::false_type
+{
+};
+
+template <class D>
+XAD_INLINE typename std::enable_if<float_or_double<D>::value, bool>::type isNaNTangent(const D& d)
+{
+    return std::isnan(d);
+}
+
+// active tangents (higher order) can carry dependencies with a zero value, so they are kept
+template <class D>
+XAD_INLINE typename std::enable_if<!float_or_double<D>::value, bool>::type isNaNTangent(const D&)
+{
+    return false;
+}
+
+template <class T, std::size_t N>
+XAD_INLINE bool isNaNTangent(const Vec<T, N>& d)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        if (isNaNTangent(d[i]))
+            return true;
+    return false;
+}
+
+// isNaNTangent(d), or false for ops with finite partials (a tag: MSVC warns on constant conditions)
+template <class D>
+XAD_INLINE bool isNaNTangent(const D&, std::true_type)
+{
+    return false;
+}
+
+template <class D>
+XAD_INLINE bool isNaNTangent(const D& d, std::false_type)
+{
+    return isNaNTangent(d);
+}
+
+template <class P, class D>
+XAD_INLINE typename std::enable_if<float_or_double<D>::value, D>::type tangentTerm(
+    const P& partial, const D& tangent)
+{
+    return tangent == D() ? D() : D(partial * tangent);
+}
+
+template <class P, class D>
+XAD_INLINE auto tangentTerm(const P& partial, const D& tangent) ->
+    typename std::enable_if<!float_or_double<D>::value, decltype(partial * tangent)>::type
+{
+    return partial * tangent;
+}
+
+template <class P, class T, std::size_t N>
+XAD_INLINE Vec<T, N> tangentTerm(const P& partial, const Vec<T, N>& tangent)
+{
+    Vec<T, N> r(tangent);
+    for (std::size_t i = 0; i < N; ++i) r[i] = tangentTerm(partial, tangent[i]);
+    return r;
+}
+
+// the tangent of v = a / b: (ta - v * tb) / b, where 1 / b * ta would be 0 * inf for b = 0
+template <class S, class D>
+XAD_INLINE D quotientTangent(const S& b, const S& v, const D& ta, const D& tb)
+{
+    return D((ta - v * tb) / b);
+}
+
+template <class S, class T, std::size_t N>
+XAD_INLINE Vec<T, N> quotientTangent(const S& b, const S& v, const Vec<T, N>& ta,
+                                     const Vec<T, N>& tb)
+{
+    Vec<T, N> r(ta);
+    for (std::size_t i = 0; i < N; ++i) r[i] = quotientTangent(b, v, ta[i], tb[i]);
+    return r;
+}
 
 }  // namespace detail
 

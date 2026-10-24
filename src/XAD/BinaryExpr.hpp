@@ -70,10 +70,7 @@ struct BinaryExpr
 
     XAD_INLINE DerivativeType derivative() const
     {
-        using xad::derivative;
-        using xad::value;
-        return der_impl::template derivative_a<>(op_, value(a_), value(b_), v_) * derivative(a_) +
-               der_impl::template derivative_b<>(op_, value(a_), value(b_), v_) * derivative(b_);
+        return derivative(std::integral_constant<bool, detail::HasTangentRule<Op>::value>());
     }
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord() || b_.shouldRecord(); }
@@ -93,6 +90,27 @@ struct BinaryExpr
 #endif
 
   private:
+    XAD_INLINE DerivativeType derivative(std::true_type) const
+    {
+        using xad::derivative;
+        using xad::value;
+        return op_.tangent(value(a_), value(b_), v_, derivative(a_), derivative(b_));
+    }
+
+    XAD_INLINE DerivativeType derivative(std::false_type) const
+    {
+        using xad::derivative;
+        using xad::value;
+        const Scalar& pa = der_impl::template derivative_a<>(op_, value(a_), value(b_), v_);
+        const Scalar& pb = der_impl::template derivative_b<>(op_, value(a_), value(b_), v_);
+        const DerivativeType& ta = derivative(a_);
+        const DerivativeType& tb = derivative(b_);
+        DerivativeType d = pa * ta + pb * tb;
+        if (XAD_VERY_UNLIKELY(detail::isNaNTangent(d, detail::HasFinitePartials<Op>())))
+            d = detail::tangentTerm(pa, ta) + detail::tangentTerm(pb, tb);
+        return d;
+    }
+
     Expr1 a_;
     Expr2 b_;
     Op op_;
