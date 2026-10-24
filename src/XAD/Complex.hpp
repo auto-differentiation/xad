@@ -554,6 +554,18 @@ XAD_INLINE std::complex<typename xad::ExprTraits<Derived>::value_type> proj_impl
 template <class T>
 XAD_INLINE T norm_impl(const std::complex<T>& x);
 
+template <class S, class T>
+XAD_INLINE std::complex<T> scalar_add(const S& s, const std::complex<T>& z);
+
+template <class S, class T>
+XAD_INLINE std::complex<T> scalar_sub(const S& s, const std::complex<T>& z);
+
+template <class S, class T>
+XAD_INLINE std::complex<T> scalar_mul(const S& s, const std::complex<T>& z);
+
+template <class S, class T>
+XAD_INLINE std::complex<T> scalar_div(const S& s, const std::complex<T>& z);
+
 }  // namespace detail
 
 }  // namespace xad
@@ -2428,7 +2440,7 @@ XAD_INLINE T& imag(complex<xad::RealDirect<Base, T>>& z)
     return z.imag();
 }
 
-#define XAD_COMPLEX_DIRECT_BINARY_OP(op, opassign, Direct)                                         \
+#define XAD_COMPLEX_DIRECT_BINARY_OP(op, opassign, scalarop, Direct)                               \
     template <class T, std::size_t N>                                                              \
     XAD_INLINE complex<xad::Direct<T, N>> operator op(complex<xad::Direct<T, N>> lhs,              \
                                                       const complex<xad::Direct<T, N>>& rhs)       \
@@ -2462,9 +2474,7 @@ XAD_INLINE T& imag(complex<xad::RealDirect<Base, T>>& z)
     XAD_INLINE complex<xad::Direct<T, N>> operator op(const xad::Direct<T, N>& lhs,                \
                                                       const complex<xad::Direct<T, N>>& rhs)       \
     {                                                                                              \
-        complex<xad::Direct<T, N>> z(lhs);                                                         \
-        z opassign rhs;                                                                            \
-        return z;                                                                                  \
+        return ::xad::detail::scalarop(lhs, rhs);                                                  \
     }                                                                                              \
     template <class T, std::size_t N>                                                              \
     XAD_INLINE complex<xad::Direct<T, N>> operator op(complex<xad::Direct<T, N>> lhs,              \
@@ -2477,9 +2487,7 @@ XAD_INLINE T& imag(complex<xad::RealDirect<Base, T>>& z)
     XAD_INLINE complex<xad::Direct<T, N>> operator op(const T& lhs,                                \
                                                       const complex<xad::Direct<T, N>>& rhs)       \
     {                                                                                              \
-        complex<xad::Direct<T, N>> z(lhs);                                                         \
-        z opassign rhs;                                                                            \
-        return z;                                                                                  \
+        return ::xad::detail::scalarop(lhs, rhs);                                                  \
     }
 
 #define XAD_COMPLEX_DIRECT_COMPARE(Direct)                                                         \
@@ -2585,10 +2593,10 @@ XAD_INLINE T& imag(complex<xad::RealDirect<Base, T>>& z)
     }
 
 #define XAD_COMPLEX_DIRECT_FUNCS(Direct)                                                           \
-    XAD_COMPLEX_DIRECT_BINARY_OP(+, +=, Direct)                                                    \
-    XAD_COMPLEX_DIRECT_BINARY_OP(-, -=, Direct)                                                    \
-    XAD_COMPLEX_DIRECT_BINARY_OP(*, *=, Direct)                                                    \
-    XAD_COMPLEX_DIRECT_BINARY_OP(/, /=, Direct)                                                    \
+    XAD_COMPLEX_DIRECT_BINARY_OP(+, +=, scalar_add, Direct)                                        \
+    XAD_COMPLEX_DIRECT_BINARY_OP(-, -=, scalar_sub, Direct)                                        \
+    XAD_COMPLEX_DIRECT_BINARY_OP(*, *=, scalar_mul, Direct)                                        \
+    XAD_COMPLEX_DIRECT_BINARY_OP(/, /=, scalar_div, Direct)                                        \
     XAD_COMPLEX_DIRECT_COMPARE(Direct)                                                             \
     template <class T, std::size_t N>                                                              \
     XAD_INLINE complex<xad::Direct<T, N>> operator+(const complex<xad::Direct<T, N>>& x)           \
@@ -2776,6 +2784,44 @@ template <class T>
 XAD_INLINE T norm_impl(const std::complex<T>& x)
 {
     return x.real() * x.real() + x.imag() * x.imag();
+}
+
+// scalar op complex, as std::complex: the scalar acts only on the parts it applies to, so a zero
+// imaginary part keeps its sign (the side of a branch cut) and no inf * 0 appears; the parts are
+// assigned, as copies would record
+template <class S, class T>
+XAD_INLINE std::complex<T> scalar_add(const S& s, const std::complex<T>& z)
+{
+    std::complex<T> r;
+    r.real() = s + z.real();
+    r.imag() = z.imag();
+    return r;
+}
+
+template <class S, class T>
+XAD_INLINE std::complex<T> scalar_sub(const S& s, const std::complex<T>& z)
+{
+    std::complex<T> r;
+    r.real() = s - z.real();
+    r.imag() = -z.imag();
+    return r;
+}
+
+template <class S, class T>
+XAD_INLINE std::complex<T> scalar_mul(const S& s, const std::complex<T>& z)
+{
+    std::complex<T> r;
+    r.real() = s * z.real();
+    r.imag() = s * z.imag();
+    return r;
+}
+
+template <class S, class T>
+XAD_INLINE std::complex<T> scalar_div(const S& s, const std::complex<T>& z)
+{
+    std::complex<T> r(s);
+    r /= z;
+    return r;
 }
 
 template <class T>

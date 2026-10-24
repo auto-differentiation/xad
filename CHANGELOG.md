@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `fmod`, `remainder` and `remquo` derivatives to the divisor: wrong for large quotients, where `a / b` rounds to an integer, and where the result is NaN
 - `ldexp` and `frexp` derivatives were wrong for negative exponents and exponents past 30
 - `scalbn` overflowed or underflowed where the result is finite
+- Direct mode `real op complex` lost a zero imaginary part's sign: wrong side of branch cuts in `asin`, `atanh` etc.
 
 
 ## [2.0.0] - 2026-02-06
