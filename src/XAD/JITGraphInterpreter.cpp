@@ -126,6 +126,14 @@ void JITGraphInterpreter<Scalar>::forward(Scalar* outputs)
 template <class Scalar>
 void JITGraphInterpreter<Scalar>::forwardAndBackward(Scalar* outputs, Scalar* inputGradients)
 {
+    forwardAndBackwardSeeded(outputs, nullptr, inputGradients);
+}
+
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::forwardAndBackwardSeeded(Scalar* outputs,
+                                                           const Scalar* outputAdjoints,
+                                                           Scalar* inputGradients)
+{
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
 
@@ -134,10 +142,10 @@ void JITGraphInterpreter<Scalar>::forwardAndBackward(Scalar* outputs, Scalar* in
     // Run forward pass
     forward(outputs);
 
-    // Run backward pass - seed output adjoints to 1.0
+    // Run backward pass - seed output adjoints (1.0 without outputAdjoints)
     impl_->nodeAdjoints.assign(graph.nodeCount(), Scalar(0));
     for (std::size_t i = 0; i < graph.output_ids.size(); ++i)
-        impl_->nodeAdjoints[graph.output_ids[i]] = Scalar(1);
+        impl_->nodeAdjoints[graph.output_ids[i]] = outputAdjoints ? outputAdjoints[i] : Scalar(1);
 
     // Propagate adjoints backward
     for (std::size_t i = graph.nodeCount(); i > 0; --i)

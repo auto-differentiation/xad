@@ -63,6 +63,8 @@ class JITGraphInterpreter : public JITBackend<Scalar>
     void setInput(std::size_t inputIndex, const Scalar* values) override;
     void forward(Scalar* outputs) override;
     void forwardAndBackward(Scalar* outputs, Scalar* inputGradients) override;
+    void forwardAndBackwardSeeded(Scalar* outputs, const Scalar* outputAdjoints,
+                                  Scalar* inputGradients) override;
 
   private:
     struct Impl;

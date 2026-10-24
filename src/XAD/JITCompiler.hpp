@@ -264,8 +264,12 @@ class JITCompiler
         }
 
         std::vector<Real> outputs(nOutputs);
+        std::vector<Real> outputAdjoints(nOutputs);
+        for (std::size_t i = 0; i < nOutputs; ++i)
+            outputAdjoints[i] = getDerivative(graph_.output_ids[i]);
         std::vector<Real> inputGradients(nInputs);
-        backend_->forwardAndBackward(outputs.data(), inputGradients.data());
+        backend_->forwardAndBackwardSeeded(outputs.data(), outputAdjoints.data(),
+                                           inputGradients.data());
 
         derivatives_.resize(graph_.nodeCount(), derivative_type());
         for (std::size_t i = 0; i < nInputs; ++i)

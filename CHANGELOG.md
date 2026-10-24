@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Tape::clearCallbacks()` destroys the callbacks pushed with `pushCallback`, for tapes used for many recordings
+- `JITBackend::forwardAndBackwardSeeded` runs the backward pass from given output adjoints
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
 
 ### Changed
@@ -72,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In a JIT scope, registering a tape variable as an output or taking its adjoint dropped it from the tape
 - JIT recording missed `+=` and `-=` with a scalar
 - JIT variables assigned a scalar kept their old graph node
+- JIT `computeAdjoints` ignored the output adjoints and seeded 1
 
 
 ## [2.0.0] - 2026-02-06
