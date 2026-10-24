@@ -444,6 +444,28 @@ TEST(Tape, restartingRecordingResetsMemory)
     // std::cout << s.getReusableSlotsString() << std::endl;
     EXPECT_EQ(2U, s.getNumVariables());
 }
+
+TEST(Tape, resetToTrimsReusableSlotsToDerivatives)
+{
+    xad::Tape<double> s;
+    std::vector<xad::Tape<double>::slot_type> slots;
+    xad::Tape<double>::position_type pos = 0;
+    for (int i = 0; i < 10; ++i)
+    {
+        slots.push_back(s.registerVariable());
+        s.pushLhs(slots.back());
+        if (i == 4)
+            pos = s.getPosition();
+    }
+    s.unregisterVariable(slots[4]);
+    s.unregisterVariable(slots[5]);
+    EXPECT_EQ("[4, 6), ", s.getReusableSlotsString());
+
+    s.clearDerivativesAfter(pos);  // up to slot 4
+    s.resetTo(pos);
+    EXPECT_EQ("[4, 5), ", s.getReusableSlotsString());
+    EXPECT_EQ(4U, s.registerVariable());
+}
 #endif
 
 TEST(Tape, clearCallbacksDestroysThem)
