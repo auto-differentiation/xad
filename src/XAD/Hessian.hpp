@@ -59,7 +59,8 @@ void computeHessianFwdAdj(const std::vector<Active> &vec,
     std::size_t domain = vec.size();
 
     if (static_cast<std::size_t>(std::distance(first, last)) != domain ||
-        static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != domain)
+        (domain != 0 &&
+         static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != domain))
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
@@ -150,7 +151,8 @@ void computeHessianFwdFwd(const std::vector<Active> &vec,
     std::size_t domain = vec.size();
 
     if (static_cast<std::size_t>(std::distance(first, last)) != domain ||
-        static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != domain)
+        (domain != 0 &&
+         static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != domain))
         throw OutOfRange("Iterator not allocated enough space");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
