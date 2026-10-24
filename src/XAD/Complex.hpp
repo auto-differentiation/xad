@@ -2979,33 +2979,43 @@ XAD_INLINE std::complex<T> tanh_impl(const std::complex<T>& z)
     return sinh(z) / cosh(z);
 }
 
+// asin by Kahan's formulas ("Branch Cuts for Complex Elementary Functions", 1987): nothing cancels
+// far from the origin, and a signed zero picks the side of a branch cut
+template <class T>
+XAD_INLINE std::complex<T> asin_kahan(const std::complex<T>& z)
+{
+    std::complex<T> a = sqrt(T(1.0) - z), b = sqrt(T(1.0) + z);
+    return std::complex<T>(atan2(z.real(), a.real() * b.real() - a.imag() * b.imag()),
+                           asinh(a.real() * b.imag() - a.imag() * b.real()));
+}
+
 template <class T>
 XAD_INLINE std::complex<T> asinh_impl(const std::complex<T>& z)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (xad::isinf(z.real()) && z.real() > 0.0)
+    if (!xad::isfinite(z.real()) || !xad::isfinite(z.imag()))
     {
-        if (xad::isinf(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   3.141592653589793238462643383279502884197169399 * 0.25);
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-        if (z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(), 0.0);
+        // special values of C99 Annex G, as glibc's casinh
+        const nested inf = std::numeric_limits<nested>::infinity(),
+                     nan = std::numeric_limits<nested>::quiet_NaN(),
+                     pi = 3.141592653589793238462643383279502884197169399;
+        const bool xneg = xad::signbit(z.real()), yneg = xad::signbit(z.imag());
+        if (xad::isinf(z.imag()))
+        {
+            nested im = xad::isfinite(z.real()) ? pi / 2 : pi / 4;
+            if (xad::isnan(z.real()))
+                im = nan;
+            return std::complex<T>(xneg ? -inf : inf, yneg ? -im : im);
+        }
+        if (xad::isfinite(z.real()))
+            return std::complex<T>(nan, nan);
+        const bool zeroimag = xad::isinf(z.real()) ? xad::isfinite(z.imag()) : z.imag() == 0.0;
+        return std::complex<T>(xad::isnan(z.real()) ? nan : (xneg ? -inf : inf),
+                               zeroimag ? (yneg ? -0.0 : 0.0) : nan);
     }
-    if (xad::isnan(z.real()))
-    {
-        if (xad::isinf(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-        if (z.imag() == 0.0 && !xad::signbit(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(), 0.0);
-    }
-    if (xad::isinf(z.imag()) && z.imag() > 0.0 && xad::isfinite(z.real()) && z.real() > 0.0)
-        return std::complex<T>(std::numeric_limits<nested>::infinity(),
-                               3.141592653589793238462643383279502884197169399 * 0.5);
-    return log(z + sqrt(T(1.0) + (z * z)));
+    // -i asin(iz)
+    std::complex<T> w = asin_kahan(std::complex<T>(-z.imag(), z.real()));
+    return std::complex<T>(w.imag(), -w.real());
 }
 
 template <class T>
