@@ -219,3 +219,41 @@ TEST(PartialRollback, ClearFullTape)
     EXPECT_THAT(slotq, Eq(slotq1));
     EXPECT_THAT(sloty, Eq(sloty1));
 }
+
+TEST(PartialRollback, ResetToReusesSlotsRegisteredAfter)
+{
+    xad::AD in = 2.0;
+    xad::AD::tape_type tape;
+    tape.registerInput(in);
+    tape.newRecording();
+    auto pos = tape.getPosition();
+    std::vector<xad::AD::tape_type::slot_type> slots, first;
+    for (int p = 0; p < 4; ++p)
+    {
+        slots.clear();
+        {
+            // destroyed front to back
+            std::vector<xad::AD> v(3);
+            for (auto& x : v)
+            {
+                x = 2.0 * in;
+                slots.push_back(x.getSlot());
+            }
+        }
+        // alive across resetTo
+        xad::AD w = 3.0 * in;
+        slots.push_back(w.getSlot());
+        tape.registerOutput(w);
+        derivative(w) = 1.0;
+        tape.computeAdjointsTo(pos);
+        EXPECT_THAT(derivative(in), DoubleEq(3.0));
+        tape.resetTo(pos);
+        tape.clearDerivatives();
+
+        if (p == 0)
+            first = slots;
+        EXPECT_THAT(slots, ContainerEq(first)) << "in path " << p;
+        EXPECT_THAT(slots[1], Ne(slots[0]));
+        EXPECT_THAT(slots[2], Ne(slots[1]));
+    }
+}

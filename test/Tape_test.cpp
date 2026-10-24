@@ -25,6 +25,7 @@
 #include <XAD/CheckpointCallback.hpp>
 #include <XAD/Tape.hpp>
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -444,6 +445,108 @@ TEST(Tape, restartingRecordingResetsMemory)
     // std::cout << s.getReusableSlotsString() << std::endl;
     EXPECT_EQ(2U, s.getNumVariables());
 }
+
+TEST(Tape, resetToTrimsReusableSlotsToDerivatives)
+{
+    xad::Tape<double> s;
+    std::vector<xad::Tape<double>::slot_type> slots;
+    xad::Tape<double>::position_type pos = 0;
+    for (int i = 0; i < 10; ++i)
+    {
+        slots.push_back(s.registerVariable());
+        s.pushLhs(slots.back());
+        if (i == 4)
+            pos = s.getPosition();
+    }
+    s.unregisterVariable(slots[4]);
+    s.unregisterVariable(slots[5]);
+    EXPECT_EQ("[4, 6), ", s.getReusableSlotsString());
+
+    s.clearDerivativesAfter(pos);  // up to slot 4
+    s.resetTo(pos);
+    EXPECT_EQ("[4, 5), ", s.getReusableSlotsString());
+    EXPECT_EQ(4U, s.registerVariable());
+}
+
+TEST(Tape, resetToDropsAllReusableSlotsOfTheRecording)
+{
+    xad::Tape<double> s;
+    std::vector<xad::Tape<double>::slot_type> slots;
+    xad::Tape<double>::position_type pos = 0;
+    for (int i = 0; i < 10; ++i)
+    {
+        slots.push_back(s.registerVariable());
+        s.pushLhs(slots.back());
+        if (i == 4)
+            pos = s.getPosition();
+    }
+    s.unregisterVariable(slots[7]);
+    EXPECT_EQ("[7, 8), ", s.getReusableSlotsString());
+
+    s.clearDerivativesAfter(pos);  // up to slot 4
+    s.resetTo(pos);
+    EXPECT_EQ("", s.getReusableSlotsString());
+    EXPECT_NE(7U, s.registerVariable());
+    s.unregisterVariable(slots[2]);
+    EXPECT_EQ("[2, 3), ", s.getReusableSlotsString());
+    EXPECT_EQ(2U, s.registerVariable());
+}
+
+TEST(Tape, nestedRecordingTakesItsReusableSlotsAlong)
+{
+    typedef xad::Tape<double> tape_type;
+    // frees a slot in the middle of a nested recording without reusable slots of its own
+    struct Callback : xad::CheckpointCallback<tape_type>
+    {
+        void computeAdjoint(tape_type* tape) override
+        {
+            xad::ScopedNestedRecording<tape_type> nested(tape);
+            auto a = tape->registerVariable(), b = tape->registerVariable();
+            tape->unregisterVariable(a);
+            tape->unregisterVariable(b);
+        }
+    } cb;
+
+    tape_type s;
+    std::vector<tape_type::slot_type> live;
+    for (int i = 0; i < 4; ++i)
+    {
+        live.push_back(s.registerVariable());
+        s.pushLhs(live.back());
+    }
+    s.unregisterVariable(live[1]);
+    live.erase(live.begin() + 1);
+    s.insertCallback(&cb);
+    s.setDerivative(live.back(), 1.0);
+    s.computeAdjoints();
+
+    for (int i = 0; i < 3; ++i)
+    {
+        auto slot = s.registerVariable();
+        EXPECT_TRUE(std::find(live.begin(), live.end(), slot) == live.end()) << slot;
+        live.push_back(slot);
+    }
+}
+
+TEST(Tape, movedTapeReusesSlots)
+{
+    xad::Tape<double> s(false);
+    s.registerVariable();
+    auto b = s.registerVariable();
+    s.registerVariable();
+
+    xad::Tape<double> moved(std::move(s));
+    moved.unregisterVariable(b);
+    EXPECT_EQ("[1, 2), ", moved.getReusableSlotsString());
+    EXPECT_EQ(b, moved.registerVariable());
+    EXPECT_EQ(3U, moved.registerVariable());
+
+    xad::Tape<double> assigned(false);
+    assigned = std::move(moved);
+    assigned.unregisterVariable(b);
+    EXPECT_EQ(b, assigned.registerVariable());
+    EXPECT_EQ(4U, assigned.registerVariable());
+}
 #endif
 
 TEST(Tape, clearCallbacksDestroysThem)
@@ -508,6 +611,8 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
             int ops = 100 + int(rng_(400));
             slot_type pinned = 0;
             position_type pos = 0;
+            // registered after the rollback point, so gone with a resetTo to it
+            std::vector<slot_type> recent;
             for (int i = 0; i < ops; ++i)
             {
                 if (i == ops / 2)
@@ -517,13 +622,20 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
                     live.pop_back();
                     pos = tape_.getPosition();
                 }
+                std::size_t n = live.size() + recent.size();
                 unsigned r = rng_(100);
                 if (r < 2)
                     tape_.insertCallback(this);
-                else if (live.empty() || r < (live.size() < target ? 65U : 35U))
-                    allocate(live);
+                else if (n == 0 || r < (n < target ? 65U : 35U))
+                    allocate(i < ops / 2 ? live : recent);
                 else
-                    release(live, rng_(unsigned(live.size())));
+                {
+                    std::size_t k = rng_(unsigned(n));
+                    if (k < live.size())
+                        release(live, k);
+                    else
+                        release(recent, k - live.size());
+                }
             }
             live.push_back(pinned);
             switch (rng_(10))
@@ -532,18 +644,21 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
                 case 1:
                 case 2:
                 case 3:
+                    live.insert(live.end(), recent.begin(), recent.end());
                     sweep(live);
                     tape_.newRecording();
                     break;
                 case 4:
+                    live.insert(live.end(), recent.begin(), recent.end());
                     sweep(live);
                     break;
                 case 5:
                 case 6:
-                    rollBack(live, pinned, pos);
+                    rollBack(live, recent, pinned, pos);
                     break;
                 case 7:
                     tape_.resetTo(pos);
+                    releaseAll(recent);
                     break;
                 case 8:
                     tape_.clearAll();
@@ -551,6 +666,7 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
                     isLive_.clear();
                     break;
                 default:
+                    live.insert(live.end(), recent.begin(), recent.end());
                     break;
             }
             mix(tape_.getNumVariables());
@@ -622,7 +738,8 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
     }
 
     // drops the reusable slots from the rollback variable on
-    void rollBack(std::vector<slot_type>& live, slot_type pinned, position_type pos)
+    void rollBack(std::vector<slot_type>& live, std::vector<slot_type>& recent, slot_type pinned,
+                  position_type pos)
     {
         // freeing a variable below last keeps some reusable slots too
         for (std::size_t i = 0; i < live.size(); ++i)
@@ -635,7 +752,14 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
             }
         }
         tape_.resetTo(pos);
+        releaseAll(recent);
         tape_.newRecording();
+    }
+
+    // variables going out of scope, in a random order
+    void releaseAll(std::vector<slot_type>& live)
+    {
+        while (!live.empty()) release(live, rng_(unsigned(live.size())));
     }
 
     tape_type tape_;
@@ -652,9 +776,9 @@ TEST(Tape, slotSequenceMatchesReference)
 {
     SlotSequence sequence;
 #ifdef XAD_TAPE_REUSE_SLOTS
-    EXPECT_EQ(17394581942319250789ULL, sequence.run(300));
+    EXPECT_EQ(4818864720068124262ULL, sequence.run(300));
 #else
-    EXPECT_EQ(15651779913695467064ULL, sequence.run(300));
+    EXPECT_EQ(7513799870854399479ULL, sequence.run(300));
 #endif
     EXPECT_EQ(0, sequence.duplicates());
 }
