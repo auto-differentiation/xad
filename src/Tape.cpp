@@ -33,6 +33,7 @@
 #include <XAD/UnaryOperators.hpp>
 
 #include <iostream>
+#include <iterator>
 #include <numeric>
 #include <sstream>
 
@@ -65,6 +66,7 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       callbacks_(std::move(o.callbacks_)),
 #ifdef XAD_TAPE_REUSE_SLOTS
       reusable_ranges_(std::move(o.reusable_ranges_)),
+      range_index_(std::move(o.range_index_)),
 #endif
       nestedRecordings_(std::move(o.nestedRecordings_)),
       currentRec_(o.currentRec_)
@@ -85,6 +87,7 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     callbacks_ = std::move(o.callbacks_);
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_ = std::move(o.reusable_ranges_);
+    range_index_ = std::move(o.range_index_);
 #endif
     nestedRecordings_ = std::move(o.nestedRecordings_);
     currentRec_ = o.currentRec_;
@@ -111,6 +114,7 @@ void Tape<T, N>::clearAll()
     checkpoints_.clear();
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_.clear();
+    range_index_.clear();
 #endif
     while (!nestedRecordings_.empty()) nestedRecordings_.pop();
     statement_.push_back(std::make_pair(size_type(operations_.size()), slot_type(INVALID_SLOT)));
@@ -125,6 +129,98 @@ typename Tape<T, N>::size_type Tape<T, N>::getNumVariables() const
 }
 
 #ifdef XAD_TAPE_REUSE_SLOTS
+namespace
+{
+// More than MIN_INDEXED_RANGES reusable ranges get indexed once linear searches have passed
+// RANGE_INDEX_BUILD_COST times as many in all; the index is dropped when updated more than once per
+// RANGE_INDEX_UPDATE_COST ranges without being searched.
+const std::size_t MIN_INDEXED_RANGES = 64;
+const std::size_t RANGE_INDEX_BUILD_COST = 16;
+const std::size_t RANGE_INDEX_UPDATE_COST = 32;
+}  // namespace
+
+// the first range of the current recording that ends at or after the slot
+template <class T, std::size_t N>
+typename Tape<T, N>::range_list::iterator Tape<T, N>::findRange(slot_type slot)
+{
+    auto first = currentRec_->startRange_;
+    if (range_index_.empty())
+    {
+        auto it = first;
+        std::size_t passed = 0;
+        for (; it != reusable_ranges_.end() && it->second() < slot; ++it) ++passed;
+        if (reusable_ranges_.size() > MIN_INDEXED_RANGES)
+        {
+            rangeSearchCost_ += passed;
+            if (rangeSearchCost_ > RANGE_INDEX_BUILD_COST * reusable_ranges_.size())
+            {
+                rangeSearchCost_ = 0;
+                rangeIndexUpdates_ = 0;
+                for (auto r = reusable_ranges_.begin(); r != reusable_ranges_.end(); ++r)
+                    range_index_.emplace_hint(range_index_.end(), RangeStart{&*r}, r);
+                if (range_index_.size() != reusable_ranges_.size())  // ranges with the same start
+                    range_index_.clear();
+            }
+        }
+        return it;
+    }
+
+    rangeIndexUpdates_ = 0;
+    slot_range_type probe(slot, slot);
+    auto entry = range_index_.lower_bound(RangeStart{&probe});
+    if (entry != range_index_.begin())
+    {
+        auto before = std::prev(entry)->second;
+        if (before->second() >= slot)
+            --entry;
+    }
+    auto it = entry == range_index_.end() ? reusable_ranges_.end() : entry->second;
+    // only the ranges of this recording, from its first one on
+    if (first == reusable_ranges_.end() || (it != reusable_ranges_.end() && *it < *first))
+        return first;
+    return it;
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE typename Tape<T, N>::range_list::iterator Tape<T, N>::insertRange(
+    range_list::iterator pos, slot_type slot)
+{
+    auto it = reusable_ranges_.emplace(pos, slot, slot + 1);
+    if (!range_index_.empty())
+        indexRange(it);
+    return it;
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE typename Tape<T, N>::range_list::iterator Tape<T, N>::eraseRange(
+    range_list::iterator it)
+{
+    if (!range_index_.empty())
+        unindexRange(it);
+    return reusable_ranges_.erase(it);
+}
+
+// the index is dropped when updated more often than searched, or if a slot freed twice gives two
+// ranges the same start
+template <class T, std::size_t N>
+void Tape<T, N>::indexRange(range_list::iterator it)
+{
+    if (!range_index_.emplace(RangeStart{&*it}, it).second ||
+        ++rangeIndexUpdates_ > reusable_ranges_.size() / RANGE_INDEX_UPDATE_COST)
+        range_index_.clear();
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::unindexRange(range_list::iterator it)
+{
+    auto entry = range_index_.find(RangeStart{&*it});
+    if (entry == range_index_.end() || entry->second != it ||
+        ++rangeIndexUpdates_ > reusable_ranges_.size() / RANGE_INDEX_UPDATE_COST)
+        range_index_.clear();
+    else
+        range_index_.erase(entry);
+}
+
 template <class T, std::size_t N>
 typename Tape<T, N>::slot_type Tape<T, N>::registerVariableReuseSlots()
 {
@@ -141,7 +237,7 @@ typename Tape<T, N>::slot_type Tape<T, N>::registerVariableReuseSlots()
             currentRec_->latestRange_ = reusable_ranges_.end();
         auto nextRange = currentRec_->startRange_;
         ++nextRange;
-        reusable_ranges_.erase(currentRec_->startRange_);
+        eraseRange(currentRec_->startRange_);
         currentRec_->startRange_ = nextRange;
         currentRec_->latestRange_ = nextRange;
     }
@@ -168,11 +264,11 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
                     currentRec_->latestRange_ = reusable_ranges_.end();
                 if (it == currentRec_->startRange_)
                 {
-                    reusable_ranges_.pop_back();
+                    eraseRange(it);
                     currentRec_->startRange_ = reusable_ranges_.end();
                 }
                 else
-                    reusable_ranges_.pop_back();
+                    eraseRange(it);
             }
         }
     }
@@ -202,19 +298,16 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
             if (reusable_ranges_.empty() || slot > reusable_ranges_.back().second())
             {
                 // insert a new range at the end
-                reusable_ranges_.emplace_back(slot, slot + 1);
-                currentRec_->latestRange_ = reusable_ranges_.end();
-                --currentRec_->latestRange_;
+                currentRec_->latestRange_ = insertRange(reusable_ranges_.end(), slot);
                 if (reusable_ranges_.size() == 1)
                     currentRec_->startRange_ = currentRec_->latestRange_;
             }
             else
             {
-                // it must fit into another range now - using binary search
-                auto it = std::lower_bound(currentRec_->startRange_, reusable_ranges_.end(), slot,
-                                           [](const slot_range_type& range, slot_type s)
-                                           { return range.second() < s; });
-                status = it->expand(slot);
+                // it must fit into another range now
+                auto it = findRange(slot);
+                if (it != reusable_ranges_.end())
+                    status = it->expand(slot);
                 if (status != slot_range_type::FAILED)
                 {
                     currentRec_->latestRange_ = it;
@@ -222,7 +315,7 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
                 else
                 {
                     // insert a new range
-                    currentRec_->latestRange_ = reusable_ranges_.emplace(it, slot, slot + 1);
+                    currentRec_->latestRange_ = insertRange(it, slot);
                     if (it == currentRec_->startRange_)
                         currentRec_->startRange_ = currentRec_->latestRange_;
                 }
@@ -236,11 +329,12 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
             --it;
             if (currentRec_->latestRange_->isJoinableStart(*it))
             {
-                // merge two ranges
-                currentRec_->latestRange_->joinStart(*it);
+                // merge two ranges, erasing the first one before its start is taken over
+                slot_range_type previous = *it;
                 if (it == currentRec_->startRange_)
                     ++currentRec_->startRange_;
-                reusable_ranges_.erase(it);
+                eraseRange(it);
+                currentRec_->latestRange_->joinStart(previous);
             }
         }
         else if (status == slot_range_type::END)
@@ -252,7 +346,7 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
                 currentRec_->latestRange_->joinEnd(*it);
                 if (currentRec_->startRange_ == it)
                     ++currentRec_->startRange_;
-                reusable_ranges_.erase(it);
+                eraseRange(it);
             }
         }
     }
@@ -319,7 +413,7 @@ void Tape<T, N>::foldSubrecording()
                          [=](const chkpt_type& ckpt, slot_type pos) { return ckpt.first < pos; });
     checkpoints_.erase(it, checkpoints_.end());
 #ifdef XAD_TAPE_REUSE_SLOTS
-    reusable_ranges_.erase(prev.startRange_, reusable_ranges_.end());
+    for (auto range = prev.startRange_; range != reusable_ranges_.end();) range = eraseRange(range);
 #endif
 }
 
@@ -717,7 +811,7 @@ void Tape<T, N>::resetTo(position_type pos)
             {
                 auto it2 = it;
                 --it2;
-                reusable_ranges_.erase(it);
+                eraseRange(it);
                 it = it2;
             }
             else

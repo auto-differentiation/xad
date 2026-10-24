@@ -54,6 +54,7 @@ set(testfiles
     ARealDirect_test.cpp
     DirectModeCompatibility_test.cpp
     DirectModeBenchmark.cpp
+    TapeReuseSlotsBenchmark.cpp
 )
 
 if (XAD_ENABLE_EIGEN_TESTS)
