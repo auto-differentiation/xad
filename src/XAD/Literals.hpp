@@ -109,7 +109,7 @@ struct ADTypeBase : public Expression<Scalar, Derived, DerivativeType>
     template <class I>
     XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator+=(I x)
     {
-        return *this += Scalar(x);
+        return derived() += Scalar(x);
     }
     XAD_INLINE Derived& operator-=(Scalar rhs)
     {
@@ -119,7 +119,7 @@ struct ADTypeBase : public Expression<Scalar, Derived, DerivativeType>
     template <class I>
     XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator-=(I x)
     {
-        return *this -= Scalar(x);
+        return derived() -= Scalar(x);
     }
     XAD_INLINE Derived& operator*=(Scalar x) { return derived() = (derived() * x); }
     template <class I>
@@ -277,6 +277,25 @@ struct AReal
     template <class Expr>
     XAD_INLINE AReal& operator=(const Expression<Scalar, Expr, derivative_type>& expr);
 
+#ifdef XAD_ENABLE_JIT
+    using base_type::operator+=;
+    using base_type::operator-=;
+
+    // a shift needs no tape entry, but the JIT graph must record it
+    XAD_INLINE AReal& operator+=(Scalar x)
+    {
+        if (recordsJit())
+            return *this = *this + x;
+        return base_type::operator+=(x);
+    }
+    XAD_INLINE AReal& operator-=(Scalar x)
+    {
+        if (recordsJit())
+            return *this = *this - x;
+        return base_type::operator-=(x);
+    }
+#endif
+
     XAD_INLINE void setDerivative(derivative_type a) { derivative() = a; }
     XAD_INLINE void setAdjoint(derivative_type a) { setDerivative(a); }
     XAD_INLINE derivative_type getAdjoint() const { return getDerivative(); }
@@ -296,6 +315,11 @@ struct AReal
     static XAD_INLINE jit_type* getActiveJit()
     {
         return getActiveJitImpl(std::integral_constant<bool, jit_supported>());
+    }
+
+    XAD_INLINE bool recordsJit() const
+    {
+        return shouldRecordJIT() && !tape_type::getActive() && getActiveJit() != nullptr;
     }
 
     template <class Expr>
