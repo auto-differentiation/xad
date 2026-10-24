@@ -72,6 +72,9 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       nestedRecordings_(std::move(o.nestedRecordings_)),
       currentRec_(o.currentRec_)
 {
+#ifdef XAD_TAPE_REUSE_SLOTS
+    rebindRangeIterators();
+#endif
     if (o.isActive())
         activate();
     else
@@ -93,6 +96,9 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 #endif
     nestedRecordings_ = std::move(o.nestedRecordings_);
     currentRec_ = o.currentRec_;
+#ifdef XAD_TAPE_REUSE_SLOTS
+    rebindRangeIterators();
+#endif
     if (o.isActive())
         activate();
     else
@@ -222,6 +228,17 @@ void Tape<T, N>::unindexRange(range_list::iterator it)
         range_index_.clear();
     else
         range_index_.erase(entry);
+}
+
+// after a move, point the outermost recording at this tape's ranges
+template <class T, std::size_t N>
+void Tape<T, N>::rebindRangeIterators()
+{
+    if (nestedRecordings_.size() != 1)
+        return;
+    currentRec_->startRange_ =
+        reusable_ranges_.empty() ? reusable_ranges_.end() : reusable_ranges_.begin();
+    currentRec_->latestRange_ = reusable_ranges_.end();
 }
 
 template <class T, std::size_t N>

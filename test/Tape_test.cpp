@@ -527,6 +527,26 @@ TEST(Tape, nestedRecordingTakesItsReusableSlotsAlong)
         live.push_back(slot);
     }
 }
+
+TEST(Tape, movedTapeReusesSlots)
+{
+    xad::Tape<double> s(false);
+    s.registerVariable();
+    auto b = s.registerVariable();
+    s.registerVariable();
+
+    xad::Tape<double> moved(std::move(s));
+    moved.unregisterVariable(b);
+    EXPECT_EQ("[1, 2), ", moved.getReusableSlotsString());
+    EXPECT_EQ(b, moved.registerVariable());
+    EXPECT_EQ(3U, moved.registerVariable());
+
+    xad::Tape<double> assigned(false);
+    assigned = std::move(moved);
+    assigned.unregisterVariable(b);
+    EXPECT_EQ(b, assigned.registerVariable());
+    EXPECT_EQ(4U, assigned.registerVariable());
+}
 #endif
 
 TEST(Tape, clearCallbacksDestroysThem)
