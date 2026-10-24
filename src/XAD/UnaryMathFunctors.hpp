@@ -184,8 +184,9 @@ struct fabs_op : abs_op<Scalar>
 XAD_MAKE_UNARY_BINFUNCTOR(pow, b == T2() ? Scalar() : Scalar(b) * Scalar(pow(a, b - T2(1))),
                           detail::powExponentDerivative(Scalar(log(b)), v))
 XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), Scalar(-detail::remainder_quotient(Scalar(b), a, v)))
-XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b * b)),
-                          -Scalar(b) / (a * a + Scalar(b * b)))
+// b * b in Scalar, as it may overflow in an integer T2
+XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b) * Scalar(b)),
+                          -Scalar(b) / (a * a + Scalar(b) * Scalar(b)))
 XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
 XAD_MAKE_UNARY_BINFUNCTOR(hypot, Scalar(a) / v, Scalar(a) / v)
 

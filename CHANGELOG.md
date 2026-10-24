@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pow(x, 0)` had a NaN derivative at `x = 0`, and `pow(x, 0u)` one everywhere
 - `pow(0, y)` had a NaN derivative to `y`
 - Forward mode: an operand without tangent made the derivative NaN where its partial was infinite
+- `atan2` with an integer argument squared it in `int`, which could overflow
 
 
 ## [2.0.0] - 2026-02-06
