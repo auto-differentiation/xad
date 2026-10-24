@@ -67,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `degrees` and `radians` were not defined for `float` and `double`
 - A moved-from tape changed the state of its successor and could not record again after `clearAll`
 - Products and quotients with a scalar gave NaN derivatives at infinity in nested forward modes
+- Complex `sqrt` of a negative real had a nonzero real part
 
 
 ## [2.0.0] - 2026-02-06
