@@ -574,9 +574,15 @@ XAD_INLINE AReal<Scalar, M>::AReal(
     {
         if (expr.shouldRecord())
         {
+#ifdef XAD_OUTLINE_RECORDING
+            DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
+            expr.calc_derivatives(info, *s);
+            slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
+#else
             slot_ = s->registerVariable();
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             s->pushLhs(slot_);
+#endif
         }
     }
 #ifdef XAD_ENABLE_JIT
@@ -597,6 +603,11 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
     {
         if (expr.shouldRecord() || this->shouldRecord())
         {
+#ifdef XAD_OUTLINE_RECORDING
+            DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
+            expr.calc_derivatives(info, *s);
+            s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
+#else
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             // only register this variable after evaluating the expression, as this
             // variable might appear on the rhs of the equation too and if not yet
@@ -604,6 +615,7 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
             if (slot_ == INVALID_SLOT)
                 slot_ = s->registerVariable();
             s->pushLhs(slot_);
+#endif
         }
     }
 #ifdef XAD_ENABLE_JIT
