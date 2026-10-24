@@ -204,7 +204,8 @@ void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
         case JITOpCode::Pow: result = std::pow(va, vb); break;
         case JITOpCode::Min: result = (std::min)(va, vb); break;
         case JITOpCode::Max: result = (std::max)(va, vb); break;
-        case JITOpCode::Mod: result = std::fmod(va, vb); break;
+        case JITOpCode::Mod:
+        case JITOpCode::Fmod: result = std::fmod(va, vb); break;
         case JITOpCode::Atan2: result = std::atan2(va, vb); break;
         case JITOpCode::Floor: result = std::floor(va); break;
         case JITOpCode::Ceil: result = std::ceil(va); break;
@@ -398,6 +399,7 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
             }
             break;
         case JITOpCode::Mod:
+        case JITOpCode::Fmod:
         case JITOpCode::Remainder:
         case JITOpCode::Remquo:
             nodeAdjoints[a] += adj;
