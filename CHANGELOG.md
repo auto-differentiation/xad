@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `incrementAdjoint` took no vector adjoint in vector mode
 - Reading an active variable from a stream kept its dependency or tangent
 - Unary plus returned the expression's base class, not the expression
+- `ADVar::calc_derivatives` without a multiplier did not compile
 
 
 ## [2.0.0] - 2026-02-06

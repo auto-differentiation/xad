@@ -517,7 +517,7 @@ struct ADVar
     template <class Info>
     XAD_INLINE void calc_derivatives(Info& info, tape_type& s) const
     {
-        ar_.calc_derivative(info, s);
+        ar_.calc_derivatives(info, s);
     }
 
     XAD_INLINE const typename areal_type::derivative_type& derivative() const
