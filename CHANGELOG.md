@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `std::norm<T>(z)` with an explicit `T` did not compile with libc++ other than Apple clang 15+
 - A JIT compiler left the tape it deactivated inactive after it went out of scope
 - `incrementAdjoint` took no vector adjoint in vector mode
+- Reading an active variable from a stream kept its dependency or tangent
 
 
 ## [2.0.0] - 2026-02-06

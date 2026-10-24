@@ -837,16 +837,23 @@ XAD_INLINE std::basic_ostream<C, T>& operator<<(std::basic_ostream<C, T>& os,
     return os << value(x);
 }
 
+// as x = v: drops the dependency or tangent
 template <class C, class T, class Scalar, std::size_t N>
 XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, AReal<Scalar, N>& x)
 {
-    return is >> value(x);
+    typename AReal<Scalar, N>::nested_type v;
+    if (is >> v)
+        x = v;
+    return is;
 }
 
 template <class C, class T, class Scalar, std::size_t N>
 XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, FReal<Scalar, N>& x)
 {
-    return is >> value(x);
+    typename FReal<Scalar, N>::nested_type v;
+    if (is >> v)
+        x = v;
+    return is;
 }
 
 typedef AReal<double> AD;
