@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Direct mode operations record one statement instead of two: the result takes over the temporary's slot
 - Direct mode mixed operators accept only arithmetic types, XAD expressions and types convertible to the direct type
 - Direct mode compound assignments return the derived type
 - Expression math tests run on the direct mode types themselves
