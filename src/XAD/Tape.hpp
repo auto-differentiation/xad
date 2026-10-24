@@ -337,6 +337,7 @@ class Tape
     range_list::iterator eraseRange(range_list::iterator it);
     void indexRange(range_list::iterator it);
     void unindexRange(range_list::iterator it);
+    void rebindRangeIterators();
 #endif
 
     void foldSubrecordings();
