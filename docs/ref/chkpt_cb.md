@@ -12,10 +12,11 @@ User-defined checkpoints should derive from this class and implement
 An object of this class should then be registered with the tape using
 [`Tape<T>::insertCallback`](tape.md#insertcallback).
 During computing adjoints, XAD then calls this registered callback
-once it reaches the corresponding point in the tape.
+each time it reaches the corresponding point in the tape.
 
 Implementers are responsible to store all needed information for the
-checkpoint within this class.
+checkpoint within this class, and to keep it if adjoints are computed
+more than once.
 That is:
 
 *   The values of input variables,

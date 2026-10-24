@@ -508,7 +508,8 @@ void Tape<T, N>::computeAdjointsTo(position_type pos)
         // std::cout << ""
         computeAdjointsToImpl(end, start);
 
-        resetTo(end - 1);  // removes up to and incl. the checkpoint from statements
+        // the recording stays for later sweeps, the callback records after it
+        position_type recorded = getPosition();
 
         // keep the prevMax stored, so we can resize the der. vector on a
         // subrecording
@@ -518,7 +519,7 @@ void Tape<T, N>::computeAdjointsTo(position_type pos)
         currentRec_->prevMax_ = INVALID_SLOT;
         // std::cout << "********Reset to " << end-1 << std::endl;
 
-        resetTo(end - 1);  // another reset, in case the checkpoint added to the tape again
+        resetTo(recorded);  // in case the callback added to the tape
         // clearDerivativesAfter(end-1);
         start = end - 1;  // skip over the checkpoint itself (?)
         LOG_DEBUG("new start=" << start);

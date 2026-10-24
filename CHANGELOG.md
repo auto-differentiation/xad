@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Second-order tapes dropped zero-valued adjoints that carried a second-order part
 - `lround`/`llround` for `FReal` did not compile
 - `max`/`min` ties with direct mode inner types
+- Computing adjoints cut the tape at its checkpoint callbacks, so a second `computeAdjoints` (e.g. in `computeJacobian`) gave wrong adjoints
 
 
 ## [2.0.0] - 2026-02-06
