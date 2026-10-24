@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complex `sqrt` of a negative real had a nonzero real part
 - Variables of a JIT scope aliased tape slots after it, and tape variables graph nodes in it, giving wrong derivatives or out-of-bounds writes
 - In a JIT scope, registering a tape variable as an output or taking its adjoint dropped it from the tape
+- `pow(x, 0)` had a NaN derivative at `x = 0`, and `pow(x, 0u)` one everywhere
 
 
 ## [2.0.0] - 2026-02-06

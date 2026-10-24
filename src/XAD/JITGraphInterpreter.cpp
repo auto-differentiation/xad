@@ -372,7 +372,8 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
         }
         break;
         case JITOpCode::Pow:
-            nodeAdjoints[a] += adj * vb * std::pow(va, vb - Scalar(1));
+            if (vb != Scalar(0))  // x^0 is 1 everywhere, but 0 * 0^-1 is NaN
+                nodeAdjoints[a] += adj * vb * std::pow(va, vb - Scalar(1));
             if (va > Scalar(0))
                 nodeAdjoints[b] += adj * vResult * std::log(va);
             break;
