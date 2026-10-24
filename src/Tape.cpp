@@ -99,7 +99,7 @@ template <class T, std::size_t N>
 Tape<T, N>::~Tape()
 {
     deactivate();
-    for (auto p : callbacks_) delete p;
+    clearCallbacks();
 }
 
 template <class T, std::size_t N>
@@ -764,6 +764,13 @@ template <class T, std::size_t N>
 bool Tape<T, N>::haveCallbacks() const
 {
     return !callbacks_.empty();
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::clearCallbacks()
+{
+    for (auto p : callbacks_) delete p;
+    callbacks_.clear();
 }
 
 template <class T, std::size_t N>
