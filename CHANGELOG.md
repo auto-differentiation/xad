@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `resetTo` kept the slots registered after its position, so repeated rollbacks slowed down
 - A slot freed in a nested recording could be handed out twice (`XAD_TAPE_REUSE_SLOTS`)
 - A moved tape could reuse slots of the tape it was moved from (`XAD_TAPE_REUSE_SLOTS`)
+- JIT interpreter tests read inputs gone out of scope
 
 
 ## [2.0.0] - 2026-02-06

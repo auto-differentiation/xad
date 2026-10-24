@@ -45,7 +45,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         double output;
         jit.forward(&output);
         EXPECT_DOUBLE_EQ(5.0, output);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test subtract
@@ -59,7 +59,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         double output;
         jit.forward(&output);
         EXPECT_DOUBLE_EQ(2.0, output);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test multiply
@@ -73,7 +73,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         double output;
         jit.forward(&output);
         EXPECT_DOUBLE_EQ(12.0, output);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test divide
@@ -87,7 +87,7 @@ TEST(JITGraphInterpreter, executeBasicOperations)
         double output;
         jit.forward(&output);
         EXPECT_DOUBLE_EQ(4.0, output);
-        jit.newRecording();
+        jit.clearAll();
     }
 }
 
@@ -106,7 +106,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         double output;
         jit.forward(&output);
         EXPECT_NEAR(std::sin(1.0), output, 1e-10);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test cos
@@ -119,7 +119,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         double output;
         jit.forward(&output);
         EXPECT_NEAR(std::cos(1.0), output, 1e-10);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test exp
@@ -132,7 +132,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         double output;
         jit.forward(&output);
         EXPECT_NEAR(std::exp(2.0), output, 1e-10);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test log
@@ -145,7 +145,7 @@ TEST(JITGraphInterpreter, executeUnaryMathFunctions)
         double output;
         jit.forward(&output);
         EXPECT_NEAR(std::log(2.0), output, 1e-10);
-        jit.newRecording();
+        jit.clearAll();
     }
 
     // Test sqrt
