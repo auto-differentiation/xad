@@ -77,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Forward mode: an operand without tangent made the derivative NaN where its partial was infinite
 - `atan2` with an integer argument squared it in `int`, which could overflow
 - Derivatives of `/`, `atan2`, `asinh` and `acosh` overflowed or underflowed for large or tiny arguments
+- `clearDerivativesAfter` dropped variables registered before its position
 
 
 ## [2.0.0] - 2026-02-06

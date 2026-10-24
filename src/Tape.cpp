@@ -972,9 +972,19 @@ void Tape<T, N>::clearCallbacks()
 template <class T, std::size_t N>
 void Tape<T, N>::clearDerivativesAfter(position_type pos)
 {
-    auto& st = statement_[pos];
-    derivatives_.resize(st.second + 1);
-    currentRec_->maxDerivative_ = st.second + 1;
+    // keep the slots in use at pos, which getPosition noted; the slot of the statement at pos
+    // can be an older one, or none
+    auto mark =
+        std::lower_bound(positionSlots_.begin(), positionSlots_.end(), position_slots_type(pos, 0));
+    slot_type end;
+    if (mark != positionSlots_.end() && mark->first == pos)
+        end = mark->second;
+    else if (statement_[pos].second != INVALID_SLOT)
+        end = statement_[pos].second + 1;
+    else
+        return;
+    derivatives_.resize(end);
+    currentRec_->maxDerivative_ = end;
 }
 
 template <class T, std::size_t N>
