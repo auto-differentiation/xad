@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `atan2` with an integer argument squared it in `int`, which could overflow
 - Derivatives of `/`, `atan2`, `asinh` and `acosh` overflowed or underflowed for large or tiny arguments
 - `clearDerivativesAfter` dropped variables registered before its position
+- Move-assigning a tape leaked the callbacks it had
 
 
 ## [2.0.0] - 2026-02-06

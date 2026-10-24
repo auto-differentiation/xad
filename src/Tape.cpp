@@ -102,7 +102,8 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     statement_ = std::move(o.statement_);
     derivatives_ = std::move(o.derivatives_);
     checkpoints_ = std::move(o.checkpoints_);
-    callbacks_ = std::move(o.callbacks_);
+    clearCallbacks();
+    callbacks_.swap(o.callbacks_);
     positionSlots_ = std::move(o.positionSlots_);
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_ = std::move(o.reusable_ranges_);
