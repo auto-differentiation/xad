@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A moved tape could reuse slots of the tape it was moved from (`XAD_TAPE_REUSE_SLOTS`)
 - JIT interpreter tests read inputs gone out of scope
 - `ChunkContainer` could request misaligned or overflowing allocation sizes
+- JIT graphs merged `-0.0` constants into `0.0`
 
 
 ## [2.0.0] - 2026-02-06

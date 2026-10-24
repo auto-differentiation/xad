@@ -156,6 +156,15 @@ TEST(JITGraph, constantPoolDeduplication)
     EXPECT_EQ(2u, graph.const_pool.size());  // Now two constants in pool
 }
 
+TEST(JITGraph, constantPoolKeepsSignOfZero)
+{
+    xad::JITGraph graph;
+    uint32_t plus = graph.addConstant(0.0);
+    uint32_t minus = graph.addConstant(-0.0);
+    EXPECT_FALSE(std::signbit(graph.getConstantValue(plus)));
+    EXPECT_TRUE(std::signbit(graph.getConstantValue(minus)));
+}
+
 // =============================================================================
 // OpCode tests for Square, Recip, SmoothAbs
 // =============================================================================

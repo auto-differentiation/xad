@@ -31,6 +31,7 @@
 #include <XAD/ChunkContainer.hpp>
 
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
 namespace xad
@@ -161,7 +162,8 @@ struct JITGraph
     {
         for (std::size_t i = 0; i < const_pool.size(); ++i)
         {
-            if (const_pool[i] == value)
+            // bitwise, so -0.0 and 0.0 stay apart
+            if (std::memcmp(&const_pool[i], &value, sizeof(double)) == 0)
                 return addNode(JITOpCode::Constant, 0, 0, 0, static_cast<double>(i));
         }
         uint32_t poolIndex = static_cast<uint32_t>(const_pool.size());
