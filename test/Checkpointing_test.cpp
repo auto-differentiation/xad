@@ -204,6 +204,64 @@ TEST(Checkpointing, equidistantLoop)
     EXPECT_LT(memchkpt, memstraight);
 }
 
+// keeps its data, so the recording can be swept more than once
+template <class Tape>
+class GKeepCheckpointCallback : public xad::CheckpointCallback<Tape>
+{
+  public:
+    typedef typename Tape::slot_type idx_type;
+
+    GKeepCheckpointCallback(int n, double x, idx_type idx) : n_(n), x_(x), idx_(idx) {}
+
+    void computeAdjoint(Tape* tape) override
+    {
+        double outputder = tape->getAndResetOutputAdjoint(idx_);
+        typename Tape::active_type x = x_;
+        tape->registerInput(x);
+
+        xad::ScopedNestedRecording<Tape> nested(tape);
+        g(n_, x);
+        tape->registerOutput(x);
+        derivative(x) = outputder;
+        nested.computeAdjoints();
+        nested.incrementAdjoint(idx_, derivative(x));
+    }
+
+  private:
+    int n_;
+    double x_;
+    idx_type idx_;
+};
+
+TEST(Checkpointing, sweepTwice)
+{
+    typedef xad::AReal<double> ad_type;
+    typedef ad_type::tape_type tape_type;
+
+    tape_type t;
+    ad_type x0 = 2.1;
+    t.registerInput(x0);
+    t.newRecording();
+    ad_type x = x0 * x0;
+    double xp = value(x);
+    auto cb = new GKeepCheckpointCallback<tape_type>(4, xp, x.getSlot());
+    t.pushCallback(cb);
+    g(4, xp);
+    value(x) = xp;
+    t.insertCallback(cb);
+    ad_type y = x * x;
+    t.registerOutput(y);
+
+    derivative(y) = 1.0;
+    t.computeAdjoints();
+    double xa = derivative(x0);
+    t.clearDerivatives();
+    derivative(y) = 1.0;
+    t.computeAdjoints();
+
+    EXPECT_EQ(xa, derivative(x0));
+}
+
 // #define VERBOSE 1
 #define STATISTICS 1
 
@@ -404,7 +462,7 @@ size_t driver_rec_adj(int n, int stride, double& xv, double& xa1)
 TEST(Checkpointing, recursiveLoop)
 {
     std::cout.precision(15);
-    int n = 20, stride = 4;
+    int n = 40, stride = 4;
     double x = 2.1, xa1 = 1.0;
     size_t memchkpt = driver_rec_adj(n, stride, x, xa1);
     // std::cout << "x=" << x << std::endl;

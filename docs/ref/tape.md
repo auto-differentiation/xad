@@ -263,7 +263,7 @@ as the same tape can be rolled back multiple times.
 
 `#!c++ void insertCallback(callback_type cb)` inserts a checkpoint callback into the tape.
 
-During computing adjoints (`computeAdjoints`), this callback is called when the tape
+During computing adjoints (`computeAdjoints`), this callback is called each time the tape
 reaches the current position,
 allowing users to implement their own adjoint computation.
 
