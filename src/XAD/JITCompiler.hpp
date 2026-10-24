@@ -93,7 +93,7 @@ class JITCompiler
     JITCompiler(JITCompiler&& other) noexcept
         : graph_(std::move(other.graph_)),
           backend_(std::move(other.backend_)),
-          inputValues_(std::move(other.inputValues_)),
+          inputs_(std::move(other.inputs_)),
           derivatives_(std::move(other.derivatives_))
     {
         takeSuspendedTape(other);
@@ -114,7 +114,7 @@ class JITCompiler
             restoreTape();
             graph_ = std::move(other.graph_);
             backend_ = std::move(other.backend_);
-            inputValues_ = std::move(other.inputValues_);
+            inputs_ = std::move(other.inputs_);
             derivatives_ = std::move(other.derivatives_);
             takeSuspendedTape(other);
             if (other.isActive())
@@ -155,13 +155,13 @@ class JITCompiler
 
     void newRecording()
     {
-        std::size_t numInputs = inputValues_.size();
         graph_.clear();
         derivatives_.clear();
         if (backend_)
             backend_->reset();
-        for (std::size_t i = 0; i < numInputs; ++i)
-            graph_.addInput();
+        // the inputs lead the new graph, so their slots move
+        for (std::size_t i = 0; i < inputs_.size(); ++i)
+            inputs_[i]->slot_ = jitSlot(graph_.addInput());
     }
 
     XAD_INLINE void registerInput(active_type& inp)
@@ -169,7 +169,7 @@ class JITCompiler
         if (!inp.shouldRecordJIT())
         {
             inp.slot_ = jitSlot(graph_.addInput());
-            inputValues_.push_back(&inp.value());
+            inputs_.push_back(&inp);
         }
     }
 
@@ -238,9 +238,9 @@ class JITCompiler
     /// Execute forward pass using registered input pointers.
     void forward(Real* outputs)
     {
-        for (std::size_t i = 0; i < inputValues_.size(); ++i)
+        for (std::size_t i = 0; i < inputs_.size(); ++i)
         {
-            Real value = *inputValues_[i];
+            Real value = inputs_[i]->value();
             backend_->setInput(i, &value);
         }
         backend_->forward(outputs);
@@ -257,9 +257,9 @@ class JITCompiler
         std::size_t nInputs = graph_.input_ids.size();
         std::size_t nOutputs = graph_.output_ids.size();
 
-        for (std::size_t i = 0; i < inputValues_.size(); ++i)
+        for (std::size_t i = 0; i < inputs_.size(); ++i)
         {
-            Real value = *inputValues_[i];
+            Real value = inputs_[i]->value();
             backend_->setInput(i, &value);
         }
 
@@ -316,7 +316,7 @@ class JITCompiler
     void clearAll()
     {
         graph_.clear();
-        inputValues_.clear();
+        inputs_.clear();
         derivatives_.clear();
         if (backend_)
             backend_->reset();
@@ -363,7 +363,7 @@ class JITCompiler
     static XAD_THREAD_LOCAL JITCompiler* active_jit_;
     JITGraph graph_;
     std::unique_ptr<JITBackend<Real>> backend_;
-    std::vector<const Real*> inputValues_;
+    std::vector<active_type*> inputs_;
     std::vector<derivative_type> derivatives_;
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
     tape_type* suspendedTape_ = nullptr;

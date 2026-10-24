@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JIT `computeAdjoints` ignored the output adjoints and seeded 1
 - JIT `derivative()` of an unrecorded variable gave it the slot of the next node
 - JIT interpreter wrote past its buffers for nodes recorded after `compile()`
+- JIT `newRecording` kept stale slots for inputs registered after other nodes
 
 
 ## [2.0.0] - 2026-02-06
