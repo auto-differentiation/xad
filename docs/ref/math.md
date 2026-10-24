@@ -34,7 +34,8 @@ Note that for well-defined second order derivative, this is implemented as
 
 #### `fmax`
 
-`#!c++ T fmax(T x, T y)` is synonym for `#!c++ max`
+`#!c++ T fmax(T x, T y)` is `#!c++ max`, except that, as in `std::fmax`, a NaN argument is ignored:
+the result and its derivative are those of the other argument (NaN if both are NaN).
 
 #### `min`
 
@@ -44,7 +45,8 @@ implemented as `(x + y - abs(x-y)) / 2`.
 
 #### `fmin`
 
-`#!c++ T fmin(T x, T y)` is a synonym for `#!c++ min`.
+`#!c++ T fmin(T x, T y)` is `#!c++ min`, except that, as in `std::fmin`, a NaN argument is ignored:
+the result and its derivative are those of the other argument (NaN if both are NaN).
 
 #### `floor`
 

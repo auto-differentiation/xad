@@ -119,12 +119,11 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
     {
         uint32_t slotA = a_.recordJIT(graph);
         uint32_t slotB = recordJITConstant(graph, getScalarConstant(op_));
-        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
         // For scalar_sub1, scalar_div1, scalar_pow1: scalar is first operand
         if (IsScalarFirstOp<Op>::value)
-            return graph.addNode(opcode, slotB, slotA);
+            return recordJITBinaryNode<Op>(graph, slotB, slotA);
         else
-            return graph.addNode(opcode, slotA, slotB);
+            return recordJITBinaryNode<Op>(graph, slotA, slotB);
     }
 
     // ldexp operation (has exp_ member)

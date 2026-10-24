@@ -338,10 +338,37 @@ struct scalar_max_op
     Scalar b_;
 };
 
-template <class Scalar, class T2>
-struct scalar_fmax_op : scalar_max_op<Scalar, T2>
+// Op (scalar_max_op / scalar_min_op), but a NaN operand is ignored as by std::fmax / std::fmin
+template <class Op, class Scalar>
+struct scalar_nan_ignoring_op : Op
 {
-    XAD_INLINE explicit scalar_fmax_op(const T2& b) : scalar_max_op<Scalar, T2>(b) {}
+    template <class T2>
+    XAD_INLINE explicit scalar_nan_ignoring_op(const T2& b) : Op(b)
+    {
+    }
+    XAD_INLINE Scalar operator()(const Scalar& a) const
+    {
+        return isnan(a) ? this->b_ : (isnan(this->b_) ? a : Op::operator()(a));
+    }
+    XAD_INLINE Scalar derivative(const Scalar& a) const
+    {
+        return isnan(a) ? Scalar() : (isnan(this->b_) ? Scalar(1) : Op::derivative(a));
+    }
+    // forward mode: the tangent of a NaN operand is ignored too
+    template <class D>
+    XAD_INLINE D tangent(const Scalar& a, const Scalar&, const D& t) const
+    {
+        return isnan(a) ? D() : D(derivative(a) * t);
+    }
+};
+
+template <class Scalar, class T2>
+struct scalar_fmax_op : scalar_nan_ignoring_op<scalar_max_op<Scalar, T2>, Scalar>
+{
+    XAD_INLINE explicit scalar_fmax_op(const T2& b)
+        : scalar_nan_ignoring_op<scalar_max_op<Scalar, T2>, Scalar>(b)
+    {
+    }
 };
 
 // scalar as first argument - keeps the argument order of std::max, which matters for NaN
@@ -374,10 +401,25 @@ struct scalar_min_op
 };
 
 template <class Scalar, class T2>
-struct scalar_fmin_op : scalar_min_op<Scalar, T2>
+struct scalar_fmin_op : scalar_nan_ignoring_op<scalar_min_op<Scalar, T2>, Scalar>
 {
-    XAD_INLINE explicit scalar_fmin_op(const T2& b) : scalar_min_op<Scalar, T2>(b) {}
+    XAD_INLINE explicit scalar_fmin_op(const T2& b)
+        : scalar_nan_ignoring_op<scalar_min_op<Scalar, T2>, Scalar>(b)
+    {
+    }
 };
+
+namespace detail
+{
+template <class Scalar, class T2>
+struct HasTangentRule<scalar_fmax_op<Scalar, T2> > : std::true_type
+{
+};
+template <class Scalar, class T2>
+struct HasTangentRule<scalar_fmin_op<Scalar, T2> > : std::true_type
+{
+};
+}  // namespace detail
 
 // scalar as first argument - keeps the argument order of std::min, which matters for NaN
 template <class Scalar, class T2>

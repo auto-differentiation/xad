@@ -119,6 +119,36 @@ inline uint32_t recordJITConstant(JITGraph& graph, double value)
     return graph.addConstant(value);
 }
 
+// fmax / fmin, unlike Max / Min (std::max / std::min), ignore a NaN operand
+template <class> struct IsFMinMaxOp : std::false_type {};
+template <class S> struct IsFMinMaxOp<fmax_op<S>> : std::true_type {};
+template <class S> struct IsFMinMaxOp<fmin_op<S>> : std::true_type {};
+template <class S, class T> struct IsFMinMaxOp<scalar_fmax_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsFMinMaxOp<scalar_fmin_op<S, T>> : std::true_type {};
+
+inline uint32_t recordJITNaNIgnoring(JITGraph&, uint32_t, uint32_t, uint32_t node, std::false_type)
+{
+    return node;
+}
+
+// fmax / fmin as If(a is NaN, b, If(b is NaN, a, Max / Min(a, b)))
+inline uint32_t recordJITNaNIgnoring(JITGraph& graph, uint32_t a, uint32_t b, uint32_t node,
+                                     std::true_type)
+{
+    const uint32_t bIsNaN = graph.addNode(JITOpCode::CmpNE, b, b);
+    const uint32_t ifB = graph.addNode(JITOpCode::If, bIsNaN, a, node);
+    const uint32_t aIsNaN = graph.addNode(JITOpCode::CmpNE, a, a);
+    return graph.addNode(JITOpCode::If, aIsNaN, b, ifB);
+}
+
+// the node for Op(a, b)
+template <class Op>
+inline uint32_t recordJITBinaryNode(JITGraph& graph, uint32_t a, uint32_t b)
+{
+    constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+    return recordJITNaNIgnoring(graph, a, b, graph.addNode(opcode, a, b), IsFMinMaxOp<Op>());
+}
+
 }  // namespace xad
 
 #endif  // XAD_ENABLE_JIT

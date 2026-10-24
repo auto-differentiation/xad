@@ -84,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Vec != scalar` was true only if every element differed
 - `xad::fma` matched built-in types, so `std::fma(2, 3, 4)` did not return `double`
 - `computeHessian` without inputs and `computeJacobian` without outputs read an empty matrix
+- `fmax`/`fmin` with a NaN argument returned NaN, not the other argument as `std::fmax`/`std::fmin`
 
 
 ## [2.0.0] - 2026-02-06

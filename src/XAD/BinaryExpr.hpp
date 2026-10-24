@@ -84,8 +84,7 @@ struct BinaryExpr
                       "JIT opcode mapping missing for binary operator");
         uint32_t slotA = a_.recordJIT(graph);
         uint32_t slotB = b_.recordJIT(graph);
-        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
-        return graph.addNode(opcode, slotA, slotB);
+        return recordJITBinaryNode<Op>(graph, slotA, slotB);
     }
 #endif
 

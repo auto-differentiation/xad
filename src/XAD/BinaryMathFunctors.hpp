@@ -201,14 +201,56 @@ struct min_op
 
 ///////// fmax / fmin
 
+// Op (max_op / min_op), but a NaN operand is ignored as by std::fmax / std::fmin: the result and
+// its derivative are the other operand's
+template <class Op, class Scalar>
+struct nan_ignoring_op : Op
+{
+    XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const
+    {
+        return isnan(a) ? b : (isnan(b) ? a : Op::operator()(a, b));
+    }
+    XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
+    {
+        return isnan(a) ? Scalar() : (isnan(b) ? Scalar(1) : Op::derivative_a(a, b));
+    }
+    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
+    {
+        return isnan(a) ? Scalar(1) : (isnan(b) ? Scalar() : Op::derivative_b(a, b));
+    }
+    // forward mode: the tangent of a NaN operand is ignored too
+    template <class D>
+    XAD_INLINE D tangent(const Scalar& a, const Scalar& b, const Scalar&, const D& ta,
+                         const D& tb) const
+    {
+        if (isnan(a))
+            return tb;
+        if (isnan(b))
+            return ta;
+        return D(Op::derivative_a(a, b) * ta + Op::derivative_b(a, b) * tb);
+    }
+};
+
 template <class Scalar>
-struct fmax_op : max_op<Scalar>
+struct fmax_op : nan_ignoring_op<max_op<Scalar>, Scalar>
 {
 };
 template <class Scalar>
-struct fmin_op : min_op<Scalar>
+struct fmin_op : nan_ignoring_op<min_op<Scalar>, Scalar>
 {
 };
+
+namespace detail
+{
+template <class Scalar>
+struct HasTangentRule<fmax_op<Scalar> > : std::true_type
+{
+};
+template <class Scalar>
+struct HasTangentRule<fmin_op<Scalar> > : std::true_type
+{
+};
+}  // namespace detail
 
 /////////// fmod
 
