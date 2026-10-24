@@ -79,8 +79,8 @@ XAD_MAKE_UNARY_FUNCTOR(cosh, sinh(a))
 XAD_MAKE_UNARY_FUNCTOR(expm1, exp(a))
 XAD_MAKE_UNARY_FUNCTOR(exp2, Scalar(0.6931471805599453094172321214581765680755001) * exp2(a))
 XAD_MAKE_UNARY_FUNCTOR(log1p, Scalar(1) / (Scalar(1) + a))
-XAD_MAKE_UNARY_FUNCTOR(asinh, Scalar(1) / sqrt(a * a + Scalar(1)))
-XAD_MAKE_UNARY_FUNCTOR(acosh, Scalar(1) / sqrt(a * a - Scalar(1)))
+XAD_MAKE_UNARY_FUNCTOR(asinh, detail::invSqrtOfSquarePlus(a, Scalar(1)))
+XAD_MAKE_UNARY_FUNCTOR(acosh, detail::invSqrtOfSquarePlus(a, Scalar(-1)))
 XAD_MAKE_UNARY_FUNCTOR(atanh, Scalar(1) / (Scalar(1) - a * a))
 
 XAD_MAKE_UNARY_FUNCTOR(erf, Scalar(1.1283791670955125738961589031215451716881013) * exp(-a * a))
@@ -185,8 +185,8 @@ XAD_MAKE_UNARY_BINFUNCTOR(pow, b == T2() ? Scalar() : Scalar(b) * Scalar(pow(a, 
                           detail::powExponentDerivative(Scalar(log(b)), v))
 XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), Scalar(-detail::remainder_quotient(Scalar(b), a, v)))
 // b * b in Scalar, as it may overflow in an integer T2
-XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b) * Scalar(b)),
-                          -Scalar(b) / (a * a + Scalar(b) * Scalar(b)))
+XAD_MAKE_UNARY_BINFUNCTOR(atan2, detail::divBySumOfSquares(Scalar(b), a, Scalar(b)),
+                          detail::divBySumOfSquares(Scalar(-Scalar(b)), a, Scalar(b)))
 XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
 XAD_MAKE_UNARY_BINFUNCTOR(hypot, Scalar(a) / v, Scalar(a) / v)
 

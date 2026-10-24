@@ -81,7 +81,12 @@ struct div_op
 
     XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar& b) const { return Scalar(1) / b; }
 
-    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const { return -a / (b * b); }
+    // -a / b^2 as -(a / b) / b, without waiting for a / b; b * b can overflow or underflow
+    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
+    {
+        const Scalar r = Scalar(1) / b;
+        return -(a * r) * r;
+    }
 
     template <class D>
     XAD_INLINE D tangent(const Scalar&, const Scalar& b, const Scalar& v, const D& ta,

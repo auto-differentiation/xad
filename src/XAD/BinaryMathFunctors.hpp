@@ -242,11 +242,11 @@ struct atan2_op
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const { return atan2(a, b); }
     XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
     {
-        return b / (a * a + b * b);
+        return detail::divBySumOfSquares(b, a, b);
     }
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
     {
-        return -a / (a * a + b * b);
+        return detail::divBySumOfSquares(Scalar(-a), a, b);
     }
 };
 

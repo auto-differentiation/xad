@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <limits>
 
 namespace xad
 {
@@ -165,6 +166,30 @@ XAD_INLINE Scalar powExponentDerivative(const Scalar& logBase, const Scalar& v)
 {
     const Scalar d = logBase * v;  // unconditional, so the choice is a select, not a branch
     return v == Scalar() ? Scalar() : d;
+}
+
+// n / (x^2 + y^2), also where the squares overflow or underflow
+template <class Scalar>
+XAD_INLINE Scalar divBySumOfSquares(const Scalar& n, const Scalar& x, const Scalar& y)
+{
+    typedef typename ExprTraits<Scalar>::nested_type nested;
+    const Scalar d = x * x + y * y;
+    if (XAD_LIKELY(d >= (std::numeric_limits<nested>::min)() &&
+                   d <= (std::numeric_limits<nested>::max)()))
+        return n / d;
+    const Scalar h = hypot(x, y);
+    return n / h / h;
+}
+
+// 1 / sqrt(x^2 + c) for |c| = 1, also where x^2 overflows (and x^2 + c is x^2)
+template <class Scalar>
+XAD_INLINE Scalar invSqrtOfSquarePlus(const Scalar& x, const Scalar& c)
+{
+    typedef typename ExprTraits<Scalar>::nested_type nested;
+    const Scalar d = x * x + c;
+    if (d <= (std::numeric_limits<nested>::max)())
+        return Scalar(1) / sqrt(d);
+    return Scalar(1) / abs(x);
 }
 }  // namespace detail
 

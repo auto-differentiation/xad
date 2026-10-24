@@ -82,13 +82,26 @@ struct scalar_div1_op
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
     XAD_INLINE explicit scalar_div1_op(const T2& b) : b_(nested_type(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return b_ / a; }
-    XAD_INLINE Scalar derivative(const Scalar& a) const { return -b_ / (a * a); }
+    // -b / a^2 as -(b / a) * (1 / a), as a * a can overflow or underflow
+    XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const
+    {
+        return -v * (Scalar(1) / a);
+    }
     template <class D>
     XAD_INLINE D tangent(const Scalar& a, const Scalar& v, const D& t) const
     {
         return detail::quotientTangent(a, v, D(), t);
     }
     nested_type b_;
+};
+
+template <class Scalar, class T2>
+struct OperatorTraits<scalar_div1_op<Scalar, T2> >
+{
+    enum
+    {
+        useResultBasedDerivatives = 1
+    };
 };
 
 template <class Scalar, class T2>
