@@ -554,6 +554,8 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
             int ops = 100 + int(rng_(400));
             slot_type pinned = 0;
             position_type pos = 0;
+            // registered after the rollback point, so gone with a resetTo to it
+            std::vector<slot_type> recent;
             for (int i = 0; i < ops; ++i)
             {
                 if (i == ops / 2)
@@ -563,13 +565,20 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
                     live.pop_back();
                     pos = tape_.getPosition();
                 }
+                std::size_t n = live.size() + recent.size();
                 unsigned r = rng_(100);
                 if (r < 2)
                     tape_.insertCallback(this);
-                else if (live.empty() || r < (live.size() < target ? 65U : 35U))
-                    allocate(live);
+                else if (n == 0 || r < (n < target ? 65U : 35U))
+                    allocate(i < ops / 2 ? live : recent);
                 else
-                    release(live, rng_(unsigned(live.size())));
+                {
+                    std::size_t k = rng_(unsigned(n));
+                    if (k < live.size())
+                        release(live, k);
+                    else
+                        release(recent, k - live.size());
+                }
             }
             live.push_back(pinned);
             switch (rng_(10))
@@ -578,18 +587,21 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
                 case 1:
                 case 2:
                 case 3:
+                    live.insert(live.end(), recent.begin(), recent.end());
                     sweep(live);
                     tape_.newRecording();
                     break;
                 case 4:
+                    live.insert(live.end(), recent.begin(), recent.end());
                     sweep(live);
                     break;
                 case 5:
                 case 6:
-                    rollBack(live, pinned, pos);
+                    rollBack(live, recent, pinned, pos);
                     break;
                 case 7:
                     tape_.resetTo(pos);
+                    releaseAll(recent);
                     break;
                 case 8:
                     tape_.clearAll();
@@ -597,6 +609,7 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
                     isLive_.clear();
                     break;
                 default:
+                    live.insert(live.end(), recent.begin(), recent.end());
                     break;
             }
             mix(tape_.getNumVariables());
@@ -668,7 +681,8 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
     }
 
     // drops the reusable slots from the rollback variable on
-    void rollBack(std::vector<slot_type>& live, slot_type pinned, position_type pos)
+    void rollBack(std::vector<slot_type>& live, std::vector<slot_type>& recent, slot_type pinned,
+                  position_type pos)
     {
         // freeing a variable below last keeps some reusable slots too
         for (std::size_t i = 0; i < live.size(); ++i)
@@ -681,7 +695,14 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
             }
         }
         tape_.resetTo(pos);
+        releaseAll(recent);
         tape_.newRecording();
+    }
+
+    // variables going out of scope, in a random order
+    void releaseAll(std::vector<slot_type>& live)
+    {
+        while (!live.empty()) release(live, rng_(unsigned(live.size())));
     }
 
     tape_type tape_;
@@ -698,9 +719,9 @@ TEST(Tape, slotSequenceMatchesReference)
 {
     SlotSequence sequence;
 #ifdef XAD_TAPE_REUSE_SLOTS
-    EXPECT_EQ(18276355987521459119ULL, sequence.run(300));
+    EXPECT_EQ(4818864720068124262ULL, sequence.run(300));
 #else
-    EXPECT_EQ(9909949292622754160ULL, sequence.run(300));
+    EXPECT_EQ(7513799870854399479ULL, sequence.run(300));
 #endif
     EXPECT_EQ(0, sequence.duplicates());
 }

@@ -313,6 +313,9 @@ class Tape
     typedef std::pair<position_type, CheckpointCallback<Tape>*> chkpt_type;
     std::vector<chkpt_type> checkpoints_;
     std::vector<CheckpointCallback<Tape>*> callbacks_;
+    // the slot counters at the positions given out, for resetTo to reuse the slots registered after
+    typedef std::pair<position_type, slot_type> position_slots_type;
+    mutable std::vector<position_slots_type> positionSlots_;
 #ifdef XAD_TAPE_REUSE_SLOTS
     slot_type registerVariableReuseSlots();
     void unregisterVariableReuseSlots(slot_type slot);
