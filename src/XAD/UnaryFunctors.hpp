@@ -24,6 +24,7 @@
 
 #pragma once
 #include <XAD/Macros.hpp>
+#include <XAD/Traits.hpp>
 
 namespace xad
 {
@@ -46,13 +47,15 @@ struct scalar_add_op
     Scalar b_;
 };
 
+// the factor stays passive: an active one has a zero tangent, which times an infinite a gives NaN
 template <class Scalar, class T2>
 struct scalar_prod_op
 {
-    XAD_INLINE explicit scalar_prod_op(const T2& b) : b_(Scalar(b)) {}
+    typedef typename ExprTraits<Scalar>::nested_type nested_type;
+    XAD_INLINE explicit scalar_prod_op(const T2& b) : b_(nested_type(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return Scalar(a * b_); }
     XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(b_); }
-    Scalar b_;
+    nested_type b_;
 };
 
 template <class Scalar, class T2>
@@ -76,18 +79,20 @@ struct scalar_sub2_op
 template <class Scalar, class T2>
 struct scalar_div1_op
 {
-    XAD_INLINE explicit scalar_div1_op(const T2& b) : b_(Scalar(b)) {}
+    typedef typename ExprTraits<Scalar>::nested_type nested_type;
+    XAD_INLINE explicit scalar_div1_op(const T2& b) : b_(nested_type(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return b_ / a; }
     XAD_INLINE Scalar derivative(const Scalar& a) const { return -b_ / (a * a); }
-    Scalar b_;
+    nested_type b_;
 };
 
 template <class Scalar, class T2>
 struct scalar_div2_op
 {
-    XAD_INLINE explicit scalar_div2_op(const T2& b) : b_(Scalar(b)) {}
+    typedef typename ExprTraits<Scalar>::nested_type nested_type;
+    XAD_INLINE explicit scalar_div2_op(const T2& b) : b_(nested_type(b)) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return a / b_; }
-    XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(1) / b_; }
-    Scalar b_;
+    XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(nested_type(1) / b_); }
+    nested_type b_;
 };
 }  // namespace xad

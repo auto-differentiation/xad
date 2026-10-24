@@ -33,19 +33,23 @@ namespace xad
 {
 // degrees and radians are mapped to products
 template <class Scalar>
-struct degrees_op : scalar_prod_op<Scalar, Scalar>
+struct degrees_op : scalar_prod_op<Scalar, typename ExprTraits<Scalar>::nested_type>
 {
+    typedef typename ExprTraits<Scalar>::nested_type nested_type;
     XAD_INLINE degrees_op()
-        : scalar_prod_op<Scalar, Scalar>(Scalar(57.2957795130823208767981548141051703324054725))
+        : scalar_prod_op<Scalar, nested_type>(
+              nested_type(57.2957795130823208767981548141051703324054725))
     {
     }
 };
 
 template <class Scalar>
-struct radians_op : scalar_prod_op<Scalar, Scalar>
+struct radians_op : scalar_prod_op<Scalar, typename ExprTraits<Scalar>::nested_type>
 {
+    typedef typename ExprTraits<Scalar>::nested_type nested_type;
     XAD_INLINE radians_op()
-        : scalar_prod_op<Scalar, Scalar>(Scalar(0.0174532925199432957692369076848861271344287))
+        : scalar_prod_op<Scalar, nested_type>(
+              nested_type(0.0174532925199432957692369076848861271344287))
     {
     }
 };
