@@ -810,7 +810,13 @@ void Tape<T, N>::resetTo(position_type pos)
         if (last->first() < currentRec_->maxDerivative_)
             last->second(currentRec_->maxDerivative_);
         else
+        {
+            if (currentRec_->startRange_ == last)
+                currentRec_->startRange_ = reusable_ranges_.end();
+            if (currentRec_->latestRange_ == last)
+                currentRec_->latestRange_ = reusable_ranges_.end();
             eraseRange(last);
+        }
     }
 #endif
 
