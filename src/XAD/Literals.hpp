@@ -396,8 +396,9 @@ struct AReal
             ignored = derivative_type();
             return &ignored;
         }
+        // a constant node: a slot no later node takes
         if (!shouldRecordJIT())
-            slot_ = jitSlot(j->registerVariable());
+            slot_ = jitSlot(recordJIT(j->getGraph()));
         return &j->derivative(slot_);
     }
 
