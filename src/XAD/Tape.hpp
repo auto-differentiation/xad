@@ -316,6 +316,7 @@ class Tape
     void computeAdjointsTo(position_type pos);
 
   private:
+    void resetMovedFrom();
     void computeAdjointsToImpl(position_type pos, position_type start);
     void initDerivatives();
     XAD_INLINE slot_type registerVariableAtEnd()

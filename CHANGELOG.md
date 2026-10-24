@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unary plus returned the expression's base class, not the expression
 - `ADVar::calc_derivatives` without a multiplier did not compile
 - `degrees` and `radians` were not defined for `float` and `double`
+- A moved-from tape changed the state of its successor and could not record again after `clearAll`
 
 
 ## [2.0.0] - 2026-02-06

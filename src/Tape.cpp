@@ -75,6 +75,7 @@ Tape<T, N>::Tape(Tape&& o) noexcept
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
+    o.resetMovedFrom();
 #ifdef XAD_ENABLE_JIT
     // the JIT that deactivated o reactivates this tape instead
     if (o.jitSuspender_)
@@ -95,6 +96,8 @@ Tape<T, N>::Tape(Tape&& o) noexcept
 template <class T, std::size_t N>
 Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 {
+    if (this == &o)
+        return *this;
     operations_ = std::move(o.operations_);
     statement_ = std::move(o.statement_);
     derivatives_ = std::move(o.derivatives_);
@@ -110,6 +113,7 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
+    o.resetMovedFrom();
 #ifdef XAD_ENABLE_JIT
     if (o.jitSuspender_)
     {
@@ -129,6 +133,15 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     else
         deactivate();
     return *this;
+}
+
+// its own empty recording, so it leaves the successor alone; clearAll makes it record again
+template <class T, std::size_t N>
+void Tape<T, N>::resetMovedFrom()
+{
+    while (!nestedRecordings_.empty()) nestedRecordings_.pop();
+    nestedRecordings_.push(SubRecording(this));
+    currentRec_ = &nestedRecordings_.top();
 }
 
 template <class T, std::size_t N>
