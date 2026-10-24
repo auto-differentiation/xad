@@ -28,6 +28,7 @@
 
 #include <XAD/JITGraphInterpreter.hpp>
 #include <XAD/Macros.hpp>
+#include <XAD/MathFunctions.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -397,8 +398,10 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
             }
             break;
         case JITOpCode::Mod:
+        case JITOpCode::Remainder:
+        case JITOpCode::Remquo:
             nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * std::trunc(va / vb);
+            nodeAdjoints[b] -= adj * detail::remainder_quotient(va, vb, vResult);
             break;
         case JITOpCode::Atan2:
         {
@@ -447,22 +450,6 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
         case JITOpCode::Round:
             // Zero derivative
             break;
-        case JITOpCode::Remainder:
-        {
-            int quo;
-            XAD_UNUSED_VARIABLE(std::remquo(va, vb, &quo));
-            nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * Scalar(quo);
-        }
-        break;
-        case JITOpCode::Remquo:
-        {
-            int quo;
-            XAD_UNUSED_VARIABLE(std::remquo(va, vb, &quo));
-            nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * Scalar(quo);
-        }
-        break;
         case JITOpCode::Hypot:
             nodeAdjoints[a] += adj * va / vResult;
             nodeAdjoints[b] += adj * vb / vResult;

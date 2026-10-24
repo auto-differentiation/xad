@@ -177,7 +177,7 @@ struct fabs_op : abs_op<Scalar>
     };
 
 XAD_MAKE_UNARY_BINFUNCTOR(pow, Scalar(b) * Scalar(pow(a, b - T2(1))), log(b) * v)
-XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), -trunc(Scalar(b) / a))
+XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), Scalar(-detail::remainder_quotient(Scalar(b), a, v)))
 XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b * b)),
                           -Scalar(b) / (a * a + Scalar(b * b)))
 XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
@@ -410,15 +410,20 @@ struct scalar_remainder1_op
 {
     XAD_INLINE explicit scalar_remainder1_op(const T2& b) : b_(b) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const { return remainder(b_, a); }
-    XAD_INLINE Scalar derivative(const Scalar& a) const
+    XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const
     {
-        // function is rare enough that there's no need to optimize this better
-        int n_;
-        using std::remquo;
-        (void)remquo(b_, a, &n_);
-        return Scalar(-n_);
+        return Scalar(-detail::remainder_quotient(Scalar(b_), a, v));
     }
     T2 b_;
+};
+
+template <class Scalar, class T2>
+struct OperatorTraits<scalar_remainder1_op<Scalar, T2> >
+{
+    enum
+    {
+        useResultBasedDerivatives = 1
+    };
 };
 
 template <class Scalar, class T2>
@@ -433,18 +438,27 @@ struct scalar_remainder2_op
 template <class Scalar, class T2>
 struct scalar_remquo1_op
 {
-    XAD_INLINE scalar_remquo1_op(const T2& b, int* quo) : b_(b), quo_(quo), q_() {}
+    XAD_INLINE scalar_remquo1_op(const T2& b, int* quo) : b_(b), quo_(quo) {}
     XAD_INLINE Scalar operator()(const Scalar& a) const
     {
         using std::remquo;
-        Scalar v = remquo(b_, a, &q_);
-        *quo_ = q_;
-        return v;
+        return remquo(b_, a, quo_);
     }
-    XAD_INLINE Scalar derivative(const Scalar&) const { return Scalar(-q_); }
+    XAD_INLINE Scalar derivative(const Scalar& a, const Scalar& v) const
+    {
+        return Scalar(-detail::remainder_quotient(Scalar(b_), a, v));
+    }
     T2 b_;
     int* quo_;
-    mutable int q_;
+};
+
+template <class Scalar, class T2>
+struct OperatorTraits<scalar_remquo1_op<Scalar, T2> >
+{
+    enum
+    {
+        useResultBasedDerivatives = 1
+    };
 };
 
 template <class Scalar, class T2>
