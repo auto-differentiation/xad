@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A JIT compiler left the tape it deactivated inactive after it went out of scope
 - `incrementAdjoint` took no vector adjoint in vector mode
 - Reading an active variable from a stream kept its dependency or tangent
+- Unary plus returned the expression's base class, not the expression
 
 
 ## [2.0.0] - 2026-02-06
