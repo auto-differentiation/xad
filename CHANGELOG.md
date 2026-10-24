@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JIT interpreter tests read inputs gone out of scope
 - `ChunkContainer` could request misaligned or overflowing allocation sizes
 - JIT graphs merged `-0.0` constants into `0.0`
+- JIT `registerOutput` dropped outputs independent of the inputs, shifting the others
 
 
 ## [2.0.0] - 2026-02-06

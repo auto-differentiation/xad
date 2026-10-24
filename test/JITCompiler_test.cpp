@@ -326,6 +326,26 @@ TEST(JITCompiler, registerOutputsRange)
     EXPECT_EQ(2u, jit.getGraph().output_ids.size());
 }
 
+TEST(JITCompiler, registerOutputKeepsConstantOutputs)
+{
+    xad::JITCompiler<double> jit;
+    using AD = xad::AReal<double, 1>;
+
+    AD x = 2.0;
+    jit.registerInput(x);
+    AD c = 5.0;  // does not depend on x
+    AD y = 3.0 * x;
+    jit.registerOutput(c);
+    jit.registerOutput(y);
+    jit.compile();
+
+    ASSERT_EQ(2u, jit.numOutputs());
+    double out[2] = {0.0, 0.0};
+    jit.forward(out);
+    EXPECT_DOUBLE_EQ(5.0, out[0]);
+    EXPECT_DOUBLE_EQ(6.0, out[1]);
+}
+
 TEST(JITCompiler, recordNodeAndConstant)
 {
     xad::JITCompiler<double> jit;
