@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Direct mode mixed operators accept only arithmetic types, XAD expressions and types convertible to the direct type
 - Direct mode compound assignments return the derived type
 - Expression math tests run on the direct mode types themselves
+- With `XAD_TAPE_REUSE_SLOTS`, freeing slots out of order takes logarithmic instead of linear time in the number of reusable slot ranges
 
 ### Deprecated
 

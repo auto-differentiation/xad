@@ -34,6 +34,7 @@
 #include <XAD/Vec.hpp>
 #include <complex>
 #include <list>
+#include <map>
 #include <stack>
 #include <type_traits>
 #include <utility>
@@ -318,6 +319,21 @@ class Tape
     typedef ReusableRange<slot_type> slot_range_type;
     typedef std::list<slot_range_type> range_list;
     range_list reusable_ranges_;
+    // the ranges by start, to find the range of a slot in log time while linear searches would
+    // cost more; the ranges never overlap, so changing one in place keeps them ordered
+    struct RangeStart
+    {
+        const slot_range_type* range;
+        bool operator<(const RangeStart& o) const { return range->first() < o.range->first(); }
+    };
+    std::map<RangeStart, range_list::iterator> range_index_;
+    std::size_t rangeSearchCost_ = 0;    // ranges passed by linear searches since the last index
+    std::size_t rangeIndexUpdates_ = 0;  // index updates since it was last searched
+    range_list::iterator findRange(slot_type slot);
+    range_list::iterator insertRange(range_list::iterator pos, slot_type slot);
+    range_list::iterator eraseRange(range_list::iterator it);
+    void indexRange(range_list::iterator it);
+    void unindexRange(range_list::iterator it);
 #endif
 
     void foldSubrecordings();

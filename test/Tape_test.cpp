@@ -27,6 +27,10 @@
 #include <gtest/gtest.h>
 #include <array>
 #include <cmath>
+#include <cstdint>
+#include <string>
+#include <utility>
+#include <vector>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -463,4 +467,194 @@ TEST(Tape, clearCallbacksDestroysThem)
         s.pushCallback(new Callback(destroyed));
     }
     EXPECT_EQ(3, destroyed);
+}
+
+namespace
+{
+
+// portable, unlike the standard distributions
+class SlotTestRng
+{
+  public:
+    explicit SlotTestRng(std::uint64_t seed) : state_(seed) {}
+
+    unsigned operator()(unsigned n)
+    {
+        state_ = state_ * 6364136223846793005ULL + 1442695040888963407ULL;
+        return unsigned((state_ >> 33) % n);
+    }
+
+  private:
+    std::uint64_t state_;
+};
+
+// Hashes the slots handed out over a long pseudo-random sequence of register and unregister
+// calls, newRecording, resetTo and clearAll, with nested recordings run by checkpoint callbacks
+class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
+{
+  public:
+    typedef xad::Tape<double> tape_type;
+    typedef tape_type::slot_type slot_type;
+    typedef tape_type::position_type position_type;
+
+    SlotSequence() : rng_(2026), hash_(14695981039346656037ULL), duplicates_(0), depth_(0) {}
+
+    std::uint64_t run(int epochs)
+    {
+        std::vector<slot_type> live;
+        for (int e = 0; e < epochs; ++e)
+        {
+            unsigned target = 50 + rng_(800);
+            int ops = 100 + int(rng_(400));
+            slot_type pinned = 0;
+            position_type pos = 0;
+            for (int i = 0; i < ops; ++i)
+            {
+                if (i == ops / 2)
+                {
+                    // the rollback point, kept live until the end of the epoch
+                    pinned = allocate(live);
+                    live.pop_back();
+                    pos = tape_.getPosition();
+                }
+                unsigned r = rng_(100);
+                if (r < 2)
+                    tape_.insertCallback(this);
+                else if (live.empty() || r < (live.size() < target ? 65U : 35U))
+                    allocate(live);
+                else
+                    release(live, rng_(unsigned(live.size())));
+            }
+            live.push_back(pinned);
+            switch (rng_(10))
+            {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    sweep(live);
+                    tape_.newRecording();
+                    break;
+                case 4:
+                    sweep(live);
+                    break;
+                case 5:
+                case 6:
+                    rollBack(live, pinned, pos);
+                    break;
+                case 7:
+                    tape_.resetTo(pos);
+                    break;
+                case 8:
+                    tape_.clearAll();
+                    live.clear();
+                    isLive_.clear();
+                    break;
+                default:
+                    break;
+            }
+            mix(tape_.getNumVariables());
+            std::string ranges = tape_.getReusableSlotsString();
+            for (std::size_t i = 0; i < ranges.size(); ++i) mix(std::uint64_t(ranges[i]));
+        }
+        return hash_;
+    }
+
+    int duplicates() const { return duplicates_; }
+
+    void computeAdjoint(tape_type* tape) override
+    {
+        ++depth_;
+        std::vector<slot_type> input;
+        allocate(input);
+        {
+            xad::ScopedNestedRecording<tape_type> nested(tape);
+            // out of order only while no outer slots are reusable
+            bool anyOrder = tape->getNumReusableSlotSections() == 0;
+            std::vector<slot_type> live;
+            for (int i = 0, n = int(rng_(60)); i < n; ++i)
+            {
+                unsigned r = rng_(100);
+                if (r < 5 && depth_ < 2)
+                    tape->insertCallback(this);
+                else if (live.empty() || r < 60)
+                    allocate(live);
+                else
+                    release(live, anyOrder ? rng_(unsigned(live.size())) : live.size() - 1);
+            }
+            tape->setDerivative(allocate(live), 1.0);
+            nested.computeAdjoints();
+            while (!live.empty())
+                release(live, anyOrder ? rng_(unsigned(live.size())) : live.size() - 1);
+        }
+        release(input, 0);
+        --depth_;
+    }
+
+  private:
+    void mix(std::uint64_t v) { hash_ = (hash_ ^ v) * 1099511628211ULL; }
+
+    slot_type allocate(std::vector<slot_type>& live)
+    {
+        slot_type s = tape_.registerVariable();
+        tape_.pushLhs(s);
+        mix(s);
+        if (s >= isLive_.size())
+            isLive_.resize(s + 1);
+        duplicates_ += isLive_[s] ? 1 : 0;
+        isLive_[s] = true;
+        live.push_back(s);
+        return s;
+    }
+
+    void release(std::vector<slot_type>& live, std::size_t i)
+    {
+        std::swap(live[i], live.back());
+        isLive_[live.back()] = false;
+        tape_.unregisterVariable(live.back());
+        live.pop_back();
+    }
+
+    void sweep(std::vector<slot_type>& live)
+    {
+        tape_.setDerivative(allocate(live), 1.0);
+        tape_.computeAdjoints();
+    }
+
+    // drops the reusable slots from the rollback variable on
+    void rollBack(std::vector<slot_type>& live, slot_type pinned, position_type pos)
+    {
+        // freeing a variable below last keeps some reusable slots too
+        for (std::size_t i = 0; i < live.size(); ++i)
+        {
+            if (live[i] < pinned)
+            {
+                release(live, i);
+                tape_.clearDerivativesAfter(pos);
+                break;
+            }
+        }
+        tape_.resetTo(pos);
+        tape_.newRecording();
+    }
+
+    tape_type tape_;
+    SlotTestRng rng_;
+    std::uint64_t hash_;
+    std::vector<bool> isLive_;
+    int duplicates_;
+    int depth_;
+};
+
+}  // namespace
+
+TEST(Tape, slotSequenceMatchesReference)
+{
+    SlotSequence sequence;
+#ifdef XAD_TAPE_REUSE_SLOTS
+    EXPECT_EQ(17394581942319250789ULL, sequence.run(300));
+#else
+    EXPECT_EQ(15651779913695467064ULL, sequence.run(300));
+#endif
+    EXPECT_EQ(0, sequence.duplicates());
 }
