@@ -158,6 +158,14 @@ remainder_quotient(const T& a, const T& b, const T& r)
 {
     return remainder_quotient(value(a), value(b), value(r));
 }
+
+// log(base) * v, the derivative of v = base^y in y, but 0 where v is 0 (as for base 0)
+template <class Scalar>
+XAD_INLINE Scalar powExponentDerivative(const Scalar& logBase, const Scalar& v)
+{
+    const Scalar d = logBase * v;  // unconditional, so the choice is a select, not a branch
+    return v == Scalar() ? Scalar() : d;
+}
 }  // namespace detail
 
 }  // namespace xad

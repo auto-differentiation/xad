@@ -73,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variables of a JIT scope aliased tape slots after it, and tape variables graph nodes in it, giving wrong derivatives or out-of-bounds writes
 - In a JIT scope, registering a tape variable as an output or taking its adjoint dropped it from the tape
 - `pow(x, 0)` had a NaN derivative at `x = 0`, and `pow(x, 0u)` one everywhere
+- `pow(0, y)` had a NaN derivative to `y`
 
 
 ## [2.0.0] - 2026-02-06

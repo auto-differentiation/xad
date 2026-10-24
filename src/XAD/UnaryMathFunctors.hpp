@@ -182,7 +182,7 @@ struct fabs_op : abs_op<Scalar>
 
 // x^0 is 1 everywhere: b * x^(b-1) would be 0 * inf at x = 0 (and b - 1 wraps for unsigned b)
 XAD_MAKE_UNARY_BINFUNCTOR(pow, b == T2() ? Scalar() : Scalar(b) * Scalar(pow(a, b - T2(1))),
-                          log(b) * v)
+                          detail::powExponentDerivative(Scalar(log(b)), v))
 XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), Scalar(-detail::remainder_quotient(Scalar(b), a, v)))
 XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b * b)),
                           -Scalar(b) / (a * a + Scalar(b * b)))

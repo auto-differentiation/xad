@@ -41,7 +41,7 @@ struct pow_op
     }
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar&, const Scalar& v) const
     {
-        return log(a) * v;
+        return detail::powExponentDerivative(Scalar(log(a)), v);
     }
 };
 
