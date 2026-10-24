@@ -285,18 +285,13 @@ struct AReal
     using base_type::operator+=;
     using base_type::operator-=;
 
-    // a shift needs no tape entry, but the JIT graph must record it
     XAD_INLINE AReal& operator+=(Scalar x)
     {
-        if (recordsJit())
-            return *this = *this + x;
-        return base_type::operator+=(x);
+        return addScalar(x, std::integral_constant<bool, jit_supported>());
     }
     XAD_INLINE AReal& operator-=(Scalar x)
     {
-        if (recordsJit())
-            return *this = *this - x;
-        return base_type::operator-=(x);
+        return subScalar(x, std::integral_constant<bool, jit_supported>());
     }
 #endif
 
@@ -325,6 +320,18 @@ struct AReal
     {
         return shouldRecordJIT() && !tape_type::getActive() && getActiveJit() != nullptr;
     }
+
+    // a shift needs no tape entry, but the JIT graph must record it
+    XAD_INLINE AReal& addScalar(Scalar x, std::true_type)
+    {
+        return recordsJit() ? (*this = *this + x) : base_type::operator+=(x);
+    }
+    XAD_INLINE AReal& addScalar(Scalar x, std::false_type) { return base_type::operator+=(x); }
+    XAD_INLINE AReal& subScalar(Scalar x, std::true_type)
+    {
+        return recordsJit() ? (*this = *this - x) : base_type::operator-=(x);
+    }
+    XAD_INLINE AReal& subScalar(Scalar x, std::false_type) { return base_type::operator-=(x); }
 
     template <class Expr>
     XAD_INLINE void tryRecordJitFromExprCtor(const Expression<Scalar, Expr, derivative_type>& expr,
