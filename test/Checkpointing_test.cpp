@@ -262,6 +262,65 @@ TEST(Checkpointing, sweepTwice)
     EXPECT_EQ(xa, derivative(x0));
 }
 
+// y = t^3 + sin(t), recomputed in a nested recording during the sweep
+template <class Tape>
+class CubeSinCheckpointCallback : public xad::CheckpointCallback<Tape>
+{
+  public:
+    typedef typename Tape::slot_type idx_type;
+
+    CubeSinCheckpointCallback(double t, idx_type in, idx_type out) : t_(t), in_(in), out_(out) {}
+
+    void computeAdjoint(Tape* tape) override
+    {
+        double outputder = tape->getAndResetOutputAdjoint(out_);
+        typename Tape::active_type t = t_;
+        tape->registerInput(t);
+
+        xad::ScopedNestedRecording<Tape> nested(tape);
+        typename Tape::active_type y = t * t * t + sin(t);
+        tape->registerOutput(y);
+        derivative(y) = outputder;
+        nested.computeAdjoints();
+        nested.incrementAdjoint(in_, derivative(t));
+    }
+
+  private:
+    double t_;
+    idx_type in_, out_;
+};
+
+TEST(Checkpointing, callbackKeepsPendingAdjoints)
+{
+    typedef xad::AReal<double> ad_type;
+    typedef ad_type::tape_type tape_type;
+
+    tape_type tape;
+    ad_type x0 = 0.7;
+    tape.registerInput(x0);
+    tape.newRecording();
+    ad_type z = 0.0 * x0;
+    {
+        // u is gone before the sweep reaches the callback, with its adjoint still pending
+        ad_type u = x0 * 3.0;
+        ad_type t = x0 * 2.0;
+        double tv = value(t);
+        ad_type y = tv * tv * tv + std::sin(tv);
+        tape.registerOutput(y);
+        auto cb = new CubeSinCheckpointCallback<tape_type>(tv, t.getSlot(), y.getSlot());
+        tape.pushCallback(cb);
+        tape.insertCallback(cb);
+        z = y * u;
+    }
+    tape.registerOutput(z);
+    derivative(z) = 1.0;
+    tape.computeAdjoints();
+
+    double t = 1.4, u = 2.1;
+    EXPECT_NEAR((t * t * t + std::sin(t)) * 3.0 + u * (3.0 * t * t + std::cos(t)) * 2.0,
+                derivative(x0), 1e-12);
+}
+
 // #define VERBOSE 1
 #define STATISTICS 1
 

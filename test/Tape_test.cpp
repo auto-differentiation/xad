@@ -652,9 +652,9 @@ TEST(Tape, slotSequenceMatchesReference)
 {
     SlotSequence sequence;
 #ifdef XAD_TAPE_REUSE_SLOTS
-    EXPECT_EQ(17394581942319250789ULL, sequence.run(300));
+    EXPECT_EQ(18276355987521459119ULL, sequence.run(300));
 #else
-    EXPECT_EQ(15651779913695467064ULL, sequence.run(300));
+    EXPECT_EQ(9909949292622754160ULL, sequence.run(300));
 #endif
     EXPECT_EQ(0, sequence.duplicates());
 }

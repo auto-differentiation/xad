@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `lround`/`llround` for `FReal` did not compile
 - `max`/`min` ties with direct mode inner types
 - Computing adjoints cut the tape at its checkpoint callbacks, so a second `computeAdjoints` (e.g. in `computeJacobian`) gave wrong adjoints
+- A variable a checkpoint callback registered could take the slot of a variable gone before the sweep whose adjoint was still needed, giving wrong adjoints
 
 
 ## [2.0.0] - 2026-02-06
