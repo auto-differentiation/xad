@@ -3130,56 +3130,17 @@ XAD_INLINE std::complex<T> asin_impl(const std::complex<T>& z)
 template <class T>
 XAD_INLINE std::complex<T> acos_impl(const std::complex<T>& z)
 {
-    typedef typename xad::ExprTraits<T>::nested_type nested;
-    if (z.real() == 0.0)
+    if (!xad::isfinite(z.real()) || !xad::isfinite(z.imag()))
     {
-        if (z.imag() == 0.0 && !xad::signbit(z.imag()))
-            return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5, -0.0);
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5,
-                                   -std::numeric_limits<nested>::quiet_NaN());
+        // special values as glibc's cacos: pi/2 - asin(z)
+        std::complex<T> w = asin_impl(z);
+        return std::complex<T>(T(3.141592653589793238462643383279502884197169399 * 0.5) - w.real(),
+                               -w.imag());
     }
-    if (xad::isfinite(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
-        return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.5,
-                               -std::numeric_limits<nested>::infinity());
-    if (xad::isinf(z.real()))
-    {
-        if (z.real() < 0.0)
-        {
-
-            if (xad::isfinite(z.imag()) && z.imag() >= 0.0)
-                return std::complex<T>(3.141592653589793238462643383279502884197169399,
-                                       -std::numeric_limits<nested>::infinity());
-            if (xad::isinf(z.imag()) && z.imag() > 0.0)
-                return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.75,
-                                       -std::numeric_limits<nested>::infinity());
-        }
-        else
-        {
-            if (xad::isfinite(z.imag()) && z.imag() >= 0.0)
-                return std::complex<T>(+0.0, -std::numeric_limits<nested>::infinity());
-            if (xad::isinf(z.imag()) && z.imag() > 0.0)
-                return std::complex<T>(3.141592653589793238462643383279502884197169399 * 0.25,
-                                       -std::numeric_limits<nested>::infinity());
-        }
-        if (xad::isnan(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::infinity());
-    }
-    if (xad::isnan(z.real()))
-    {
-        if (xad::isfinite(z.imag()))
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   std::numeric_limits<nested>::quiet_NaN());
-        else if (xad::isinf(z.imag()) && z.imag() > 0.0)
-            return std::complex<T>(std::numeric_limits<nested>::quiet_NaN(),
-                                   -std::numeric_limits<nested>::infinity());
-    }
-
-    std::complex<T> iz(-z.imag(), z.real());
-    std::complex<T> lnizsqrt = log(iz + sqrt(T(1.0) - (z * z)));
-    std::complex<T> ilnizsqrt(-lnizsqrt.imag(), lnizsqrt.real());
-    return T(3.141592653589793238462643383279502884197169399 * 0.5) + ilnizsqrt;
+    // Kahan's formulas, as asin_kahan
+    std::complex<T> a = sqrt(T(1.0) - z), b = sqrt(T(1.0) + z);
+    return std::complex<T>(T(2.0) * atan2(a.real(), b.real()),
+                           asinh(b.real() * a.imag() - b.imag() * a.real()));
 }
 
 template <class T>

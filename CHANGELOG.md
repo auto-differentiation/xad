@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scalbn` overflowed or underflowed where the result is finite
 - Direct mode `real op complex` lost a zero imaginary part's sign: wrong side of branch cuts in `asin`, `atanh` etc.
 - Complex `asinh`, `asin` cancelled far from the origin (`asinh(-1e8)` was `-inf`) and near it, and missed special values
+- Complex `acos` of large reals was wrong, differently in each mode, and so were its special values below the real axis
 
 
 ## [2.0.0] - 2026-02-06
