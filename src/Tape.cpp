@@ -442,6 +442,8 @@ void Tape<T, N>::newNestedRecording()
     newr.opStartPos_ = slot_type(operations_.size());
     newr.derivativesInitialized_ = false;
     newr.startDerivative_ = currentRec_->maxDerivative_;
+    // above the outer recording's slots, whose adjoints may be pending
+    newr.iDerivative_ = (std::max)(newr.iDerivative_, newr.startDerivative_);
     nestedRecordings_.push(newr);
 
     currentRec_ = &nestedRecordings_.top();
@@ -602,18 +604,17 @@ void Tape<T, N>::computeAdjointsTo(position_type pos)
         // std::cout << ""
         computeAdjointsToImpl(end, start);
 
-        // the recording stays for later sweeps, the callback records after it
-        position_type recorded = getPosition();
-
         // keep the prevMax stored, so we can resize the der. vector on a
         // subrecording
         currentRec_->prevMax_ = currentRec_->maxDerivative_;
-
-        cb->computeAdjoint(this);
+        {
+            // a nested recording keeps the callback's variables off slots with pending adjoints
+            ScopedNestedRecording<Tape> nested(this);
+            cb->computeAdjoint(this);
+        }
         currentRec_->prevMax_ = INVALID_SLOT;
         // std::cout << "********Reset to " << end-1 << std::endl;
 
-        resetTo(recorded);  // in case the callback added to the tape
         // clearDerivativesAfter(end-1);
         start = end - 1;  // skip over the checkpoint itself (?)
         LOG_DEBUG("new start=" << start);
