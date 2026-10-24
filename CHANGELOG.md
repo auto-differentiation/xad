@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complex `exp`, `sinh`, `cosh`, `tanh` (so `sin`, `cos`, `tan`) overflowed early (NaN parts, `tanh(400)` was NaN) and cancelled near zero
 - Complex division over- or underflowed `|w|^2` (`1 / 1e-200` was `(inf, NaN)`), also in derivatives; now Smith's algorithm, as GCC
 - `std::norm<T>(z)` with an explicit `T` did not compile with libc++ other than Apple clang 15+
+- A JIT compiler left the tape it deactivated inactive after it went out of scope
 
 
 ## [2.0.0] - 2026-02-06

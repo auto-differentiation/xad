@@ -53,6 +53,10 @@ template <class Scalar, std::size_t N>
 struct FRealDirect;
 template <class>
 class CheckpointCallback;
+#ifdef XAD_ENABLE_JIT
+template <class, std::size_t>
+class JITCompiler;
+#endif
 
 template <class Tape>
 class ScopedNestedRecording
@@ -376,6 +380,12 @@ class Tape
     };
     std::stack<SubRecording> nestedRecordings_;
     SubRecording* currentRec_;
+#ifdef XAD_ENABLE_JIT
+    template <class, std::size_t>
+    friend class JITCompiler;
+    // the pointer of the JIT that deactivated this tape, to clear when the tape goes
+    Tape** jitSuspender_ = nullptr;
+#endif
 };
 
 // declare external explicit instantiations

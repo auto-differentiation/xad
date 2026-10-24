@@ -75,6 +75,15 @@ Tape<T, N>::Tape(Tape&& o) noexcept
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
+#ifdef XAD_ENABLE_JIT
+    // the JIT that deactivated o reactivates this tape instead
+    if (o.jitSuspender_)
+    {
+        jitSuspender_ = o.jitSuspender_;
+        o.jitSuspender_ = nullptr;
+        *jitSuspender_ = this;
+    }
+#endif
     if (o.isActive())
     {
         // activate() would throw while o is active
@@ -101,6 +110,16 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
+#ifdef XAD_ENABLE_JIT
+    if (o.jitSuspender_)
+    {
+        if (jitSuspender_)
+            *jitSuspender_ = nullptr;
+        jitSuspender_ = o.jitSuspender_;
+        o.jitSuspender_ = nullptr;
+        *jitSuspender_ = this;
+    }
+#endif
     if (o.isActive())
     {
         // activate() would throw while o is active
@@ -116,6 +135,10 @@ template <class T, std::size_t N>
 Tape<T, N>::~Tape()
 {
     deactivate();
+#ifdef XAD_ENABLE_JIT
+    if (jitSuspender_)
+        *jitSuspender_ = nullptr;
+#endif
     clearCallbacks();
 }
 

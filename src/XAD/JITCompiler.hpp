@@ -64,11 +64,7 @@ class JITCompiler
         : backend_(std::unique_ptr<JITGraphInterpreter<Real>>(new JITGraphInterpreter<Real>()))
     {
         if (activate)
-        {
-            // Deactivate any active tape - JIT requires no tape to be active
-            tape_type::deactivateAll();
-            setActive(this);
-        }
+            activateSuspendingTape();
     }
 
     // Constructor with custom backend
@@ -76,14 +72,14 @@ class JITCompiler
         : backend_(std::move(backend))
     {
         if (activate)
-        {
-            // Deactivate any active tape - JIT requires no tape to be active
-            tape_type::deactivateAll();
-            setActive(this);
-        }
+            activateSuspendingTape();
     }
 
-    ~JITCompiler() { deactivate(); }
+    ~JITCompiler()
+    {
+        deactivate();
+        restoreTape();
+    }
 
     /// Set or replace the JIT backend.
     /// Resets any compiled state when the backend is changed.
@@ -100,6 +96,7 @@ class JITCompiler
           inputValues_(std::move(other.inputValues_)),
           derivatives_(std::move(other.derivatives_))
     {
+        takeSuspendedTape(other);
         if (other.isActive())
         {
             other.deactivate();
@@ -114,10 +111,12 @@ class JITCompiler
         if (this != &other)
         {
             deactivate();
+            restoreTape();
             graph_ = std::move(other.graph_);
             backend_ = std::move(other.backend_);
             inputValues_ = std::move(other.inputValues_);
             derivatives_ = std::move(other.derivatives_);
+            takeSuspendedTape(other);
             if (other.isActive())
             {
                 other.deactivate();
@@ -311,12 +310,47 @@ class JITCompiler
     position_type getPosition() const { return static_cast<position_type>(graph_.nodeCount()); }
 
   private:
+    // JIT recording needs the tape off: this JIT reactivates it when it goes
+    void activateSuspendingTape()
+    {
+        setActive(this);
+        if (tape_type* t = tape_type::getActive())
+        {
+            if (t->jitSuspender_)  // deactivated by an earlier JIT and reactivated since
+                *t->jitSuspender_ = nullptr;
+            t->jitSuspender_ = &suspendedTape_;
+            suspendedTape_ = t;
+            t->deactivate();
+        }
+    }
+
+    void takeSuspendedTape(JITCompiler& other) noexcept
+    {
+        suspendedTape_ = other.suspendedTape_;
+        other.suspendedTape_ = nullptr;
+        if (suspendedTape_)
+            suspendedTape_->jitSuspender_ = &suspendedTape_;
+    }
+
+    // unless the tape is gone (it clears suspendedTape_) or something else is active now
+    void restoreTape() noexcept
+    {
+        tape_type* t = suspendedTape_;
+        if (!t)
+            return;
+        t->jitSuspender_ = nullptr;
+        suspendedTape_ = nullptr;
+        if (active_jit_ == nullptr && tape_type::getActive() == nullptr)
+            t->activate();
+    }
+
     static XAD_THREAD_LOCAL JITCompiler* active_jit_;
     JITGraph graph_;
     std::unique_ptr<JITBackend<Real>> backend_;
     std::vector<const Real*> inputValues_;
     std::vector<derivative_type> derivatives_;
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
+    tape_type* suspendedTape_ = nullptr;
 };
 
 // Declare external explicit instantiations (mirrors Tape.hpp pattern).
