@@ -233,6 +233,7 @@ class Tape
     size_type getNumCallbacks() const;
     bool haveCallbacks() const;
     void popCallback();
+    void clearCallbacks();
 
     // internal tape recording
     XAD_INLINE slot_type registerVariable()

@@ -352,6 +352,12 @@ Gives *strong exception safety guarantee* - tape state unchanged in case of exce
 
 Gives *strong exception safety guarantee* - tape state unchanged in case of exception.
 
+#### `clearCallbacks`
+
+`#!c++ void clearCallbacks()` destroys all callback objects pushed by `pushCallback`,
+e.g. before a new recording on a tape that is used for many recordings.
+Call it only when no recording that uses them will be rolled back again.
+
 ## `ScopedNestedRecording`
 
 ```c++

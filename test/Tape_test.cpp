@@ -22,6 +22,7 @@
 
 ******************************************************************************/
 
+#include <XAD/CheckpointCallback.hpp>
 #include <XAD/Tape.hpp>
 #include <gtest/gtest.h>
 #include <array>
@@ -440,3 +441,26 @@ TEST(Tape, restartingRecordingResetsMemory)
     EXPECT_EQ(2U, s.getNumVariables());
 }
 #endif
+
+TEST(Tape, clearCallbacksDestroysThem)
+{
+    struct Callback : xad::CheckpointCallback<xad::Tape<double>>
+    {
+        explicit Callback(int& destroyed) : destroyed_(destroyed) {}
+        ~Callback() override { ++destroyed_; }
+        void computeAdjoint(xad::Tape<double>*) override {}
+        int& destroyed_;
+    };
+
+    int destroyed = 0;
+    {
+        xad::Tape<double> s;
+        s.pushCallback(new Callback(destroyed));
+        s.pushCallback(new Callback(destroyed));
+        s.clearCallbacks();
+        EXPECT_EQ(2, destroyed);
+        EXPECT_FALSE(s.haveCallbacks());
+        s.pushCallback(new Callback(destroyed));
+    }
+    EXPECT_EQ(3, destroyed);
+}
