@@ -76,9 +76,11 @@ Tape<T, N>::Tape(Tape&& o) noexcept
     rebindRangeIterators();
 #endif
     if (o.isActive())
-        activate();
-    else
-        deactivate();
+    {
+        // activate() would throw while o is active
+        o.deactivate();
+        active_tape_ = this;
+    }
 }
 
 template <class T, std::size_t N>
@@ -100,7 +102,11 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     rebindRangeIterators();
 #endif
     if (o.isActive())
-        activate();
+    {
+        // activate() would throw while o is active
+        o.deactivate();
+        active_tape_ = this;
+    }
     else
         deactivate();
     return *this;
