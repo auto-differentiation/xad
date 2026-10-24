@@ -71,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variables of a JIT scope aliased tape slots after it, and tape variables graph nodes in it, giving wrong derivatives or out-of-bounds writes
 - In a JIT scope, registering a tape variable as an output or taking its adjoint dropped it from the tape
 - JIT recording missed `+=` and `-=` with a scalar
+- JIT variables assigned a scalar kept their old graph node
 
 
 ## [2.0.0] - 2026-02-06

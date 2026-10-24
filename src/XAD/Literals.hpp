@@ -267,6 +267,10 @@ struct AReal
         auto tape = tape_type::getActive();
         if (tape && shouldRecord())
             tape->pushLhs(slot_);
+#ifdef XAD_ENABLE_JIT
+        else if (recordsJit())
+            slot_ = INVALID_SLOT;  // a constant now, as in the JIT's copy assignment
+#endif
         return *this;
     }
 
