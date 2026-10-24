@@ -64,6 +64,7 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       derivatives_(std::move(o.derivatives_)),
       checkpoints_(std::move(o.checkpoints_)),
       callbacks_(std::move(o.callbacks_)),
+      positionSlots_(std::move(o.positionSlots_)),
 #ifdef XAD_TAPE_REUSE_SLOTS
       reusable_ranges_(std::move(o.reusable_ranges_)),
       range_index_(std::move(o.range_index_)),
@@ -85,6 +86,7 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     derivatives_ = std::move(o.derivatives_);
     checkpoints_ = std::move(o.checkpoints_);
     callbacks_ = std::move(o.callbacks_);
+    positionSlots_ = std::move(o.positionSlots_);
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_ = std::move(o.reusable_ranges_);
     range_index_ = std::move(o.range_index_);
@@ -112,6 +114,7 @@ void Tape<T, N>::clearAll()
     statement_.clear();
     derivatives_.clear();
     checkpoints_.clear();
+    positionSlots_.clear();
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_.clear();
     range_index_.clear();
@@ -272,7 +275,7 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
             }
         }
     }
-    else  // not at the end of the tape
+    else if (slot < currentRec_->iDerivative_)  // not at the end, nor reused by resetTo
     {
         // unregistering in the middle of the tape requires inserting the slot into a reusable slot
         // list at the right point
@@ -412,6 +415,9 @@ void Tape<T, N>::foldSubrecording()
         std::lower_bound(checkpoints_.begin(), checkpoints_.end(), prev.statementStartPos_,
                          [=](const chkpt_type& ckpt, slot_type pos) { return ckpt.first < pos; });
     checkpoints_.erase(it, checkpoints_.end());
+    positionSlots_.erase(std::lower_bound(positionSlots_.begin(), positionSlots_.end(),
+                                          position_slots_type(prev.statementStartPos_, 0)),
+                         positionSlots_.end());
 #ifdef XAD_TAPE_REUSE_SLOTS
     for (auto range = prev.startRange_; range != reusable_ranges_.end();) range = eraseRange(range);
 #endif
@@ -467,6 +473,7 @@ void Tape<T, N>::newRecording()
     statement_.clear();
     checkpoints_.clear();
     foldSubrecordings();
+    positionSlots_.clear();
     currentRec_->maxDerivative_ = currentRec_->iDerivative_ + 1;
     statement_.push_back(std::make_pair(size_type(operations_.size()), slot_type(INVALID_SLOT)));
     currentRec_->derivativesInitialized_ = false;
@@ -781,7 +788,10 @@ void Tape<T, N>::incrementAdjoint(slot_type slot, const T& x)
 template <class T, std::size_t N>
 typename Tape<T, N>::position_type Tape<T, N>::getPosition() const
 {
-    return static_cast<position_type>(statement_.size() - 1);
+    auto pos = static_cast<position_type>(statement_.size() - 1);
+    while (!positionSlots_.empty() && positionSlots_.back().first >= pos) positionSlots_.pop_back();
+    positionSlots_.push_back(position_slots_type(pos, currentRec_->iDerivative_));
+    return pos;
 }
 
 template <class T, std::size_t N>
@@ -801,14 +811,24 @@ void Tape<T, N>::resetTo(position_type pos)
         LOG_DEBUG("removing " << std::distance(newend, checkpoints_.end()) << " checkpoints");
         checkpoints_.erase(newend, checkpoints_.end());
     }
+    // reuse the slots registered after the position, if getPosition gave it out
+    auto mark =
+        std::lower_bound(positionSlots_.begin(), positionSlots_.end(), position_slots_type(pos, 0));
+    if (mark != positionSlots_.end() && mark->first == pos &&
+        pos + 1 >= currentRec_->statementStartPos_)
+    {
+        currentRec_->iDerivative_ = (std::min)(currentRec_->iDerivative_, mark->second);
+        ++mark;
+    }
+    positionSlots_.erase(mark, positionSlots_.end());
 #ifdef XAD_TAPE_REUSE_SLOTS
-    // drop the reusable slots at or above maxDerivative_
-    while (!reusable_ranges_.empty() &&
-           reusable_ranges_.back().second() > currentRec_->maxDerivative_)
+    // drop the reusable slots at or above maxDerivative_ or the slot counter
+    auto limit = (std::min)(currentRec_->maxDerivative_, currentRec_->iDerivative_);
+    while (!reusable_ranges_.empty() && reusable_ranges_.back().second() > limit)
     {
         auto last = std::prev(reusable_ranges_.end());
-        if (last->first() < currentRec_->maxDerivative_)
-            last->second(currentRec_->maxDerivative_);
+        if (last->first() < limit)
+            last->second(limit);
         else
         {
             if (currentRec_->startRange_ == last)

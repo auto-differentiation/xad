@@ -191,7 +191,7 @@ adjoints further.
 
 #### `resetTo`
 
-`#!c++ void resetTo(position_type pos)` resets the tape back to the given position. All statements recorded after this point will be discarded.
+`#!c++ void resetTo(position_type pos)` resets the tape back to the given position. All statements recorded after this point will be discarded; slots registered after a position from `getPosition` are reused.
 
 !!! warning
 

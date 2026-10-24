@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Checkpoint callbacks could reuse a slot whose adjoint was still pending, giving wrong adjoints
 - `resetTo` could hang with `XAD_TAPE_REUSE_SLOTS`
 - Slots dropped by `resetTo` could still be handed out (`XAD_TAPE_REUSE_SLOTS`)
+- `resetTo` kept the slots registered after its position, so repeated rollbacks slowed down
 
 
 ## [2.0.0] - 2026-02-06
