@@ -300,9 +300,9 @@ void Tape<T, N>::unregisterVariableReuseSlots(slot_type slot)
 #endif
             if (reusable_ranges_.empty() || slot > reusable_ranges_.back().second())
             {
-                // insert a new range at the end
+                // new range at the end, the recording's first if it has none
                 currentRec_->latestRange_ = insertRange(reusable_ranges_.end(), slot);
-                if (reusable_ranges_.size() == 1)
+                if (currentRec_->startRange_ == reusable_ranges_.end())
                     currentRec_->startRange_ = currentRec_->latestRange_;
             }
             else

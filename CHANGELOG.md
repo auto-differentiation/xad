@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `resetTo` could hang with `XAD_TAPE_REUSE_SLOTS`
 - Slots dropped by `resetTo` could still be handed out (`XAD_TAPE_REUSE_SLOTS`)
 - `resetTo` kept the slots registered after its position, so repeated rollbacks slowed down
+- A slot freed in a nested recording could be handed out twice (`XAD_TAPE_REUSE_SLOTS`)
 
 
 ## [2.0.0] - 2026-02-06

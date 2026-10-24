@@ -25,6 +25,7 @@
 #include <XAD/CheckpointCallback.hpp>
 #include <XAD/Tape.hpp>
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -489,6 +490,42 @@ TEST(Tape, resetToDropsAllReusableSlotsOfTheRecording)
     s.unregisterVariable(slots[2]);
     EXPECT_EQ("[2, 3), ", s.getReusableSlotsString());
     EXPECT_EQ(2U, s.registerVariable());
+}
+
+TEST(Tape, nestedRecordingTakesItsReusableSlotsAlong)
+{
+    typedef xad::Tape<double> tape_type;
+    // frees a slot in the middle of a nested recording without reusable slots of its own
+    struct Callback : xad::CheckpointCallback<tape_type>
+    {
+        void computeAdjoint(tape_type* tape) override
+        {
+            xad::ScopedNestedRecording<tape_type> nested(tape);
+            auto a = tape->registerVariable(), b = tape->registerVariable();
+            tape->unregisterVariable(a);
+            tape->unregisterVariable(b);
+        }
+    } cb;
+
+    tape_type s;
+    std::vector<tape_type::slot_type> live;
+    for (int i = 0; i < 4; ++i)
+    {
+        live.push_back(s.registerVariable());
+        s.pushLhs(live.back());
+    }
+    s.unregisterVariable(live[1]);
+    live.erase(live.begin() + 1);
+    s.insertCallback(&cb);
+    s.setDerivative(live.back(), 1.0);
+    s.computeAdjoints();
+
+    for (int i = 0; i < 3; ++i)
+    {
+        auto slot = s.registerVariable();
+        EXPECT_TRUE(std::find(live.begin(), live.end(), slot) == live.end()) << slot;
+        live.push_back(slot);
+    }
 }
 #endif
 
