@@ -268,8 +268,8 @@ struct AReal
         if (tape && shouldRecord())
             tape->pushLhs(slot_);
 #ifdef XAD_ENABLE_JIT
-        else if (recordsJit())
-            slot_ = INVALID_SLOT;  // a constant now, as in the JIT's copy assignment
+        else
+            dropJitNode(std::integral_constant<bool, jit_supported>());
 #endif
         return *this;
     }
@@ -316,22 +316,37 @@ struct AReal
         return getActiveJitImpl(std::integral_constant<bool, jit_supported>());
     }
 
-    XAD_INLINE bool recordsJit() const
+    // Scalar shifts and assignments change the graph, but not on an input: forward() reads
+    // its value, so they set the value to replay.
+    XAD_INLINE bool jitRecordsScalarOp() const
     {
-        return shouldRecordJIT() && !tape_type::getActive() && getActiveJit() != nullptr;
+        jit_type* j = jit_type::getActive();
+        if (!j || !shouldRecordJIT() || tape_type::getActive())
+            return false;
+        const JITGraph& g = j->getGraph();
+        const uint32_t node = jitNode(slot_);
+        return node >= g.nodeCount() || !g.isInput(node);
     }
 
     // a shift needs no tape entry, but the JIT graph must record it
     XAD_INLINE AReal& addScalar(Scalar x, std::true_type)
     {
-        return recordsJit() ? (*this = *this + x) : base_type::operator+=(x);
+        return jitRecordsScalarOp() ? (*this = *this + x) : base_type::operator+=(x);
     }
     XAD_INLINE AReal& addScalar(Scalar x, std::false_type) { return base_type::operator+=(x); }
     XAD_INLINE AReal& subScalar(Scalar x, std::true_type)
     {
-        return recordsJit() ? (*this = *this - x) : base_type::operator-=(x);
+        return jitRecordsScalarOp() ? (*this = *this - x) : base_type::operator-=(x);
     }
     XAD_INLINE AReal& subScalar(Scalar x, std::false_type) { return base_type::operator-=(x); }
+
+    // a constant now, as in the JIT's copy assignment
+    XAD_INLINE void dropJitNode(std::true_type)
+    {
+        if (jitRecordsScalarOp())
+            slot_ = INVALID_SLOT;
+    }
+    XAD_INLINE void dropJitNode(std::false_type) {}
 
     template <class Expr>
     XAD_INLINE void tryRecordJitFromExprCtor(const Expression<Scalar, Expr, derivative_type>& expr,
