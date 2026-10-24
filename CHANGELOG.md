@@ -60,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complex division over- or underflowed `|w|^2` (`1 / 1e-200` was `(inf, NaN)`), also in derivatives; now Smith's algorithm, as GCC
 - `std::norm<T>(z)` with an explicit `T` did not compile with libc++ other than Apple clang 15+
 - A JIT compiler left the tape it deactivated inactive after it went out of scope
+- `incrementAdjoint` took no vector adjoint in vector mode
 
 
 ## [2.0.0] - 2026-02-06

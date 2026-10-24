@@ -69,6 +69,13 @@ class ScopedNestedRecording
     {
         s_->incrementAdjoint(slot, value);
     }
+    template <class T = Tape>
+    typename std::enable_if<
+        !std::is_same<typename T::derivative_type, typename T::value_type>::value>::type
+    incrementAdjoint(typename Tape::slot_type slot, const typename T::derivative_type& value)
+    {
+        s_->incrementAdjoint(slot, value);
+    }
 
     Tape* getTape() { return s_; }
 
@@ -229,6 +236,15 @@ class Tape
     void insertCallback(callback_type cb);
     derivative_type getAndResetOutputAdjoint(slot_type slot);
     void incrementAdjoint(slot_type slot, const Real& x);
+    // vector mode: per lane
+    template <std::size_t M = N>
+    typename std::enable_if<(M > 1)>::type incrementAdjoint(
+        slot_type slot, const typename DerivativesTraits<Real, M>::type& x)
+    {
+        if (slot >= derivatives_.size())
+            throw OutOfRange("adjoint to be incremented is out of range");
+        derivatives_[slot] += x;
+    }
     void newNestedRecording();
     void endNestedRecording();
 
