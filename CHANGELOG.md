@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Products and quotients with a scalar gave NaN derivatives at infinity in nested forward modes
 - Complex `sqrt` of a negative real had a nonzero real part
 - Variables of a JIT scope aliased tape slots after it, and tape variables graph nodes in it, giving wrong derivatives or out-of-bounds writes
+- In a JIT scope, registering a tape variable as an output or taking its adjoint dropped it from the tape
 
 
 ## [2.0.0] - 2026-02-06

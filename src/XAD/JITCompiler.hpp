@@ -175,9 +175,16 @@ class JITCompiler
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (!outp.shouldRecordJIT())  // independent of the inputs
-            outp.slot_ = jitSlot(graph_.addConstant(outp.value()));
-        graph_.markOutput(jitNode(outp.slot_));
+        uint32_t node;
+        if (outp.shouldRecordJIT())
+            node = jitNode(outp.slot_);
+        else  // independent of the inputs: a constant, leaving a tape variable its slot
+        {
+            node = graph_.addConstant(outp.value());
+            if (!outp.shouldRecord())
+                outp.slot_ = jitSlot(node);
+        }
+        graph_.markOutput(node);
     }
 
     template <class Inner>

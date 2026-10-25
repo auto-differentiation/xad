@@ -361,6 +361,13 @@ struct AReal
         auto j = getActiveJit();
         if (!j)
             return nullptr;
+        if (shouldRecord())
+        {
+            // a tape variable is a constant here: its adjoint reads 0 and ignores writes
+            static XAD_THREAD_LOCAL derivative_type ignored;
+            ignored = derivative_type();
+            return &ignored;
+        }
         if (!shouldRecordJIT())
             slot_ = jitSlot(j->registerVariable());
         return &j->derivative(slot_);
