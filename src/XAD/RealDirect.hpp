@@ -45,8 +45,8 @@ struct RealDirect
     constexpr XAD_INLINE RealDirect() = default;
     constexpr XAD_INLINE RealDirect(RealDirect &&o) noexcept = default;
     constexpr XAD_INLINE RealDirect(const RealDirect &o) = default;
-    RealDirect &operator=(const RealDirect &val) = default;
-    RealDirect &operator=(RealDirect &&val) = default;
+    XAD_INLINE RealDirect &operator=(const RealDirect &val) = default;
+    XAD_INLINE RealDirect &operator=(RealDirect &&val) = default;
 
     constexpr XAD_INLINE RealDirect(const BaseType &rhs) : base_(rhs) {}
 

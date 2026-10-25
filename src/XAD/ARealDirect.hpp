@@ -44,6 +44,14 @@ struct ARealDirect : public RealDirect<AReal<Scalar, N>, ARealDirect<Scalar, N>>
     typedef RealDirect<AReal<Scalar, N>, ARealDirect<Scalar, N>> base_class;
     using base_class::base_class;
 
+    // explicit so XAD_INLINE applies; GCC does not inline the implicit ones
+    XAD_INLINE ARealDirect() = default;
+    XAD_INLINE ARealDirect(const ARealDirect &) = default;
+    XAD_INLINE ARealDirect(ARealDirect &&) noexcept = default;
+    XAD_INLINE ARealDirect &operator=(const ARealDirect &) = default;
+    XAD_INLINE ARealDirect &operator=(ARealDirect &&) noexcept = default;
+    XAD_INLINE ~ARealDirect() = default;
+
     static constexpr slot_type INVALID_SLOT = tape_type::INVALID_SLOT;
 
     XAD_INLINE void setDerivative(const derivative_type &a) { this->base().setDerivative(a); }
