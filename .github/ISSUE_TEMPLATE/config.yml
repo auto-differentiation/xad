@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or help
+    url: https://github.com/auto-differentiation/xad/discussions/categories/q-a
+    about: Ask usage questions in Discussions, where the answers help everyone.
+  - name: Commercial licence and support
+    url: https://www.xcelerit.com/xad-enterprise-support
+    about: Production use without AGPL obligations, support and training.

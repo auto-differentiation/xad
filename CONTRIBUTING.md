@@ -12,7 +12,7 @@ git clone https://github.com/yourusername/xad.git
 2.  Follow the [Build Instructions](README.md) to setup the dependencies and
     build the software. Make sure all tests pass.
 
-3.  Create a feature branch, typically based on master, for your change
+3.  Create a feature branch, typically based on main, for your change
 
 ```bash
 git checkout -b feature/my-changed-main
