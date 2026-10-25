@@ -655,6 +655,11 @@ void Tape<T, N>::computeAdjoints()
 template <class T, std::size_t N>
 void Tape<T, N>::computeAdjointsTo(position_type pos)
 {
+#ifdef XAD_ENABLE_JIT
+    // slots from FIRST_JIT_SLOT on are passive, so their dependencies were not recorded
+    if (currentRec_->maxDerivative_ > FIRST_JIT_SLOT)
+        throw OutOfRange("too many tape slots with JIT enabled");
+#endif
     position_type start = position_type(statement_.size() - 1);
     LOG_DEBUG("number checkpoints: " << checkpoints_.size());
     for (unsigned i = unsigned(checkpoints_.size()); i > 0; --i)

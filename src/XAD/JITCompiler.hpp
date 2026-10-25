@@ -166,18 +166,18 @@ class JITCompiler
 
     XAD_INLINE void registerInput(active_type& inp)
     {
-        if (!inp.shouldRecord())
+        if (!inp.shouldRecordJIT())
         {
-            inp.slot_ = graph_.addInput();
+            inp.slot_ = jitSlot(graph_.addInput());
             inputValues_.push_back(&inp.value());
         }
     }
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (!outp.shouldRecord())  // independent of the inputs
-            outp.slot_ = graph_.addConstant(outp.value());
-        graph_.markOutput(outp.slot_);
+        if (!outp.shouldRecordJIT())  // independent of the inputs
+            outp.slot_ = jitSlot(graph_.addConstant(outp.value()));
+        graph_.markOutput(jitNode(outp.slot_));
     }
 
     template <class Inner>
@@ -265,31 +265,36 @@ class JITCompiler
             derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputGradients[i]);
     }
 
+    // s: a variable's slot or a graph node
     derivative_type& derivative(slot_type s)
     {
-        if (s >= derivatives_.size())
-            derivatives_.resize(s + 1, derivative_type());
-        return derivatives_[s];
+        uint32_t n = jitNode(s);
+        if (n >= derivatives_.size())
+            derivatives_.resize(n + 1, derivative_type());
+        return derivatives_[n];
     }
 
     const derivative_type& derivative(slot_type s) const
     {
-        if (s < derivatives_.size())
-            return derivatives_[s];
+        uint32_t n = jitNode(s);
+        if (n < derivatives_.size())
+            return derivatives_[n];
         // Return reference to class member for out-of-range slots (thread-safe)
         return zero_;
     }
 
     derivative_type getDerivative(slot_type s) const
     {
-        return (s < derivatives_.size()) ? derivatives_[s] : derivative_type();
+        uint32_t n = jitNode(s);
+        return (n < derivatives_.size()) ? derivatives_[n] : derivative_type();
     }
 
     void setDerivative(slot_type s, const derivative_type& d)
     {
-        if (s >= derivatives_.size())
-            derivatives_.resize(s + 1, derivative_type());
-        derivatives_[s] = d;
+        uint32_t n = jitNode(s);
+        if (n >= derivatives_.size())
+            derivatives_.resize(n + 1, derivative_type());
+        derivatives_[n] = d;
     }
 
     void clearDerivatives()

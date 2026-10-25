@@ -224,7 +224,7 @@ struct AReal
 #ifdef XAD_ENABLE_JIT
         else if (getActiveJit() != nullptr)
         {
-            if (o.shouldRecord())
+            if (o.shouldRecordJIT())
             {
                 // Copy the slot directly - preserves JIT dependency chain
                 slot_ = o.slot_;
@@ -255,7 +255,7 @@ struct AReal
     XAD_INLINE ~AReal()
     {
         if (auto tape = tape_type::getActive())
-            if (slot_ != INVALID_SLOT)
+            if (shouldRecord())
                 tape->unregisterVariable(slot_);
     }
 
@@ -265,7 +265,7 @@ struct AReal
     {
         this->a_ = x;
         auto tape = tape_type::getActive();
-        if (tape && slot_ != INVALID_SLOT)
+        if (tape && shouldRecord())
             tape->pushLhs(slot_);
         return *this;
     }
@@ -304,8 +304,9 @@ struct AReal
     {
         if (auto* j = jit_type::getActive())
         {
-            if (expr.shouldRecord())
-                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+            const Expr& e = static_cast<const Expr&>(expr);
+            if (e.shouldRecordJIT())
+                slot_ = jitSlot(e.recordJIT(j->getGraph()));
         }
     }
 
@@ -321,8 +322,9 @@ struct AReal
     {
         if (auto* j = jit_type::getActive())
         {
-            if (expr.shouldRecord() || this->shouldRecord())
-                slot_ = static_cast<const Expr&>(expr).recordJIT(j->getGraph());
+            const Expr& e = static_cast<const Expr&>(expr);
+            if (e.shouldRecordJIT() || this->shouldRecordJIT())
+                slot_ = jitSlot(e.recordJIT(j->getGraph()));
         }
     }
 
@@ -341,7 +343,7 @@ struct AReal
         auto j = getActiveJit();
         if (!j)
             return nullptr;
-        if (slot_ == INVALID_SLOT)
+        if (!shouldRecordJIT())
         {
             static const derivative_type zero = derivative_type();
             return &zero;
@@ -359,8 +361,8 @@ struct AReal
         auto j = getActiveJit();
         if (!j)
             return nullptr;
-        if (slot_ == INVALID_SLOT)
-            slot_ = j->registerVariable();
+        if (!shouldRecordJIT())
+            slot_ = jitSlot(j->registerVariable());
         return &j->derivative(slot_);
     }
 
@@ -381,14 +383,14 @@ struct AReal
     template <class Info>
     XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type&, const Scalar& mul) const
     {
-        if (slot_ != INVALID_SLOT)
+        if (shouldRecord())
             pushRhs(info, mul, slot_);
     }
 
     template <class Info>
     XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type&) const
     {
-        if (slot_ != INVALID_SLOT)
+        if (shouldRecord())
             pushRhs(info, Scalar(1), slot_);
     }
 
@@ -406,7 +408,7 @@ struct AReal
 #endif
             throw NoTapeException();
         }
-        if (slot_ == INVALID_SLOT)
+        if (!shouldRecord())
         {
             // we return a dummy const ref if not registered on tape - always zero
             static const derivative_type zero = derivative_type();
@@ -428,20 +430,26 @@ struct AReal
             throw NoTapeException();
         }
         // register ourselves if not already done
-        if (slot_ == INVALID_SLOT)
+        if (!shouldRecord())
         {
             slot_ = t->registerVariable();
             t->pushLhs(slot_);
         }
         return t->derivative(slot_);
     }
+#ifdef XAD_ENABLE_JIT
+    // JIT variables are passive on tapes; the hint keeps GCC's code layout of an INVALID_SLOT check
+    XAD_INLINE bool shouldRecord() const { return XAD_LIKELY(slot_ < FIRST_JIT_SLOT); }
+    XAD_INLINE bool shouldRecordJIT() const { return isJitSlot(slot_); }
+#else
     XAD_INLINE bool shouldRecord() const { return slot_ != INVALID_SLOT; }
+#endif
 
 #ifdef XAD_ENABLE_JIT
     uint32_t recordJIT(JITGraph& graph) const
     {
-        if (slot_ != INVALID_SLOT)
-            return slot_;
+        if (shouldRecordJIT())
+            return jitNode(slot_);
         // Not registered - treat as constant (handles nested AD types)
         return recordJITConstant(graph, getNestedDoubleValue(this->a_));
     }
@@ -528,6 +536,7 @@ struct ADVar
     XAD_INLINE bool shouldRecord() const { return shouldRecord_; }
 
 #ifdef XAD_ENABLE_JIT
+    bool shouldRecordJIT() const { return ar_.shouldRecordJIT(); }
     uint32_t recordJIT(JITGraph& graph) const { return ar_.recordJIT(graph); }
 #endif
 
@@ -543,7 +552,7 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
     {
         if (o.shouldRecord() || this->shouldRecord())
         {
-            if (slot_ == INVALID_SLOT)
+            if (!shouldRecord())
                 slot_ = s->registerVariable();
             pushAll<1>(s, o);
             s->pushLhs(slot_);
@@ -552,10 +561,10 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 #ifdef XAD_ENABLE_JIT
     else if (getActiveJit() != nullptr)
     {
-        if (o.shouldRecord() || this->shouldRecord())
+        if (o.shouldRecordJIT() || this->shouldRecordJIT())
         {
             // Copy the slot directly - preserves JIT dependency chain
-            slot_ = o.slot_;
+            slot_ = o.shouldRecordJIT() ? o.slot_ : INVALID_SLOT;
         }
     }
 #endif
@@ -601,7 +610,7 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
             // only register this variable after evaluating the expression, as this
             // variable might appear on the rhs of the equation too and if not yet
             // registered, it doesn't need recording of derivatives
-            if (slot_ == INVALID_SLOT)
+            if (!shouldRecord())
                 slot_ = s->registerVariable();
             s->pushLhs(slot_);
         }
