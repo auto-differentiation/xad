@@ -55,6 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `fmod`, `remainder` and `remquo` derivatives to the divisor: wrong for large quotients, where `a / b` rounds to an integer, and where the result is NaN
 - `ldexp` and `frexp` derivatives were wrong for negative exponents and exponents past 30
 - `scalbn` overflowed or underflowed where the result is finite
+- Direct mode `real op complex` lost a zero imaginary part's sign: wrong side of branch cuts in `asin`, `atanh` etc.
+- Complex `asinh`, `asin` cancelled far from the origin (`asinh(-1e8)` was `-inf`) and near it, and missed special values
+- Complex `acos` of large reals was wrong, differently in each mode, and so were its special values below the real axis
+- Complex `exp`, `sinh`, `cosh`, `tanh` (so `sin`, `cos`, `tan`) overflowed early (NaN parts, `tanh(400)` was NaN) and cancelled near zero
+- Complex division over- or underflowed `|w|^2` (`1 / 1e-200` was `(inf, NaN)`), also in derivatives; now Smith's algorithm, as GCC
+- `std::norm<T>(z)` with an explicit `T` did not compile with libc++ other than Apple clang 15+
 
 
 ## [2.0.0] - 2026-02-06
