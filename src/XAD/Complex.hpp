@@ -1578,9 +1578,8 @@ XAD_INLINE xad::FReal<T, N> norm(const complex<xad::FReal<T, N>>& x)
     return ::xad::detail::norm_impl(x);
 }
 
-// appleclang15 needs this overload for type paramed norm
-#if defined(__APPLE__) && defined(__clang__) && defined(__apple_build_version__) &&                \
-    (__apple_build_version__ >= 15000000)
+// libc++'s generic norm needs std::isinf and std::abs of T: std::norm<T>(z) must pick this
+#if defined(_LIBCPP_VERSION)
 template <class T>
 XAD_INLINE typename std::enable_if<xad::ExprTraits<T>::isExpr, T>::type norm(complex<T>& x)
 {
