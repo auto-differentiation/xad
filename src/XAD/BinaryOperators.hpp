@@ -30,6 +30,7 @@
 
 #include <XAD/BinaryOperatorMacros.hpp>
 #include <XAD/Macros.hpp>
+#include <XAD/UnaryExpr.hpp>
 
 // needed here as these are not expressions and we need to specialise
 #include <XAD/ARealDirect.hpp>
@@ -52,6 +53,37 @@ XAD_BINARY_OPERATOR(atan2, atan2_op)
 XAD_BINARY_OPERATOR(hypot, hypot_op)
 XAD_BINARY_OPERATOR(smooth_abs, smooth_abs_op)
 XAD_BINARY_OPERATOR(nextafter, nextafter_op)
+// direct mode copysign: UnaryOperators.hpp
+XAD_BINARY_EXPR_OPERATOR(copysign, copysign_op)
+
+// same-type expressions: beat std::max/min, which would bake in the branch
+#define XAD_SAME_EXPR_OPERATOR(_op, func)                                                          \
+    template <class Scalar, class Op, class Expr, class DerivativeType>                            \
+    XAD_INLINE BinaryExpr<Scalar, func<Scalar>, UnaryExpr<Scalar, Op, Expr, DerivativeType>,       \
+                          UnaryExpr<Scalar, Op, Expr, DerivativeType>, DerivativeType>(_op)(       \
+        const UnaryExpr<Scalar, Op, Expr, DerivativeType>& a,                                      \
+        const UnaryExpr<Scalar, Op, Expr, DerivativeType>& b)                                      \
+    {                                                                                              \
+        return BinaryExpr<Scalar, func<Scalar>, UnaryExpr<Scalar, Op, Expr, DerivativeType>,       \
+                          UnaryExpr<Scalar, Op, Expr, DerivativeType>, DerivativeType>(a, b);      \
+    }                                                                                              \
+    template <class Scalar, class Op, class Expr1, class Expr2, class DerivativeType>              \
+    XAD_INLINE                                                                                     \
+    BinaryExpr<Scalar, func<Scalar>, BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>,         \
+               BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>, DerivativeType>(_op)(         \
+        const BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>& a,                             \
+        const BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>& b)                             \
+    {                                                                                              \
+        return BinaryExpr<Scalar, func<Scalar>,                                                    \
+                          BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>,                    \
+                          BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>, DerivativeType>(   \
+            a, b);                                                                                 \
+    }
+
+XAD_SAME_EXPR_OPERATOR(max, max_op)
+XAD_SAME_EXPR_OPERATOR(min, min_op)
+
+#undef XAD_SAME_EXPR_OPERATOR
 
 // note - this is C++11 only
 template <class T1, class T2, class T3>
@@ -495,6 +527,8 @@ XAD_DIRECT_NESTED_FUNCS(ARealDirect, AReal)
 
 #undef XAD_DIRECT_NESTED_FUNCS
 #undef XAD_BINARY_OPERATOR
+#undef XAD_BINARY_EXPR_OPERATOR
+#undef XAD_BINARY_DIRECT_OPERATOR
 #undef XAD_COMPARE_OPERATOR
 #undef XAD_DIRECT_COMPARE_OPERATOR
 }  // namespace xad

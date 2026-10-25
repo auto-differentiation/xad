@@ -51,6 +51,7 @@ template <class> struct remquo_op;
 template <class> struct hypot_op;
 template <class> struct nextafter_op;
 template <class> struct smooth_abs_op;
+template <class> struct copysign_op;
 
 // Derived scalar ops (degrees/radians inherit from scalar_prod_op)
 template <class> struct degrees_op;
@@ -119,6 +120,7 @@ template <class, class> struct scalar_nextafter1_op;
 template <class, class> struct scalar_nextafter2_op;
 template <class, class> struct scalar_smooth_abs1_op;
 template <class, class> struct scalar_smooth_abs2_op;
+template <class, class> struct scalar_copysign2_op;
 
 // Primary template - unknown operator
 template <class Op>
@@ -150,6 +152,7 @@ template <class S> struct JITOpCodeFor<remquo_op<S>> { static constexpr JITOpCod
 template <class S> struct JITOpCodeFor<hypot_op<S>> { static constexpr JITOpCode value = JITOpCode::Hypot; };
 template <class S> struct JITOpCodeFor<nextafter_op<S>> { static constexpr JITOpCode value = JITOpCode::Nextafter; };
 template <class S> struct JITOpCodeFor<smooth_abs_op<S>> { static constexpr JITOpCode value = JITOpCode::SmoothAbs; };
+template <class S> struct JITOpCodeFor<copysign_op<S>> { static constexpr JITOpCode value = JITOpCode::Copysign; };
 
 // Unary math
 template <class S> struct JITOpCodeFor<sin_op<S>> { static constexpr JITOpCode value = JITOpCode::Sin; };
@@ -214,6 +217,7 @@ template <class S, class T> struct JITOpCodeFor<scalar_nextafter1_op<S, T>> { st
 template <class S, class T> struct JITOpCodeFor<scalar_nextafter2_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Nextafter; };
 template <class S, class T> struct JITOpCodeFor<scalar_smooth_abs1_op<S, T>> { static constexpr JITOpCode value = JITOpCode::SmoothAbs; };
 template <class S, class T> struct JITOpCodeFor<scalar_smooth_abs2_op<S, T>> { static constexpr JITOpCode value = JITOpCode::SmoothAbs; };
+template <class S, class T> struct JITOpCodeFor<scalar_copysign2_op<S, T>> { static constexpr JITOpCode value = JITOpCode::Copysign; };
 
 // Derived types that inherit from scalar_prod_op (need explicit specializations since C++ doesn't match base class)
 template <class S> struct JITOpCodeFor<degrees_op<S>> { static constexpr JITOpCode value = JITOpCode::Mul; };

@@ -118,6 +118,8 @@ derivative accordingly.
 `#!c++ T copysign(T x, T y)` copies the sign of the floating point value `y` to
 the value `x`, correctly treating positive/negative zero, NaN, and Inf values.
 It uses the function `signbit` internally to determine the sign of `y`.
+The derivative is 1 with respect to `x` if the sign bits of `x` and `y` match and -1 otherwise,
+and 0 with respect to `y`.
 
 ## Trigonometric Functions
 

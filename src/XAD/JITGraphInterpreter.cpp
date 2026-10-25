@@ -491,9 +491,8 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
             nodeAdjoints[a] += adj;
             break;
         case JITOpCode::Copysign:
-            // d/da copysign(a, b) = sign(b)
-            nodeAdjoints[a] += adj * ((vb >= Scalar(0)) ? Scalar(1) : Scalar(-1));
-            // d/db copysign(a, b) = 0
+            // a or -a by sign bits; d/db = 0
+            nodeAdjoints[a] += (std::signbit(va) == std::signbit(vb)) ? adj : -adj;
             break;
         case JITOpCode::SmoothAbs:
         {
