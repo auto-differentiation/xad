@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `XAD/Version.hpp` defined empty version numbers
 - `adjd<T, N>::active_type` is `ARealDirect<T, N>`, as documented
 - `std::numeric_limits` for direct mode types returned 0
 - Direct mode comparisons with integer literals and convertible types
