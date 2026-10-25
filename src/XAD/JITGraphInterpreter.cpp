@@ -28,6 +28,7 @@
 
 #include <XAD/JITGraphInterpreter.hpp>
 #include <XAD/Macros.hpp>
+#include <XAD/MathFunctions.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -203,7 +204,8 @@ void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
         case JITOpCode::Pow: result = std::pow(va, vb); break;
         case JITOpCode::Min: result = (std::min)(va, vb); break;
         case JITOpCode::Max: result = (std::max)(va, vb); break;
-        case JITOpCode::Mod: result = std::fmod(va, vb); break;
+        case JITOpCode::Mod:
+        case JITOpCode::Fmod: result = std::fmod(va, vb); break;
         case JITOpCode::Atan2: result = std::atan2(va, vb); break;
         case JITOpCode::Floor: result = std::floor(va); break;
         case JITOpCode::Ceil: result = std::ceil(va); break;
@@ -397,8 +399,11 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
             }
             break;
         case JITOpCode::Mod:
+        case JITOpCode::Fmod:
+        case JITOpCode::Remainder:
+        case JITOpCode::Remquo:
             nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * std::trunc(va / vb);
+            nodeAdjoints[b] -= adj * detail::remainder_quotient(va, vb, vResult);
             break;
         case JITOpCode::Atan2:
         {
@@ -447,22 +452,6 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
         case JITOpCode::Round:
             // Zero derivative
             break;
-        case JITOpCode::Remainder:
-        {
-            int quo;
-            XAD_UNUSED_VARIABLE(std::remquo(va, vb, &quo));
-            nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * Scalar(quo);
-        }
-        break;
-        case JITOpCode::Remquo:
-        {
-            int quo;
-            XAD_UNUSED_VARIABLE(std::remquo(va, vb, &quo));
-            nodeAdjoints[a] += adj;
-            nodeAdjoints[b] -= adj * Scalar(quo);
-        }
-        break;
         case JITOpCode::Hypot:
             nodeAdjoints[a] += adj * va / vResult;
             nodeAdjoints[b] += adj * vb / vResult;
@@ -475,15 +464,15 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
         {
             double imm = node.imm;
             int exp = static_cast<int>(imm);
-            nodeAdjoints[a] += adj * Scalar(1 << exp);
+            nodeAdjoints[a] += adj * std::ldexp(Scalar(1), exp);
         }
         break;
         case JITOpCode::Frexp:
         {
-            // Derivative is 1 / 2^exp, but we need to recompute frexp
-            int exp;
+            // Derivative is 2^-exp, but we need to recompute frexp
+            int exp = 0;
             std::frexp(va, &exp);
-            nodeAdjoints[a] += adj / Scalar(1 << exp);
+            nodeAdjoints[a] += adj * std::ldexp(Scalar(1), -exp);
         }
         break;
         case JITOpCode::Modf:

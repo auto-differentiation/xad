@@ -131,4 +131,27 @@ using ::std::round;
 using ::std::signbit;
 using ::std::trunc;
 
+namespace detail
+{
+// n in r = a - n * b, from r = fmod(a, b) or remainder(a, b): a / b - r / b is within about
+// (|n| + 1) ulp of n, so this is exact for |n| < 2^(digits - 2); +-inf where n overflows, NaN where
+// r is NaN
+template <class T>
+XAD_INLINE typename std::enable_if<!is_active<T>::value, T>::type remainder_quotient(const T& a,
+                                                                                     const T& b,
+                                                                                     const T& r)
+{
+    using std::round;
+    return round(a / b - r / b);
+}
+
+// n is piecewise constant: computed from the passive values
+template <class T>
+XAD_INLINE typename std::enable_if<is_active<T>::value, typename ExprTraits<T>::nested_type>::type
+remainder_quotient(const T& a, const T& b, const T& r)
+{
+    return remainder_quotient(value(a), value(b), value(r));
+}
+}  // namespace detail
+
 }  // namespace xad

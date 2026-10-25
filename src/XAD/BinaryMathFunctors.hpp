@@ -216,8 +216,24 @@ template <class Scalar>
 struct fmod_op
 {
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const { return fmod(a, b); }
-    XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar&) const { return Scalar(1); }
-    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const { return -trunc(a / b); }
+    XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar&, const Scalar&) const
+    {
+        return Scalar(1);
+    }
+    // the quotient from the result: trunc(a / b) is off by one where a / b rounds up to an integer
+    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b, const Scalar& v) const
+    {
+        return Scalar(-detail::remainder_quotient(a, b, v));
+    }
+};
+
+template <class Scalar>
+struct OperatorTraits<fmod_op<Scalar> >
+{
+    enum
+    {
+        useResultBasedDerivatives = 1
+    };
 };
 
 template <class Scalar>
@@ -261,32 +277,45 @@ template <class Scalar>
 struct remainder_op
 {
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const { return remainder(a, b); }
-    XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar&) const { return Scalar(1); }
-    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
+    XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar&, const Scalar&) const
     {
-        // function is rare enough that there's no need to optimize this better
-        int n_;
-        using std::remquo;
-        XAD_UNUSED_VARIABLE(remquo(a, b, &n_));
-        return Scalar(-n_);
+        return Scalar(1);
+    }
+    // the full quotient: remquo's holds only its low bits
+    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b, const Scalar& v) const
+    {
+        return Scalar(-detail::remainder_quotient(a, b, v));
     }
 };
 
 template <class Scalar>
-struct remquo_op
+struct OperatorTraits<remainder_op<Scalar> >
 {
-    XAD_INLINE explicit remquo_op(int* quo) : quo_(quo), q_() {}
+    enum
+    {
+        useResultBasedDerivatives = 1
+    };
+};
+
+template <class Scalar>
+struct remquo_op : remainder_op<Scalar>
+{
+    XAD_INLINE explicit remquo_op(int* quo) : quo_(quo) {}
     XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const
     {
         using std::remquo;
-        Scalar v = remquo(a, b, &q_);
-        *quo_ = q_;
-        return v;
+        return remquo(a, b, quo_);
     }
-    XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar&) const { return Scalar(1); }
-    XAD_INLINE Scalar derivative_b(const Scalar&, const Scalar&) const { return Scalar(-q_); }
     int* quo_;
-    mutable int q_;
+};
+
+template <class Scalar>
+struct OperatorTraits<remquo_op<Scalar> >
+{
+    enum
+    {
+        useResultBasedDerivatives = 1
+    };
 };
 
 template <class Scalar>

@@ -49,6 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moving an active tape terminated the program
 - `max`/`min` of two same-type expressions: JIT kept the recorded branch; ties gave all the derivative to the first operand
 - `copysign`: JIT kept the recorded sign; `copysign(-0.0, y)` had the wrong sign; the interpreter's derivative ignored the signs
+- The JIT interpreter threw on the `Fmod` opcode
+- `fmod`, `remainder` and `remquo` derivatives to the divisor: wrong for large quotients, where `a / b` rounds to an integer, and where the result is NaN
+- `ldexp` and `frexp` derivatives were wrong for negative exponents and exponents past 30
+- `scalbn` overflowed or underflowed where the result is finite
 
 
 ## [2.0.0] - 2026-02-06
