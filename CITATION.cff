@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use XAD in your work, please cite it as below."
+title: "XAD: Fast and easy automatic differentiation in C++"
+type: software
+authors:
+  - name: "Auto Differentiation Dev Team"
+  - name: "Xcelerit Computing Limited"
+repository-code: "https://github.com/auto-differentiation/xad"
+url: "https://auto-differentiation.github.io"
+license: AGPL-3.0-or-later
+version: "2.1.0"
+date-released: "2026-03-31"
+doi: "10.5281/zenodo.7965850"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.7965850"
+    description: "All versions (concept DOI)"
+  - type: doi
+    value: "10.5281/zenodo.19354435"
+    description: "Version 2.1.0"
+keywords:
+  - automatic differentiation
+  - algorithmic differentiation
+  - adjoint
+  - C++
+  - Python
+abstract: "XAD computes exact derivatives of C++ and Python code in forward, adjoint and higher-order mode via operator overloading, with checkpointing, Eigen support and a JIT backend interface."
