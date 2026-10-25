@@ -32,6 +32,9 @@ for record-once / replay-many execution.
     <a href="https://pypi.org/project/xad/">
         <img src="https://img.shields.io/pypi/v/xad?label=PyPI" alt="PyPI" style="max-width: 100%;">
     </a>
+    <a href="https://doi.org/10.5281/zenodo.7965850">
+        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.7965850.svg" alt="DOI" style="max-width: 100%;">
+    </a>
     <a href="#license">
         <img src="https://img.shields.io/badge/license-AGPL--3.0%20%7C%20commercial-blue" alt="License: AGPL-3.0 or commercial" style="max-width: 100%;">
     </a>
