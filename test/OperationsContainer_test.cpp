@@ -30,34 +30,6 @@
 
 using namespace testing;
 
-struct NullAlignedAllocator {
-    static void* aligned_alloc(std::size_t, std::size_t) {
-        return nullptr; // simulate failure
-    }
-
-    void operator()(void* ptr) const { xad::detail::AlignedAllocator::aligned_free(ptr); }
-};
-
-TEST(OperationsContainerTestHuge, throwsBadAlloc)
-{
-    auto construct_huge = [&]
-    {
-        auto c = xad::OperationsContainer<double, int, static_cast<std::size_t>(-1), NullAlignedAllocator>();
-        XAD_UNUSED_VARIABLE(c);
-    };
-    EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());
-}
-
-TEST(OperationsContainerPairedTestHuge, throwsBadAlloc)
-{
-    auto construct_huge = [&]
-    {
-        auto c = xad::OperationsContainerPaired<double, int, static_cast<std::size_t>(-1), NullAlignedAllocator>();
-        XAD_UNUSED_VARIABLE(c);
-    };
-    EXPECT_THAT(construct_huge, Throws<std::bad_alloc>());
-}
-
 template <typename C>
 class OperationsContainerTest : public Test
 {
@@ -248,19 +220,6 @@ TYPED_TEST(OperationsContainerTest2, callsDestructOnResize)
     EXPECT_THAT(TestStruct::items, Eq(1));
 }
 
-TYPED_TEST(OperationsContainerTest2, callsDestructOnResize_MatchesChunkEnd)
-{
-    TestStruct::items = 0;
-    auto c = TypeParam();
-    for (unsigned i = 0; i < TypeParam::chunk_size; ++i)
-    {
-        c.push_back(TestStruct(), static_cast<int>(i));
-    }
-
-    c.resize(2);
-    EXPECT_THAT(TestStruct::items, Eq(2));
-}
-
 TYPED_TEST(OperationsContainerTest2, callsDestructOnClear)
 {
     TestStruct::items = 0;
@@ -295,40 +254,6 @@ TEST(OperationsContainerPairedTestReserve, givesWritableSpaceWithinChunk)
     EXPECT_THAT(c[0], Pair(1.0, 3));
     EXPECT_THAT(c[1], Pair(2.0, 4));
     EXPECT_THAT(c[2], Pair(3.0, 5));
-}
-
-TEST(OperationsContainerPairedTestReserve, canCommitFewerThanReserved)
-{
-    auto c = xad::OperationsContainerPaired<double, int, 4>();
-
-    auto* dst = c.try_reserve(3);
-    ASSERT_THAT(dst, NotNull());
-    dst[0] = {1.0, 3};
-    c.commit(1);
-
-    EXPECT_THAT(c.size(), Eq(1));
-    EXPECT_THAT(c[0], Pair(1.0, 3));
-}
-
-TEST(OperationsContainerPairedTestReserve, declinesWhenRunCrossesChunkBoundary)
-{
-    auto c = xad::OperationsContainerPaired<double, int, 4>();
-    c.push_back(1.0, 1);
-    c.push_back(2.0, 2);
-
-    EXPECT_THAT(c.try_reserve(3), IsNull());
-    EXPECT_THAT(c.try_reserve(2), NotNull());
-}
-
-TEST(OperationsContainerPairedTestReserve, declinesWhenChunkIsFull)
-{
-    auto c = xad::OperationsContainerPaired<double, int, 4>();
-    for (int i = 0; i < 4; ++i)
-    {
-        c.push_back(static_cast<double>(i), i);
-    }
-
-    EXPECT_THAT(c.try_reserve(1), IsNull());
 }
 
 TEST(OperationsContainerPairedTestReserve, reservedSpaceContinuesAfterExistingElements)

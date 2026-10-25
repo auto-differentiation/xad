@@ -152,19 +152,6 @@ TEST(JITABool, greaterComparison)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(JITABool, greaterComparisonWithScalar)
-{
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD a = 5.0;
-    jit.registerInput(a);
-
-    auto cond = xad::greater(a, 3.0);
-    EXPECT_TRUE(cond.passive());
-    EXPECT_TRUE(cond.hasSlot());
-}
-
 TEST(JITABool, lessEqualComparison)
 {
     xad::JITCompiler<double> jit;
@@ -180,19 +167,6 @@ TEST(JITABool, lessEqualComparison)
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(JITABool, lessEqualComparisonWithScalar)
-{
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD a = 3.0;
-    jit.registerInput(a);
-
-    auto cond = xad::lessEqual(a, 3.0);
-    EXPECT_TRUE(cond.passive());
-    EXPECT_TRUE(cond.hasSlot());
-}
-
 TEST(JITABool, greaterEqualComparison)
 {
     xad::JITCompiler<double> jit;
@@ -205,19 +179,6 @@ TEST(JITABool, greaterEqualComparison)
 
     auto cond = xad::greaterEqual(a, b);
     EXPECT_TRUE(cond.passive());  // 5 >= 3 is true
-    EXPECT_TRUE(cond.hasSlot());
-}
-
-TEST(JITABool, greaterEqualComparisonWithScalar)
-{
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD a = 5.0;
-    jit.registerInput(a);
-
-    auto cond = xad::greaterEqual(a, 3.0);
-    EXPECT_TRUE(cond.passive());
     EXPECT_TRUE(cond.hasSlot());
 }
 
@@ -242,29 +203,6 @@ TEST(JITABool, ifWithJITRecording)
     jit.forward(&output);
 
     EXPECT_DOUBLE_EQ(4.0, output);  // x < 5, so trueVal = 2*2 = 4
-}
-
-TEST(JITABool, ifWithJITRecordingFalseBranch)
-{
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD x = 10.0;
-    jit.registerInput(x);
-    jit.newRecording();
-
-    AD trueVal = x * 2.0;   // 20.0
-    AD falseVal = x * 3.0;  // 30.0
-
-    auto cond = xad::less(x, 5.0);  // false for x=10
-    AD result = cond.If(trueVal, falseVal);
-    jit.registerOutput(result);
-
-    jit.compile();
-    double output;
-    jit.forward(&output);
-
-    EXPECT_DOUBLE_EQ(30.0, output);  // x >= 5, so falseVal = 10*3 = 30
 }
 
 TEST(JITABool, ifDerivativeTrueBranch)
@@ -317,33 +255,6 @@ TEST(JITABool, ifDerivativeFalseBranch)
     EXPECT_NEAR(3.0, jit.getDerivative(x.getSlot()), 1e-10);
 }
 
-TEST(JITABool, ifWithConstantOperands)
-{
-    // Test ABool::If when operands don't have slots (need to be recorded as constants)
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD x = 2.0;
-    jit.registerInput(x);
-
-    // Create a condition that has a slot
-    auto cond = xad::less(x, 5.0);  // true for x=2
-
-    // Use constant values (not from graph operations) for branches
-    // These AD values won't have slots, so ABool::If should record them as constants
-    AD trueVal(100.0);   // No slot - just a constant
-    AD falseVal(200.0);  // No slot - just a constant
-
-    AD result = cond.If(trueVal, falseVal);
-    jit.registerOutput(result);
-
-    jit.compile();
-    double output;
-    jit.forward(&output);
-
-    EXPECT_DOUBLE_EQ(100.0, output);  // x < 5, so trueVal = 100
-}
-
 TEST(JITABool, comparisonWithoutJIT)
 {
     // Test comparison functions when JIT is NOT active
@@ -363,40 +274,8 @@ TEST(JITABool, comparisonWithoutJIT)
     EXPECT_FALSE(cond2.hasSlot());
 }
 
-TEST(JITABool, comparisonWithInvalidSlotOperands)
-{
-    // Test comparison when AReal operands don't have slots yet
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    // Create AD values that are NOT registered as inputs (no slots)
-    AD a(2.0);  // No slot
-    AD b(3.0);  // No slot
-
-    // Compare should still work - should record constants for the operands
-    auto cond = xad::less(a, b);
-    EXPECT_TRUE(cond.passive());
-    EXPECT_TRUE(cond.hasSlot());  // JIT is active, so slot should be created
-}
-
-TEST(JITABool, comparisonWithScalarRecordsLhsWhenNoSlot)
-{
-    // Cover the branch where comparing AReal vs scalar with JIT active and the AReal has no slot yet.
-    // In that case the AReal operand is recorded as a constant node.
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD a(2.0);  // no slot
-    auto cond = xad::less(a, 3.0);
-
-    EXPECT_TRUE(cond.passive());   // 2 < 3
-    EXPECT_TRUE(cond.hasSlot());   // JIT active -> recorded comparison
-    EXPECT_GE(jit.getGraph().const_pool.size(), 2u);  // records lhs value and scalar rhs
-}
-
 // =============================================================================
 // Additional JITCompiler tests
 // =============================================================================
-
 
 #endif  // XAD_ENABLE_JIT

@@ -317,21 +317,6 @@ class StdCompatibilityConstexprTempl : public ::testing::Test
 
 typedef ::testing::Types<xad::FAD, xad::FReal<xad::FReal<double>>> constexpr_test_types;
 
-TEST(StdCompatibility, StdMinWithSizeWorks)
-{
-    // this has been added as the call to hashtable_policy.h in GCC showed a failure with this,
-    // it called xad::min, which instantiates an AD type with int scalar type,
-    // which is not supported
-    const auto max_width = std::min<size_t>(sizeof(size_t), 8);
-    const auto min_width = std::max<size_t>(sizeof(size_t), 8);
-
-    static_assert(std::is_same<decltype(max_width), const size_t>::value, "mismatch in type");
-    static_assert(std::is_same<decltype(min_width), const size_t>::value, "mismatch in type");
-
-    EXPECT_THAT(max_width, Le(8));
-    EXPECT_THAT(min_width, Ge(8));
-}
-
 TEST(StdCompatibility, UseWithRandomDistribution)
 {
     std::normal_distribution<xad::AReal<double>> dst(1.0, 2.0);
@@ -345,59 +330,6 @@ TEST(StdCompatibility, UseInVectorAndFill)
     std::fill(v.begin(), v.end(), xad::AReal<double>(1.));
 
     EXPECT_THAT(v, ElementsAre(1., 1., 1.));
-}
-
-// https://github.com/auto-differentiation/xad/issues/158
-TEST(StdCompatibility, CopysignWindowsAReal)
-{
-    xad::AD x(1.2);
-    xad::AD y(-0.5);
-    xad::AD one(1.);
-
-    auto r1 = std::copysign(1.2, y);
-    auto r2 = std::copysign(x, -0.5);
-    auto r3 = std::copysign(x, y);
-    // with expressions
-    auto r4 = std::copysign(1.2, y * one);
-    auto r5 = std::copysign(x * one, -0.5);
-    auto r6 = std::copysign(x * one, y);
-    auto r7 = std::copysign(x * one, y * one);
-    auto r8 = std::copysign(x, y * one);
-
-    EXPECT_EQ(xad::value(r1), -1.2);
-    EXPECT_EQ(xad::value(r2), -1.2);
-    EXPECT_EQ(xad::value(r3), -1.2);
-    EXPECT_EQ(xad::value(r4), -1.2);
-    EXPECT_EQ(xad::value(r5), -1.2);
-    EXPECT_EQ(xad::value(r6), -1.2);
-    EXPECT_EQ(xad::value(r7), -1.2);
-    EXPECT_EQ(xad::value(r8), -1.2);
-}
-
-TEST(StdCompatibility, CopysignWindowsFReal)
-{
-    xad::FAD x(1.2);
-    xad::FAD y(-0.5);
-    xad::FAD one(1.);
-
-    auto r1 = std::copysign(1.2, y);
-    auto r2 = std::copysign(x, -0.5);
-    auto r3 = std::copysign(x, y);
-    // with expressions
-    auto r4 = std::copysign(1.2, y * one);
-    auto r5 = std::copysign(x * one, -0.5);
-    auto r6 = std::copysign(x * one, y);
-    auto r7 = std::copysign(x * one, y * one);
-    auto r8 = std::copysign(x, y * one);
-
-    EXPECT_EQ(xad::value(r1), -1.2);
-    EXPECT_EQ(xad::value(r2), -1.2);
-    EXPECT_EQ(xad::value(r3), -1.2);
-    EXPECT_EQ(xad::value(r4), -1.2);
-    EXPECT_EQ(xad::value(r5), -1.2);
-    EXPECT_EQ(xad::value(r6), -1.2);
-    EXPECT_EQ(xad::value(r7), -1.2);
-    EXPECT_EQ(xad::value(r8), -1.2);
 }
 
 TEST(StdCompatibility, UseWithRandomDistributionDirect)

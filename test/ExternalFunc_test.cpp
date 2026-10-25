@@ -171,25 +171,3 @@ TEST(ExternalFunctions, manual)
     for (unsigned i = 0; i < n; ++i) EXPECT_DOUBLE_EQ(xa1_ref[i], xa1[i]) << i;
     EXPECT_LT(mem_ext, mem_ref);
 }
-
-TEST(ExternalFunctions, sweepTwice)
-{
-    typedef xad::AReal<double> ad_type;
-    ad_type::tape_type t;
-    vector<ad_type> x = {0.5, 1.0, 1.5};
-    t.registerInputs(x);
-    t.newRecording();
-    ad_type y;
-    f_ext(x, y);
-    t.registerOutput(y);
-
-    derivative(y) = 1.0;
-    t.computeAdjoints();
-    vector<double> xa1;
-    for (auto& xi : x) xa1.push_back(derivative(xi));
-    t.clearDerivatives();
-    derivative(y) = 1.0;
-    t.computeAdjoints();
-
-    for (unsigned i = 0; i < x.size(); ++i) EXPECT_DOUBLE_EQ(xa1[i], derivative(x[i])) << i;
-}

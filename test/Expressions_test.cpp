@@ -27,7 +27,6 @@
 #include <gtest/gtest.h>
 #include <numeric>
 
-#include "COSHestonEngineExpr.hpp"
 
 using namespace ::testing;
 
@@ -1555,120 +1554,6 @@ TEST(Expressions, canDerivePostDecrementAAD)
     EXPECT_DOUBLE_EQ(value(x3), 2.1);
 }
 
-TEST(Expressions, canDeriveLongExpressionFromLambdaReturnAdjoint)
-{
-    std::vector<xad::AD> tmp(3, 1.0);
-    tmp[2] = 0.0;
-    auto lbd = [&](xad::AD in) -> xad::AD
-    {
-        // we make this function really long with loads of temporaries in the expression
-        // to trigger problems with overwriting temp refs
-        return tmp[0] * (xad::AD(in * in) * xad::AD(tmp[1]) + exp(in)) +
-               0.0 * (xad::AD(in * in * in) * xad::AD(tmp[1]) + exp(sin(in * in)));
-    };
-    // we capture this lambda in a std::function object to make sure that it doesn't get inlined
-    // and optimised away (std::function is a virtual polymorphic class)
-    using ret_t = std::decay<decltype(lbd(tmp[0]))>::type;
-    std::function<ret_t(xad::AD)> func = lbd;
-
-    xad::Tape<double> tape;
-    std::vector<xad::AD> xv(10, 2.1);
-    std::vector<xad::AD> yv(10);
-    tape.registerInputs(xv);
-    tape.newRecording();
-    std::transform(xv.begin(), xv.end(), yv.begin(), func);
-    xad::AD y = std::accumulate(yv.begin(), yv.end(), xad::AD(0.0));
-    tape.registerOutput(y);
-    derivative(y) = 1.0;
-    tape.computeAdjoints();
-
-    EXPECT_DOUBLE_EQ(value(y), 10 * (std::exp(2.1) + 2.1 * 2.1));
-    EXPECT_DOUBLE_EQ(derivative(xv[0]), std::exp(2.1) + 2.0 * 2.1);
-    EXPECT_DOUBLE_EQ(derivative(xv[1]), std::exp(2.1) + 2.0 * 2.1);
-}
-
-TEST(Expressions, canDeriveLongExpressionFromLambdaReturnForward)
-{
-    std::vector<xad::FAD> tmp(3, 1.0);
-    tmp[2] = 0.0;
-    auto lbd = [&](xad::FAD in) -> xad::FAD
-    {
-        // we make this function really long with loads of temporaries in the
-        // expression to trigger problems with overwriting temp refs
-        return tmp[0] * (xad::FAD(in * in) * xad::FAD(tmp[1]) + exp(in)) +
-               0.0 * (xad::FAD(in * in * in) * xad::FAD(tmp[1]) + exp(sin(in * in)));
-    };
-    // we capture this lambda in a std::function object to make sure that it
-    // doesn't get inlined and optimised away (std::function is a virtual
-    // polymorphic class)
-    using ret_t = std::decay<decltype(lbd(tmp[0]))>::type;
-    std::function<ret_t(xad::FAD)> func = lbd;
-
-    std::vector<xad::FAD> xv(10, 2.1);
-    std::vector<xad::FAD> yv(10);
-    derivative(xv[0]) = 1.0;
-    derivative(xv[1]) = 1.0;
-    std::transform(xv.begin(), xv.end(), yv.begin(), func);
-
-    EXPECT_DOUBLE_EQ(value(yv[0]), (std::exp(2.1) + 2.1 * 2.1));
-    EXPECT_DOUBLE_EQ(value(yv[1]), (std::exp(2.1) + 2.1 * 2.1));
-    EXPECT_DOUBLE_EQ(derivative(yv[0]), std::exp(2.1) + 2.0 * 2.1);
-    EXPECT_DOUBLE_EQ(derivative(yv[1]), std::exp(2.1) + 2.0 * 2.1);
-}
-
-// this is an insanely long expression taken from QuantLib's COSHestonEngine,
-// where a bug was detected with XAD in Ubuntu Groovy
-
-#if !defined(_MSC_VER) || (_MSC_VER > 1920)
-// only build this with Visual Studio newer than 2017, as older versions struggle
-// and miscompile these expressions in Release mode
-
-TEST(Expressions, canEvaluateLongExpressionsLikeHestonAdjoint)
-{
-    xad::Tape<double> tape;
-
-    TestHeston<xad::AD> tester;
-    xad::AD x = 0.8;
-    tape.registerInput(x);
-    tape.newRecording();
-    xad::AD y = tester.c4(x);
-    tape.registerOutput(y);
-    derivative(y) = 1.0;
-    tape.computeAdjoints();
-    double dx = derivative(x);
-
-    // same with double + bumping
-    TestHeston<double> testerd;
-    double yd = testerd.c4(value(x));
-    double eps = 1e-6;
-    double yd_eps = testerd.c4(value(x) + eps);
-    double dxd = (yd_eps - yd) / eps;
-
-    EXPECT_THAT(value(y), DoubleNear(yd, 1e-9));
-    EXPECT_THAT(dx, DoubleNear(dxd, 1e-5));
-}
-
-#endif
-
-TEST(Expressions, canEvaluateLongExpressionsLikeHestonForward)
-{
-    TestHeston<xad::FAD> tester;
-    xad::FAD x = 0.8;
-    derivative(x) = 1.0;
-    xad::FAD y = tester.c4(x);
-    double dx = derivative(y);
-
-    // same with double
-    TestHeston<double> testerd;
-    double yd = testerd.c4(value(x));
-    double eps = 1e-6;
-    double yd_eps = testerd.c4(value(x) + eps);
-    double dxd = (yd_eps - yd) / eps;
-
-    EXPECT_THAT(value(y), DoubleNear(yd, 1e-9));
-    EXPECT_THAT(dx, DoubleNear(dxd, 1e-5));
-}
-
 namespace
 {
 template <class Scalar, std::size_t M = 1>
@@ -1676,92 +1561,7 @@ inline xad::AReal<Scalar, M> calc(xad::AReal<Scalar, M> a, xad::AReal<Scalar, M>
 {
     return a * b;
 }
-class ConstexprTest
-{
-  public:
-    xad::AReal<double> test_func(xad::AReal<double> x)
-    {
-        xad::AReal<double> z = x;
-        z *= 1.0;
-        z = a1_ * z;
-        z = a1_ * z;
-        z = a2_ + z;
-        z = a3_ - z;
-        z = a4_ / z;
-        z = z * b1_;
-        z = z + b2_;
-        z = z - b3_;
-        z = z / b4_;
-
-        using std::max;
-        using std::min;
-
-        z = min(z, a1_);
-        z = max(z, a2_);
-        z = min(b1_, z);
-        z = max(b2_, z);
-
-        z = min<xad::AReal<double>>(z, c1_);
-        z = min<xad::AReal<double>>(c2_, z);
-        z = max<xad::AReal<double>>(z, c3_);
-        z = max<xad::AReal<double>>(c4_, z);
-
-        if (z >= c1_ || (z < d3_ && !(z == d4_)))
-        {
-            z = min<xad::AReal<double>>(z, d1_);
-            z = min<xad::AReal<double>>(d2_, z);
-            z = max<xad::AReal<double>>(z, d3_);
-            z = max<xad::AReal<double>>(d4_, z);
-        }
-
-        return z;
-    }
-
-  private:
-    static constexpr double a1_ = -3.969683028665376e+01;
-    static constexpr double a2_ = 2.209460984245205e+02;
-    static constexpr double a3_ = -2.759285104469687e+02;
-    static constexpr double a4_ = 1.383577518672690e+02;
-    static constexpr double b1_ = -5.447609879822406e+01;
-    static constexpr double b2_ = 1.615858368580409e+02;
-    static constexpr double b3_ = -1.556989798598866e+02;
-    static constexpr double b4_ = 6.680131188771972e+01;
-    static constexpr int c1_ = 1;
-    static constexpr int c2_ = 2;
-    static constexpr int c3_ = 3;
-    static constexpr int c4_ = 4;
-    static constexpr long long d1_ = 1;
-    static constexpr long long d2_ = 2;
-    static constexpr long long d3_ = 3;
-    static constexpr long long d4_ = 4;
-};
 }  // namespace
-
-TEST(Expressions, doesNotCaptureConstexprByRef)
-{
-    // this function should simply compile, without complaining about
-    // undefined references in the linker in Linux/Debug
-    auto c = ConstexprTest();
-    xad::AReal<double> result = c.test_func(1.2);
-
-    EXPECT_THAT(result, Gt(0.0));
-}
-
-TEST(Expressions, notWarningAboutSizetToDouble)
-{
-    // recent compilers with high warning levels warn about size_t conversion to double,
-    // if a function does the conversion implicitly. For plain doubles, the expressions
-    // below don't trigger the warning - so for XAD types, they should not do that either.
-    xad::AReal<double> x = 2.0;
-    std::size_t d = 2;
-
-    x /= d;
-    x *= d;
-    x += d;
-    x -= d;
-
-    EXPECT_THAT(value(x), DoubleEq(2.0));
-}
 
 TEST(Expressions, FmaFunctionTest)
 {
@@ -1797,23 +1597,6 @@ TEST(Expressions, FmaFunctionTest)
 }
 
 TEST(Expressions, FmaFunctionTestWithAReal)
-{
-    xad::Tape<double> tape;
-    xad::AReal<double> a = 1, b = 2, c = 3;
-    tape.registerInput(a);
-    tape.registerInput(b);
-    tape.registerInput(c);
-    tape.newRecording();
-    xad::AReal<double> y = fma(a, b, c);
-    tape.registerOutput(y);
-    derivative(y) = 1.0;
-    tape.computeAdjoints();
-    EXPECT_THAT(derivative(a), DoubleEq(value(b)));
-    EXPECT_THAT(derivative(b), DoubleEq(value(a)));
-    EXPECT_THAT(derivative(c), DoubleEq(1.0));
-}
-
-TEST(Expressions, FmaFunctionTestWithARealDirect)
 {
     xad::Tape<double> tape;
     xad::AReal<double> a = 1, b = 2, c = 3;

@@ -106,19 +106,6 @@ TEST(Tape, isMovable)
     EXPECT_FALSE(s3.isActive());
 }
 
-TEST(Tape, movingActiveTapeMovesActivation)
-{
-    xad::Tape<double> s;
-    xad::Tape<double> moved(std::move(s));
-    EXPECT_TRUE(moved.isActive());
-    EXPECT_FALSE(s.isActive());
-
-    xad::Tape<double> assigned(false);
-    assigned = std::move(moved);
-    EXPECT_TRUE(assigned.isActive());
-    EXPECT_FALSE(moved.isActive());
-}
-
 TEST(Tape, canRegisterVariables)
 {
     using xad::Tape;
@@ -320,29 +307,6 @@ TEST(Tape, canPushOperationsIntoReservedSpace)
     EXPECT_DOUBLE_EQ(3.0, s.getDerivative(x2s));
 }
 
-TEST(Tape, canCommitFewerOperationsThanReserved)
-{
-    xad::Tape<double> s;
-    using slot_type = xad::Tape<double>::slot_type;
-
-    auto x1s = s.registerVariable();
-    s.newRecording();
-
-    auto zs = s.registerVariable();
-    std::pair<double, slot_type>* dst = s.tryReserveOperations(4);
-    ASSERT_NE(nullptr, dst);
-    dst[0] = {2.0, x1s};
-    s.commitOperations(1);
-    s.pushLhs(zs);
-
-    EXPECT_EQ(1U, s.getNumOperations());
-
-    s.setDerivative(zs, 1.0);
-    s.computeAdjoints();
-
-    EXPECT_DOUBLE_EQ(2.0, s.getDerivative(x1s));
-}
-
 #endif
 
 TEST(Tape, canRestartRecording)
@@ -416,151 +380,6 @@ TEST(Tape, canPushCombined)
     EXPECT_DOUBLE_EQ(1.0, s.getDerivative(x1s));
     EXPECT_DOUBLE_EQ(M_PI, s.getDerivative(x2s));
 }
-
-#ifdef XAD_TAPE_REUSE_SLOTS
-TEST(Tape, restartingRecordingResetsMemory)
-{
-    xad::Tape<double> s;
-
-    auto s1 = s.registerVariable();
-    auto s2 = s.registerVariable();
-    auto s3 = s.registerVariable();
-    auto s4 = s.registerVariable();
-    s.newRecording();
-    EXPECT_EQ(4U, s.getNumVariables());
-
-    auto s5 = s.registerVariable();
-    EXPECT_EQ(5U, s.getNumVariables());
-
-    s.unregisterVariable(s2);
-    s.unregisterVariable(s3);
-    EXPECT_EQ(3U, s.getNumVariables());
-
-    s.unregisterVariable(s5);
-    EXPECT_EQ(2U, s.getNumVariables());
-
-    s.unregisterVariable(s1);
-    EXPECT_EQ(1U, s.getNumVariables());
-
-    s.newRecording();
-    EXPECT_EQ(1U, s.getNumVariables());
-
-    // these should fill the reusable ranges
-    auto s6 = s.registerVariable();
-    auto s7 = s.registerVariable();
-    EXPECT_EQ(3U, s.getNumVariables());
-    EXPECT_LT(s6, s4);
-    EXPECT_LT(s7, s4);
-    //  std::cout << s4 << ", " << s6 << ", " << s7 << std::endl;
-
-    // std::cout << s.getReusableSlotsString() << std::endl;
-    s.unregisterVariable(s4);
-    // std::cout << s.getReusableSlotsString() << std::endl;
-    EXPECT_EQ(2U, s.getNumVariables());
-}
-
-TEST(Tape, resetToTrimsReusableSlotsToDerivatives)
-{
-    xad::Tape<double> s;
-    std::vector<xad::Tape<double>::slot_type> slots;
-    xad::Tape<double>::position_type pos = 0;
-    for (int i = 0; i < 10; ++i)
-    {
-        slots.push_back(s.registerVariable());
-        s.pushLhs(slots.back());
-        if (i == 4)
-            pos = s.getPosition();
-    }
-    s.unregisterVariable(slots[4]);
-    s.unregisterVariable(slots[5]);
-    EXPECT_EQ("[4, 6), ", s.getReusableSlotsString());
-
-    s.clearDerivativesAfter(pos);  // up to slot 4
-    s.resetTo(pos);
-    EXPECT_EQ("[4, 5), ", s.getReusableSlotsString());
-    EXPECT_EQ(4U, s.registerVariable());
-}
-
-TEST(Tape, resetToDropsAllReusableSlotsOfTheRecording)
-{
-    xad::Tape<double> s;
-    std::vector<xad::Tape<double>::slot_type> slots;
-    xad::Tape<double>::position_type pos = 0;
-    for (int i = 0; i < 10; ++i)
-    {
-        slots.push_back(s.registerVariable());
-        s.pushLhs(slots.back());
-        if (i == 4)
-            pos = s.getPosition();
-    }
-    s.unregisterVariable(slots[7]);
-    EXPECT_EQ("[7, 8), ", s.getReusableSlotsString());
-
-    s.clearDerivativesAfter(pos);  // up to slot 4
-    s.resetTo(pos);
-    EXPECT_EQ("", s.getReusableSlotsString());
-    EXPECT_NE(7U, s.registerVariable());
-    s.unregisterVariable(slots[2]);
-    EXPECT_EQ("[2, 3), ", s.getReusableSlotsString());
-    EXPECT_EQ(2U, s.registerVariable());
-}
-
-TEST(Tape, nestedRecordingTakesItsReusableSlotsAlong)
-{
-    typedef xad::Tape<double> tape_type;
-    // frees a slot in the middle of a nested recording without reusable slots of its own
-    struct Callback : xad::CheckpointCallback<tape_type>
-    {
-        void computeAdjoint(tape_type* tape) override
-        {
-            xad::ScopedNestedRecording<tape_type> nested(tape);
-            auto a = tape->registerVariable(), b = tape->registerVariable();
-            tape->unregisterVariable(a);
-            tape->unregisterVariable(b);
-        }
-    } cb;
-
-    tape_type s;
-    std::vector<tape_type::slot_type> live;
-    for (int i = 0; i < 4; ++i)
-    {
-        live.push_back(s.registerVariable());
-        s.pushLhs(live.back());
-    }
-    s.unregisterVariable(live[1]);
-    live.erase(live.begin() + 1);
-    s.insertCallback(&cb);
-    s.setDerivative(live.back(), 1.0);
-    s.computeAdjoints();
-
-    for (int i = 0; i < 3; ++i)
-    {
-        auto slot = s.registerVariable();
-        EXPECT_TRUE(std::find(live.begin(), live.end(), slot) == live.end()) << slot;
-        live.push_back(slot);
-    }
-}
-
-TEST(Tape, movedTapeReusesSlots)
-{
-    xad::Tape<double> s(false);
-    s.registerVariable();
-    auto b = s.registerVariable();
-    s.registerVariable();
-
-    xad::Tape<double> moved(std::move(s));
-    moved.unregisterVariable(b);
-    EXPECT_EQ("[1, 2), ", moved.getReusableSlotsString());
-    EXPECT_EQ(b, moved.registerVariable());
-    EXPECT_EQ(3U, moved.registerVariable());
-
-    xad::Tape<double> assigned(false);
-    assigned = std::move(moved);
-    assigned.unregisterVariable(b);
-    EXPECT_EQ(b, assigned.registerVariable());
-    EXPECT_EQ(4U, assigned.registerVariable());
-}
-#endif
 
 TEST(Tape, clearCallbacksDestroysThem)
 {

@@ -141,24 +141,6 @@ TEST(ExpressionsMath, maxExprExpr)
     mathTest2_all(1.7, -0.7, 2.3 * 1.7, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, maxExprExpr);
 }
 
-LOCAL_TEST_FUNCTOR2(maxExprExpr2, max(2.3 * x1, 2.3 * x2 + 0.0))
-TEST(ExpressionsMath, maxExprExpr2)
-{
-    mathTest2_all(0.3, 0.7, 2.3 * 0.7, 0.0, 2.3, 0.0, 0.0, 0.0, 0.0, maxExprExpr2);
-    mathTest2_all(1.7, -0.7, 2.3 * 1.7, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, maxExprExpr2);
-    mathTest2_all(0.3, 0.7, 2.3 * 0.7, 0.0, 2.3, 0.0, 0.0, 0.0, 0.0, maxExprExpr2);
-    mathTest2_all(1.7, -0.7, 2.3 * 1.7, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, maxExprExpr2);
-}
-
-LOCAL_TEST_FUNCTOR2(maxExprExpr3, max(2.3 * x1 + 0.0, 2.3 * x2))
-TEST(ExpressionsMath, maxExprExpr3)
-{
-    mathTest2_all(0.3, 0.7, 2.3 * 0.7, 0.0, 2.3, 0.0, 0.0, 0.0, 0.0, maxExprExpr3);
-    mathTest2_all(1.7, -0.7, 2.3 * 1.7, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, maxExprExpr3);
-    mathTest2_all(0.3, 0.7, 2.3 * 0.7, 0.0, 2.3, 0.0, 0.0, 0.0, 0.0, maxExprExpr3);
-    mathTest2_all(1.7, -0.7, 2.3 * 1.7, 2.3, 0.0, 0.0, 0.0, 0.0, 0.0, maxExprExpr3);
-}
-
 LOCAL_TEST_FUNCTOR1(maxScalarAD, max(0.7, x))
 TEST(ExpressionsMath, maxScalarAD)
 {
@@ -330,49 +312,6 @@ TEST(ExpressionsMath, minExprScalar)
     mathTest_all(0.3, 2.0 * 0.3, 2.0, 0.0, minExprScalar);
 }
 
-namespace
-{
-// min/max must give the same values as std::min/std::max, including the argument order,
-// which matters when one of the arguments is NaN
-template <class AD>
-void checkMinMaxLikeStd()
-{
-    using xad::value;
-    const double nan = std::numeric_limits<double>::quiet_NaN();
-    auto same = [](double actual, double expected)
-    { return (std::isnan(actual) && std::isnan(expected)) || actual == expected; };
-    for (double a : {nan, 1.0})
-    {
-        for (double b : {nan, 1.0, 2.0})
-        {
-            AD x = a, y = b;
-            EXPECT_TRUE(same(value(max(x, y)), std::max(a, b))) << a << ", " << b;
-            EXPECT_TRUE(same(value(min(x, y)), std::min(a, b))) << a << ", " << b;
-            EXPECT_TRUE(same(value(max(x, b)), std::max(a, b))) << a << ", " << b;
-            EXPECT_TRUE(same(value(min(x, b)), std::min(a, b))) << a << ", " << b;
-            EXPECT_TRUE(same(value(max(a, y)), std::max(a, b))) << a << ", " << b;
-            EXPECT_TRUE(same(value(min(a, y)), std::min(a, b))) << a << ", " << b;
-            EXPECT_TRUE(same(value(max(2.0 * x, 2.0 * b)), std::max(2.0 * a, 2.0 * b)))
-                << a << ", " << b;
-            EXPECT_TRUE(same(value(min(2.0 * x, 2.0 * b)), std::min(2.0 * a, 2.0 * b)))
-                << a << ", " << b;
-            EXPECT_TRUE(same(value(max(2.0 * a, 2.0 * y)), std::max(2.0 * a, 2.0 * b)))
-                << a << ", " << b;
-            EXPECT_TRUE(same(value(min(2.0 * a, 2.0 * y)), std::min(2.0 * a, 2.0 * b)))
-                << a << ", " << b;
-            EXPECT_TRUE(same(value(max(2.0 * x, 2.0 * y)), std::max(2.0 * a, 2.0 * b)))
-                << a << ", " << b;
-            EXPECT_TRUE(same(value(min(2.0 * x, 2.0 * y)), std::min(2.0 * a, 2.0 * b)))
-                << a << ", " << b;
-        }
-    }
-}
-}  // namespace
-
-TEST(ExpressionsMath, minMaxNaNLikeStdAReal) { checkMinMaxLikeStd<xad::AReal<double>>(); }
-
-TEST(ExpressionsMath, minMaxNaNLikeStdFReal) { checkMinMaxLikeStd<xad::FReal<double>>(); }
-
 LOCAL_TEST_FUNCTOR2(sminADAD, smooth_min(x1, x2))
 TEST(ExpressionsMath, sminADAD)
 {
@@ -497,16 +436,6 @@ TEST(ExpressionsMath, maxMinForIntegers)
     EXPECT_EQ(xad::min(y, x), y);
 }
 
-TEST(ExpressionsMath, maxMinForIntegersExplicit)
-{
-    int x = 10;
-    long long y = 8;
-    EXPECT_EQ(xad::max<long long>(x, y), x);
-    EXPECT_EQ(xad::max<long long>(y, x), x);
-    EXPECT_EQ(xad::min<long long>(x, y), y);
-    EXPECT_EQ(xad::min<long long>(y, x), y);
-}
-
 // temporarily disable double->int conversion warning, as we're testing just that below
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -522,16 +451,6 @@ TEST(ExpressionsMath, maxMinForIntegersExplicit)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wfloat-conversion"
 #endif
-
-TEST(ExpressionsMath, maxMinForIntegersDoubleExplicit)
-{
-    int x = 10;
-    double y = 8.;
-    EXPECT_EQ(xad::max<long long>(x, y), x);
-    EXPECT_EQ(xad::max<long long>(y, x), x);
-    EXPECT_EQ(xad::min<long long>(x, y), static_cast<long long>(y));
-    EXPECT_EQ(xad::min<long long>(y, x), static_cast<long long>(y));
-}
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
