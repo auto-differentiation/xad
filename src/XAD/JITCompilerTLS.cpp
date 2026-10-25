@@ -41,17 +41,61 @@
 namespace xad
 {
 
+#ifdef XAD_SHARED_LIBS
+namespace
+{
+// not a static member of JITCompiler: thread-local data cannot be exported from a DLL
+template <class Real, std::size_t N>
+struct ActiveJIT
+{
+    static XAD_THREAD_LOCAL JITCompiler<Real, N>* jit;
+};
+
+template <class Real, std::size_t N>
+XAD_THREAD_LOCAL JITCompiler<Real, N>* ActiveJIT<Real, N>::jit = nullptr;
+}  // namespace
+
+template <class Real, std::size_t N>
+JITCompiler<Real, N>* JITCompiler<Real, N>::getActive()
+{
+    return ActiveJIT<Real, N>::jit;
+}
+
+template <class Real, std::size_t N>
+void JITCompiler<Real, N>::setActive(JITCompiler* j)
+{
+    if (ActiveJIT<Real, N>::jit != nullptr)
+        throw OutOfRange("JIT Compiler already active");
+    ActiveJIT<Real, N>::jit = j;
+}
+
+template <class Real, std::size_t N>
+void JITCompiler<Real, N>::setActiveUnchecked(JITCompiler* j)
+{
+    ActiveJIT<Real, N>::jit = j;
+}
+
+template <class Real, std::size_t N>
+void JITCompiler<Real, N>::deactivateAll()
+{
+    ActiveJIT<Real, N>::jit = nullptr;
+}
+#else
 // Define TLS storage for active_jit_ (mirrors Tape.cpp pattern).
 template <class Real, std::size_t N>
 XAD_THREAD_LOCAL JITCompiler<Real, N>* JITCompiler<Real, N>::active_jit_ = nullptr;
+#endif
 
 // JIT is intentionally limited to scalar, first-order mode only:
 // - no vector mode (N>1)
 // - no higher-order AD types
 //
 // Therefore we only provide explicit instantiations for the scalar specializations.
-template class JITCompiler<float>;
-template class JITCompiler<double>;
+#ifdef _MSC_VER
+#pragma warning(disable : 4251)
+#endif
+template class XAD_TEMPLATE_EXPORT JITCompiler<float>;
+template class XAD_TEMPLATE_EXPORT JITCompiler<double>;
 
 }  // namespace xad
 
