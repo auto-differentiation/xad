@@ -50,6 +50,10 @@ struct JITGraphInterpreter<Scalar>::Impl
     std::vector<Scalar> inputValues;  // Current input values (set via setInput)
     std::vector<Scalar> nodeValues;   // Forward pass intermediate values
     std::vector<Scalar> nodeAdjoints; // Backward pass adjoints
+    // sizes at compile(): nodes recorded later are not evaluated
+    std::size_t numNodes = 0;
+    std::size_t numInputs = 0;
+    std::size_t numOutputs = 0;
 };
 
 template <class Scalar>
@@ -65,9 +69,12 @@ template <class Scalar>
 void JITGraphInterpreter<Scalar>::compile(const JITGraph& graph)
 {
     impl_->graph = &graph;
-    impl_->inputValues.resize(graph.input_ids.size());
-    impl_->nodeValues.resize(graph.nodeCount());
-    impl_->nodeAdjoints.resize(graph.nodeCount());
+    impl_->numNodes = graph.nodeCount();
+    impl_->numInputs = graph.input_ids.size();
+    impl_->numOutputs = graph.output_ids.size();
+    impl_->inputValues.resize(impl_->numInputs);
+    impl_->nodeValues.resize(impl_->numNodes);
+    impl_->nodeAdjoints.resize(impl_->numNodes);
 }
 
 template <class Scalar>
@@ -77,18 +84,19 @@ void JITGraphInterpreter<Scalar>::reset()
     impl_->inputValues.clear();
     impl_->nodeValues.clear();
     impl_->nodeAdjoints.clear();
+    impl_->numNodes = impl_->numInputs = impl_->numOutputs = 0;
 }
 
 template <class Scalar>
 std::size_t JITGraphInterpreter<Scalar>::numInputs() const
 {
-    return impl_->graph ? impl_->graph->input_ids.size() : 0;
+    return impl_->numInputs;
 }
 
 template <class Scalar>
 std::size_t JITGraphInterpreter<Scalar>::numOutputs() const
 {
-    return impl_->graph ? impl_->graph->output_ids.size() : 0;
+    return impl_->numOutputs;
 }
 
 template <class Scalar>
@@ -96,7 +104,7 @@ void JITGraphInterpreter<Scalar>::setInput(std::size_t inputIndex, const Scalar*
 {
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
-    if (inputIndex >= impl_->graph->input_ids.size())
+    if (inputIndex >= impl_->numInputs)
         throw std::runtime_error("Input index out of range");
 
     impl_->inputValues[inputIndex] = values[0];
@@ -111,20 +119,28 @@ void JITGraphInterpreter<Scalar>::forward(Scalar* outputs)
     const JITGraph& graph = *impl_->graph;
 
     // Load input values into node values
-    for (std::size_t i = 0; i < graph.input_ids.size(); ++i)
+    for (std::size_t i = 0; i < impl_->numInputs; ++i)
         impl_->nodeValues[graph.input_ids[i]] = impl_->inputValues[i];
 
     // Evaluate all nodes
-    for (std::size_t i = 0; i < graph.nodeCount(); ++i)
+    for (std::size_t i = 0; i < impl_->numNodes; ++i)
         evaluateNode(static_cast<uint32_t>(i));
 
     // Collect outputs (scalar: 1 value per output)
-    for (std::size_t i = 0; i < graph.output_ids.size(); ++i)
+    for (std::size_t i = 0; i < impl_->numOutputs; ++i)
         outputs[i] = impl_->nodeValues[graph.output_ids[i]];
 }
 
 template <class Scalar>
 void JITGraphInterpreter<Scalar>::forwardAndBackward(Scalar* outputs, Scalar* inputGradients)
+{
+    forwardAndBackwardSeeded(outputs, nullptr, inputGradients);
+}
+
+template <class Scalar>
+void JITGraphInterpreter<Scalar>::forwardAndBackwardSeeded(Scalar* outputs,
+                                                           const Scalar* outputAdjoints,
+                                                           Scalar* inputGradients)
 {
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
@@ -134,17 +150,17 @@ void JITGraphInterpreter<Scalar>::forwardAndBackward(Scalar* outputs, Scalar* in
     // Run forward pass
     forward(outputs);
 
-    // Run backward pass - seed output adjoints to 1.0
-    impl_->nodeAdjoints.assign(graph.nodeCount(), Scalar(0));
-    for (std::size_t i = 0; i < graph.output_ids.size(); ++i)
-        impl_->nodeAdjoints[graph.output_ids[i]] = Scalar(1);
+    // Run backward pass - seed output adjoints (1.0 without outputAdjoints)
+    impl_->nodeAdjoints.assign(impl_->numNodes, Scalar(0));
+    for (std::size_t i = 0; i < impl_->numOutputs; ++i)
+        impl_->nodeAdjoints[graph.output_ids[i]] = outputAdjoints ? outputAdjoints[i] : Scalar(1);
 
     // Propagate adjoints backward
-    for (std::size_t i = graph.nodeCount(); i > 0; --i)
+    for (std::size_t i = impl_->numNodes; i > 0; --i)
         propagateAdjoint(static_cast<uint32_t>(i - 1));
 
     // Collect input gradients (scalar: 1 value per input)
-    for (std::size_t i = 0; i < graph.input_ids.size(); ++i)
+    for (std::size_t i = 0; i < impl_->numInputs; ++i)
         inputGradients[i] = impl_->nodeAdjoints[graph.input_ids[i]];
 }
 

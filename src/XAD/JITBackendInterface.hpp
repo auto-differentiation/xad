@@ -30,6 +30,7 @@
 
 #include <XAD/JITGraph.hpp>
 #include <cstddef>
+#include <stdexcept>
 
 namespace xad
 {
@@ -79,6 +80,22 @@ class JITBackend
 
     /// Execute forward and backward passes. Output adjoints are seeded to 1.0.
     virtual void forwardAndBackward(Scalar* outputs, Scalar* inputGradients) = 0;
+
+    /// As forwardAndBackward, with output adjoints seeded from outputAdjoints
+    /// (numOutputs() * vectorWidth() values).
+    virtual void forwardAndBackwardSeeded(Scalar* outputs, const Scalar* outputAdjoints,
+                                          Scalar* inputGradients)
+    {
+        // default for backends that only seed 1.0: equal seeds scale the gradients
+        const std::size_t nSeeds = numOutputs() * vectorWidth();
+        for (std::size_t i = 1; i < nSeeds; ++i)
+            if (!(outputAdjoints[i] == outputAdjoints[0]))
+                throw std::runtime_error("JIT backend does not support different output adjoints");
+        forwardAndBackward(outputs, inputGradients);
+        if (nSeeds > 0 && !(outputAdjoints[0] == Scalar(1)))
+            for (std::size_t i = 0; i < numInputs() * vectorWidth(); ++i)
+                inputGradients[i] *= outputAdjoints[0];
+    }
 };
 
 }  // namespace xad
