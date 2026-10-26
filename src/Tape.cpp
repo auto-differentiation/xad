@@ -75,6 +75,16 @@ Tape<T, N>::Tape(Tape&& o) noexcept
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
+    o.resetMovedFrom();
+#ifdef XAD_ENABLE_JIT
+    // the JIT that deactivated o reactivates this tape instead
+    if (o.jitSuspender_)
+    {
+        jitSuspender_ = o.jitSuspender_;
+        o.jitSuspender_ = nullptr;
+        *jitSuspender_ = this;
+    }
+#endif
     if (o.isActive())
     {
         // activate() would throw while o is active
@@ -86,6 +96,8 @@ Tape<T, N>::Tape(Tape&& o) noexcept
 template <class T, std::size_t N>
 Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 {
+    if (this == &o)
+        return *this;
     operations_ = std::move(o.operations_);
     statement_ = std::move(o.statement_);
     derivatives_ = std::move(o.derivatives_);
@@ -101,6 +113,17 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
+    o.resetMovedFrom();
+#ifdef XAD_ENABLE_JIT
+    if (o.jitSuspender_)
+    {
+        if (jitSuspender_)
+            *jitSuspender_ = nullptr;
+        jitSuspender_ = o.jitSuspender_;
+        o.jitSuspender_ = nullptr;
+        *jitSuspender_ = this;
+    }
+#endif
     if (o.isActive())
     {
         // activate() would throw while o is active
@@ -112,10 +135,23 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     return *this;
 }
 
+// its own empty recording, so it leaves the successor alone; clearAll makes it record again
+template <class T, std::size_t N>
+void Tape<T, N>::resetMovedFrom()
+{
+    while (!nestedRecordings_.empty()) nestedRecordings_.pop();
+    nestedRecordings_.push(SubRecording(this));
+    currentRec_ = &nestedRecordings_.top();
+}
+
 template <class T, std::size_t N>
 Tape<T, N>::~Tape()
 {
     deactivate();
+#ifdef XAD_ENABLE_JIT
+    if (jitSuspender_)
+        *jitSuspender_ = nullptr;
+#endif
     clearCallbacks();
 }
 
@@ -619,6 +655,11 @@ void Tape<T, N>::computeAdjoints()
 template <class T, std::size_t N>
 void Tape<T, N>::computeAdjointsTo(position_type pos)
 {
+#ifdef XAD_ENABLE_JIT
+    // slots from FIRST_JIT_SLOT on are passive, so their dependencies were not recorded
+    if (currentRec_->maxDerivative_ > FIRST_JIT_SLOT)
+        throw OutOfRange("too many tape slots with JIT enabled");
+#endif
     position_type start = position_type(statement_.size() - 1);
     LOG_DEBUG("number checkpoints: " << checkpoints_.size());
     for (unsigned i = unsigned(checkpoints_.size()); i > 0; --i)

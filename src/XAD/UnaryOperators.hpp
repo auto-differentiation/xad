@@ -49,10 +49,9 @@ struct ARealDirect;
 
 // unary plus - does nothing
 template <class Scalar, class Expr, class DerivativeType>
-XAD_INLINE const Expression<Scalar, Expr, DerivativeType>& operator+(
-    const Expression<Scalar, Expr, DerivativeType>& a)
+XAD_INLINE const Expr& operator+(const Expression<Scalar, Expr, DerivativeType>& a)
 {
-    return a;
+    return a.derived();
 }
 
 template <class Scalar, std::size_t M = 1>

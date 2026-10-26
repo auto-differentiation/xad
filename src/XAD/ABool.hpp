@@ -81,19 +81,9 @@ class ABool
         auto* jit = jit_type::getActive();
         if (jit && hasSlot())
         {
-            // Get slots for both branches (they must be recorded in the graph)
-            uint32_t trueSlot = trueVal.getSlot();
-            uint32_t falseSlot = falseVal.getSlot();
-
-            // If either operand doesn't have a slot, record it as a constant
-            if (trueSlot == INVALID_SLOT)
-            {
-                trueSlot = jit->recordConstant(getNestedDoubleValue(value(trueVal)));
-            }
-            if (falseSlot == INVALID_SLOT)
-            {
-                falseSlot = jit->recordConstant(getNestedDoubleValue(value(falseVal)));
-            }
+            // Get nodes for both branches, constants for those not recorded in the graph
+            uint32_t trueSlot = trueVal.recordJIT(jit->getGraph());
+            uint32_t falseSlot = falseVal.recordJIT(jit->getGraph());
 
             // Record the If node: If(condition, trueVal, falseVal)
             uint32_t resultSlot = jit->recordNode(JITOpCode::If, slot_, trueSlot, falseSlot);
@@ -117,7 +107,7 @@ class ABool
     static areal_type createWithSlot(Scalar val, slot_type slot)
     {
         areal_type result(val);
-        result.slot_ = slot;
+        result.slot_ = jitSlot(slot);
         return result;
     }
 
@@ -145,17 +135,8 @@ ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, const AReal<Scalar, N>&
     auto* jit = jit_type::getActive();
     if (jit)
     {
-        uint32_t slotA = a.getSlot();
-        uint32_t slotB = b.getSlot();
-
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-        {
-            slotA = jit->recordConstant(getNestedDoubleValue(value(a)));
-        }
-        if (slotB == ABool<Scalar, N>::INVALID_SLOT)
-        {
-            slotB = jit->recordConstant(getNestedDoubleValue(value(b)));
-        }
+        uint32_t slotA = a.recordJIT(jit->getGraph());
+        uint32_t slotB = b.recordJIT(jit->getGraph());
 
         slot_type cmpSlot = jit->recordNode(opcode, slotA, slotB);
         return ABool<Scalar, N>(cmpSlot, passive);
@@ -177,12 +158,7 @@ ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, Scalar b,
     auto* jit = jit_type::getActive();
     if (jit)
     {
-        uint32_t slotA = a.getSlot();
-        if (slotA == ABool<Scalar, N>::INVALID_SLOT)
-        {
-            slotA = jit->recordConstant(getNestedDoubleValue(value(a)));
-        }
-
+        uint32_t slotA = a.recordJIT(jit->getGraph());
         uint32_t slotB = jit->recordConstant(getNestedDoubleValue(b));
         slot_type cmpSlot = jit->recordNode(opcode, slotA, slotB);
         return ABool<Scalar, N>(cmpSlot, passive);

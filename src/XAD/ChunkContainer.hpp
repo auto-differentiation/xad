@@ -142,9 +142,9 @@ class ChunkContainer
 
     void clear()
     {
-        destructAllImpl<std::is_trivially_destructible<value_type>::value>::make(this, size_type(0),
-                                                                                 size());
-        chunk_ = idx_ = 0;
+        destroyAll();
+        if (chunkList_.empty())  // moved from
+            reserve(1);
     }
 
     size_type capacity() const { return getNumElements(chunkList_.capacity()); }
@@ -394,9 +394,16 @@ class ChunkContainer
 
     void check_space(size_type i) { reserve(chunk_ * chunk_size + idx_ + i); }
 
+    void destroyAll()
+    {
+        destructAllImpl<std::is_trivially_destructible<value_type>::value>::make(this, size_type(0),
+                                                                                 size());
+        chunk_ = idx_ = 0;
+    }
+
     void _free_memory()
     {
-        clear();
+        destroyAll();
         for (auto& c : chunkList_)
         {
             AllocHelper::aligned_free(c);

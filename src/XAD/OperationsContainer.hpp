@@ -76,8 +76,23 @@ class OperationsContainer
         addChunks(1);
     }
     OperationsContainer(const OperationsContainer&) = delete;
-    OperationsContainer(OperationsContainer&&) = default;
-    OperationsContainer& operator=(OperationsContainer&&) = default;
+    OperationsContainer(OperationsContainer&& o) noexcept
+        : chunks_(std::move(o.chunks_)), idx_(o.idx_), chunk_(o.chunk_)
+    {
+        o.idx_ = o.chunk_ = 0;
+    }
+    OperationsContainer& operator=(OperationsContainer&& o) noexcept
+    {
+        if (this != &o)
+        {
+            destruct_elements(0);
+            chunks_ = std::move(o.chunks_);
+            idx_ = o.idx_;
+            chunk_ = o.chunk_;
+            o.idx_ = o.chunk_ = 0;
+        }
+        return *this;
+    }
     OperationsContainer& operator=(const OperationsContainer&) = delete;
     ~OperationsContainer() { destruct_elements(0); }
 
@@ -116,6 +131,8 @@ class OperationsContainer
         destruct_elements(0);
         chunk_ = 0;
         idx_ = 0;
+        if (chunks_.empty())  // moved from
+            addChunks(1);
     }
 
     void push_back(T multiplier, S slot)
@@ -261,6 +278,8 @@ class OperationsContainer
     {
         static void destr(OperationsContainer* cont, size_type start)
         {
+            if (start >= cont->size())
+                return;
             auto start_chunk = start / ChunkSize;
             auto start_idx = start % ChunkSize;
             auto end_chunk = cont->size() / ChunkSize;

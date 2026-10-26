@@ -105,6 +105,12 @@ XAD_INLINE float smooth_min(float x, float y, float c = 0.001f)
     return 0.5f * (x + y - smooth_abs(x - y, c));
 }
 
+// the same factors as degrees_op and radians_op
+XAD_INLINE double degrees(double x) { return x * 57.2957795130823208767981548141051703324054725; }
+XAD_INLINE float degrees(float x) { return x * 57.2957795130823208767981548141051703324054725f; }
+XAD_INLINE double radians(double x) { return x * 0.0174532925199432957692369076848861271344287; }
+XAD_INLINE float radians(float x) { return x * 0.0174532925199432957692369076848861271344287f; }
+
 using ::std::acosh;
 using ::std::asinh;
 using ::std::atan2;

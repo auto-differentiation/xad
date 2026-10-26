@@ -3063,6 +3063,12 @@ XAD_INLINE std::complex<T> sqrt_impl(const std::complex<T>& z)
     if (xad::isinf(z.imag()) && z.imag() > 0.0)
         return std::complex<T>(std::numeric_limits<nested>::infinity(),
                                std::numeric_limits<nested>::infinity());
+    if (z.imag() == 0.0 && z.real() < 0.0)
+    {
+        // exactly imaginary (cos(pi / 2) is not 0); y / (2 im) is 0 with the right derivative
+        T im = ::xad::copysign(T(sqrt(-z.real())), z.imag());
+        return std::complex<T>(T(z.imag() / (2.0 * im)), im);
+    }
 
     return ::xad::detail::polar_impl(sqrt(abs(z)), arg(z) * T(0.5));
 }
