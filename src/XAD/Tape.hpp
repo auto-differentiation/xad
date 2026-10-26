@@ -297,6 +297,12 @@ class Tape
 
     XAD_FORCE_INLINE void commitOperations(unsigned n) { operations_.commit(n); }
 
+    // One out-of-line call per recorded statement (XAD_OUTLINE_RECORDING): a new variable, or the
+    // assignment to lhs (registered after its operations, as it may appear in them).
+    slot_type recordStatement(const value_type* multipliers, const slot_type* slots, unsigned n);
+    void recordAssignment(slot_type& lhs, const value_type* multipliers, const slot_type* slots,
+                          unsigned n);
+
     // capacity
     size_type getNumVariables() const;
     size_type getNumOperations() const;
