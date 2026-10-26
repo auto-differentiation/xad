@@ -79,8 +79,8 @@ XAD_MAKE_UNARY_FUNCTOR(cosh, sinh(a))
 XAD_MAKE_UNARY_FUNCTOR(expm1, exp(a))
 XAD_MAKE_UNARY_FUNCTOR(exp2, Scalar(0.6931471805599453094172321214581765680755001) * exp2(a))
 XAD_MAKE_UNARY_FUNCTOR(log1p, Scalar(1) / (Scalar(1) + a))
-XAD_MAKE_UNARY_FUNCTOR(asinh, Scalar(1) / sqrt(a * a + Scalar(1)))
-XAD_MAKE_UNARY_FUNCTOR(acosh, Scalar(1) / sqrt(a * a - Scalar(1)))
+XAD_MAKE_UNARY_FUNCTOR(asinh, detail::invSqrtOfSquarePlus(a, Scalar(1)))
+XAD_MAKE_UNARY_FUNCTOR(acosh, detail::invSqrtOfSquarePlus(a, Scalar(-1)))
 XAD_MAKE_UNARY_FUNCTOR(atanh, Scalar(1) / (Scalar(1) - a * a))
 
 XAD_MAKE_UNARY_FUNCTOR(erf, Scalar(1.1283791670955125738961589031215451716881013) * exp(-a * a))
@@ -180,10 +180,13 @@ struct fabs_op : abs_op<Scalar>
         };                                                                                         \
     };
 
-XAD_MAKE_UNARY_BINFUNCTOR(pow, Scalar(b) * Scalar(pow(a, b - T2(1))), log(b) * v)
+// x^0 is 1 everywhere: b * x^(b-1) would be 0 * inf at x = 0 (and b - 1 wraps for unsigned b)
+XAD_MAKE_UNARY_BINFUNCTOR(pow, b == T2() ? Scalar() : Scalar(b) * Scalar(pow(a, b - T2(1))),
+                          detail::powExponentDerivative(Scalar(log(b)), v))
 XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), Scalar(-detail::remainder_quotient(Scalar(b), a, v)))
-XAD_MAKE_UNARY_BINFUNCTOR(atan2, Scalar(b) / (a * a + Scalar(b * b)),
-                          -Scalar(b) / (a * a + Scalar(b * b)))
+// b * b in Scalar, as it may overflow in an integer T2
+XAD_MAKE_UNARY_BINFUNCTOR(atan2, detail::divBySumOfSquares(Scalar(b), a, Scalar(b)),
+                          detail::divBySumOfSquares(Scalar(-Scalar(b)), a, Scalar(b)))
 XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
 XAD_MAKE_UNARY_BINFUNCTOR(hypot, Scalar(a) / v, Scalar(a) / v)
 
@@ -335,10 +338,37 @@ struct scalar_max_op
     Scalar b_;
 };
 
-template <class Scalar, class T2>
-struct scalar_fmax_op : scalar_max_op<Scalar, T2>
+// Op (scalar_max_op / scalar_min_op), but a NaN operand is ignored as by std::fmax / std::fmin
+template <class Op, class Scalar>
+struct scalar_nan_ignoring_op : Op
 {
-    XAD_INLINE explicit scalar_fmax_op(const T2& b) : scalar_max_op<Scalar, T2>(b) {}
+    template <class T2>
+    XAD_INLINE explicit scalar_nan_ignoring_op(const T2& b) : Op(b)
+    {
+    }
+    XAD_INLINE Scalar operator()(const Scalar& a) const
+    {
+        return isnan(a) ? this->b_ : (isnan(this->b_) ? a : Op::operator()(a));
+    }
+    XAD_INLINE Scalar derivative(const Scalar& a) const
+    {
+        return isnan(a) ? Scalar() : (isnan(this->b_) ? Scalar(1) : Op::derivative(a));
+    }
+    // forward mode: the tangent of a NaN operand is ignored too
+    template <class D>
+    XAD_INLINE D tangent(const Scalar& a, const Scalar&, const D& t) const
+    {
+        return isnan(a) ? D() : D(derivative(a) * t);
+    }
+};
+
+template <class Scalar, class T2>
+struct scalar_fmax_op : scalar_nan_ignoring_op<scalar_max_op<Scalar, T2>, Scalar>
+{
+    XAD_INLINE explicit scalar_fmax_op(const T2& b)
+        : scalar_nan_ignoring_op<scalar_max_op<Scalar, T2>, Scalar>(b)
+    {
+    }
 };
 
 // scalar as first argument - keeps the argument order of std::max, which matters for NaN
@@ -371,10 +401,25 @@ struct scalar_min_op
 };
 
 template <class Scalar, class T2>
-struct scalar_fmin_op : scalar_min_op<Scalar, T2>
+struct scalar_fmin_op : scalar_nan_ignoring_op<scalar_min_op<Scalar, T2>, Scalar>
 {
-    XAD_INLINE explicit scalar_fmin_op(const T2& b) : scalar_min_op<Scalar, T2>(b) {}
+    XAD_INLINE explicit scalar_fmin_op(const T2& b)
+        : scalar_nan_ignoring_op<scalar_min_op<Scalar, T2>, Scalar>(b)
+    {
+    }
 };
+
+namespace detail
+{
+template <class Scalar, class T2>
+struct HasTangentRule<scalar_fmax_op<Scalar, T2> > : std::true_type
+{
+};
+template <class Scalar, class T2>
+struct HasTangentRule<scalar_fmin_op<Scalar, T2> > : std::true_type
+{
+};
+}  // namespace detail
 
 // scalar as first argument - keeps the argument order of std::min, which matters for NaN
 template <class Scalar, class T2>

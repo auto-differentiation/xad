@@ -34,6 +34,11 @@ std::cout << "y = " << value(y) << "\n"
 For usability, it is recommended to use the type definitions decribed in
 [AD Mode Interfaces](interface.md) instead of using this tape type directly.
 
+A variable belongs to the tape it is registered on. With the CMake option `XAD_TAPE_CHECKS`
+(on by default in Debug builds), a variable used while another tape is active is a constant there,
+and destroying it leaves that tape's slots alone; without it, variables of an inactive tape must
+not be used or destroyed while another tape is active.
+
 ### Member Typedefs
 
 #### `size_type`

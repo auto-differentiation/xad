@@ -36,6 +36,9 @@
 #include <iterator>
 #include <numeric>
 #include <sstream>
+#ifdef XAD_TAPE_CHECKS
+#include <atomic>
+#endif
 
 #if 0
 #define LOG_DEBUG(msg) std::cout << msg << std::endl;
@@ -46,9 +49,25 @@
 namespace xad
 {
 
+#ifdef XAD_TAPE_CHECKS
+namespace
+{
+// unique, also for a tape created where a destroyed one was; 0 is no tape
+unsigned int nextTapeId()
+{
+    static std::atomic<unsigned int> last(0);
+    unsigned int id = ++last;
+    return id != 0 ? id : ++last;
+}
+}  // namespace
+#endif
+
 template <class T, std::size_t N>
 Tape<T, N>::Tape(bool activateNow)
 {
+#ifdef XAD_TAPE_CHECKS
+    id_ = nextTapeId();
+#endif
 
     nestedRecordings_.push(SubRecording(this));
     currentRec_ = &nestedRecordings_.top();
@@ -72,6 +91,10 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       nestedRecordings_(std::move(o.nestedRecordings_)),
       currentRec_(o.currentRec_)
 {
+#ifdef XAD_TAPE_CHECKS
+    id_ = o.id_;
+    o.id_ = nextTapeId();
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
@@ -102,7 +125,8 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     statement_ = std::move(o.statement_);
     derivatives_ = std::move(o.derivatives_);
     checkpoints_ = std::move(o.checkpoints_);
-    callbacks_ = std::move(o.callbacks_);
+    clearCallbacks();
+    callbacks_.swap(o.callbacks_);
     positionSlots_ = std::move(o.positionSlots_);
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_ = std::move(o.reusable_ranges_);
@@ -110,6 +134,10 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 #endif
     nestedRecordings_ = std::move(o.nestedRecordings_);
     currentRec_ = o.currentRec_;
+#ifdef XAD_TAPE_CHECKS
+    id_ = o.id_;
+    o.id_ = nextTapeId();
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     rebindRangeIterators();
 #endif
@@ -972,9 +1000,19 @@ void Tape<T, N>::clearCallbacks()
 template <class T, std::size_t N>
 void Tape<T, N>::clearDerivativesAfter(position_type pos)
 {
-    auto& st = statement_[pos];
-    derivatives_.resize(st.second + 1);
-    currentRec_->maxDerivative_ = st.second + 1;
+    // keep the slots in use at pos, which getPosition noted; the slot of the statement at pos
+    // can be an older one, or none
+    auto mark =
+        std::lower_bound(positionSlots_.begin(), positionSlots_.end(), position_slots_type(pos, 0));
+    slot_type end;
+    if (mark != positionSlots_.end() && mark->first == pos)
+        end = mark->second;
+    else if (statement_[pos].second != INVALID_SLOT)
+        end = statement_[pos].second + 1;
+    else
+        return;
+    derivatives_.resize(end);
+    currentRec_->maxDerivative_ = end;
 }
 
 template <class T, std::size_t N>

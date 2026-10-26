@@ -109,7 +109,7 @@ XAD_INLINE auto smooth_min(const T1& x, const T2& y) -> decltype(0.5 * (x + y - 
     return 0.5 * (x + y - smooth_abs(x - y));
 }
 
-template <class T, class = typename std::enable_if<xad::ExprTraits<T>::isExpr>>
+template <class T, class = typename std::enable_if<detail::is_active<T>::value>::type>
 XAD_INLINE auto fma(const T& a, const T& b, const T& c) -> decltype(a * b + c)
 {
     return a * b + c;
@@ -117,8 +117,8 @@ XAD_INLINE auto fma(const T& a, const T& b, const T& c) -> decltype(a * b + c)
 
 template <
     class T1, class T2, class T3,
-    class = typename std::enable_if<(xad::ExprTraits<T1>::isExpr || xad::ExprTraits<T2>::isExpr ||
-                                     xad::ExprTraits<T3>::isExpr)>>
+    class = typename std::enable_if<(detail::is_active<T1>::value || detail::is_active<T2>::value ||
+                                     detail::is_active<T3>::value)>::type>
 XAD_INLINE auto fma(const T1& a, const T2& b, const T3& c) -> decltype(a * b + c)
 {
     return a * b + c;

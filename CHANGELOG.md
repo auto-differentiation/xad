@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `XAD_OUTLINE_RECORDING` option: one out-of-line call per recorded operation, for faster compiles with `XAD_USE_STRONG_INLINE`
 - `Tape::clearCallbacks()` destroys the callbacks pushed with `pushCallback`, for tapes used for many recordings
+- CMake option `XAD_TAPE_CHECKS` (on in Debug builds): variables use and free slots only on the tape they are registered on
 - `JITBackend::forwardAndBackwardSeeded` runs the backward pass from given output adjoints
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
 
@@ -73,6 +74,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complex `sqrt` of a negative real had a nonzero real part
 - Variables of a JIT scope aliased tape slots after it, and tape variables graph nodes in it, giving wrong derivatives or out-of-bounds writes
 - In a JIT scope, registering a tape variable as an output or taking its adjoint dropped it from the tape
+- `pow(x, 0)` had a NaN derivative at `x = 0`, and `pow(x, 0u)` one everywhere
+- `pow(0, y)` had a NaN derivative to `y`
+- Forward mode: an operand without tangent made the derivative NaN where its partial was infinite
+- `atan2` with an integer argument squared it in `int`, which could overflow
+- Derivatives of `/`, `atan2`, `asinh` and `acosh` overflowed or underflowed for large or tiny arguments
+- `clearDerivativesAfter` dropped variables registered before its position
+- Move-assigning a tape leaked the callbacks it had
+- Destroying a variable of an inactive tape freed its slot on the active tape (fixed with `XAD_TAPE_CHECKS`)
+- `Vec != scalar` was true only if every element differed
+- `xad::fma` matched built-in types, so `std::fma(2, 3, 4)` did not return `double`
+- `computeHessian` without inputs and `computeJacobian` without outputs read an empty matrix
+- `fmax`/`fmin` with a NaN argument returned NaN, not the other argument as `std::fmax`/`std::fmin`
 - JIT recording missed `+=` and `-=` with a scalar
 - JIT variables assigned a scalar kept their old graph node
 - JIT `computeAdjoints` ignored the output adjoints and seeded 1

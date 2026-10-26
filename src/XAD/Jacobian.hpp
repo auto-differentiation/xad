@@ -87,7 +87,9 @@ void computeJacobianAdj(const std::vector<Active> &vec,
                         std::function<std::vector<Active>(std::vector<Active> &)> foo,
                         RowIterator first, RowIterator last, std::size_t codomain, Tape<T> *tape)
 {
-    if (static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != vec.size())
+    // no rows to check for an empty codomain
+    if (first != last &&
+        static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != vec.size())
         throw OutOfRange("Iterator allocated space doesn't equal codomain");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
@@ -210,7 +212,9 @@ void computeJacobianFwd(const std::vector<Active> &vec,
                         std::function<std::vector<Active>(std::vector<Active> &)> foo,
                         RowIterator first, RowIterator last, std::size_t codomain)
 {
-    if (static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != vec.size())
+    // no rows to check for an empty codomain
+    if (first != last &&
+        static_cast<std::size_t>(std::distance(first->cbegin(), first->cend())) != vec.size())
         throw OutOfRange("Iterator allocated space doesn't equal codomain");
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");

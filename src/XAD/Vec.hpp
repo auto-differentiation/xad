@@ -75,13 +75,7 @@ struct Vec
         return true;
     }
 
-    bool operator!=(const T& scalar)
-    {
-        for (std::size_t i = 0; i < N; i++)
-            if (data_[i] == scalar)
-                return false;
-        return true;
-    }
+    bool operator!=(const T& scalar) { return !(*this == scalar); }
 
     Vec<T, N>& operator+=(const T& scalar)
     {

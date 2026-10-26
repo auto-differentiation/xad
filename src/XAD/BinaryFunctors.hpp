@@ -24,6 +24,7 @@
 
 #pragma once
 #include <XAD/Macros.hpp>
+#include <XAD/Traits.hpp>
 
 namespace xad
 {
@@ -57,6 +58,22 @@ struct sub_op
     XAD_INLINE Scalar derivative_b(const Scalar&, const Scalar&) const { return Scalar(-1); }
 };
 
+namespace detail
+{
+template <class Scalar>
+struct HasFinitePartials<add_op<Scalar> > : std::true_type
+{
+};
+template <class Scalar>
+struct HasFinitePartials<prod_op<Scalar> > : std::true_type
+{
+};
+template <class Scalar>
+struct HasFinitePartials<sub_op<Scalar> > : std::true_type
+{
+};
+}  // namespace detail
+
 template <class Scalar>
 struct div_op
 {
@@ -64,6 +81,26 @@ struct div_op
 
     XAD_INLINE Scalar derivative_a(const Scalar&, const Scalar& b) const { return Scalar(1) / b; }
 
-    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const { return -a / (b * b); }
+    // -a / b^2 as -(a / b) / b, without waiting for a / b; b * b can overflow or underflow
+    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
+    {
+        const Scalar r = Scalar(1) / b;
+        return -(a * r) * r;
+    }
+
+    template <class D>
+    XAD_INLINE D tangent(const Scalar&, const Scalar& b, const Scalar& v, const D& ta,
+                         const D& tb) const
+    {
+        return detail::quotientTangent(b, v, ta, tb);
+    }
 };
+
+namespace detail
+{
+template <class Scalar>
+struct HasTangentRule<div_op<Scalar> > : std::true_type
+{
+};
+}  // namespace detail
 }  // namespace xad
