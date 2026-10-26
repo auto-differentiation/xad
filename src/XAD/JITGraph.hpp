@@ -29,6 +29,8 @@
 #ifdef XAD_ENABLE_JIT
 
 #include <XAD/ChunkContainer.hpp>
+#include <XAD/Exceptions.hpp>
+#include <XAD/Macros.hpp>
 
 #include <cstdint>
 #include <cstring>
@@ -100,6 +102,15 @@ enum class JITOpCode : uint16_t
     SmoothAbs = 58
 };
 
+// AReal slots of graph nodes take the top quarter, below INVALID_SLOT, so tapes and JITs each
+// take the other's variables as passive
+constexpr unsigned FIRST_JIT_SLOT = 0xC0000000u;
+constexpr unsigned jitSlot(uint32_t node) { return node | FIRST_JIT_SLOT; }
+constexpr uint32_t jitNode(unsigned slot) { return slot & ~FIRST_JIT_SLOT; }
+constexpr bool isJitSlot(unsigned slot) { return slot >= FIRST_JIT_SLOT && slot != ~0u; }
+// nodes, and nodeCount() as the next one, need distinct slots below INVALID_SLOT
+constexpr uint32_t MAX_JIT_NODES = jitNode(~0u) - 1;
+
 struct JITNodeFlags
 {
     static constexpr uint8_t IsActive = 0x01;
@@ -143,6 +154,8 @@ struct JITGraph
                      uint8_t fl = JITNodeFlags::IsActive)
     {
         uint32_t id = static_cast<uint32_t>(nodes.size());
+        if (XAD_VERY_UNLIKELY(id >= MAX_JIT_NODES))
+            throwTooManyNodes();
         JITNode n;
         n.op = static_cast<uint16_t>(op);
         n.a = a;
@@ -187,6 +200,13 @@ struct JITGraph
     double getConstantValue(uint32_t nodeId) const
     {
         return const_pool[static_cast<std::size_t>(nodes[nodeId].imm)];
+    }
+
+  private:
+    // out of line, so the check costs addNode only a compare
+    [[noreturn]] static XAD_NEVER_INLINE void throwTooManyNodes()
+    {
+        throw OutOfRange("too many JIT graph nodes");
     }
 };
 

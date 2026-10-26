@@ -64,11 +64,7 @@ class JITCompiler
         : backend_(std::unique_ptr<JITGraphInterpreter<Real>>(new JITGraphInterpreter<Real>()))
     {
         if (activate)
-        {
-            // Deactivate any active tape - JIT requires no tape to be active
-            tape_type::deactivateAll();
-            setActive(this);
-        }
+            activateSuspendingTape();
     }
 
     // Constructor with custom backend
@@ -76,14 +72,14 @@ class JITCompiler
         : backend_(std::move(backend))
     {
         if (activate)
-        {
-            // Deactivate any active tape - JIT requires no tape to be active
-            tape_type::deactivateAll();
-            setActive(this);
-        }
+            activateSuspendingTape();
     }
 
-    ~JITCompiler() { deactivate(); }
+    ~JITCompiler()
+    {
+        deactivate();
+        restoreTape();
+    }
 
     /// Set or replace the JIT backend.
     /// Resets any compiled state when the backend is changed.
@@ -100,6 +96,7 @@ class JITCompiler
           inputValues_(std::move(other.inputValues_)),
           derivatives_(std::move(other.derivatives_))
     {
+        takeSuspendedTape(other);
         if (other.isActive())
         {
             other.deactivate();
@@ -114,10 +111,12 @@ class JITCompiler
         if (this != &other)
         {
             deactivate();
+            restoreTape();
             graph_ = std::move(other.graph_);
             backend_ = std::move(other.backend_);
             inputValues_ = std::move(other.inputValues_);
             derivatives_ = std::move(other.derivatives_);
+            takeSuspendedTape(other);
             if (other.isActive())
             {
                 other.deactivate();
@@ -167,18 +166,25 @@ class JITCompiler
 
     XAD_INLINE void registerInput(active_type& inp)
     {
-        if (!inp.shouldRecord())
+        if (!inp.shouldRecordJIT())
         {
-            inp.slot_ = graph_.addInput();
+            inp.slot_ = jitSlot(graph_.addInput());
             inputValues_.push_back(&inp.value());
         }
     }
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (!outp.shouldRecord())  // independent of the inputs
-            outp.slot_ = graph_.addConstant(outp.value());
-        graph_.markOutput(outp.slot_);
+        uint32_t node;
+        if (outp.shouldRecordJIT())
+            node = jitNode(outp.slot_);
+        else  // independent of the inputs: a constant, leaving a tape variable its slot
+        {
+            node = graph_.addConstant(outp.value());
+            if (!outp.shouldRecord())
+                outp.slot_ = jitSlot(node);
+        }
+        graph_.markOutput(node);
     }
 
     template <class Inner>
@@ -266,31 +272,36 @@ class JITCompiler
             derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputGradients[i]);
     }
 
+    // s: a variable's slot or a graph node
     derivative_type& derivative(slot_type s)
     {
-        if (s >= derivatives_.size())
-            derivatives_.resize(s + 1, derivative_type());
-        return derivatives_[s];
+        uint32_t n = jitNode(s);
+        if (n >= derivatives_.size())
+            derivatives_.resize(n + 1, derivative_type());
+        return derivatives_[n];
     }
 
     const derivative_type& derivative(slot_type s) const
     {
-        if (s < derivatives_.size())
-            return derivatives_[s];
+        uint32_t n = jitNode(s);
+        if (n < derivatives_.size())
+            return derivatives_[n];
         // Return reference to class member for out-of-range slots (thread-safe)
         return zero_;
     }
 
     derivative_type getDerivative(slot_type s) const
     {
-        return (s < derivatives_.size()) ? derivatives_[s] : derivative_type();
+        uint32_t n = jitNode(s);
+        return (n < derivatives_.size()) ? derivatives_[n] : derivative_type();
     }
 
     void setDerivative(slot_type s, const derivative_type& d)
     {
-        if (s >= derivatives_.size())
-            derivatives_.resize(s + 1, derivative_type());
-        derivatives_[s] = d;
+        uint32_t n = jitNode(s);
+        if (n >= derivatives_.size())
+            derivatives_.resize(n + 1, derivative_type());
+        derivatives_[n] = d;
     }
 
     void clearDerivatives()
@@ -311,12 +322,47 @@ class JITCompiler
     position_type getPosition() const { return static_cast<position_type>(graph_.nodeCount()); }
 
   private:
+    // JIT recording needs the tape off: this JIT reactivates it when it goes
+    void activateSuspendingTape()
+    {
+        setActive(this);
+        if (tape_type* t = tape_type::getActive())
+        {
+            if (t->jitSuspender_)  // deactivated by an earlier JIT and reactivated since
+                *t->jitSuspender_ = nullptr;
+            t->jitSuspender_ = &suspendedTape_;
+            suspendedTape_ = t;
+            t->deactivate();
+        }
+    }
+
+    void takeSuspendedTape(JITCompiler& other) noexcept
+    {
+        suspendedTape_ = other.suspendedTape_;
+        other.suspendedTape_ = nullptr;
+        if (suspendedTape_)
+            suspendedTape_->jitSuspender_ = &suspendedTape_;
+    }
+
+    // unless the tape is gone (it clears suspendedTape_) or something else is active now
+    void restoreTape() noexcept
+    {
+        tape_type* t = suspendedTape_;
+        if (!t)
+            return;
+        t->jitSuspender_ = nullptr;
+        suspendedTape_ = nullptr;
+        if (active_jit_ == nullptr && tape_type::getActive() == nullptr)
+            t->activate();
+    }
+
     static XAD_THREAD_LOCAL JITCompiler* active_jit_;
     JITGraph graph_;
     std::unique_ptr<JITBackend<Real>> backend_;
     std::vector<const Real*> inputValues_;
     std::vector<derivative_type> derivatives_;
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
+    tape_type* suspendedTape_ = nullptr;
 };
 
 // Declare external explicit instantiations (mirrors Tape.hpp pattern).

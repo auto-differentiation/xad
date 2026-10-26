@@ -87,6 +87,8 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord(); }
 
 #ifdef XAD_ENABLE_JIT
+    bool shouldRecordJIT() const { return a_.shouldRecordJIT(); }
+
     uint32_t recordJIT(JITGraph& graph) const
     {
         static_assert(static_cast<uint16_t>(JITOpCodeFor<Op>::value) != 0xFFFF,

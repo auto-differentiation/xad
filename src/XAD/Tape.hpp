@@ -53,6 +53,10 @@ template <class Scalar, std::size_t N>
 struct FRealDirect;
 template <class>
 class CheckpointCallback;
+#ifdef XAD_ENABLE_JIT
+template <class, std::size_t>
+class JITCompiler;
+#endif
 
 template <class Tape>
 class ScopedNestedRecording
@@ -62,6 +66,13 @@ class ScopedNestedRecording
     ~ScopedNestedRecording() { s_->endNestedRecording(); }
     void computeAdjoints() { s_->computeAdjoints(); }
     void incrementAdjoint(typename Tape::slot_type slot, const typename Tape::value_type& value)
+    {
+        s_->incrementAdjoint(slot, value);
+    }
+    template <class T = Tape>
+    typename std::enable_if<
+        !std::is_same<typename T::derivative_type, typename T::value_type>::value>::type
+    incrementAdjoint(typename Tape::slot_type slot, const typename T::derivative_type& value)
     {
         s_->incrementAdjoint(slot, value);
     }
@@ -225,6 +236,15 @@ class Tape
     void insertCallback(callback_type cb);
     derivative_type getAndResetOutputAdjoint(slot_type slot);
     void incrementAdjoint(slot_type slot, const Real& x);
+    // vector mode: per lane
+    template <std::size_t M = N>
+    typename std::enable_if<(M > 1)>::type incrementAdjoint(
+        slot_type slot, const typename DerivativesTraits<Real, M>::type& x)
+    {
+        if (slot >= derivatives_.size())
+            throw OutOfRange("adjoint to be incremented is out of range");
+        derivatives_[slot] += x;
+    }
     void newNestedRecording();
     void endNestedRecording();
 
@@ -302,6 +322,7 @@ class Tape
     void computeAdjointsTo(position_type pos);
 
   private:
+    void resetMovedFrom();
     void computeAdjointsToImpl(position_type pos, position_type start);
     void initDerivatives();
     XAD_INLINE slot_type registerVariableAtEnd()
@@ -382,6 +403,12 @@ class Tape
     };
     std::stack<SubRecording> nestedRecordings_;
     SubRecording* currentRec_;
+#ifdef XAD_ENABLE_JIT
+    template <class, std::size_t>
+    friend class JITCompiler;
+    // the pointer of the JIT that deactivated this tape, to clear when the tape goes
+    Tape** jitSuspender_ = nullptr;
+#endif
 };
 
 // declare external explicit instantiations

@@ -289,6 +289,8 @@ Gives *strong exception safety guarantee* - tape state unchanged in case of exce
 #### `incrementAdjoint`
 
 `#!c++ void incrementAdjoint(slot_type slot, const T& x)` increments the adjoint of the given slot by the value `x`.
+In vector mode (`N > 1`), `#!c++ void incrementAdjoint(slot_type slot, const derivative_type& x)`
+increments each element of the adjoint by the matching element of `x`.
 
 This function should be called at the end of a [`CheckpointCallback<TapeType>::computeAdjoints`](chkpt_cb.md)
 implementation, to update the input adjoints with the
@@ -396,7 +398,7 @@ The destructor calles `endNestedRecording` on the given tape automatically.
 
 `#!c++ void incrementAdjoint(TapeType::slot_type slot, const TapeType::value_type& value)`
 increments the adjoint given by the slot by the given value,
-similar to [`Tape<T>::incrementAdjoint`](#incrementadjoint).
+similar to [`Tape<T>::incrementAdjoint`](#incrementadjoint), which also has its vector mode overload.
 
 #### `getTape`
 

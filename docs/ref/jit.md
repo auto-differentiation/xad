@@ -7,6 +7,9 @@ When enabled, XAD expressions can be recorded into a compact `JITGraph` and exec
 
     The JIT API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`.
     This is a compile-time configuration (it is compiled into the library).
+    With it, the top quarter of the slots are JIT variables, passive on tapes (and tape variables are
+    passive in JIT recordings), so a tape holds up to 3·2^30 slots and a JIT graph up to 2^30 - 2 nodes.
+    Beyond them, `computeAdjoints` and adding a node throw `OutOfRange`.
 
 ## Main building blocks
 
