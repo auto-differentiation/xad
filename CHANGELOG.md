@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `XAD_OUTLINE_RECORDING` option: one out-of-line call per recorded operation, for faster compiles with `XAD_USE_STRONG_INLINE`
 - `Tape::clearCallbacks()` destroys the callbacks pushed with `pushCallback`, for tapes used for many recordings
 - CMake option `XAD_TAPE_CHECKS` (on in Debug builds): variables use and free slots only on the tape they are registered on
+- `JITBackend::forwardAndBackwardSeeded` runs the backward pass from given output adjoints
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
 
 ### Changed
@@ -85,6 +86,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `xad::fma` matched built-in types, so `std::fma(2, 3, 4)` did not return `double`
 - `computeHessian` without inputs and `computeJacobian` without outputs read an empty matrix
 - `fmax`/`fmin` with a NaN argument returned NaN, not the other argument as `std::fmax`/`std::fmin`
+- JIT recording missed `+=` and `-=` with a scalar
+- JIT variables assigned a scalar kept their old graph node
+- JIT `computeAdjoints` ignored the output adjoints and seeded 1
+- JIT `derivative()` of an unrecorded variable gave it the slot of the next node
+- JIT interpreter wrote past its buffers for nodes recorded after `compile()`
+- JIT `newRecording` kept stale slots for inputs registered after other nodes
 
 
 ## [2.0.0] - 2026-02-06
