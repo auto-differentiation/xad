@@ -94,4 +94,4 @@ else()
     set(_version_suffix "")
 endif()
 
-setup_version(${PROJECT_NAME} "${_version_major}" "${_version_minor}" "${_version_patch}" ${_version_suffix})
+setup_version(XAD "${_version_major}" "${_version_minor}" "${_version_patch}" ${_version_suffix})
