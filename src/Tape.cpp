@@ -179,6 +179,26 @@ typename Tape<T, N>::size_type Tape<T, N>::getNumVariables() const
     return currentRec_->numDerivatives_;
 }
 
+template <class T, std::size_t N>
+typename Tape<T, N>::slot_type Tape<T, N>::recordStatement(const value_type* multipliers,
+                                                           const slot_type* slots, unsigned n)
+{
+    slot_type lhs = registerVariable();
+    pushAll(multipliers, slots, n);
+    pushLhs(lhs);
+    return lhs;
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::recordAssignment(slot_type& lhs, const value_type* multipliers,
+                                  const slot_type* slots, unsigned n)
+{
+    pushAll(multipliers, slots, n);
+    if (lhs == INVALID_SLOT)
+        lhs = registerVariable();
+    pushLhs(lhs);
+}
+
 #ifdef XAD_TAPE_REUSE_SLOTS
 namespace
 {

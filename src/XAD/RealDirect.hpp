@@ -29,6 +29,7 @@
 #include <XAD/Traits.hpp>
 #include <iosfwd>
 #include <type_traits>
+#include <utility>
 
 namespace xad
 {
@@ -49,6 +50,8 @@ struct RealDirect
     XAD_INLINE RealDirect &operator=(RealDirect &&val) = default;
 
     constexpr XAD_INLINE RealDirect(const BaseType &rhs) : base_(rhs) {}
+    // operations return a temporary: take over its slot rather than record a copy
+    constexpr XAD_INLINE RealDirect(BaseType &&rhs) noexcept : base_(std::move(rhs)) {}
 
     XAD_INLINE ~RealDirect() = default;
 

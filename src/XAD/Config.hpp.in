@@ -31,6 +31,11 @@
 #cmakedefine XAD_USE_STRONG_INLINE
 #endif
 
+// Record each operation with one out-of-line call: much faster compiles with strong inlining
+#ifndef XAD_OUTLINE_RECORDING
+#cmakedefine XAD_OUTLINE_RECORDING
+#endif
+
 // Allow conversion operator from active type to integers, potentially missing some
 // AAD variable dependency tracking
 #ifndef XAD_ALLOW_INT_CONVERSION
