@@ -129,8 +129,18 @@ function(xad_add_library name type)
         target_compile_options(${name} PRIVATE ${xad_cxx_asan_flags})
         target_link_options(${name} PRIVATE ${xad_link_asan_flags})
     endif()
-    set(rls_name "${name}${archsuff}${comp}${rls_suffix}")
-    set(dbg_name "${name}${archsuff}${comp}${dbg_suffix}")
+    if(type STREQUAL "SHARED")
+        # plain names for shared libraries (xad.dll, libxad.so), as their runtime is always dynamic
+        set(rls_name "${name}")
+        set(dbg_name "${name}_d")
+        set_target_properties(${name} PROPERTIES
+            OUTPUT_NAME ${rls_name}
+            OUTPUT_NAME_DEBUG ${dbg_name}
+        )
+    else()
+        set(rls_name "${name}${archsuff}${comp}${rls_suffix}")
+        set(dbg_name "${name}${archsuff}${comp}${dbg_suffix}")
+    endif()
     set_target_properties(${name} PROPERTIES
         ARCHIVE_OUTPUT_NAME_DEBUG ${dbg_name}
         ARCHIVE_OUTPUT_NAME ${rls_name}
@@ -194,4 +204,8 @@ function(xad_add_executable name)
         RELWITHDEBINFO_POSTFIX ""
         MINSIZEREL_POSTFIX ""
     )
+    if(WIN32 AND XAD_SHARED_LIBS)
+        # next to the XAD DLL, so that it is found when running
+        set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    endif()
 endfunction()
