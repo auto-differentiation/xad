@@ -86,5 +86,4 @@ add_subdirectory(Hessian)
 add_subdirectory(Jacobian)
 add_subdirectory(LiborSwaptionPricer)
 add_subdirectory(jit_tutorial)
-
-
+add_subdirectory(LogisticRegression)
