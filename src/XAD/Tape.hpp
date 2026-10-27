@@ -256,6 +256,12 @@ class Tape
     void popCallback();
     void clearCallbacks();
 
+    // checkpoint callbacks inserted in the current recording, with their tape positions
+    const std::vector<std::pair<position_type, callback_type>>& getCheckpoints() const
+    {
+        return checkpoints_;
+    }
+
     // internal tape recording
     XAD_INLINE slot_type registerVariable()
     {
