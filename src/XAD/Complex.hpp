@@ -136,10 +136,37 @@ class complex<xad::ADTypeBase<Scalar, T, Deriv>> : public xad::detail::complex_i
 
     XAD_INLINE complex<T>& derived() { return static_cast<complex<T>&>(*this); }
 
+    // an inner-type scalar as an operand: passive ones as they are, active ones (e.g.
+    // FReal<double> in AReal<FReal<double>>) lifted to a constant T keeping their inner
+    // derivatives, as T has no implicit conversion from them
+    template <class S>
+    XAD_INLINE static typename std::enable_if<!xad::ExprTraits<S>::isExpr, const S&>::type
+    constant(const S& s)
+    {
+        return s;
+    }
+
+    template <class S>
+    XAD_INLINE static typename std::enable_if<xad::ExprTraits<S>::isExpr, T>::type constant(
+        const S& s)
+    {
+        T r;
+        r.value() = s;
+        return r;
+    }
+
     XAD_INLINE complex<T>& operator+=(const T& other)
     {
         base::real() += other;
         return derived();
+    }
+
+    template <class S>
+    XAD_INLINE typename std::enable_if<
+        std::is_same<S, Scalar>::value && xad::ExprTraits<S>::isExpr, complex<T>&>::type
+    operator+=(const S& other)
+    {
+        return *this += constant(other);
     }
 
     template <class X>
@@ -154,6 +181,14 @@ class complex<xad::ADTypeBase<Scalar, T, Deriv>> : public xad::detail::complex_i
     {
         base::real() -= other;
         return derived();
+    }
+
+    template <class S>
+    XAD_INLINE typename std::enable_if<
+        std::is_same<S, Scalar>::value && xad::ExprTraits<S>::isExpr, complex<T>&>::type
+    operator-=(const S& other)
+    {
+        return *this -= constant(other);
     }
 
     template <class X>
@@ -171,6 +206,14 @@ class complex<xad::ADTypeBase<Scalar, T, Deriv>> : public xad::detail::complex_i
         return derived();
     }
 
+    template <class S>
+    XAD_INLINE typename std::enable_if<
+        std::is_same<S, Scalar>::value && xad::ExprTraits<S>::isExpr, complex<T>&>::type
+    operator*=(const S& other)
+    {
+        return *this *= constant(other);
+    }
+
     template <class X>
     complex<T>& operator*=(const std::complex<X>& other)
     {
@@ -185,6 +228,14 @@ class complex<xad::ADTypeBase<Scalar, T, Deriv>> : public xad::detail::complex_i
         base::real() /= other;
         base::imag() /= other;
         return derived();
+    }
+
+    template <class S>
+    XAD_INLINE typename std::enable_if<
+        std::is_same<S, Scalar>::value && xad::ExprTraits<S>::isExpr, complex<T>&>::type
+    operator/=(const S& other)
+    {
+        return *this /= constant(other);
     }
 
     template <class X>
@@ -1055,7 +1106,8 @@ template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator-(const T& rhs,
                                                     std::complex<xad::AReal<T, N>> lhs)
 {
-    return std::complex<xad::AReal<T, N>>(rhs - lhs.real(), -lhs.imag());
+    typedef std::complex<xad::AReal<T, N>> C;
+    return C(C::constant(rhs) - lhs.real(), -lhs.imag());
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
@@ -1142,7 +1194,8 @@ template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::FReal<T, N>> operator-(const T& rhs,
                                                     std::complex<xad::FReal<T, N>> lhs)
 {
-    return std::complex<xad::FReal<T, N>>(rhs - lhs.real(), -lhs.imag());
+    typedef std::complex<xad::FReal<T, N>> C;
+    return C(C::constant(rhs) - lhs.real(), -lhs.imag());
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
@@ -1432,7 +1485,8 @@ template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const T& rhs,
                                                     std::complex<xad::AReal<T, N>> lhs)
 {
-    return std::complex<xad::AReal<T, N>>(rhs) / lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return C(C::constant(rhs)) / lhs;
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
@@ -1519,7 +1573,8 @@ template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::FReal<T, N>> operator/(const T& rhs,
                                                     std::complex<xad::FReal<T, N>> lhs)
 {
-    return std::complex<xad::FReal<T, N>>(rhs) / lhs;
+    typedef std::complex<xad::FReal<T, N>> C;
+    return C(C::constant(rhs)) / lhs;
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
