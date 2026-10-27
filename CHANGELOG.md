@@ -31,8 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Complex `acosh` of a real in (-1, 1) had a real part of -1e-16, not +0
 - `XAD/Version.hpp` defined empty version numbers
 - Linux aarch64 builds no longer get x86 SIMD flags
+- Debug builds with Visual Studio 2026 (MSVC 14.5x): its standard library no longer has `stdext::checked_array_iterator`
 - `adjd<T, N>::active_type` is `ARealDirect<T, N>`, as documented
 - `std::numeric_limits` for direct mode types returned 0
 - Direct mode comparisons with integer literals and convertible types

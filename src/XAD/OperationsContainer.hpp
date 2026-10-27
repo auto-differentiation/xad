@@ -37,7 +37,10 @@ namespace xad
 namespace detail
 {
 
-#if defined(_ITERATOR_DEBUG_LEVEL) && _ITERATOR_DEBUG_LEVEL
+// The MSVC STL of Visual Studio 2026 (_MSVC_STL_VERSION 145) no longer has
+// stdext::checked_array_iterator
+#if defined(_ITERATOR_DEBUG_LEVEL) && _ITERATOR_DEBUG_LEVEL &&                                     \
+    (!defined(_MSVC_STL_VERSION) || _MSVC_STL_VERSION < 145)
 // Make a checked iterator to avoid MSVC warnings.
 template <typename T>
 using checked_ptr = stdext::checked_array_iterator<T*>;
