@@ -3249,6 +3249,13 @@ XAD_INLINE std::complex<T> acosh_impl(const std::complex<T>& z)
     if (xad::isnan(z.real()) && xad::isinf(z.imag()) && z.imag() > 0.0)
         return std::complex<T>(std::numeric_limits<nested>::infinity(),
                                std::numeric_limits<nested>::quiet_NaN());
+    if (xad::isfinite(z.real()) && xad::isfinite(z.imag()))
+    {
+        // Kahan's formulas, as asin_kahan: the real part is exactly +0 on (-1, 1)
+        std::complex<T> a = sqrt(z - T(1.0)), b = sqrt(z + T(1.0));
+        return std::complex<T>(asinh(a.real() * b.real() + a.imag() * b.imag()),
+                               T(2.0) * atan2(a.imag(), b.real()));
+    }
 
     return log(z + sqrt(z + T(1.0)) * sqrt(z - T(1.0)));
 }
