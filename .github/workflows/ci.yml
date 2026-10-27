@@ -15,6 +15,7 @@ jobs:
         standard: ["11", "17"]
         memory: ["default", "lowmem"]
         jit: [OFF]
+        shared: ["OFF"]
         include:
           - config: Debug
             sccache: "false"
@@ -42,6 +43,7 @@ jobs:
             standard: "17"
             memory: default
             jit: OFF
+            shared: "OFF"
             runner: windows-2025-vs2026
             cxx: cl
             cc: cl
@@ -54,12 +56,26 @@ jobs:
             standard: "11"
             memory: default
             jit: OFF
+            shared: "OFF"
             runner: windows-2025-vs2026
             cxx: cl
             cc: cl
             sccache: "false"
             cmake_extra: ""
             vsvarsall: C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+          # shared library build
+          - toolset: "14.4"
+            compiler: msvc
+            config: Release
+            standard: "17"
+            memory: default
+            jit: OFF
+            shared: "ON"
+            cxx: cl
+            cc: cl
+            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+            sccache: "true"
+            cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
           # JIT-enabled builds: Release, C++11, all compiler versions
           # MSVC
           # - jit: ON  # codegen requires commercial license
@@ -132,6 +148,7 @@ jobs:
              ${{ matrix.cmake_mem_flag }} ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
              -DXAD_ENABLE_CODEGEN=${{ matrix.jit }} ^
+             -DXAD_SHARED_LIBS=${{ matrix.shared }} ^
              -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
         shell: cmd
@@ -149,7 +166,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
+          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }}-shared${{ matrix.shared }})
           path: build/test_results.xml
       - name: install
         shell: cmd
@@ -183,6 +200,7 @@ jobs:
         standard: [c++11, c++17]
         memory: ["default", "lowmem"]
         jit: [OFF]
+        shared: ["OFF"]
         exclude:
           - config: Debug
             reuse_slots: ON
@@ -220,10 +238,19 @@ jobs:
             standard: c++11
             memory: default
             jit: OFF
+            shared: "OFF"
             compiler: gcc-11-coverage
             coverage: true
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-lgcov"
+          # shared library build
+          - version: "14"
+            config: Release
+            reuse_slots: OFF
+            standard: c++17
+            memory: default
+            jit: OFF
+            shared: "ON"
           # JIT-enabled builds (commented out - codegen requires commercial license)
           # All GCC versions
           # - jit: ON  # codegen requires commercial license
@@ -345,6 +372,7 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             -DXAD_ENABLE_CODEGEN=${{ matrix.jit }} \
+            -DXAD_SHARED_LIBS=${{ matrix.shared }} \
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install \
             -DXAD_ENABLE_EIGEN_TESTS=ON
@@ -366,7 +394,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results (linux gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
+          name: Test Results (linux gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }}-shared${{ matrix.shared }})
           path: ${{ env.GITHUB_WORKSPACE }}/build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
@@ -412,6 +440,7 @@ jobs:
         standard: ["11", "17"]
         memory: ["default", "lowmem"]
         jit: [OFF]
+        shared: ["OFF"]
         include:
           - version: "11"
             cxx: clang++
@@ -435,6 +464,16 @@ jobs:
             cxx: clang++
             cc: clang
           - version: "18"
+            cxx: clang++
+            cc: clang
+          # shared library build
+          - version: "18"
+            config: Release
+            reuse_slots: OFF
+            standard: "17"
+            memory: default
+            jit: OFF
+            shared: "ON"
             cxx: clang++
             cc: clang
           # JIT-enabled builds: Release, C++11, all compiler versions
@@ -567,6 +606,7 @@ jobs:
             -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
             -DXAD_ENABLE_CODEGEN=${{ matrix.jit }} \
+            -DXAD_SHARED_LIBS=${{ matrix.shared }} \
             ${{ matrix.memory == 'lowmem' && ' -DXAD_REDUCED_MEMORY=ON' || '' }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             -DXAD_ENABLE_EIGEN_TESTS=ON
@@ -582,7 +622,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results (linux clang-${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }})
+          name: Test Results (linux clang-${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }}-shared${{ matrix.shared }})
           path: build/test_results.xml
       - name: install
         run: |
@@ -611,6 +651,7 @@ jobs:
         standard: [c++11, c++17]
         memory: ["default", "lowmem"]
         jit: [OFF]
+        shared: ["OFF"]
         include:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
@@ -634,6 +675,15 @@ jobs:
             coverage_cxx_flags: "-fprofile-arcs -ftest-coverage"
             coverage_ld_flags: "-ftest-coverage"
             standard: c++17
+          # shared library build
+          - config: Release
+            os: macos-latest
+            standard: c++17
+            memory: default
+            jit: OFF
+            shared: "ON"
+            compiler: default
+            coverage: false
           # JIT-enabled builds: Release, C++11, all OS versions
           # - jit: ON  # codegen requires commercial license
           #   config: Release
@@ -681,6 +731,7 @@ jobs:
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DXAD_ENABLE_CODEGEN=${{ matrix.jit }} \
+            -DXAD_SHARED_LIBS=${{ matrix.shared }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
@@ -701,7 +752,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }}-jit${{ matrix.jit }})
+          name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }}-jit${{ matrix.jit }}-shared${{ matrix.shared }})
           path: build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
