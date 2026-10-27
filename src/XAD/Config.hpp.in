@@ -60,6 +60,9 @@
 // Disable thread-local tape usage
 #cmakedefine XAD_NO_THREADLOCAL
 
+// Use the initial-exec TLS model for the thread-local tape (GCC/Clang)
+#cmakedefine XAD_TLS_INITIAL_EXEC
+
 // Reduce memory usage in the tape, at a slight performance cost
 #cmakedefine XAD_REDUCED_MEMORY
 

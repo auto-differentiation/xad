@@ -68,6 +68,7 @@ option(XAD_TAPE_TRACK_LIVE_SLOTS "resetTo keeps the slots of variables still ali
 option(XAD_HUGE_PAGES "Back large tape chunks with transparent huge pages on Linux (faster on large tapes with free memory; can stall on fragmented hosts)" OFF)
 option(XAD_SKIP_ZERO_PARTIALS "Do not record partial derivatives that are exactly zero" OFF)
 option(XAD_NO_THREADLOCAL "Disable thread-local tape - only for single-threaded tape use" OFF)
+option(XAD_TLS_INITIAL_EXEC "Use the faster initial-exec TLS model for the thread-local tape - needs to be OFF for libraries loaded with dlopen (e.g. Python extensions)" OFF)
 option(XAD_USE_STRONG_INLINE "Use forced inlining for higher performance, at a higher compile time cost" OFF)
 option(XAD_OUTLINE_RECORDING "Record each operation with one out-of-line call (faster compiles with strong inlining)" OFF)
 option(XAD_ALLOW_INT_CONVERSION "Add real->int conversion operator, potentially missing to track dependencies" ON)
