@@ -63,19 +63,31 @@ enable_testing()
 
 
 if (XAD_ENABLE_EIGEN_TESTS)
-    include(FetchContent)
-    FetchContent_Declare(
-        Eigen3
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-        GIT_TAG 3.4.0
-        SOURCE_SUBDIR cmake # no CMakeLists.txt in cmake, so this turns off configure
-    )
-    FetchContent_MakeAvailable(Eigen3)
+    # an installed Eigen 3.4 or 5 (package manager or CMAKE_PREFIX_PATH), else the 3.4.0 release
+    find_package(Eigen3 3.4 QUIET NO_MODULE)
+    if (NOT Eigen3_FOUND AND NOT CMAKE_VERSION VERSION_LESS 3.19)
+        find_package(Eigen3 3.4...5 QUIET NO_MODULE)
+    endif()
+    if (Eigen3_FOUND)
+        message(STATUS "Using Eigen ${Eigen3_VERSION} from ${Eigen3_DIR}")
+    else()
+        if (POLICY CMP0135)
+            cmake_policy(SET CMP0135 NEW)
+        endif()
+        include(FetchContent)
+        FetchContent_Declare(
+            Eigen3
+            URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
+            URL_HASH SHA256=b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626
+            SOURCE_SUBDIR cmake # no CMakeLists.txt in cmake, so this turns off configure
+        )
+        FetchContent_MakeAvailable(Eigen3)
 
-    # add dependency ourselves - their CMake files seem broken
-    add_library(Eigen INTERFACE)
-    target_include_directories(Eigen INTERFACE ${eigen3_SOURCE_DIR})
-    add_library(Eigen3::Eigen ALIAS Eigen)
+        # add dependency ourselves - their CMake files seem broken
+        add_library(Eigen INTERFACE)
+        target_include_directories(Eigen INTERFACE ${eigen3_SOURCE_DIR})
+        add_library(Eigen3::Eigen ALIAS Eigen)
+    endif()
 endif()
 
 # Adds a Google test executable

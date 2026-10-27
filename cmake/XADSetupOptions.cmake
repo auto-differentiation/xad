@@ -36,7 +36,7 @@ option(XAD_WARNINGS_PARANOID "Use extra-paranoid warning level" ON)
 option(XAD_SHARED_LIBS "Build XAD as a shared library" OFF)
 option(XAD_POSITION_INDEPENDENT_CODE "Generate PIC code, so it can be linked into a shared library" ON)
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm|aarch64|ARM64")
     if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
         set(XAD_SIMD_OPTION "APPLE_M1" CACHE STRING "SIMD instruction set to use")
         set_property(CACHE XAD_SIMD_OPTION PROPERTY STRINGS APPLE_M1 NATIVE)
