@@ -23,6 +23,11 @@
 ##############################################################################
 
 @PACKAGE_INIT@
+
+# build settings of the installed XAD (also in XAD/Config.hpp and XAD/Export.hpp)
+set(XAD_SHARED_LIBS @XAD_SHARED_LIBS@)
+set(XAD_NO_THREADLOCAL @XAD_NO_THREADLOCAL@)
+
 include(CMakeFindDependencyMacro)
 find_dependency(Threads)
 

@@ -1,0 +1,58 @@
+/*******************************************************************************
+
+   Export macros for the XAD library
+
+   This file is part of XAD, a comprehensive C++ library for
+   automatic differentiation.
+
+   Copyright (C) 2010-2026 Xcelerit Computing Ltd.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Affero General Public License as published
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+******************************************************************************/
+
+
+#pragma once
+
+#cmakedefine XAD_SHARED_LIBS
+
+// XAD_API: exported; XAD_VISIBLE: unique across modules (exceptions);
+// XAD_TEMPLATE_API/_EXPORT: extern template declarations/definitions
+#if defined(XAD_SHARED_LIBS)
+#if defined(_WIN32) || defined(__CYGWIN__)
+#ifdef xad_EXPORTS
+#define XAD_API __declspec(dllexport)
+#else
+#define XAD_API __declspec(dllimport)
+#endif
+#if defined(_MSC_VER) && defined(xad_EXPORTS)
+#define XAD_TEMPLATE_API
+#define XAD_TEMPLATE_EXPORT XAD_API
+#else
+#define XAD_TEMPLATE_API XAD_API
+#define XAD_TEMPLATE_EXPORT
+#endif
+#define XAD_VISIBLE
+#else
+#define XAD_API __attribute__((visibility("default")))
+#define XAD_TEMPLATE_API XAD_API
+#define XAD_TEMPLATE_EXPORT
+#define XAD_VISIBLE XAD_API
+#endif
+#else
+#define XAD_API
+#define XAD_TEMPLATE_API
+#define XAD_TEMPLATE_EXPORT
+#define XAD_VISIBLE
+#endif

@@ -33,6 +33,7 @@ else()
 endif()
 option(XAD_ENABLE_EIGEN_TESTS "Enable the Eigen tests" OFF)
 option(XAD_WARNINGS_PARANOID "Use extra-paranoid warning level" ON)
+option(XAD_SHARED_LIBS "Build XAD as a shared library" OFF)
 option(XAD_POSITION_INDEPENDENT_CODE "Generate PIC code, so it can be linked into a shared library" ON)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm|aarch64|ARM64")

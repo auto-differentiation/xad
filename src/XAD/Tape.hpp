@@ -26,6 +26,7 @@
 
 #include <XAD/Config.hpp>
 #include <XAD/Exceptions.hpp>
+#include <XAD/Export.hpp>
 #include <XAD/Macros.hpp>
 #include <XAD/ReusableRange.hpp>
 #include <XAD/TapeContainer.hpp>
@@ -85,6 +86,11 @@ class ScopedNestedRecording
     Tape* s_;
 };
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4251)  // members of the exported Tape need no dll interface
+#endif
+
 template <class Real, std::size_t N = 1>
 class Tape
 {
@@ -116,10 +122,17 @@ class Tape
 
     XAD_INLINE void deactivate()
     {
-        if (active_tape_ == this)
-            active_tape_ = nullptr;
+        if (isActive())
+            deactivateAll();
     }
-    XAD_INLINE bool isActive() const { return active_tape_ == this; }
+    XAD_INLINE bool isActive() const { return getActive() == this; }
+
+#ifdef XAD_SHARED_LIBS
+    // out of line, so that all modules linking the shared XAD see the same active tape
+    static Tape* getActive();
+    static void setActive(Tape* t);
+    static void deactivateAll();
+#else
     XAD_INLINE static Tape* getActive() { return active_tape_; }
 
     XAD_INLINE static void setActive(Tape* t)
@@ -131,6 +144,7 @@ class Tape
     }
 
     XAD_INLINE static void deactivateAll() { active_tape_ = nullptr; }
+#endif
 
     XAD_INLINE void registerInput(active_type& inp)
     {
@@ -333,7 +347,9 @@ class Tape
         return currentRec_->iDerivative_ - 1;
     }
 
+#ifndef XAD_SHARED_LIBS
     static XAD_THREAD_LOCAL Tape* active_tape_;
+#endif
     typename TapeContainerTraits<Real, slot_type>::operations_type operations_;
     typename TapeContainerTraits<Real, slot_type>::statements_type statement_;
     std::vector<derivative_type> derivatives_;
@@ -419,7 +435,7 @@ class Tape
 };
 
 // declare external explicit instantiations
-#define XAD_DECLARE_EXTERN_TAPE(type) extern template class Tape<type>;
+#define XAD_DECLARE_EXTERN_TAPE(type) extern template class XAD_TEMPLATE_API Tape<type>;
 #define XAD_SINGLE_ARG(...) __VA_ARGS__
 
 // 1st order
@@ -436,6 +452,10 @@ XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(FRealDirect<double, 1>))
 XAD_DECLARE_EXTERN_TAPE(XAD_SINGLE_ARG(FRealDirect<float, 1>))
 
 #include <XAD/GenerateMode.hpp>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #undef XAD_DECLARE_EXTERN_TAPE
 }  // namespace xad
