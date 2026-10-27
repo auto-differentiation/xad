@@ -28,10 +28,35 @@
 #include <XAD/XAD.hpp>
 
 #include <cmath>
+#include <cstddef>
 #include <iomanip>
 #include <iostream>
 #include <random>
 #include <vector>
+
+// Mean binary cross-entropy for both passive and active weights.
+template <typename T>
+T computeLoss(const std::vector<T>& w, const std::vector<std::vector<double>>& x,
+              const std::vector<int>& y)
+{
+    using std::exp;
+    using std::log1p;
+
+    T total = 0.0;
+    for (std::size_t i = 0; i < y.size(); ++i)
+    {
+        T z = w.back();  // bias
+        for (std::size_t j = 0; j < x[i].size(); ++j)
+            z = z + w[j] * x[i][j];
+
+        // Evaluate softplus(-z) without overflow when z is very negative.
+        if (xad::value(z) >= 0.0)
+            total = total + log1p(exp(-z)) + (1.0 - y[i]) * z;
+        else
+            total = total + log1p(exp(z)) - y[i] * z;
+    }
+    return total / static_cast<double>(y.size());
+}
 
 int main()
 {
@@ -73,10 +98,9 @@ int main()
 
     std::vector<double> w0(N_FEATURES + 1, 0.0);
     std::vector<double> grad(N_FEATURES + 1);
+    tape_type tape;
 
     {
-        tape_type tape;
-
         // set independent variables and register them
         std::vector<AD> w(N_FEATURES + 1);
         for (int j = 0; j <= N_FEATURES; ++j)
@@ -88,19 +112,7 @@ int main()
         // start recording derivatives
         tape.newRecording();
 
-        // compute binary cross-entropy loss: -1/N * sum[ y*log(s) + (1-y)*log(1-s) ]
-        AD loss = AD(0.0);
-        for (int i = 0; i < N_POINTS; ++i)
-        {
-            AD z = w[N_FEATURES];  // bias
-            for (int j = 0; j < N_FEATURES; ++j)
-                z = z + w[j] * features[i][j];
-
-            AD sigma = AD(1.0) / (AD(1.0) + exp(-z));
-            AD eps   = AD(1e-15);  // avoids log(0)
-            loss = loss - (AD(y[i]) * log(sigma + eps) + AD(1 - y[i]) * log(AD(1.0) - sigma + eps));
-        }
-        loss = loss / AD(N_POINTS);
+        AD loss = computeLoss(w, features, y);
 
         // register output, seed adjoint, and compute all input adjoints
         tape.registerOutput(loss);
@@ -144,18 +156,7 @@ int main()
             std::vector<double> wPerturbed = w0;
             wPerturbed[idx] += pm * FD_STEP;
 
-            double lossVal = 0.0;
-            for (int i = 0; i < N_POINTS; ++i)
-            {
-                double z = wPerturbed[N_FEATURES];  // bias
-                for (int j = 0; j < N_FEATURES; ++j)
-                    z += wPerturbed[j] * features[i][j];
-
-                double sigma = 1.0 / (1.0 + std::exp(-z));
-                double eps   = 1e-15;
-                lossVal -= y[i] * std::log(sigma + eps) + (1 - y[i]) * std::log(1.0 - sigma + eps);
-            }
-            lossVal /= N_POINTS;
+            double lossVal = computeLoss(wPerturbed, features, y);
 
             if (pm == 1)
                 lossPlus = lossVal;
@@ -197,7 +198,7 @@ int main()
 
     for (int iter = 0; iter < 20; ++iter)
     {
-        tape_type tape;
+        tape.clearAll();
 
         // set independent variables and register them
         std::vector<AD> w(N_FEATURES + 1);
@@ -210,19 +211,7 @@ int main()
         // start recording derivatives
         tape.newRecording();
 
-        // compute loss
-        AD loss = AD(0.0);
-        for (int i = 0; i < N_POINTS; ++i)
-        {
-            AD z = w[N_FEATURES];  // bias
-            for (int j = 0; j < N_FEATURES; ++j)
-                z = z + w[j] * features[i][j];
-
-            AD sigma = AD(1.0) / (AD(1.0) + exp(-z));
-            AD eps   = AD(1e-15);
-            loss = loss - (AD(y[i]) * log(sigma + eps) + AD(1 - y[i]) * log(AD(1.0) - sigma + eps));
-        }
-        loss = loss / AD(N_POINTS);
+        AD loss = computeLoss(w, features, y);
 
         // seed adjoint and compute all input adjoints
         tape.registerOutput(loss);
