@@ -134,6 +134,12 @@ Contributions are welcome. Please see the
 discussion in our
 [**GitHub Discussions**](https://github.com/auto-differentiation/xad/discussions).
 
+New here? Pick a [good first issue](https://github.com/auto-differentiation/xad/labels/good%20first%20issue). Each one is small, self-contained and comes with a clear task.
+
+Thanks to everyone who has contributed:
+
+[![Contributors](https://contrib.rocks/image?repo=auto-differentiation/xad)](https://github.com/auto-differentiation/xad/graphs/contributors)
+
 ## Found a Bug?
 
 Please report bugs and issues via the
