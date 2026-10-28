@@ -1,5 +1,13 @@
 name: CI
-on: [push, pull_request]
+on:
+  # branches build through their pull request only, so they do not run twice
+  push:
+    branches: [main]
+    tags: ["**"]
+  pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
@@ -166,8 +174,10 @@ jobs:
         if: ${{ matrix.sccache == 'true' }}
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}
+          key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-${{ matrix.shared }}
+          restore-keys: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
           variant: sccache
+          save: ${{ github.event_name != 'pull_request' }}
       - name: configure
         shell: cmd
         run: |
@@ -397,7 +407,9 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: linux-gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}
+          key: linux-gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-${{ matrix.shared }}${{ matrix.coverage && '-coverage' || '' }}
+          restore-keys: linux-gcc${{ matrix.version }}-${{ matrix.config }}
+          save: ${{ github.event_name != 'pull_request' }}
       - name: configure
         run: |
           mkdir build
@@ -632,7 +644,9 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: linux-clang${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}
+          key: linux-clang${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-${{ matrix.shared }}
+          restore-keys: linux-clang${{ matrix.version }}-${{ matrix.config }}
+          save: ${{ github.event_name != 'pull_request' }}
       - name: configure
         run: |
           mkdir build
@@ -760,7 +774,9 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: macos-${{ matrix.config }}-${{ matrix.compiler }}-${{ matrix.standard }}-${{ matrix.memory }}
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.standard }}-${{ matrix.memory }}-${{ matrix.shared }}
+          restore-keys: ${{ matrix.os }}-${{ matrix.config }}
+          save: ${{ github.event_name != 'pull_request' }}
       - name: configure
         run: |
           mkdir build
