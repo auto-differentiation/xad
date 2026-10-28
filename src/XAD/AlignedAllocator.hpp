@@ -50,6 +50,17 @@ struct AlignedAllocator {
             size += alignment - size % alignment;
         }
 
+    #if defined(__linux__)
+        // 2 MiB-align large blocks so the kernel can back them with huge pages
+        const std::size_t hugePage = std::size_t(2) << 20;
+        if (size >= hugePage && alignment <= hugePage &&
+            size <= (std::numeric_limits<std::size_t>::max)() - hugePage) {
+            void* pointer = nullptr;
+            if (posix_memalign(&pointer, hugePage, (size + hugePage - 1) / hugePage * hugePage) == 0)
+                return pointer;
+        }
+    #endif
+
     #if defined(_WIN32)
         return ::_aligned_malloc(size, alignment);
 
