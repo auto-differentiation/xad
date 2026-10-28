@@ -54,6 +54,9 @@
 // Back large tape chunks with transparent huge pages on Linux
 #cmakedefine XAD_HUGE_PAGES
 
+// skip recording partial derivatives that are exactly zero
+#cmakedefine XAD_SKIP_ZERO_PARTIALS
+
 // Disable thread-local tape usage
 #cmakedefine XAD_NO_THREADLOCAL
 
