@@ -28,6 +28,10 @@
 #include <AvailabilityMacros.h>
 #endif
 
+#if defined(__linux__)
+#include <sys/mman.h>
+#endif
+
 #include <algorithm>
 #include <iterator>
 #include <limits>
@@ -56,8 +60,13 @@ struct AlignedAllocator {
         if (size >= hugePage && alignment <= hugePage &&
             size <= (std::numeric_limits<std::size_t>::max)() - hugePage) {
             void* pointer = nullptr;
-            if (posix_memalign(&pointer, hugePage, (size + hugePage - 1) / hugePage * hugePage) == 0)
+            const std::size_t hugeSize = (size + hugePage - 1) / hugePage * hugePage;
+            if (posix_memalign(&pointer, hugePage, hugeSize) == 0) {
+    #if defined(MADV_HUGEPAGE)
+                ::madvise(pointer, hugeSize, MADV_HUGEPAGE);  // best effort
+    #endif
                 return pointer;
+            }
         }
     #endif
 
