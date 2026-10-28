@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CMake option `XAD_TAPE_CHECKS` (on in Debug builds): variables use and free slots only on the tape they are registered on
 - CMake option `XAD_HUGE_PAGES` (off by default): on Linux, tape chunks of 2 MiB or more are 2 MiB aligned and advised for transparent huge pages (fewer TLB misses and page faults on large tapes; can stall on hosts with fragmented memory)
 - `JITBackend::forwardAndBackwardSeeded` runs the backward pass from given output adjoints
+- CMake option `XAD_SKIP_ZERO_PARTIALS` (off by default): partial derivatives that are exactly zero are not recorded, and results with only zero partials stay passive (smaller tapes for sparse code; a skipped zero no longer turns an infinite or NaN adjoint into NaN)
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
 
 ### Changed
