@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Complex `+ - * /` with a scalar of the inner type, and so `log10`, did not compile for second-order types
 - Complex `acosh` of a real in (-1, 1) had a real part of -1e-16, not +0
 - `XAD/Version.hpp` defined empty version numbers
 - Linux aarch64 builds no longer get x86 SIMD flags
