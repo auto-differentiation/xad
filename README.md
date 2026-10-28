@@ -32,6 +32,9 @@ for record-once / replay-many execution.
     <a href="https://pypi.org/project/xad/">
         <img src="https://img.shields.io/pypi/v/xad?label=PyPI" alt="PyPI" style="max-width: 100%;">
     </a>
+    <a href="https://github.com/microsoft/vcpkg/tree/master/ports/xad">
+        <img src="https://img.shields.io/vcpkg/v/xad?label=vcpkg" alt="vcpkg" style="max-width: 100%;">
+    </a>
     <a href="https://doi.org/10.5281/zenodo.7965850">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.7965850.svg" alt="DOI" style="max-width: 100%;">
     </a>
@@ -69,6 +72,17 @@ int main() {
 ```
 
 ## Install
+
+With [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/xad):
+
+```bash
+vcpkg install xad
+```
+
+```cmake
+find_package(XAD CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE XAD::xad)
+```
 
 With CMake, straight from GitHub:
 
