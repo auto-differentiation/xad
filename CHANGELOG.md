@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `XAD_OUTLINE_RECORDING` option: one out-of-line call per recorded operation, for faster compiles with `XAD_USE_STRONG_INLINE`
 - CMake option `XAD_SHARED_LIBS` builds XAD as a shared library, with one active tape per thread across all modules linking it, and `XAD_API` macros in the generated `XAD/Export.hpp`
 - `Tape::clearCallbacks()` destroys the callbacks pushed with `pushCallback`, for tapes used for many recordings
+- `Tape::getCheckpoints()`: the checkpoint callbacks inserted in the current recording, with their positions
 - CMake option `XAD_TAPE_CHECKS` (on in Debug builds): variables use and free slots only on the tape they are registered on
 - `JITBackend::forwardAndBackwardSeeded` runs the backward pass from given output adjoints
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
