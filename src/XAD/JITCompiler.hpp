@@ -28,6 +28,7 @@
 
 #ifdef XAD_ENABLE_JIT
 #include <XAD/Exceptions.hpp>
+#include <XAD/Export.hpp>
 #include <XAD/JITBackendInterface.hpp>
 #include <XAD/JITGraph.hpp>
 #include <XAD/JITGraphInterpreter.hpp>
@@ -43,6 +44,11 @@ namespace xad
 
 template <class Scalar, std::size_t M>
 struct AReal;
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4251)  // members of the exported JITCompiler need no dll interface
+#endif
 
 template <class Real, std::size_t N = 1>
 class JITCompiler
@@ -102,7 +108,7 @@ class JITCompiler
             other.deactivate();
             // `setActive()` can throw if another JIT is active. Here we know `other` was active and we
             // just deactivated it, so we can safely update the active pointer without risking a throw.
-            active_jit_ = this;
+            setActiveUnchecked(this);
         }
     }
 
@@ -121,7 +127,7 @@ class JITCompiler
             {
                 other.deactivate();
                 // See move-ctor comment: avoid calling throwing `setActive()` inside a noexcept function.
-                active_jit_ = this;
+                setActiveUnchecked(this);
             }
         }
         return *this;
@@ -134,11 +140,18 @@ class JITCompiler
 
     XAD_INLINE void deactivate()
     {
-        if (active_jit_ == this)
-            active_jit_ = nullptr;
+        if (isActive())
+            deactivateAll();
     }
 
-    XAD_INLINE bool isActive() const { return active_jit_ == this; }
+    XAD_INLINE bool isActive() const { return getActive() == this; }
+
+#ifdef XAD_SHARED_LIBS
+    // out of line, see Tape
+    static JITCompiler* getActive();
+    static void setActive(JITCompiler* j);
+    static void deactivateAll();
+#else
     XAD_INLINE static JITCompiler* getActive() { return active_jit_; }
 
     XAD_INLINE static void setActive(JITCompiler* j)
@@ -149,6 +162,7 @@ class JITCompiler
     }
 
     XAD_INLINE static void deactivateAll() { active_jit_ = nullptr; }
+#endif
 
     const JITGraph& getGraph() const { return graph_; }
     JITGraph& getGraph() { return graph_; }
@@ -356,11 +370,16 @@ class JITCompiler
             return;
         t->jitSuspender_ = nullptr;
         suspendedTape_ = nullptr;
-        if (active_jit_ == nullptr && tape_type::getActive() == nullptr)
+        if (getActive() == nullptr && tape_type::getActive() == nullptr)
             t->activate();
     }
 
+#ifdef XAD_SHARED_LIBS
+    static void setActiveUnchecked(JITCompiler* j);
+#else
+    XAD_INLINE static void setActiveUnchecked(JITCompiler* j) { active_jit_ = j; }
     static XAD_THREAD_LOCAL JITCompiler* active_jit_;
+#endif
     JITGraph graph_;
     std::unique_ptr<JITBackend<Real>> backend_;
     std::vector<active_type*> inputs_;
@@ -371,8 +390,12 @@ class JITCompiler
 
 // Declare external explicit instantiations (mirrors Tape.hpp pattern).
 // Definitions are provided in JITCompilerTLS.cpp.
-extern template class JITCompiler<float>;
-extern template class JITCompiler<double>;
+extern template class XAD_TEMPLATE_API JITCompiler<float>;
+extern template class XAD_TEMPLATE_API JITCompiler<double>;
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 }  // namespace xad
 

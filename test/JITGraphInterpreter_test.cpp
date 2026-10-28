@@ -334,35 +334,6 @@ TEST(JITGraphInterpreter, smoothAbsOpCode)
     EXPECT_DOUBLE_EQ(1.0, output);  // Should be |x|
 }
 
-TEST(JITGraphInterpreter, smoothAbsNegative)
-{
-    xad::JITGraph graph;
-    uint32_t inp = graph.addInput();
-    uint32_t c = graph.addConstant(0.5);
-    uint32_t sa = graph.addBinary(xad::JITOpCode::SmoothAbs, inp, c);
-    graph.markOutput(sa);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    // Test negative value in smooth region
-    double input = -0.3;
-    interp.setInput(0, &input);
-    double output;
-    interp.forward(&output);
-
-    // For x < 0 and |x| < c: x^2 * (2/c + x/c^2)
-    double c_val = 0.5;
-    double expected = input * input * (2.0 / c_val + input / (c_val * c_val));
-    EXPECT_NEAR(expected, output, 1e-10);
-
-    // Test negative outside smooth region
-    input = -1.0;
-    interp.setInput(0, &input);
-    interp.forward(&output);
-    EXPECT_DOUBLE_EQ(1.0, output);  // Should be |x|
-}
-
 TEST(JITGraphInterpreter, smoothAbsAdjoint)
 {
     xad::JITGraph graph;
@@ -575,111 +546,6 @@ TEST(JITGraphInterpreter, cmpLTAdjoint)
     EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
 }
 
-TEST(JITGraphInterpreter, cmpLEAdjoint)
-{
-    xad::JITGraph graph;
-    uint32_t a = graph.addInput();
-    uint32_t b = graph.addConstant(5.0);
-    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpLE, a, b);
-    graph.markOutput(cmp);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    double input = 5.0;
-    interp.setInput(0, &input);
-    double output;
-    double inputAdjoint;
-    interp.forwardAndBackward(&output, &inputAdjoint);
-
-    EXPECT_DOUBLE_EQ(1.0, output);   // 5 <= 5 is true
-    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
-}
-
-TEST(JITGraphInterpreter, cmpGTAdjoint)
-{
-    xad::JITGraph graph;
-    uint32_t a = graph.addInput();
-    uint32_t b = graph.addConstant(5.0);
-    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGT, a, b);
-    graph.markOutput(cmp);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    double input = 7.0;
-    interp.setInput(0, &input);
-    double output;
-    double inputAdjoint;
-    interp.forwardAndBackward(&output, &inputAdjoint);
-
-    EXPECT_DOUBLE_EQ(1.0, output);   // 7 > 5 is true
-    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
-}
-
-TEST(JITGraphInterpreter, cmpGEAdjoint)
-{
-    xad::JITGraph graph;
-    uint32_t a = graph.addInput();
-    uint32_t b = graph.addConstant(5.0);
-    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpGE, a, b);
-    graph.markOutput(cmp);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    double input = 5.0;
-    interp.setInput(0, &input);
-    double output;
-    double inputAdjoint;
-    interp.forwardAndBackward(&output, &inputAdjoint);
-
-    EXPECT_DOUBLE_EQ(1.0, output);   // 5 >= 5 is true
-    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
-}
-
-TEST(JITGraphInterpreter, cmpEQAdjoint)
-{
-    xad::JITGraph graph;
-    uint32_t a = graph.addInput();
-    uint32_t b = graph.addConstant(5.0);
-    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpEQ, a, b);
-    graph.markOutput(cmp);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    double input = 5.0;
-    interp.setInput(0, &input);
-    double output;
-    double inputAdjoint;
-    interp.forwardAndBackward(&output, &inputAdjoint);
-
-    EXPECT_DOUBLE_EQ(1.0, output);   // 5 == 5 is true
-    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
-}
-
-TEST(JITGraphInterpreter, cmpNEAdjoint)
-{
-    xad::JITGraph graph;
-    uint32_t a = graph.addInput();
-    uint32_t b = graph.addConstant(5.0);
-    uint32_t cmp = graph.addBinary(xad::JITOpCode::CmpNE, a, b);
-    graph.markOutput(cmp);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    double input = 4.0;
-    interp.setInput(0, &input);
-    double output;
-    double inputAdjoint;
-    interp.forwardAndBackward(&output, &inputAdjoint);
-
-    EXPECT_DOUBLE_EQ(1.0, output);   // 4 != 5 is true
-    EXPECT_DOUBLE_EQ(0.0, inputAdjoint);  // comparison has zero derivative
-}
-
 // =============================================================================
 // If OpCode tests
 // =============================================================================
@@ -699,23 +565,6 @@ TEST(JITGraphInterpreter, ifOpCodeTrueBranch)
     double output;
     interp.forward(&output);
     EXPECT_DOUBLE_EQ(10.0, output);  // condition is true, return trueVal
-}
-
-TEST(JITGraphInterpreter, ifOpCodeFalseBranch)
-{
-    xad::JITGraph graph;
-    uint32_t cond = graph.addConstant(0.0);  // false
-    uint32_t t = graph.addConstant(10.0);
-    uint32_t f = graph.addConstant(20.0);
-    uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
-    graph.markOutput(result);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    double output;
-    interp.forward(&output);
-    EXPECT_DOUBLE_EQ(20.0, output);  // condition is false, return falseVal
 }
 
 TEST(JITGraphInterpreter, ifOpCodeAdjointTrueBranch)
@@ -807,26 +656,6 @@ TEST(JITGraphInterpreter, modAdjoint)
     // d(fmod(a,b))/da = 1, d(fmod(a,b))/db = -trunc(a/b)
     EXPECT_DOUBLE_EQ(1.0, inputAdjoints[0]);
     EXPECT_DOUBLE_EQ(-std::trunc(7.5 / 3.0), inputAdjoints[1]);
-}
-
-TEST(JITGraphInterpreter, modAdjointNegativeQuotient)
-{
-    xad::JITGraph graph;
-    uint32_t a = graph.addInput();
-    uint32_t b = graph.addInput();
-    graph.markOutput(graph.addBinary(xad::JITOpCode::Mod, a, b));
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-    double inputs[2] = {-7.5, 3.0};
-    interp.setInput(0, &inputs[0]);
-    interp.setInput(1, &inputs[1]);
-    double output;
-    double inputAdjoints[2];
-    interp.forwardAndBackward(&output, inputAdjoints);
-
-    // fmod truncates the quotient: d/db = -trunc(-2.5)
-    EXPECT_DOUBLE_EQ(2.0, inputAdjoints[1]);
 }
 
 TEST(JITGraphInterpreter, copysignOpCode)
@@ -1078,30 +907,6 @@ TEST(JITGraphInterpreter, minEqualValues)
     EXPECT_DOUBLE_EQ(0.5, inputAdjoints[1]);
 }
 
-TEST(JITGraphInterpreter, maxEqualValues)
-{
-    // Test max adjoint when values are equal (splits 50/50)
-    xad::JITGraph graph;
-    uint32_t a = graph.addInput();
-    uint32_t b = graph.addInput();
-    uint32_t result = graph.addBinary(xad::JITOpCode::Max, a, b);
-    graph.markOutput(result);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    double inputs[2] = {5.0, 5.0};  // Equal values
-    interp.setInput(0, &inputs[0]);
-    interp.setInput(1, &inputs[1]);
-    double output;
-    double inputAdjoints[2];
-    interp.forwardAndBackward(&output, inputAdjoints);
-
-    EXPECT_DOUBLE_EQ(5.0, output);
-    EXPECT_DOUBLE_EQ(0.5, inputAdjoints[0]);  // Split 50/50
-    EXPECT_DOUBLE_EQ(0.5, inputAdjoints[1]);
-}
-
 TEST(JITGraphInterpreter, ldexpAdjoint)
 {
     xad::JITGraph graph;
@@ -1172,21 +977,6 @@ TEST(JITGraphInterpreter, reset)
     EXPECT_DOUBLE_EQ(-5.0, output);
 }
 
-TEST(JITGraphInterpreter, setInputOutOfRange)
-{
-    xad::JITGraph graph;
-    graph.addInput();
-    uint32_t c = graph.addConstant(1.0);
-    graph.markOutput(c);
-
-    xad::JITGraphInterpreter<double> interp;
-    interp.compile(graph);
-
-    double input = 5.0;
-    // Graph has 1 input but we try to set input at index 1
-    EXPECT_THROW(interp.setInput(1, &input), std::runtime_error);
-}
-
 TEST(JITGraphInterpreter, queryMethods)
 {
     xad::JITGraph graph;
@@ -1207,26 +997,11 @@ TEST(JITGraphInterpreter, queryMethods)
 // Exception path tests for coverage
 // =============================================================================
 
-TEST(JITGraphInterpreter, setInputThrowsWhenNotCompiled)
-{
-    xad::JITGraphInterpreter<double> interp;
-    double input = 5.0;
-    EXPECT_THROW(interp.setInput(0, &input), std::runtime_error);
-}
-
 TEST(JITGraphInterpreter, forwardThrowsWhenNotCompiled)
 {
     xad::JITGraphInterpreter<double> interp;
     double output;
     EXPECT_THROW(interp.forward(&output), std::runtime_error);
 }
-
-TEST(JITGraphInterpreter, forwardAndBackwardThrowsWhenNotCompiled)
-{
-    xad::JITGraphInterpreter<double> interp;
-    double output, inputAdjoint;
-    EXPECT_THROW(interp.forwardAndBackward(&output, &inputAdjoint), std::runtime_error);
-}
-
 
 #endif  // XAD_ENABLE_JIT

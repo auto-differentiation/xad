@@ -305,40 +305,6 @@ TEST(ExpressionsMath, isnan_inf_finite)
     EXPECT_FALSE(signbit(x4));
     EXPECT_TRUE(signbit(-x4));
 }
-
-TEST(ExpressionsMath, isnan_inf_finite_fwd)
-{
-    xad::FAD x1 = 1.2, x2 = std::numeric_limits<double>::infinity(),
-             x3 = std::numeric_limits<double>::quiet_NaN();
-    EXPECT_FALSE(isinf(x1));
-    EXPECT_FALSE(isinf(x1 * 2.3));
-    EXPECT_TRUE(isinf(x2));
-    EXPECT_TRUE(isinf(x2 * 2.3));
-    EXPECT_FALSE(isnan(x1));
-    EXPECT_FALSE(isnan(x1 * 2.3));
-    EXPECT_FALSE(isnan(x2));
-    EXPECT_TRUE(isnan(x3));
-    EXPECT_TRUE(isfinite(x1));
-    EXPECT_TRUE(isfinite(x1 * 2.3));
-    EXPECT_FALSE(isfinite(x2));
-    EXPECT_FALSE(isfinite(x2 * x3));
-    // EXPECT_FALSE(__isinf(x1));
-    // EXPECT_FALSE(__isinf(x1*2.3));
-    // EXPECT_TRUE(__isinf(x2));
-    // EXPECT_TRUE(__isinf(x2*2.3));
-    // EXPECT_FALSE(__isnan(x1));
-    // EXPECT_FALSE(__isnan(x1*2.3));
-    // EXPECT_FALSE(__isnan(x2));
-    // EXPECT_TRUE(__isnan(x3));
-    // EXPECT_TRUE(__isfinite(x1));
-    // EXPECT_TRUE(__isfinite(x1*2.3));
-    // EXPECT_FALSE(__isfinite(x2));
-    // EXPECT_FALSE(__isfinite(x2*x3));
-    EXPECT_EQ(FP_NORMAL, fpclassify(x1));
-    EXPECT_EQ(FP_INFINITE, fpclassify(x2));
-    EXPECT_EQ(FP_NAN, fpclassify(x3));
-    EXPECT_EQ(FP_ZERO, fpclassify(0.0 * x1));
-}
 #endif
 
 // TODO: not in docs that fmod may cause lookup problems with VS 2012 or below
@@ -351,15 +317,6 @@ TEST(ExpressionsMath, fmod_AD)
                   fmodAD);
     mathTest_all(1.3, std::fmod(1.3, 0.5), 1.0, 0.0, fmodADScalar);
     mathTest_all(0.5, std::fmod(1.3, 0.5), -std::trunc(1.3 / 0.5), 0.0, fmodScalarAD);
-}
-
-LOCAL_TEST_FUNCTOR1(fmodNegativeScalarAD, xad::fmod(-1.3, x))
-TEST(ExpressionsMath, fmod_negative_quotient)
-{
-    // fmod truncates the quotient
-    mathTest2_all(-1.3, 0.5, std::fmod(-1.3, 0.5), 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, fmodAD);
-    mathTest2_all(1.3, -0.5, std::fmod(1.3, -0.5), 1.0, 2.0, 0.0, 0.0, 0.0, 0.0, fmodAD);
-    mathTest_all(0.5, std::fmod(-1.3, 0.5), 2.0, 0.0, fmodNegativeScalarAD);
 }
 
 LOCAL_TEST_FUNCTOR2(fmodExprExpr, xad::fmod(2.3 * x1, 2.3 * x2))

@@ -15,7 +15,7 @@ for record-once / replay-many execution.
 [Documentation](https://auto-differentiation.github.io/) ·
 [Install](#install) ·
 [Samples](samples) ·
-[Benchmarks](https://github.com/auto-differentiation/ad-benchmarks) ·
+[Benchmarks](https://auto-differentiation.github.io/benchmarks/) ·
 [Python](https://github.com/auto-differentiation/xad-py) ·
 [Discussions](https://github.com/auto-differentiation/xad/discussions)
 
@@ -31,6 +31,9 @@ for record-once / replay-many execution.
     </a>
     <a href="https://pypi.org/project/xad/">
         <img src="https://img.shields.io/pypi/v/xad?label=PyPI" alt="PyPI" style="max-width: 100%;">
+    </a>
+    <a href="https://github.com/microsoft/vcpkg/tree/master/ports/xad">
+        <img src="https://img.shields.io/vcpkg/v/xad?label=vcpkg" alt="vcpkg" style="max-width: 100%;">
     </a>
     <a href="https://doi.org/10.5281/zenodo.7965850">
         <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.7965850.svg" alt="DOI" style="max-width: 100%;">
@@ -70,6 +73,17 @@ int main() {
 
 ## Install
 
+With [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/xad):
+
+```bash
+vcpkg install xad
+```
+
+```cmake
+find_package(XAD CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE XAD::xad)
+```
+
 With CMake, straight from GitHub:
 
 ```cmake
@@ -92,15 +106,8 @@ and the [Tutorials](https://auto-differentiation.github.io/tutorials/).
 
 ## Benchmarks
 
-Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://github.com/rjhogan/Adept-2), [autodiff](https://github.com/autodiff/autodiff), and finite differences on four quant-finance workloads (Intel Xeon Platinum 8488C, GCC 13.3, `-O3 -mavx2 -mfma`):
-
-<p align="center">
-  <a href="https://github.com/auto-differentiation/ad-benchmarks">
-    <img src="https://raw.githubusercontent.com/auto-differentiation/ad-benchmarks/main/results/chart.svg" alt="Benchmark chart" width="100%">
-  </a>
-</p>
-
-Full methodology, source code, and reproducible CSV: **[auto-differentiation/ad-benchmarks](https://github.com/auto-differentiation/ad-benchmarks)**
+Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://github.com/rjhogan/Adept-2), [autodiff](https://github.com/autodiff/autodiff), and finite differences on quant-finance workloads.
+We are rebuilding the suite with new workloads, pinned library versions and gradient checks, run on GitHub CI; new results in November 2026.
 
 ## Key Features
 

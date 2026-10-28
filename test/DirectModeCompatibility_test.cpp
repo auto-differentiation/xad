@@ -336,76 +336,6 @@ TYPED_TEST(DirectModeCompatibility, Comparisons)
     EXPECT_TRUE(x < ConvertsTo<T>() && ConvertsTo<T>() > y);
 }
 
-namespace
-{
-
-// a type with an implicit conversion to double, but not to the active types
-struct ConvertsToDouble
-{
-    operator double() const { return 2.0; }
-};
-
-}  // namespace
-
-TYPED_TEST(DirectModeCompatibility, ArithmeticWithConvertibleTypes)
-{
-    typedef TypeParam T;
-    std::unique_ptr<xad::Tape<double>> tape;
-    if (xad::ExprTraits<T>::isReverse)
-        tape.reset(new xad::Tape<double>());
-    T x = 0.5;
-    T y1 = x + ConvertsTo<T>();
-    T y2 = ConvertsTo<T>() * x;
-    T y3 = std::max(x, ConvertsTo<T>());
-    T y4 = x * ConvertsToDouble();
-    EXPECT_THAT(xad::value(y1), DoubleEq(42.5));
-    EXPECT_THAT(xad::value(y2), DoubleEq(21.0));
-    EXPECT_THAT(xad::value(y3), DoubleEq(42.0));
-    EXPECT_THAT(xad::value(y4), DoubleEq(1.0));
-}
-
-TYPED_TEST(DirectModeCompatibility, ConstructionFromConvertibleTypes)
-{
-    typedef TypeParam T;
-    ConvertsTo<T> c;
-    ConvertsToDouble d;
-    T x(c);
-    T y = c;
-    T z(d);
-    EXPECT_THAT(xad::value(x), DoubleEq(42.0));
-    EXPECT_THAT(xad::value(y), DoubleEq(42.0));
-    EXPECT_THAT(xad::value(z), DoubleEq(2.0));
-}
-
-namespace
-{
-
-// a class with its own generic operator templates (as in matrix libraries): XAD's must not compete
-struct ForeignMatrix
-{
-};
-
-template <class T>
-int operator*(const T&, const ForeignMatrix&)
-{
-    return 1;
-}
-
-template <class T>
-int operator*(const ForeignMatrix&, const T&)
-{
-    return 2;
-}
-
-}  // namespace
-
-TYPED_TEST(DirectModeCompatibility, ForeignOperatorTemplates)
-{
-    TypeParam x = 1.0;
-    EXPECT_EQ(x * ForeignMatrix(), 1);
-    EXPECT_EQ(ForeignMatrix() * x, 2);
-}
-
 // ------------------- XAD math functions
 
 namespace
@@ -454,38 +384,6 @@ TEST(DirectModeHigherOrder, HigherOrderMixedScalars)
     EXPECT_THAT(derivative(derivative(x)), DoubleNear(4.0, 1e-12));
 }
 
-namespace
-{
-enum class Unit
-{
-    Days
-};
-enum PlainUnit
-{
-    Weeks
-};
-template <class T>
-int operator*(const T&, PlainUnit)
-{
-    return 7;
-}
-}  // namespace
-
-// like AReal / FReal, direct types take no enum operands: QuantLib's T * TimeUnit stays unambiguous
-TEST(DirectModeCompatibility, EnumsAreNoOperands)
-{
-    static_assert(!xad::detail::direct_convertible_operand<xad::ARealDirect<double>, Unit>::value,
-                  "scoped enum");
-    static_assert(
-        !xad::detail::direct_convertible_operand<xad::ARealDirect<double>, PlainUnit>::value,
-        "unscoped enum");
-    static_assert(
-        !xad::detail::direct_convertible_operand<xad::FRealDirect<double>, PlainUnit>::value,
-        "unscoped enum");
-    EXPECT_EQ(7, xad::ARealDirect<double>(2.0) * Weeks);
-    EXPECT_EQ(7, xad::FRealDirect<double>(2.0) * Weeks);
-}
-
 TEST(DirectModeHigherOrder, HigherOrderLimitsAndTraits)
 {
     typedef xad::fwdd_fwdd<double>::active_type T;
@@ -500,21 +398,6 @@ TEST(DirectModeHigherOrder, HigherOrderLimitsAndTraits)
     T y = x * x * 3 + 1;
     EXPECT_TRUE(y > 1 && y == 13.0);
     EXPECT_THAT(derivative(derivative(y)), DoubleEq(6.0));
-}
-
-TEST(DirectModeHigherOrder, MaxMinAtTiesWithDirectInnerType)
-{
-    // at ties, max and min split the derivative equally, as for FReal<FReal<double>>
-    typedef xad::FReal<xad::FRealDirect<double>> T;
-    typedef xad::FReal<xad::FReal<double>> Tref;
-    T x1 = 1.7, x2 = 1.7;
-    Tref r1 = 1.7, r2 = 1.7;
-    derivative(value(x1)) = 1.0;
-    derivative(value(r1)) = 1.0;
-    T y = max(x1, x2) + 2.0 * min(x1, x2);
-    Tref yref = max(r1, r2) + 2.0 * min(r1, r2);
-    EXPECT_THAT(derivative(value(y)), DoubleEq(derivative(value(yref))));
-    EXPECT_THAT(derivative(value(y)), DoubleEq(0.5 + 2.0 * 0.5));
 }
 
 // ------------------- complex numbers

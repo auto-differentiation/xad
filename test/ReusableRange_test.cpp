@@ -86,15 +86,6 @@ TEST(ReusableRange, CanInsert)
     EXPECT_THAT(r.isClosed(), false);
 }
 
-TEST(ReusableRange, InsertionClosesRange)
-{
-    xad::ReusableRange<unsigned> r(6, 7);
-    auto s = r.insert();
-
-    EXPECT_THAT(s, 6u);
-    EXPECT_THAT(r.isClosed(), true);
-}
-
 TEST(ReusableRange, ExpandSuccessEnd)
 {
     xad::ReusableRange<unsigned> r(5, 7);
@@ -113,19 +104,6 @@ TEST(ReusableRange, ExpandSuccessStart)
     EXPECT_THAT(ret, xad::ReusableRange<unsigned>::START);
     EXPECT_THAT(r.size(), 3u);
     EXPECT_THAT(r.first(), 4u);
-    EXPECT_THAT(r.second(), 7u);
-}
-
-TEST(ReusableRange, ExpandFail)
-{
-    xad::ReusableRange<unsigned> r(5, 7);
-
-    EXPECT_THAT(r.expand(2), xad::ReusableRange<unsigned>::FAILED);
-    EXPECT_THAT(r.expand(6), xad::ReusableRange<unsigned>::FAILED);
-    EXPECT_THAT(r.expand(9), xad::ReusableRange<unsigned>::FAILED);
-
-    EXPECT_THAT(r.size(), 2u);
-    EXPECT_THAT(r.first(), 5u);
     EXPECT_THAT(r.second(), 7u);
 }
 

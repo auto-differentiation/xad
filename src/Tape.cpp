@@ -112,7 +112,7 @@ Tape<T, N>::Tape(Tape&& o) noexcept
     {
         // activate() would throw while o is active
         o.deactivate();
-        active_tape_ = this;
+        activate();
     }
 }
 
@@ -156,7 +156,7 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     {
         // activate() would throw while o is active
         o.deactivate();
-        active_tape_ = this;
+        activate();
     }
     else
         deactivate();
@@ -1026,16 +1026,55 @@ typename Tape<T, N>::derivative_type Tape<T, N>::getAndResetOutputAdjoint(slot_t
     return ret;
 }
 
+#ifdef XAD_SHARED_LIBS
+namespace
+{
+// not a static member of Tape: thread-local data cannot be exported from a DLL
+template <class T, std::size_t N>
+struct ActiveTape
+{
+    static XAD_THREAD_LOCAL Tape<T, N>* tape;
+};
+
+template <class T, std::size_t N>
+XAD_THREAD_LOCAL Tape<T, N>* ActiveTape<T, N>::tape = nullptr;
+}  // namespace
+
+template <class T, std::size_t N>
+Tape<T, N>* Tape<T, N>::getActive()
+{
+    return ActiveTape<T, N>::tape;
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::setActive(Tape* t)
+{
+    if (ActiveTape<T, N>::tape != nullptr)
+        throw TapeAlreadyActive();
+    ActiveTape<T, N>::tape = t;
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::deactivateAll()
+{
+    ActiveTape<T, N>::tape = nullptr;
+}
+#else
 template <class T, std::size_t N>
 XAD_THREAD_LOCAL Tape<T, N>* Tape<T, N>::active_tape_ = nullptr;
+#endif
 
 #define MAKE_TAPE_TLS(type)                                                                        \
     template class CheckpointCallback<Tape<type>>;                                                 \
-    template class Tape<type>;
+    template class XAD_TEMPLATE_EXPORT Tape<type>;
 
 #define MAKE_TAPE_TLS_HIGHER(type)                                                                 \
     template struct type;                                                                          \
     MAKE_TAPE_TLS(type)
+#ifdef _MSC_VER
+#pragma warning(disable : 4251)
+#endif
+
 // 1st order
 MAKE_TAPE_TLS(float)
 MAKE_TAPE_TLS(double)
