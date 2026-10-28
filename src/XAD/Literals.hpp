@@ -744,8 +744,24 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
             if (!isOn(s))
                 slot_ = INVALID_SLOT;  // a slot of another tape: register on s
 #endif
-            s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
-            setTape(s);
+#ifdef XAD_SKIP_ZERO_PARTIALS
+            // all partials zero: a passive lhs stays passive, an active one gets an empty statement
+            if (info.index != 0 || isOn(s))
+            {
+#endif
+                s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
+                setTape(s);
+#ifdef XAD_SKIP_ZERO_PARTIALS
+            }
+#endif
+#elif defined(XAD_SKIP_ZERO_PARTIALS)
+            // all partials zero: a passive lhs stays passive, an active one gets an empty statement
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0 || isOn(s))
+            {
+                if (!isOn(s))
+                    registerOn(s);
+                s->pushLhs(slot_);
+            }
 #else
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             // only register this variable after evaluating the expression, as this
