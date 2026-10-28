@@ -25,6 +25,7 @@
 #pragma once
 
 #include <XAD/Config.hpp>
+#include <XAD/Export.hpp>
 
 #ifdef XAD_ENABLE_JIT
 
@@ -35,6 +36,11 @@
 
 namespace xad
 {
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4251 4275)  // members and base of the exported class need no dll interface
+#endif
 
 /**
  * @brief Reference JITBackend implementation that interprets a JITGraph.
@@ -76,8 +82,12 @@ class JITGraphInterpreter : public JITBackend<Scalar>
 };
 
 // Declare external explicit instantiations
-extern template class JITGraphInterpreter<float>;
-extern template class JITGraphInterpreter<double>;
+extern template class XAD_TEMPLATE_API JITGraphInterpreter<float>;
+extern template class XAD_TEMPLATE_API JITGraphInterpreter<double>;
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 }  // namespace xad
 

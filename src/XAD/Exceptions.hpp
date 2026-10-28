@@ -24,31 +24,32 @@
 
 #pragma once
 
+#include <XAD/Export.hpp>
 #include <stdexcept>
 #include <string>
 
 namespace xad
 {
 
-class Exception : public std::runtime_error
+class XAD_VISIBLE Exception : public std::runtime_error
 {
   public:
     explicit Exception(const std::string& msg) : std::runtime_error(msg) {}
 };
 
-class TapeAlreadyActive : public Exception
+class XAD_VISIBLE TapeAlreadyActive : public Exception
 {
   public:
     TapeAlreadyActive() : Exception("A tape is already active for the current thread") {}
 };
 
-class OutOfRange : public Exception
+class XAD_VISIBLE OutOfRange : public Exception
 {
   public:
     explicit OutOfRange(const std::string& msg) : Exception(msg) {}
 };
 
-class DerivativesNotInitialized : public Exception
+class XAD_VISIBLE DerivativesNotInitialized : public Exception
 {
   public:
     explicit DerivativesNotInitialized(
@@ -58,7 +59,7 @@ class DerivativesNotInitialized : public Exception
     }
 };
 
-class NoTapeException : public Exception
+class XAD_VISIBLE NoTapeException : public Exception
 {
   public:
     explicit NoTapeException(const std::string& msg = "No active tape for the current thread")

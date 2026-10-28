@@ -545,8 +545,11 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
 }
 
 // Explicit instantiations
-template class JITGraphInterpreter<float>;
-template class JITGraphInterpreter<double>;
+#ifdef _MSC_VER
+#pragma warning(disable : 4251 4275)
+#endif
+template class XAD_TEMPLATE_EXPORT JITGraphInterpreter<float>;
+template class XAD_TEMPLATE_EXPORT JITGraphInterpreter<double>;
 
 }  // namespace xad
 
