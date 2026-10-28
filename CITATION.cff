@@ -7,7 +7,7 @@ authors:
   - name: "Xcelerit Computing Limited"
 repository-code: "https://github.com/auto-differentiation/xad"
 url: "https://auto-differentiation.github.io"
-license: AGPL-3.0-or-later
+license: AGPL-3.0-only
 version: "2.1.0"
 date-released: "2026-03-31"
 doi: "10.5281/zenodo.7965850"

@@ -154,5 +154,5 @@ Please report bugs and issues via the
 
 ## License
 
-XAD is free under the [AGPL-3.0](LICENSE.md) for evaluation, research and open-source use.
+XAD is free under the [AGPL-3.0](LICENSE.md) (version 3 only) for evaluation, research and open-source use.
 For production use without AGPL obligations, a [commercial subscription](https://www.xcelerit.com/xad-enterprise-support) is available.
