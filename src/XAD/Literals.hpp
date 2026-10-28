@@ -524,6 +524,7 @@ struct AReal
 #endif
 
   private:
+#ifndef XAD_SKIP_ZERO_PARTIALS
     // Stage the partials in stack arrays, then append them to the tape in one
     // batch. The arrays are locals, so the compiler can keep them in registers.
     template <int Size, typename Expr>
@@ -555,6 +556,31 @@ struct AReal
         expr.calc_derivatives(info, *t);
         t->commitOperations(info.index);
     }
+#else
+    // as above, returning the number of partials recorded
+    template <int Size, typename Expr>
+    XAD_FORCE_INLINE unsigned pushStaged(tape_type* t, const Expr& expr) const
+    {
+        DerivInfo<tape_type, Size> info;
+        expr.calc_derivatives(info, *t);
+        t->pushAll(info.multipliers, info.slots, info.index);
+        return info.index;
+    }
+
+    template <int Size, typename Expr>
+    XAD_FORCE_INLINE unsigned pushAll(tape_type* t, const Expr& expr) const
+    {
+        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
+            return pushStaged<Size>(t, expr);
+        DerivInfoDirect<tape_type> info;
+        info.dst = t->tryReserveOperations(Size);
+        if (XAD_VERY_UNLIKELY(info.dst == nullptr))
+            return pushStaged<Size>(t, expr);
+        expr.calc_derivatives(info, *t);
+        t->commitOperations(info.index);
+        return info.index;
+    }
+#endif
 
     XAD_INLINE void registerOn(tape_type* t)
     {
@@ -673,8 +699,19 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
             expr.calc_derivatives(info, *s);
+#ifdef XAD_SKIP_ZERO_PARTIALS
+            if (info.index == 0)
+                return;  // all partials zero: the result stays passive
+#endif
             slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
             setTape(s);
+#elif defined(XAD_SKIP_ZERO_PARTIALS)
+            // all partials zero: the result stays passive
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0)
+            {
+                registerOn(s);
+                s->pushLhs(slot_);
+            }
 #else
             registerOn(s);
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
