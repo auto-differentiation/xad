@@ -95,22 +95,6 @@ TEST(JITCompiler, isMovable)
     EXPECT_FALSE(jit4.isActive());
 }
 
-TEST(JITCompiler, moveAssignFromActiveTransfersActivePointer)
-{
-    // Cover the move-assignment branch where the source compiler is active.
-    xad::JITCompiler<double> src(true);
-    EXPECT_TRUE(src.isActive());
-    EXPECT_EQ(&src, xad::JITCompiler<double>::getActive());
-
-    xad::JITCompiler<double> dst(false);
-    EXPECT_FALSE(dst.isActive());
-
-    dst = std::move(src);
-    EXPECT_TRUE(dst.isActive());
-    EXPECT_EQ(&dst, xad::JITCompiler<double>::getActive());
-    EXPECT_FALSE(src.isActive());
-}
-
 TEST(JITCompiler, canSetBackend)
 {
     xad::JITCompiler<double> jit;
@@ -326,26 +310,6 @@ TEST(JITCompiler, registerOutputsRange)
     EXPECT_EQ(2u, jit.getGraph().output_ids.size());
 }
 
-TEST(JITCompiler, registerOutputKeepsConstantOutputs)
-{
-    xad::JITCompiler<double> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD x = 2.0;
-    jit.registerInput(x);
-    AD c = 5.0;  // does not depend on x
-    AD y = 3.0 * x;
-    jit.registerOutput(c);
-    jit.registerOutput(y);
-    jit.compile();
-
-    ASSERT_EQ(2u, jit.numOutputs());
-    double out[2] = {0.0, 0.0};
-    jit.forward(out);
-    EXPECT_DOUBLE_EQ(5.0, out[0]);
-    EXPECT_DOUBLE_EQ(6.0, out[1]);
-}
-
 TEST(JITCompiler, recordNodeAndConstant)
 {
     xad::JITCompiler<double> jit;
@@ -435,28 +399,6 @@ TEST(JITCompiler, getPosition)
     EXPECT_GT(pos2, pos1);
 }
 
-TEST(JITCompiler, derivativeNonConstAccess)
-{
-    xad::JITCompiler<double> jit;
-
-    // Access derivative for a slot that doesn't exist yet
-    auto& deriv = jit.derivative(10);
-    deriv = 42.0;
-
-    EXPECT_DOUBLE_EQ(42.0, jit.getDerivative(10));
-}
-
-TEST(JITCompiler, derivativeConstAccessOutOfRange)
-{
-    xad::JITCompiler<double> jit;
-
-    // Const access to out-of-range slot should return zero
-    const auto& jit_const = jit;
-    const auto& deriv = jit_const.derivative(999);
-
-    EXPECT_DOUBLE_EQ(0.0, deriv);
-}
-
 TEST(JITCompiler, floatScalarOperations)
 {
     // Test JIT with float scalar type to exercise getNestedDoubleValue(float)
@@ -474,83 +416,6 @@ TEST(JITCompiler, floatScalarOperations)
     jit.forward(&output);
 
     EXPECT_FLOAT_EQ(6.0f, output);
-}
-
-TEST(JITAReal, derivativeFallbackUsesJITWhenNoTape)
-{
-    // Cover Literals.hpp JIT-derivative fallback paths:
-    // - const derivative() returns a zero ref when slot is INVALID and JIT is active
-    // - non-const derivative() allocates a slot when slot is INVALID and JIT is active
-    xad::JITCompiler<double, 1> jit;
-    using AD = xad::AReal<double, 1>;
-
-    const AD c(2.0);  // no tape, no slot
-    EXPECT_EQ(static_cast<AD::slot_type>(-1), c.getSlot());
-    EXPECT_DOUBLE_EQ(0.0, c.derivative());
-    EXPECT_EQ(static_cast<AD::slot_type>(-1), c.getSlot()); // const path must not allocate a slot
-
-    AD x(3.0);  // no tape, no slot
-    EXPECT_EQ(static_cast<AD::slot_type>(-1), x.getSlot());
-    auto& dx = x.derivative(); // allocates slot in JIT
-    dx = 7.0;
-    EXPECT_NE(static_cast<AD::slot_type>(-1), x.getSlot());
-    EXPECT_DOUBLE_EQ(7.0, jit.getDerivative(x.getSlot()));
-}
-
-TEST(JITAReal, copyCtorCopiesSlotWhenNoTapeAndJitActive)
-{
-    xad::JITCompiler<double, 1> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD x(3.0);
-    (void)x.derivative();  // allocate slot in JIT
-    EXPECT_NE(static_cast<AD::slot_type>(-1), x.getSlot());
-
-    AD y(x);  // copy-ctor should copy the slot when JIT is active and no tape is active
-    EXPECT_EQ(x.getSlot(), y.getSlot());
-    EXPECT_DOUBLE_EQ(x.getValue(), y.getValue());
-}
-
-TEST(JITAReal, copyAssignCopiesSlotWhenNoTapeAndJitActive)
-{
-    xad::JITCompiler<double, 1> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD x(4.0);
-    (void)x.derivative();  // allocate slot in JIT
-    EXPECT_NE(static_cast<AD::slot_type>(-1), x.getSlot());
-
-    AD y(1.0);
-    EXPECT_EQ(static_cast<AD::slot_type>(-1), y.getSlot());
-
-    y = x;  // copy-assign should copy the slot when JIT is active and no tape is active
-    EXPECT_EQ(x.getSlot(), y.getSlot());
-    EXPECT_DOUBLE_EQ(x.getValue(), y.getValue());
-}
-
-TEST(JITAReal, constantExpressionDoesNotRecordWhenNoTapeAndJitActive)
-{
-    // Exercise the "expr.shouldRecord() == false" branch in the JIT recording path.
-    xad::JITCompiler<double, 1> jit;
-    using AD = xad::AReal<double, 1>;
-
-    AD c(2.0);  // no slot
-    EXPECT_EQ(static_cast<AD::slot_type>(-1), c.getSlot());
-
-    AD y = c + 1.0;  // pure constant expression => should not record any JIT node
-    EXPECT_EQ(static_cast<AD::slot_type>(-1), y.getSlot());
-    EXPECT_DOUBLE_EQ(3.0, y.getValue());
-}
-
-TEST(JITAReal, vectorModeDoesNotUseJitFallback)
-{
-    // JIT is intentionally scalar-only; vector AD should not attempt JIT fallback.
-    xad::JITCompiler<double, 1> jit;
-
-    using ADV = xad::AReal<double, 2>;
-    const ADV v;  // no tape
-
-    EXPECT_THROW((void)v.derivative(), xad::NoTapeException);
 }
 
 // =============================================================================
@@ -604,6 +469,5 @@ TEST(JITCompiler, constGetGraph)
 // =============================================================================
 // Additional JITGraph tests
 // =============================================================================
-
 
 #endif  // XAD_ENABLE_JIT

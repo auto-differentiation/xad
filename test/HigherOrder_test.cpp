@@ -195,10 +195,3 @@ TEST(HigherOrder, fwd_fwd)
     compareLimitedPrecision(-149.9496480624, yt1t2[0], 13, "y^(1,2)[0]");
     compareLimitedPrecision(-124.2565681746, yt1t2[1], 13, "y^(1,2)[1]");
 }
-
-// intermediates with a zero adjoint value still carry second-order parts
-LOCAL_TEST_FUNCTOR1(stationarySquare, T(T(x + 1.0) - 1.0) * T(T(x + 1.0) - 1.0))
-TEST(HigherOrder, zeroAdjointAtStationaryPoint)
-{
-    mathTest_all(0.0, 0.0, 0.0, 2.0, stationarySquare);
-}

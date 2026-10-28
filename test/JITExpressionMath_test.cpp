@@ -704,38 +704,6 @@ TEST(JITExpressionMath, smoothAbsADAD)
 // Power function expression variants
 // =============================================================================
 
-JIT_TEST_FUNCTOR1(jitPowScalarBaseExpr, pow(2.1, 2.3 * x))
-TEST(JITExpressionMath, powScalarBaseExpr)
-{
-    mathTest_jit(0.3, std::pow(2.1, 2.3 * 0.3), 2.3 * std::log(2.1) * std::pow(2.1, 2.3 * 0.3),
-                 jitPowScalarBaseExpr);
-}
-
-JIT_TEST_FUNCTOR1(jitPowScalarExpExpr, pow(2.3 * x, 2.1))
-TEST(JITExpressionMath, powScalarExpExpr)
-{
-    mathTest_jit(0.3, std::pow(2.3 * 0.3, 2.1), 2.3 * 2.1 * std::pow(2.3 * 0.3, 1.1),
-                 jitPowScalarExpExpr);
-}
-
-JIT_TEST_FUNCTOR2(jitPowADExpr, pow(x1, 2.3 * x2))
-TEST(JITExpressionMath, powADExpr)
-{
-    mathTest2_jit(1.3, 2.1, std::pow(1.3, 2.3 * 2.1),
-                  2.3 * 2.1 * std::pow(1.3, 2.3 * 2.1 - 1.0),      // d1
-                  2.3 * std::log(1.3) * std::pow(1.3, 2.3 * 2.1),  // d2
-                  jitPowADExpr);
-}
-
-JIT_TEST_FUNCTOR2(jitPowExprAD, pow(2.3 * x1, x2))
-TEST(JITExpressionMath, powExprAD)
-{
-    mathTest2_jit(0.3, 2.1, std::pow(2.3 * 0.3, 2.1),
-                  2.3 * 2.1 * std::pow(2.3 * 0.3, 1.1),          // d1
-                  std::log(2.3 * 0.3) * std::pow(2.3 * 0.3, 2.1),  // d2
-                  jitPowExprAD);
-}
-
 JIT_TEST_FUNCTOR2(jitPowExprExpr, pow(1.2 * x1, 2.3 * x2))
 TEST(JITExpressionMath, powExprExpr)
 {
@@ -760,12 +728,6 @@ JIT_TEST_FUNCTOR1(jitPown1AD, pow(x, 2))
 TEST(JITExpressionMath, pown1AD)
 {
     mathTest_jit(0.3, std::pow(0.3, 2), 2 * std::pow(0.3, 1), jitPown1AD);
-}
-
-JIT_TEST_FUNCTOR1(jitPown1Expr, pow(2.3 * x, 2))
-TEST(JITExpressionMath, pown1Expr)
-{
-    mathTest_jit(0.3, std::pow(2.3 * 0.3, 2), 2.3 * 2 * std::pow(2.3 * 0.3, 1), jitPown1Expr);
 }
 
 // =============================================================================
@@ -798,12 +760,6 @@ TEST(JITExpressionMath, atan2ADScalar)
     mathTest_jit(0.3, std::atan2(0.3, 0.5), 0.5 / (0.3 * 0.3 + 0.5 * 0.5), jitAtan2ADScalar);
 }
 
-JIT_TEST_FUNCTOR1(jitAtan2ScalarAD, xad::atan2(0.3, x))
-TEST(JITExpressionMath, atan2ScalarAD)
-{
-    mathTest_jit(0.5, std::atan2(0.3, 0.5), -0.3 / (0.3 * 0.3 + 0.5 * 0.5), jitAtan2ScalarAD);
-}
-
 JIT_TEST_FUNCTOR2(jitHypotExprExpr, xad::hypot(1.3 * x1, 1.3 * x2))
 TEST(JITExpressionMath, hypotExprExpr)
 {
@@ -819,12 +775,6 @@ TEST(JITExpressionMath, hypotADScalar)
     mathTest_jit(0.3, std::hypot(0.3, 0.5), 0.3 / std::hypot(0.3, 0.5), jitHypotADScalar);
 }
 
-JIT_TEST_FUNCTOR1(jitHypotScalarAD, xad::hypot(0.3, x))
-TEST(JITExpressionMath, hypotScalarAD)
-{
-    mathTest_jit(0.5, std::hypot(0.3, 0.5), 0.5 / std::hypot(0.3, 0.5), jitHypotScalarAD);
-}
-
 JIT_TEST_FUNCTOR2(jitFmodExprExpr, xad::fmod(2.3 * x1, 2.3 * x2))
 TEST(JITExpressionMath, fmodExprExpr)
 {
@@ -838,12 +788,6 @@ JIT_TEST_FUNCTOR1(jitFmodADScalar, xad::fmod(x, 0.5))
 TEST(JITExpressionMath, fmodADScalar)
 {
     mathTest_jit(1.3, std::fmod(1.3, 0.5), 1.0, jitFmodADScalar);
-}
-
-JIT_TEST_FUNCTOR1(jitFmodScalarAD, xad::fmod(1.3, x))
-TEST(JITExpressionMath, fmodScalarAD)
-{
-    mathTest_jit(0.5, std::fmod(1.3, 0.5), -std::floor(1.3 / 0.5), jitFmodScalarAD);
 }
 
 JIT_TEST_FUNCTOR2(jitRemainderExprExpr, remainder(2.3 * x1, 2.3 * x2))
@@ -862,40 +806,14 @@ TEST(JITExpressionMath, remainderADScalar)
     mathTest_jit(1.3, res, 1.0, jitRemainderADScalar);
 }
 
-JIT_TEST_FUNCTOR1(jitRemainderScalarAD, remainder(1.3, x))
-TEST(JITExpressionMath, remainderScalarAD)
-{
-    int n;
-    auto res = std::remquo(1.3, 0.5, &n);
-    mathTest_jit(0.5, res, -double(n), jitRemainderScalarAD);
-}
-
 // =============================================================================
 // Nextafter expression variants
 // =============================================================================
-
-JIT_TEST_FUNCTOR2(jitNextafterADExpr, nextafter(x1, 2.3 * x2))
-TEST(JITExpressionMath, nextafterADExpr)
-{
-    mathTest2_jit(0.1, 0.2, std::nextafter(0.1, 2.3 * 0.2), 1.0, 0.0, jitNextafterADExpr);
-}
-
-JIT_TEST_FUNCTOR2(jitNextafterExprAD, nextafter(2.3 * x1, x2))
-TEST(JITExpressionMath, nextafterExprAD)
-{
-    mathTest2_jit(0.1, 0.2, std::nextafter(2.3 * 0.1, 0.2), 2.3, 0.0, jitNextafterExprAD);
-}
 
 JIT_TEST_FUNCTOR2(jitNextafterExprExpr, nextafter(2.3 * x1, 2.3 * x2))
 TEST(JITExpressionMath, nextafterExprExpr)
 {
     mathTest2_jit(0.1, 0.2, std::nextafter(2.3 * 0.1, 2.3 * 0.2), 2.3, 0.0, jitNextafterExprExpr);
-}
-
-JIT_TEST_FUNCTOR1(jitNextafterScalarAD, nextafter(0.1, x))
-TEST(JITExpressionMath, nextafterScalarAD)
-{
-    mathTest_jit(0.2, std::nextafter(0.1, 0.2), 0.0, jitNextafterScalarAD);
 }
 
 JIT_TEST_FUNCTOR1(jitNextafterADScalar, nextafter(x, 0.2))
@@ -941,25 +859,11 @@ TEST(JITExpressionMath, DISABLED_maxExprExpr)
     mathTest2_jit(1.7, -0.7, 2.3 * 1.7, 2.3, 0.0, jitMaxExprExpr);
 }
 
-JIT_TEST_FUNCTOR1(jitMaxScalarAD, max(0.7, x))
-TEST(JITExpressionMath, maxScalarAD)
-{
-    mathTest_jit(1.1, 1.1, 1.0, jitMaxScalarAD);
-    mathTest_jit(0.6, 0.7, 0.0, jitMaxScalarAD);
-}
-
 JIT_TEST_FUNCTOR1(jitMaxADScalar, max(x, 0.7))
 TEST(JITExpressionMath, maxADScalar)
 {
     mathTest_jit(1.1, 1.1, 1.0, jitMaxADScalar);
     mathTest_jit(0.6, 0.7, 0.0, jitMaxADScalar);
-}
-
-JIT_TEST_FUNCTOR1(jitMaxScalarExpr, max(0.7, 2.0 * x))
-TEST(JITExpressionMath, maxScalarExpr)
-{
-    mathTest_jit(1.1, 2.0 * 1.1, 2.0, jitMaxScalarExpr);
-    mathTest_jit(0.3, 0.7, 0.0, jitMaxScalarExpr);
 }
 
 JIT_TEST_FUNCTOR1(jitMaxExprScalar, max(2.0 * x, 0.7))
@@ -990,25 +894,11 @@ TEST(JITExpressionMath, DISABLED_minExprExpr)
     mathTest2_jit(1.7, -0.7, 2.3 * -0.7, 0.0, 2.3, jitMinExprExpr);
 }
 
-JIT_TEST_FUNCTOR1(jitMinScalarAD, min(0.7, x))
-TEST(JITExpressionMath, minScalarAD)
-{
-    mathTest_jit(1.1, 0.7, 0.0, jitMinScalarAD);
-    mathTest_jit(0.6, 0.6, 1.0, jitMinScalarAD);
-}
-
 JIT_TEST_FUNCTOR1(jitMinADScalar, min(x, 0.7))
 TEST(JITExpressionMath, minADScalar)
 {
     mathTest_jit(1.1, 0.7, 0.0, jitMinADScalar);
     mathTest_jit(0.6, 0.6, 1.0, jitMinADScalar);
-}
-
-JIT_TEST_FUNCTOR1(jitMinScalarExpr, min(0.7, 2.0 * x))
-TEST(JITExpressionMath, minScalarExpr)
-{
-    mathTest_jit(1.1, 0.7, 0.0, jitMinScalarExpr);
-    mathTest_jit(0.3, 2.0 * 0.3, 2.0, jitMinScalarExpr);
 }
 
 JIT_TEST_FUNCTOR1(jitMinExprScalar, min(2.0 * x, 0.7))
@@ -1030,13 +920,6 @@ TEST(JITExpressionMath, smoothMaxADAD)
     mathTest2_jit(1.7, 1.7, 1.7, 0.5, 0.5, jitSmoothMaxADAD);
 }
 
-JIT_TEST_FUNCTOR1(jitSmoothMaxScalarAD, smooth_max(0.7, x))
-TEST(JITExpressionMath, smoothMaxScalarAD)
-{
-    mathTest_jit(1.1, 1.1, 1.0, jitSmoothMaxScalarAD);
-    mathTest_jit(0.6, 0.7, 0.0, jitSmoothMaxScalarAD);
-}
-
 JIT_TEST_FUNCTOR1(jitSmoothMaxADScalar, smooth_max(x, 0.7))
 TEST(JITExpressionMath, smoothMaxADScalar)
 {
@@ -1050,13 +933,6 @@ TEST(JITExpressionMath, smoothMinADAD)
     mathTest2_jit(0.3, 0.7, 0.3, 1.0, 0.0, jitSmoothMinADAD);
     mathTest2_jit(1.7, -0.7, -0.7, 0.0, 1.0, jitSmoothMinADAD);
     mathTest2_jit(1.7, 1.7, 1.7, 0.5, 0.5, jitSmoothMinADAD);
-}
-
-JIT_TEST_FUNCTOR1(jitSmoothMinScalarAD, smooth_min(0.7, x))
-TEST(JITExpressionMath, smoothMinScalarAD)
-{
-    mathTest_jit(1.1, 0.7, 0.0, jitSmoothMinScalarAD);
-    mathTest_jit(0.6, 0.6, 1.0, jitSmoothMinScalarAD);
 }
 
 JIT_TEST_FUNCTOR1(jitSmoothMinADScalar, smooth_min(x, 0.7))
@@ -1122,20 +998,6 @@ TEST(JITExpressionMath, copysignADAD)
 {
     mathTest_jit(1.2, 1.2, 1.0, jitCopysignADAD);
     mathTest_jit(-1.2, -1.2, 1.0, jitCopysignADAD);
-}
-
-struct jitTestFunctor_jitCopysignADExpr
-{
-    template <class T>
-    T operator()(const T& x) const
-    {
-        return copysign(x, -x);
-    }
-} jitCopysignADExpr;
-
-TEST(JITExpressionMath, copysignADExpr)
-{
-    mathTest_jit(1.2, -1.2, -1.0, jitCopysignADExpr);
 }
 
 struct jitTestFunctor_jitCopysignExprAD

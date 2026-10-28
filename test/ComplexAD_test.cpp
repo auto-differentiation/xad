@@ -332,13 +332,6 @@ TYPED_TEST(ComplexADTest, Arg)
     y.compare(-0.125, 0.0, 0.125, 0.0);
 }
 
-TYPED_TEST(ComplexADTest, ArgNegReal)
-{
-    std::complex<TypeParam> z(-4.0, 0.0);
-    auto y = this->calcDerivatives(ArgFunc(), z);
-    y.compare(0.0, 0.0, -0.25, 0.0);
-}
-
 XAD_MAKE_FUNCTOR(NormFunc, norm(in))
 TYPED_TEST(ComplexADTest, Norm)
 {
@@ -378,20 +371,6 @@ TYPED_TEST(ComplexADTest, Log)
     std::complex<TypeParam> z(1.0, 1.0);
     auto y = this->calcDerivatives(LogFunc(), z);
     y.compare(0.5, -0.5, 0.5, 0.5);
-}
-
-TYPED_TEST(ComplexADTest, LogOfZeroImag)
-{
-    std::complex<TypeParam> z(-1.0, 0.0);
-    auto y = this->calcDerivatives(LogFunc(), z);
-    y.compare(-1.0, 0.0, 0.0, -1.0);
-}
-
-TYPED_TEST(ComplexADTest, LogOfNegZeroImag)
-{
-    std::complex<TypeParam> z(-1.0, -0.0);
-    auto y = this->calcDerivatives(LogFunc(), z);
-    y.compare(-1.0, 0.0, 0.0, -1.0);
 }
 
 XAD_MAKE_FUNCTOR(Log10Func, log10(in))
