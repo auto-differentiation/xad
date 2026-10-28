@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Tape::clearCallbacks()` destroys the callbacks pushed with `pushCallback`, for tapes used for many recordings
 - `Tape::getCheckpoints()`: the checkpoint callbacks inserted in the current recording, with their positions
 - CMake option `XAD_TAPE_CHECKS` (on in Debug builds): variables use and free slots only on the tape they are registered on
+- CMake option `XAD_HUGE_PAGES` (off by default): on Linux, tape chunks of 2 MiB or more are 2 MiB aligned and advised for transparent huge pages (fewer TLB misses and page faults on large tapes; can stall on hosts with fragmented memory)
 - `JITBackend::forwardAndBackwardSeeded` runs the backward pass from given output adjoints
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
 
@@ -30,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recording an `AReal` from an expression and `Tape::pushLhs` are always inlined, `Tape::derivative` is inlined when the adjoints are already initialised, and with `XAD_TAPE_REUSE_SLOTS` so are registering and freeing a slot at the end of the tape
 - Copying an `AReal` (construction and assignment) is always inlined, its slot counters are updated with scalar code (no stalled vector load), and the reverse sweep runs over flat arrays when a recording fits in one chunk
 - Copying, moving and destroying a `std::complex<AReal>` is always inlined: about 2.8x faster AD for complex-heavy code (a Rough Heston engine) with `XAD_USE_STRONG_INLINE`
-- On Linux, tape chunks of 2 MiB or more are 2 MiB aligned and advised for transparent huge pages (fewer TLB misses and page faults on large tapes)
 
 ### Deprecated
 

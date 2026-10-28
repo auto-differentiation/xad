@@ -24,11 +24,13 @@
 
 #pragma once
 
+#include <XAD/Config.hpp>
+
 #if defined(__APPLE__)
 #include <AvailabilityMacros.h>
 #endif
 
-#if defined(__linux__)
+#if defined(XAD_HUGE_PAGES) && defined(__linux__)
 #include <sys/mman.h>
 #endif
 
@@ -54,7 +56,7 @@ struct AlignedAllocator {
             size += alignment - size % alignment;
         }
 
-    #if defined(__linux__)
+    #if defined(XAD_HUGE_PAGES) && defined(__linux__)
         // 2 MiB-align large blocks so the kernel can back them with huge pages
         const std::size_t hugePage = std::size_t(2) << 20;
         if (size >= hugePage && alignment <= hugePage &&

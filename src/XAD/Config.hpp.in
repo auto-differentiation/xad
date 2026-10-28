@@ -51,6 +51,9 @@
 // resetTo after getPosition keeps the slots of variables that are still alive
 #cmakedefine XAD_TAPE_TRACK_LIVE_SLOTS
 
+// Back large tape chunks with transparent huge pages on Linux
+#cmakedefine XAD_HUGE_PAGES
+
 // Disable thread-local tape usage
 #cmakedefine XAD_NO_THREADLOCAL
 
