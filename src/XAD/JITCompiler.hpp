@@ -340,7 +340,12 @@ class JITCompiler
     position_type getPosition() const { return static_cast<position_type>(graph_.nodeCount()); }
 
   private:
-    // JIT recording needs the tape off: this JIT reactivates it when it goes
+    // JIT recording needs the tape off: this JIT reactivates it when it goes.
+    // The tape keeps &suspendedTape_ only while this JIT lives (the destructor clears it); GCC 12+ can't see that
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdangling-pointer"
+#endif
     void activateSuspendingTape()
     {
         setActive(this);
@@ -353,6 +358,9 @@ class JITCompiler
             t->deactivate();
         }
     }
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 12
+#pragma GCC diagnostic pop
+#endif
 
     void takeSuspendedTape(JITCompiler& other) noexcept
     {
