@@ -102,6 +102,9 @@ void computeJacobianAdj(const std::vector<Active> &vec,
     auto v(vec);
 
     tape->registerInputs(v);
+    // foo may swap or assign its arguments: read the adjoints by input slot
+    std::vector<typename Tape<T>::slot_type> inslots(v.size());
+    for (std::size_t j = 0; j < v.size(); j++) inslots[j] = v[j].getSlot();
     tape->newRecording();
     auto y = foo(v);
     std::size_t domain = vec.size();
@@ -118,7 +121,7 @@ void computeJacobianAdj(const std::vector<Active> &vec,
         auto col = row->begin();
         derivative(y[i]) = 1.0;
         tape->computeAdjoints();
-        for (std::size_t j = 0; j < domain; j++, col++) *col = derivative(v[j]);
+        for (std::size_t j = 0; j < domain; j++, col++) *col = tape->getDerivative(inslots[j]);
         tape->clearDerivatives();
     }
 }
