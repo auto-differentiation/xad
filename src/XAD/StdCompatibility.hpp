@@ -608,6 +608,11 @@ inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FRealDirect<long d
 #else
 #define _XAD_INLINE_VAR
 #endif
+// clang declares these inline in every mode (C++11/14 included): keep that, without -Wc++17-extensions
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++17-extensions"
+#endif
 
 template <>
 _XAD_INLINE_VAR constexpr bool _Is_any_of_v<xad::AReal<double, 1>, float, double, long double> =
@@ -738,6 +743,9 @@ XAD_DIRECT_IS_ANY_OF_NESTED(FReal, FRealDirect);
 #undef XAD_DIRECT_IS_ANY_OF_NESTED
 #undef XAD_DIRECT_IS_ANY_OF_SCALARS
 #undef XAD_DIRECT_IS_ANY_OF
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 #undef _XAD_INLINE_VAR
 
 #endif
