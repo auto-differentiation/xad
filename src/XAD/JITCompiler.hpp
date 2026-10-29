@@ -69,6 +69,7 @@ class JITCompiler
     explicit JITCompiler(bool activate = true)
         : backend_(std::unique_ptr<JITGraphInterpreter<Real>>(new JITGraphInterpreter<Real>()))
     {
+        width_ = backend_->vectorWidth();
         if (activate)
             activateSuspendingTape();
     }
@@ -77,6 +78,8 @@ class JITCompiler
     explicit JITCompiler(std::unique_ptr<JITBackend<Real>> backend, bool activate = true)
         : backend_(std::move(backend))
     {
+        if (backend_)
+            width_ = backend_->vectorWidth();
         if (activate)
             activateSuspendingTape();
     }
@@ -244,11 +247,7 @@ class JITCompiler
     uint32_t recordConstant(double value) { return graph_.addConstant(value); }
 
     /// Compile the recorded graph. Must be called before execution methods.
-    void compile()
-    {
-        backend_->compile(graph_);
-        width_ = backend_->vectorWidth();
-    }
+    void compile() { backend_->compile(graph_); }
 
     std::size_t vectorWidth() const { return backend_->vectorWidth(); }
     std::size_t numInputs() const { return backend_->numInputs(); }
@@ -447,7 +446,7 @@ class JITCompiler
 #endif
     JITGraph graph_;
     std::unique_ptr<JITBackend<Real>> backend_;
-    std::size_t width_ = 1;  // backend's vectorWidth(), cached by compile()
+    std::size_t width_ = 1;  // backend's vectorWidth(), cached when the backend is attached
     std::vector<active_type*> inputs_;
     std::vector<derivative_type> derivatives_;
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
