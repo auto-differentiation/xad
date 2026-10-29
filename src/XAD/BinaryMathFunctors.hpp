@@ -104,7 +104,20 @@ struct smooth_abs_op
 
 //////// max
 
-// need this complicated expression to have a kind-of smooth 2nd derivative
+namespace detail
+{
+// a, but on a tie of active values the mean of their tangents, as the derivatives split there
+// (b - a is exactly 0 then; inf - inf is not)
+template <class Scalar>
+XAD_INLINE Scalar tieOr(const Scalar& a, const Scalar& b)
+{
+    if (a == b && !isinf(a))
+        return a + (b - a) / Scalar(2);
+    return a;
+}
+}  // namespace detail
+
+// as std::max: a unless a < b
 template <class Scalar>
 struct max_op
 {
@@ -113,7 +126,7 @@ struct max_op
         if (!detail::is_active<Scalar>::value)
             return (a < b) ? b : a;
         else
-            return (a + b + abs(a - b)) / Scalar(2);
+            return (a < b) ? b : detail::tieOr(a, b);
     }
     XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
     {
@@ -161,7 +174,7 @@ struct min_op
         if (!detail::is_active<Scalar>::value)
             return (b < a) ? b : a;  // as std::min, which matters for NaN
         else
-            return (a + b - abs(a - b)) / Scalar(2);
+            return (b < a) ? b : detail::tieOr(a, b);
     }
     XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
     {
