@@ -253,6 +253,15 @@ class JITCompiler
     // every lane of a vector backend gets the registered value
     void setInputs()
     {
+        if (vectorWidth() == 1)
+        {
+            for (std::size_t i = 0; i < inputs_.size(); ++i)
+            {
+                Real value = inputs_[i]->value();
+                backend_->setInput(i, &value);
+            }
+            return;
+        }
         std::vector<Real> lanes(vectorWidth());
         for (std::size_t i = 0; i < inputs_.size(); ++i)
         {
@@ -285,23 +294,23 @@ class JITCompiler
         std::size_t nInputs = graph_.input_ids.size();
         std::size_t nOutputs = graph_.output_ids.size();
 
-        for (std::size_t i = 0; i < inputs_.size(); ++i)
-        {
-            Real value = inputs_[i]->value();
-            backend_->setInput(i, &value);
-        }
+        setInputs();
 
-        std::vector<Real> outputs(nOutputs);
-        std::vector<Real> outputAdjoints(nOutputs);
+        // a vector backend computes the same inputs in every lane; lane 0 is the result
+        const std::size_t width = vectorWidth();
+        std::vector<Real> outputs(nOutputs * width);
+        std::vector<Real> outputAdjoints(nOutputs * width);
         for (std::size_t i = 0; i < nOutputs; ++i)
-            outputAdjoints[i] = getDerivative(graph_.output_ids[i]);
-        std::vector<Real> inputGradients(nInputs);
+            std::fill_n(outputAdjoints.begin() + i * width, width,
+                        getDerivative(graph_.output_ids[i]));
+        std::vector<Real> inputGradients(nInputs * width);
         backend_->forwardAndBackwardSeeded(outputs.data(), outputAdjoints.data(),
                                            inputGradients.data());
 
         derivatives_.resize(graph_.nodeCount(), derivative_type());
         for (std::size_t i = 0; i < nInputs; ++i)
-            derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputGradients[i]);
+            derivatives_[graph_.input_ids[i]] =
+                static_cast<derivative_type>(inputGradients[i * width]);
     }
 
     // s: a variable's slot or a graph node
