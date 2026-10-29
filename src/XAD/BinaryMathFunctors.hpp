@@ -130,37 +130,21 @@ struct max_op
     }
     XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
     {
-        if (!detail::is_active<Scalar>::value)
-        {
-            if (b < a)
-                return Scalar(1);
-            else if (a < b)
-                return Scalar();
-            else
-                return Scalar(0.5);
-        }
-        else
-        {
-            return (Scalar(1) + (Scalar((a - b) > Scalar()) - Scalar((a - b) < Scalar()))) /
-                   Scalar(2);
-        }
+        if (a < b)
+            return Scalar();
+        else if (a <= b)  // a tie
+            return Scalar(0.5);
+        else  // also with a NaN operand, as the result is a
+            return Scalar(1);
     }
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
     {
-        if (!detail::is_active<Scalar>::value)
-        {
-            if (b < a)
-                return Scalar();
-            else if (a < b)
-                return Scalar(1);
-            else
-                return Scalar(0.5);
-        }
+        if (a < b)
+            return Scalar(1);
+        else if (a <= b)  // a tie
+            return Scalar(0.5);
         else
-        {
-            return (Scalar(1) - (Scalar((a - b) > Scalar()) - Scalar((a - b) < Scalar()))) /
-                   Scalar(2);
-        }
+            return Scalar();
     }
 };
 
@@ -178,37 +162,21 @@ struct min_op
     }
     XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
     {
-        if (!detail::is_active<Scalar>::value)
-        {
-            if (a < b)
-                return Scalar(1);
-            else if (b < a)
-                return Scalar();
-            else
-                return Scalar(0.5);
-        }
-        else
-        {
-            return (Scalar(1) - (Scalar((a - b) > Scalar()) - Scalar((a - b) < Scalar()))) /
-                   Scalar(2);
-        }
+        if (b < a)
+            return Scalar();
+        else if (b <= a)  // a tie
+            return Scalar(0.5);
+        else  // also with a NaN operand, as the result is a
+            return Scalar(1);
     }
     XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
     {
-        if (!detail::is_active<Scalar>::value)
-        {
-            if (a < b)
-                return Scalar();
-            else if (b < a)
-                return Scalar(1);
-            else
-                return Scalar(0.5);
-        }
+        if (b < a)
+            return Scalar(1);
+        else if (b <= a)  // a tie
+            return Scalar(0.5);
         else
-        {
-            return (Scalar(1) + (Scalar((a - b) > Scalar()) - Scalar((a - b) < Scalar()))) /
-                   Scalar(2);
-        }
+            return Scalar();
     }
 };
 

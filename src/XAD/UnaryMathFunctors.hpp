@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <XAD/BinaryMathFunctors.hpp>
 #include <XAD/Macros.hpp>
 #include <XAD/MathFunctions.hpp>
 #include <XAD/UnaryFunctors.hpp>
@@ -331,9 +332,7 @@ struct scalar_max_op
     XAD_INLINE Scalar operator()(const Scalar& a) const { return max(a, b_); }
     XAD_INLINE Scalar derivative(const Scalar& a) const
     {
-        // (1 + ((a-b)>0 - (a-b)<0)) / 2
-        return (Scalar(1) + (Scalar((a - b_) > Scalar()) - Scalar((a - b_) < Scalar()))) /
-               Scalar(2);
+        return max_op<Scalar>().derivative_a(a, b_);
     }
     Scalar b_;
 };
@@ -379,9 +378,7 @@ struct scalar_max1_op
     XAD_INLINE Scalar operator()(const Scalar& a) const { return max(b_, a); }
     XAD_INLINE Scalar derivative(const Scalar& a) const
     {
-        // (1 + ((a-b)>0 - (a-b)<0)) / 2
-        return (Scalar(1) + (Scalar((a - b_) > Scalar()) - Scalar((a - b_) < Scalar()))) /
-               Scalar(2);
+        return max_op<Scalar>().derivative_b(b_, a);
     }
     Scalar b_;
 };
@@ -393,9 +390,7 @@ struct scalar_min_op
     XAD_INLINE Scalar operator()(const Scalar& a) const { return min(a, b_); }
     XAD_INLINE Scalar derivative(const Scalar& a) const
     {
-        // (1 - ((a-b)>0 - (a-b)<0)) / 2
-        return (Scalar(1) - (Scalar((a - b_) > Scalar()) - Scalar((a - b_) < Scalar()))) /
-               Scalar(2);
+        return min_op<Scalar>().derivative_a(a, b_);
     }
     Scalar b_;
 };
@@ -429,9 +424,7 @@ struct scalar_min1_op
     XAD_INLINE Scalar operator()(const Scalar& a) const { return min(b_, a); }
     XAD_INLINE Scalar derivative(const Scalar& a) const
     {
-        // (1 - ((a-b)>0 - (a-b)<0)) / 2
-        return (Scalar(1) - (Scalar((a - b_) > Scalar()) - Scalar((a - b_) < Scalar()))) /
-               Scalar(2);
+        return min_op<Scalar>().derivative_b(b_, a);
     }
     Scalar b_;
 };
