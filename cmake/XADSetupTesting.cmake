@@ -84,7 +84,8 @@ if (XAD_ENABLE_EIGEN_TESTS)
 
         # add dependency ourselves - their CMake files seem broken
         add_library(Eigen INTERFACE)
-        target_include_directories(Eigen INTERFACE ${eigen3_SOURCE_DIR})
+        # SYSTEM, as for an installed Eigen: its headers must not trip the paranoid warnings
+        target_include_directories(Eigen SYSTEM INTERFACE ${eigen3_SOURCE_DIR})
         add_library(Eigen3::Eigen ALIAS Eigen)
     endif()
 endif()
