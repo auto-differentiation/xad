@@ -289,11 +289,15 @@ struct hash<xad::FRealDirect<T, N>>
 // libc++ 21 marks the standard type traits [[clang::no_specializations]],
 // which raises -Winvalid-specialization (a default-error warning) on the
 // specializations below; suppress it to keep behaviour identical across
-// standard libraries (libc++ internals use builtins, not the public traits)
+// standard libraries (libc++ internals use builtins, not the public traits).
+// MSVC 14.5x reports the same as C5285 (an error with /WX).
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Winvalid-specialization"
+#elif defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 5285)
 #endif
 template <class T, std::size_t N>
 struct is_floating_point<xad::AReal<T, N>> : std::is_floating_point<T>
@@ -585,6 +589,8 @@ inline constexpr bool is_trivially_copyable_v<xad::FReal<xad::FRealDirect<long d
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning(pop)
 #endif
 
 #if defined(_MSC_VER)
