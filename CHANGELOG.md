@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Licence: from this release XAD is licensed under the AGPL version 3 only (SPDX `AGPL-3.0-only`), no longer "or any later version"; the commercial licence is unchanged. Earlier releases keep their original terms.
 - Direct mode operations record one statement instead of two: the result takes over the temporary's slot
 - Direct mode mixed operators accept only arithmetic types, XAD expressions and types convertible to the direct type
 - Direct mode compound assignments return the derived type
@@ -33,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Adjoint `computeJacobian` returned swapped columns when the function swapped or move-assigned its arguments
 - `JITCompiler` passed one-value buffers to backends with `vectorWidth() > 1` (inputs, outputs, output adjoints and input gradients): it now fills every lane and reads lane 0
 - `XAD_WARNINGS_PARANOID` now applies to XAD's own tests (the option name was misspelled); MSVC C5285 on the standard type-trait specialisations is suppressed like the matching clang warning
 - Complex `+ - * /` with a scalar of the inner type, and so `log10`, did not compile for second-order types

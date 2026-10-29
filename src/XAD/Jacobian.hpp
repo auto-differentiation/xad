@@ -9,7 +9,8 @@
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published
-   by the Free Software Foundation, version 3 of the License only.
+   by the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -102,6 +103,9 @@ void computeJacobianAdj(const std::vector<Active> &vec,
     auto v(vec);
 
     tape->registerInputs(v);
+    // foo may swap or assign its arguments: read the adjoints by input slot
+    std::vector<typename Tape<T>::slot_type> inslots(v.size());
+    for (std::size_t j = 0; j < v.size(); j++) inslots[j] = v[j].getSlot();
     tape->newRecording();
     auto y = foo(v);
     std::size_t domain = vec.size();
@@ -118,7 +122,7 @@ void computeJacobianAdj(const std::vector<Active> &vec,
         auto col = row->begin();
         derivative(y[i]) = 1.0;
         tape->computeAdjoints();
-        for (std::size_t j = 0; j < domain; j++, col++) *col = derivative(v[j]);
+        for (std::size_t j = 0; j < domain; j++, col++) *col = tape->getDerivative(inslots[j]);
         tape->clearDerivatives();
     }
 }
