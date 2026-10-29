@@ -92,13 +92,18 @@ class JITCompiler
     void setBackend(std::unique_ptr<JITBackend<Real>> backend)
     {
         backend_ = std::move(backend);
+        width_ = 1;
         if (backend_)
+        {
             backend_->reset();
+            width_ = backend_->vectorWidth();
+        }
     }
 
     JITCompiler(JITCompiler&& other) noexcept
         : graph_(std::move(other.graph_)),
           backend_(std::move(other.backend_)),
+          width_(other.width_),
           inputs_(std::move(other.inputs_)),
           derivatives_(std::move(other.derivatives_))
     {
@@ -120,6 +125,7 @@ class JITCompiler
             restoreTape();
             graph_ = std::move(other.graph_);
             backend_ = std::move(other.backend_);
+            width_ = other.width_;
             inputs_ = std::move(other.inputs_);
             derivatives_ = std::move(other.derivatives_);
             takeSuspendedTape(other);
@@ -238,7 +244,11 @@ class JITCompiler
     uint32_t recordConstant(double value) { return graph_.addConstant(value); }
 
     /// Compile the recorded graph. Must be called before execution methods.
-    void compile() { backend_->compile(graph_); }
+    void compile()
+    {
+        backend_->compile(graph_);
+        width_ = backend_->vectorWidth();
+    }
 
     std::size_t vectorWidth() const { return backend_->vectorWidth(); }
     std::size_t numInputs() const { return backend_->numInputs(); }
@@ -249,38 +259,17 @@ class JITCompiler
         backend_->setInput(inputIndex, values);
     }
 
-  private:
-    // every lane of a vector backend gets the registered value
-    void setInputs()
-    {
-        if (vectorWidth() == 1)
-        {
-            for (std::size_t i = 0; i < inputs_.size(); ++i)
-            {
-                Real value = inputs_[i]->value();
-                backend_->setInput(i, &value);
-            }
-            return;
-        }
-        std::vector<Real> lanes(vectorWidth());
-        for (std::size_t i = 0; i < inputs_.size(); ++i)
-        {
-            std::fill(lanes.begin(), lanes.end(), inputs_[i]->value());
-            backend_->setInput(i, lanes.data());
-        }
-    }
-
-  public:
     /// Execute forward pass using registered input pointers.
     void forward(Real* outputs)
     {
-        setInputs();
-        const std::size_t width = vectorWidth();
-        if (width == 1)
-            return backend_->forward(outputs);
-        std::vector<Real> lanes(graph_.output_ids.size() * width);
-        backend_->forward(lanes.data());
-        for (std::size_t i = 0; i < graph_.output_ids.size(); ++i) outputs[i] = lanes[i * width];
+        if (width_ != 1)
+            return forwardLanes(outputs);
+        for (std::size_t i = 0; i < inputs_.size(); ++i)
+        {
+            Real value = inputs_[i]->value();
+            backend_->setInput(i, &value);
+        }
+        backend_->forward(outputs);
     }
 
     void forwardAndBackward(Real* outputs, Real* inputGradients)
@@ -291,28 +280,73 @@ class JITCompiler
     /// Compute adjoints using registered input pointers.
     void computeAdjoints()
     {
+        if (width_ != 1)
+            return computeAdjointsLanes();
         std::size_t nInputs = graph_.input_ids.size();
         std::size_t nOutputs = graph_.output_ids.size();
 
-        setInputs();
+        for (std::size_t i = 0; i < inputs_.size(); ++i)
+        {
+            Real value = inputs_[i]->value();
+            backend_->setInput(i, &value);
+        }
 
-        // a vector backend computes the same inputs in every lane; lane 0 is the result
-        const std::size_t width = vectorWidth();
-        std::vector<Real> outputs(nOutputs * width);
-        std::vector<Real> outputAdjoints(nOutputs * width);
+        std::vector<Real> outputs(nOutputs);
+        std::vector<Real> outputAdjoints(nOutputs);
         for (std::size_t i = 0; i < nOutputs; ++i)
-            std::fill_n(outputAdjoints.begin() + i * width, width,
+            outputAdjoints[i] = getDerivative(graph_.output_ids[i]);
+        std::vector<Real> inputGradients(nInputs);
+        backend_->forwardAndBackwardSeeded(outputs.data(), outputAdjoints.data(),
+                                           inputGradients.data());
+
+        derivatives_.resize(graph_.nodeCount(), derivative_type());
+        for (std::size_t i = 0; i < nInputs; ++i)
+            derivatives_[graph_.input_ids[i]] = static_cast<derivative_type>(inputGradients[i]);
+    }
+
+  private:
+    // a vector backend computes the same inputs in every lane; lane 0 is the result
+    void setInputLanes()
+    {
+        std::vector<Real> lanes(width_);
+        for (std::size_t i = 0; i < inputs_.size(); ++i)
+        {
+            std::fill(lanes.begin(), lanes.end(), inputs_[i]->value());
+            backend_->setInput(i, lanes.data());
+        }
+    }
+
+    void forwardLanes(Real* outputs)
+    {
+        setInputLanes();
+        std::vector<Real> lanes(graph_.output_ids.size() * width_);
+        backend_->forward(lanes.data());
+        for (std::size_t i = 0; i < graph_.output_ids.size(); ++i) outputs[i] = lanes[i * width_];
+    }
+
+    void computeAdjointsLanes()
+    {
+        std::size_t nInputs = graph_.input_ids.size();
+        std::size_t nOutputs = graph_.output_ids.size();
+
+        setInputLanes();
+
+        std::vector<Real> outputs(nOutputs * width_);
+        std::vector<Real> outputAdjoints(nOutputs * width_);
+        for (std::size_t i = 0; i < nOutputs; ++i)
+            std::fill_n(outputAdjoints.begin() + i * width_, width_,
                         getDerivative(graph_.output_ids[i]));
-        std::vector<Real> inputGradients(nInputs * width);
+        std::vector<Real> inputGradients(nInputs * width_);
         backend_->forwardAndBackwardSeeded(outputs.data(), outputAdjoints.data(),
                                            inputGradients.data());
 
         derivatives_.resize(graph_.nodeCount(), derivative_type());
         for (std::size_t i = 0; i < nInputs; ++i)
             derivatives_[graph_.input_ids[i]] =
-                static_cast<derivative_type>(inputGradients[i * width]);
+                static_cast<derivative_type>(inputGradients[i * width_]);
     }
 
+  public:
     // s: a variable's slot or a graph node
     derivative_type& derivative(slot_type s)
     {
@@ -413,6 +447,7 @@ class JITCompiler
 #endif
     JITGraph graph_;
     std::unique_ptr<JITBackend<Real>> backend_;
+    std::size_t width_ = 1;  // backend's vectorWidth(), cached by compile()
     std::vector<active_type*> inputs_;
     std::vector<derivative_type> derivatives_;
     derivative_type zero_ = derivative_type();  // Thread-safe zero for out-of-range derivative access
