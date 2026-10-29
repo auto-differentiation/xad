@@ -333,7 +333,7 @@ class JITCompiler
         std::vector<Real> outputs(nOutputs * width_);
         std::vector<Real> outputAdjoints(nOutputs * width_);
         for (std::size_t i = 0; i < nOutputs; ++i)
-            std::fill_n(outputAdjoints.begin() + i * width_, width_,
+            std::fill_n(outputAdjoints.data() + i * width_, width_,
                         getDerivative(graph_.output_ids[i]));
         std::vector<Real> inputGradients(nInputs * width_);
         backend_->forwardAndBackwardSeeded(outputs.data(), outputAdjoints.data(),
