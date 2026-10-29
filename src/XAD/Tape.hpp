@@ -148,7 +148,7 @@ class Tape
 
     XAD_INLINE void registerInput(active_type& inp)
     {
-        if (!inp.isOn(this))  // already registered
+        if (!isRegistered(inp))
         {
             inp.registerOn(this);
             pushLhs(inp.slot_);
@@ -174,7 +174,7 @@ class Tape
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (!outp.isOn(this))
+        if (!isRegistered(outp))
         {
             outp.registerOn(this);
             pushLhs(outp.slot_);
@@ -351,6 +351,15 @@ class Tape
         currentRec_->maxDerivative_ =
             (std::max)(currentRec_->iDerivative_, currentRec_->maxDerivative_);
         return currentRec_->iDerivative_ - 1;
+    }
+    // whether v holds a live slot of this tape, not one clearAll or resetTo gave up
+    XAD_INLINE bool isRegistered(const active_type& v) const
+    {
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
+        if (!v.isOn(this))  // another tape's or a JIT slot
+            return false;
+#endif
+        return v.slot_ < currentRec_->iDerivative_;  // false for INVALID_SLOT too
     }
 
 #ifndef XAD_SHARED_LIBS
