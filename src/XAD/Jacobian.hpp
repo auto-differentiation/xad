@@ -222,9 +222,12 @@ void computeJacobianFwd(const std::vector<Active> &vec,
     static_assert(detail::has_begin<typename std::iterator_traits<RowIterator>::value_type>::value,
                   "RowIterator must dereference to a type that implements a begin() method");
 
-    auto v(vec);
     std::size_t domain = vec.size();
-    codomain = (codomain == 0) ? foo(v).size() : codomain;
+    if (codomain == 0)
+    {
+        auto v(vec);
+        codomain = foo(v).size();
+    }
 
     if (static_cast<std::size_t>(std::distance(first, last)) != codomain)
         throw OutOfRange("Iterator allocated space doesn't equal codomain");
@@ -232,13 +235,14 @@ void computeJacobianFwd(const std::vector<Active> &vec,
     auto row = first;
     for (std::size_t i = 0; i < domain; i++)
     {
+        // fresh inputs for each call, as foo may change them
+        auto v(vec);
         derivative(v[i]) = 1.0;
         auto y = foo(v);
         if (i == 0) { // only check once; codomain won't change on further iterations
             if (y.size() != codomain)
                 throw OutOfRange("Iterator allocated space doesn't equal codomain");
         }
-        derivative(v[i]) = 0.0;
         for (std::size_t j = 0; j < codomain; j++)
         {
             row = first;

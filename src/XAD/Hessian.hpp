@@ -79,7 +79,9 @@ void computeHessianFwdAdj(const std::vector<Active> &vec,
     {
         derivative(value(v[i])) = 1.0;
         tape->newRecording();
-        Active y = foo(v);
+        // fresh inputs for each call, as foo may change them
+        auto w(v);
+        Active y = foo(w);
         tape->registerOutput(y);
         value(derivative(y)) = 1.0;
         tape->computeAdjoints();
@@ -167,7 +169,9 @@ void computeHessianFwdFwd(const std::vector<Active> &vec,
         for (std::size_t j = 0; j < domain; j++, col++)
         {
             derivative(value(v[j])) = 1.0;
-            Active y = foo(v);
+            // fresh inputs for each call, as foo may change them
+            auto w(v);
+            Active y = foo(w);
             *col = derivative(derivative(y));
             derivative(value(v[j])) = 0.0;
         }
