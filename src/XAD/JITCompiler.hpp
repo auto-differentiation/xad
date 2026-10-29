@@ -34,6 +34,7 @@
 #include <XAD/Macros.hpp>
 #include <XAD/Tape.hpp>
 #include <XAD/Traits.hpp>
+#include <algorithm>
 #include <complex>
 #include <memory>
 #include <vector>
@@ -248,15 +249,29 @@ class JITCompiler
         backend_->setInput(inputIndex, values);
     }
 
+  private:
+    // every lane of a vector backend gets the registered value
+    void setInputs()
+    {
+        std::vector<Real> lanes(vectorWidth());
+        for (std::size_t i = 0; i < inputs_.size(); ++i)
+        {
+            std::fill(lanes.begin(), lanes.end(), inputs_[i]->value());
+            backend_->setInput(i, lanes.data());
+        }
+    }
+
+  public:
     /// Execute forward pass using registered input pointers.
     void forward(Real* outputs)
     {
-        for (std::size_t i = 0; i < inputs_.size(); ++i)
-        {
-            Real value = inputs_[i]->value();
-            backend_->setInput(i, &value);
-        }
-        backend_->forward(outputs);
+        setInputs();
+        const std::size_t width = vectorWidth();
+        if (width == 1)
+            return backend_->forward(outputs);
+        std::vector<Real> lanes(graph_.output_ids.size() * width);
+        backend_->forward(lanes.data());
+        for (std::size_t i = 0; i < graph_.output_ids.size(); ++i) outputs[i] = lanes[i * width];
     }
 
     void forwardAndBackward(Real* outputs, Real* inputGradients)
