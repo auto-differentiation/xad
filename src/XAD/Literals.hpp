@@ -687,6 +687,15 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
     if (auto* s = tape_type::getActive())
     {
+#ifdef XAD_LINEAR_SLOTS
+        if (o.shouldRecord())
+        {
+            // linear slots: share the slot of o, which no later statement writes
+            slot_ = o.slot_;
+            copyTape(o);
+        }
+        else
+#endif
         if (o.shouldRecord() || this->shouldRecord())
             recordCopy(s, o);
     }
@@ -768,7 +777,12 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
             if (info.index != 0 || isOn(s))
             {
 #endif
+#ifdef XAD_LINEAR_SLOTS
+                // linear slots: every assignment writes a new slot, as copies may share the old one
+                slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
+#else
                 s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
+#endif
                 setTape(s);
 #ifdef XAD_SKIP_ZERO_PARTIALS
             }
@@ -777,8 +791,12 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
             // all partials zero: a passive lhs stays passive, an active one gets an empty statement
             if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0 || isOn(s))
             {
+#ifdef XAD_LINEAR_SLOTS
+                registerOn(s);  // linear slots: a new slot, as copies may share the old one
+#else
                 if (!isOn(s))
                     registerOn(s);
+#endif
                 s->pushLhs(slot_);
             }
 #else
@@ -786,8 +804,12 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
             // only register this variable after evaluating the expression, as this
             // variable might appear on the rhs of the equation too and if not yet
             // registered, it doesn't need recording of derivatives
+#ifdef XAD_LINEAR_SLOTS
+            registerOn(s);  // linear slots: a new slot, as copies may share the old one
+#else
             if (!isOn(s))
                 registerOn(s);
+#endif
             s->pushLhs(slot_);
 #endif
         }
