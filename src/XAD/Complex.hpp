@@ -61,6 +61,12 @@ class complex_impl
     {
     }
 
+    XAD_FORCE_INLINE complex_impl(const complex_impl&) = default;
+    XAD_FORCE_INLINE complex_impl(complex_impl&&) = default;
+    complex_impl& operator=(const complex_impl&) = default;
+    complex_impl& operator=(complex_impl&&) = default;
+    XAD_FORCE_INLINE ~complex_impl() = default;
+
     template <class X>
     XAD_INLINE complex_impl& operator=(const X& other)
     {
@@ -133,6 +139,12 @@ class complex<xad::ADTypeBase<Scalar, T, Deriv>> : public xad::detail::complex_i
     typedef T value_type;
 
     complex(const T& areal = T(), const T& aimag = T()) : base(areal, aimag) {}
+
+    XAD_FORCE_INLINE complex(const complex&) = default;
+    XAD_FORCE_INLINE complex(complex&&) = default;
+    complex& operator=(const complex&) = default;
+    complex& operator=(complex&&) = default;
+    XAD_FORCE_INLINE ~complex() = default;
 
     XAD_INLINE complex<T>& derived() { return static_cast<complex<T>&>(*this); }
 
@@ -288,6 +300,12 @@ class complex<xad::AReal<T, N>>
         : base(xad::AReal<T, N>(o.real()), xad::AReal<T, N>(o.imag()))
     {
     }
+
+    XAD_FORCE_INLINE complex(const complex&) = default;
+    XAD_FORCE_INLINE complex(complex&&) = default;
+    complex& operator=(const complex&) = default;
+    complex& operator=(complex&&) = default;
+    XAD_FORCE_INLINE ~complex() = default;
 
     using base::operator+=;
     using base::operator-=;
