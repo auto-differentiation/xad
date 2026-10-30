@@ -355,28 +355,32 @@ XAD_COMPARE_OPERATOR(>)
 XAD_BINARY_OPERATOR(remainder, remainder_op)
 
 // manual remquo due to additional argument
-template <class Scalar, class Expr1, class Expr2>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, Expr1, Expr2> remquo(
-    const Expression<Scalar, Expr1>& a, const Expression<Scalar, Expr2>& b, int* quo)
+template <class Scalar, class Expr1, class Expr2, class DerivativeType>
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, Expr1, Expr2, DerivativeType> remquo(
+    const Expression<Scalar, Expr1, DerivativeType>& a,
+    const Expression<Scalar, Expr2, DerivativeType>& b, int* quo)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, Expr1, Expr2>(a.derived(), b.derived(),
-                                                               remquo_op<Scalar>(quo));
+    return BinaryExpr<Scalar, remquo_op<Scalar>, Expr1, Expr2, DerivativeType>(
+        a.derived(), b.derived(), remquo_op<Scalar>(quo));
 }
 
 template <class Scalar, std::size_t M>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, ADVar<Scalar, M>, ADVar<Scalar, M>> remquo(
-    const AReal<Scalar, M>& a, const AReal<Scalar, M>& b, int* quo)
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, ADVar<Scalar, M>, ADVar<Scalar, M>,
+                      typename DerivativesTraits<Scalar, M>::type>
+remquo(const AReal<Scalar, M>& a, const AReal<Scalar, M>& b, int* quo)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, ADVar<Scalar, M>, ADVar<Scalar, M>>(
+    return BinaryExpr<Scalar, remquo_op<Scalar>, ADVar<Scalar, M>, ADVar<Scalar, M>,
+                      typename DerivativesTraits<Scalar, M>::type>(
         ADVar<Scalar, M>(a), ADVar<Scalar, M>(b), remquo_op<Scalar>(quo));
 }
 
 template <class Scalar, std::size_t N>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar, N>, FReal<Scalar, N>> remquo(
-    const FReal<Scalar, N>& a, const FReal<Scalar, N>& b, int* quo)
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar, N>, FReal<Scalar, N>,
+                      typename FReal<Scalar, N>::derivative_type>
+remquo(const FReal<Scalar, N>& a, const FReal<Scalar, N>& b, int* quo)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar, N>, FReal<Scalar, N>>(
-        a, b, remquo_op<Scalar>(quo));
+    return BinaryExpr<Scalar, remquo_op<Scalar>, FReal<Scalar, N>, FReal<Scalar, N>,
+                      typename FReal<Scalar, N>::derivative_type>(a, b, remquo_op<Scalar>(quo));
 }
 
 template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,
@@ -423,20 +427,26 @@ XAD_INLINE xad::ARealDirect<T, N> remquo(const T& a, const xad::ARealDirect<T, N
     return xad::AReal<T, N>(remquo(a, b.base(), c));
 }
 
-template <class Scalar, class Expr>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, typename ExprTraits<Expr>::value_type, Expr>
-remquo(const typename ExprTraits<Expr>::value_type& a, const Expression<Scalar, Expr>& b, int* quo)
+template <class Scalar, class Expr, class DerivativeType>
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, typename ExprTraits<Expr>::value_type, Expr,
+                      DerivativeType>
+remquo(const typename ExprTraits<Expr>::value_type& a,
+       const Expression<Scalar, Expr, DerivativeType>& b, int* quo)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, typename ExprTraits<Expr>::value_type, Expr>(
-        typename ExprTraits<Expr>::value_type(a), b.derived(), remquo_op<Scalar>(quo));
+    return BinaryExpr<Scalar, remquo_op<Scalar>, typename ExprTraits<Expr>::value_type, Expr,
+                      DerivativeType>(typename ExprTraits<Expr>::value_type(a), b.derived(),
+                                      remquo_op<Scalar>(quo));
 }
 
-template <class Scalar, class Expr>
-XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename ExprTraits<Expr>::value_type>
-remquo(const Expression<Scalar, Expr>& a, const typename ExprTraits<Expr>::value_type& b, int* quo)
+template <class Scalar, class Expr, class DerivativeType>
+XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename ExprTraits<Expr>::value_type,
+                      DerivativeType>
+remquo(const Expression<Scalar, Expr, DerivativeType>& a,
+       const typename ExprTraits<Expr>::value_type& b, int* quo)
 {
-    return BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename ExprTraits<Expr>::value_type>(
-        a.derived(), typename ExprTraits<Expr>::value_type(b), remquo_op<Scalar>(quo));
+    return BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename ExprTraits<Expr>::value_type,
+                      DerivativeType>(a.derived(), typename ExprTraits<Expr>::value_type(b),
+                                      remquo_op<Scalar>(quo));
 }
 
 template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,

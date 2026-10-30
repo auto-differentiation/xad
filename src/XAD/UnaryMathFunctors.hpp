@@ -207,17 +207,22 @@ struct ldexp_op
 template <class Scalar>
 struct frexp_op
 {
-    XAD_INLINE explicit frexp_op(int* exp) : exp_(exp) {}
-    XAD_INLINE Scalar operator()(const Scalar& a) const { return frexp(a, exp_); }
+    XAD_INLINE explicit frexp_op(int* exp) : exp_(exp), e_(0) {}
+    XAD_INLINE Scalar operator()(const Scalar& a) const
+    {
+        Scalar r = frexp(a, exp_);
+        e_ = *exp_;
+        return r;
+    }
     XAD_INLINE Scalar derivative(const Scalar&) const
     {
-        // we assume that operator() and derivative are called in succession and in
-        // this order, which is always the case in XAD. Therefore we can read the
-        // value in *exp_ here to calculate the derivative
+        // own copy of the exponent: *exp_ may be overwritten by a later frexp in the
+        // same expression before derivatives are computed
         using std::ldexp;
-        return Scalar(ldexp(typename ExprTraits<Scalar>::nested_type(1), -*exp_));
+        return Scalar(ldexp(typename ExprTraits<Scalar>::nested_type(1), -e_));
     }
     int* exp_;
+    mutable int e_;
 };
 
 namespace detail
