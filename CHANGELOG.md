@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adjoints are value-initialised instead of copied when a recording first uses them: ~5% faster for many small recordings with `clearAll`
 - Recording an `AReal` from an expression and `Tape::pushLhs` are always inlined, `Tape::derivative` is inlined when the adjoints are already initialised, and with `XAD_TAPE_REUSE_SLOTS` so are registering and freeing a slot at the end of the tape
 - Copying an `AReal` (construction and assignment) is always inlined, its slot counters are updated with scalar code (no stalled vector load), and the reverse sweep runs over flat arrays when a recording fits in one chunk
+- Copying, moving and destroying a `std::complex<AReal>` is always inlined: about 2.8x faster AD for complex-heavy code (a Rough Heston engine) with `XAD_USE_STRONG_INLINE`
 
 ### Deprecated
 
