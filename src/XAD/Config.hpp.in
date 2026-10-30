@@ -54,6 +54,9 @@
 // Back large tape chunks with transparent huge pages on Linux
 #cmakedefine XAD_HUGE_PAGES
 
+// linear slots: copies share the slot of the source
+#cmakedefine XAD_LINEAR_SLOTS
+
 // skip recording partial derivatives that are exactly zero
 #cmakedefine XAD_SKIP_ZERO_PARTIALS
 
