@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `XAD_WARNINGS_PARANOID` now applies to XAD's own tests (the option name was misspelled); MSVC C5285 on the standard type-trait specialisations is suppressed like the matching clang warning
 - Complex `+ - * /` with a scalar of the inner type, and so `log10`, did not compile for second-order types
 - Complex `acosh` of a real in (-1, 1) had a real part of -1e-16, not +0
+- JIT recording took quadratic time in the number of distinct constants
 - `XAD/Version.hpp` defined empty version numbers
 - Linux aarch64 builds no longer get x86 SIMD flags
 - Debug builds with Visual Studio 2026 (MSVC 14.5x): its standard library no longer has `stdext::checked_array_iterator`

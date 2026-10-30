@@ -34,6 +34,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <unordered_map>
 #include <vector>
 
 namespace xad
@@ -140,6 +141,8 @@ struct JITGraph
     {
         nodes.clear();
         const_pool.clear();
+        const_index_.clear();
+        const_indexed_ = 0;
         input_ids.clear();
         output_ids.clear();
     }
@@ -173,15 +176,19 @@ struct JITGraph
 
     uint32_t addConstant(double value)
     {
-        for (std::size_t i = 0; i < const_pool.size(); ++i)
+        const std::size_t n = const_pool.size();
+        std::size_t i = 0;
+        if (n <= LINEAR_CONSTANTS)
         {
             // bitwise, so -0.0 and 0.0 stay apart
-            if (std::memcmp(&const_pool[i], &value, sizeof(double)) == 0)
-                return addNode(JITOpCode::Constant, 0, 0, 0, static_cast<double>(i));
+            while (i < n && std::memcmp(&const_pool[i], &value, sizeof(double)) != 0)
+                ++i;
+            if (i == n)
+                const_pool.push_back(value);
         }
-        uint32_t poolIndex = static_cast<uint32_t>(const_pool.size());
-        const_pool.push_back(value);
-        return addNode(JITOpCode::Constant, 0, 0, 0, static_cast<double>(poolIndex));
+        else
+            i = findOrAddIndexed(value);
+        return addNode(JITOpCode::Constant, 0, 0, 0, static_cast<double>(i));
     }
 
     uint32_t addInput()
@@ -208,6 +215,39 @@ struct JITGraph
     {
         throw OutOfRange("too many JIT graph nodes");
     }
+
+    static uint64_t bitsOf(double v)
+    {
+        uint64_t bits;
+        std::memcpy(&bits, &v, sizeof(double));
+        return bits;
+    }
+
+    // small pools are scanned, larger ones indexed
+    static constexpr std::size_t LINEAR_CONSTANTS = 32;
+
+    // pool index of the constant, added if new; out of line, so small pools pay nothing for it
+    XAD_NEVER_INLINE std::size_t findOrAddIndexed(double value)
+    {
+        const uint64_t bits = bitsOf(value);
+        // first index of each constant; also picks up constants pushed to const_pool directly
+        if (const_indexed_ > const_pool.size())
+        {
+            const_index_.clear();
+            const_indexed_ = 0;
+        }
+        for (; const_indexed_ < const_pool.size(); ++const_indexed_)
+            const_index_.emplace(bitsOf(const_pool[const_indexed_]),
+                                 static_cast<uint32_t>(const_indexed_));
+        auto it = const_index_.find(bits);
+        if (it != const_index_.end() && bitsOf(const_pool[it->second]) == bits)
+            return it->second;
+        const_pool.push_back(value);
+        return const_pool.size() - 1;
+    }
+
+    std::unordered_map<uint64_t, uint32_t> const_index_;
+    std::size_t const_indexed_ = 0;
 };
 
 }  // namespace xad
