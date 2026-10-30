@@ -221,12 +221,19 @@ struct AReal
     {
         if (auto* s = tape_type::getActive())
         {
+#ifdef XAD_LINEAR_SLOTS
+            // linear slots: a slot is written by one statement only, so a copy shares it
+            XAD_UNUSED_VARIABLE(s);
+            slot_ = o.slot_;
+            copyTape(o);
+#else
             if (o.shouldRecord())
             {
                 registerOn(s);
                 pushAll<1>(s, o);
                 s->pushLhs(slot_);
             }
+#endif
         }
 #ifdef XAD_ENABLE_JIT
         else if (getActiveJit() != nullptr)
@@ -592,10 +599,16 @@ struct AReal
     XAD_INLINE bool isOn(const tape_type* t) const { return shouldRecord() && tapeId_ == t->id_; }
     XAD_INLINE void setTape(const tape_type* t) { tapeId_ = t->id_; }
     XAD_INLINE void swapTape(AReal& o) { std::swap(tapeId_, o.tapeId_); }
+#ifdef XAD_LINEAR_SLOTS
+    XAD_INLINE void copyTape(const AReal& o) { tapeId_ = o.tapeId_; }
+#endif
 #else
     XAD_INLINE bool isOn(const tape_type*) const { return shouldRecord(); }
     XAD_INLINE void setTape(const tape_type*) {}
     XAD_INLINE void swapTape(AReal&) {}
+#ifdef XAD_LINEAR_SLOTS
+    XAD_INLINE void copyTape(const AReal&) {}
+#endif
 #endif
 
     template <class T, std::size_t d__cnt>
