@@ -646,12 +646,12 @@ void Tape<T, N>::initDerivatives()
         std::fill(derivatives_.begin() + currentRec_->startDerivative_, derivatives_.end(), T());
     }
 
-    derivatives_.resize(currentRec_->maxDerivative_, Tape<T, N>::derivative_type());
+    derivatives_.resize(currentRec_->maxDerivative_);
     currentRec_->derivativesInitialized_ = true;
 }
 
 template <class T, std::size_t N>
-typename Tape<T, N>::derivative_type& Tape<T, N>::derivative(slot_type s)
+typename Tape<T, N>::derivative_type& Tape<T, N>::derivativeSlow(slot_type s)
 {
     if (s >= currentRec_->maxDerivative_)
         throw OutOfRange("given derivative slot is out of range - did you register the outputs?");
@@ -862,6 +862,28 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
     auto chunk_it = statement_.chunk_begin() + startchunk;
     auto chunk_eit = statement_.chunk_begin() + endchunk - 1;
     const int chunksz = int(s_type::chunk_size);
+
+    // fast path: the statements in one chunk and their operations in one chunk. endcidx > 0 keeps
+    // sts[i - 1] inside the chunk (endcidx == 0 needs the previous chunk's last statement).
+    if (startchunk == endchunk && endcidx > 0)
+    {
+        const auto* sts = *chunk_it;
+        auto ops = operations_.flat(sts[endcidx - 1].first, sts[idx].first);
+        if (ops)
+        {
+            derivative_type* der = derivatives_.data();
+            for (auto i = idx; i >= endcidx; --i)
+            {
+                const auto st = sts[i];
+                derivative_type a = der[st.second];
+                der[st.second] = derivative_type();
+                if (!detail::isZeroAdjoint(a))
+                    ops.for_each(sts[i - 1].first, st.first,
+                                 [&](const T& mul, slot_type slot) { der[slot] += mul * a; });
+            }
+            return;
+        }
+    }
 
     for (; chunk_it != chunk_eit; --chunk_it)
     {

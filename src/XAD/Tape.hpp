@@ -235,7 +235,13 @@ class Tape
 
     // derivatives
     void clearDerivatives();
-    derivative_type& derivative(slot_type s);
+    derivative_type& derivative(slot_type s)
+    {
+        if (XAD_LIKELY(s < currentRec_->maxDerivative_ && currentRec_->derivativesInitialized_ &&
+                       derivatives_.size() == currentRec_->maxDerivative_))
+            return derivatives_[s];
+        return derivativeSlow(s);
+    }
     const derivative_type& derivative(slot_type s) const;
 
     derivative_type getDerivative(slot_type s) const { return derivative(s); }
@@ -281,6 +287,8 @@ class Tape
     {
         ++currentRec_->numDerivatives_;
 #ifdef XAD_TAPE_REUSE_SLOTS
+        if (currentRec_->startRange_ == reusable_ranges_.end())  // no free slots
+            return registerVariableAtEnd();
         return registerVariableReuseSlots();
 #else
         return registerVariableAtEnd();
@@ -298,11 +306,19 @@ class Tape
             freeWatchedSlot(slot);
 #endif
 #else
+        SubRecording* r = currentRec_;
+        if (slot == r->iDerivative_ - 1 &&
+            r->startRange_ == reusable_ranges_.end())  // at the end, no free slots
+        {
+            --r->numDerivatives_;
+            r->iDerivative_ = slot;
+            return;
+        }
         unregisterVariableReuseSlots(slot);
 #endif
     }
 
-    XAD_INLINE void pushLhs(slot_type slot)
+    XAD_FORCE_INLINE void pushLhs(slot_type slot)
     {
         assert(slot != INVALID_SLOT);
         statement_.emplace_back(size_type(operations_.size()), slot);
@@ -349,12 +365,16 @@ class Tape
     void resetMovedFrom();
     void computeAdjointsToImpl(position_type pos, position_type start);
     void initDerivatives();
+    derivative_type& derivativeSlow(slot_type s);
     XAD_INLINE slot_type registerVariableAtEnd()
     {
-        ++currentRec_->iDerivative_;
-        currentRec_->maxDerivative_ =
-            (std::max)(currentRec_->iDerivative_, currentRec_->maxDerivative_);
-        return currentRec_->iDerivative_ - 1;
+        SubRecording* r = currentRec_;
+        const slot_type s = r->iDerivative_;
+        const slot_type n = s + 1;
+        r->iDerivative_ = n;
+        if (n > r->maxDerivative_)
+            r->maxDerivative_ = n;
+        return s;
     }
     // whether v holds a live slot of this tape, not one clearAll or resetTo gave up
     XAD_INLINE bool isRegistered(const active_type& v) const
@@ -427,8 +447,7 @@ class Tape
     struct SubRecording
     {
         explicit SubRecording(Tape<Real, N>* parent)
-            : numDerivatives_(),
-              iDerivative_(),
+            : iDerivative_(),
               maxDerivative_(),
               statementStartPos_(1),
               opStartPos_(),
@@ -441,11 +460,11 @@ class Tape
               startRange_(parent->reusable_ranges_.end()),
               latestRange_(parent->reusable_ranges_.end()),
 #endif
-              derivativesInitialized_(false)
+              derivativesInitialized_(false),
+              numDerivatives_()
         {
             XAD_UNUSED_VARIABLE(parent);
         }
-        slot_type numDerivatives_;
         slot_type iDerivative_;
         slot_type maxDerivative_;
         slot_type statementStartPos_;
@@ -460,6 +479,7 @@ class Tape
         range_list::iterator latestRange_;
 #endif
         bool derivativesInitialized_;
+        slot_type numDerivatives_;
     };
     std::stack<SubRecording> nestedRecordings_;
     SubRecording* currentRec_;

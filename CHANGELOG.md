@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Direct mode compound assignments return the derived type
 - Expression math tests run on the direct mode types themselves
 - With `XAD_TAPE_REUSE_SLOTS`, freeing slots out of order takes logarithmic instead of linear time in the number of reusable slot ranges
+- Adjoints are value-initialised instead of copied when a recording first uses them: ~5% faster for many small recordings with `clearAll`
+- Recording an `AReal` from an expression and `Tape::pushLhs` are always inlined, `Tape::derivative` is inlined when the adjoints are already initialised, and with `XAD_TAPE_REUSE_SLOTS` so are registering and freeing a slot at the end of the tape
+- Copying an `AReal` (construction and assignment) is always inlined, its slot counters are updated with scalar code (no stalled vector load), and the reverse sweep runs over flat arrays when a recording fits in one chunk
 
 ### Deprecated
 

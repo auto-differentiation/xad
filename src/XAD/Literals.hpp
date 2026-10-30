@@ -217,7 +217,7 @@ struct AReal
     {
     }
 
-    XAD_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
+    XAD_FORCE_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
     {
         if (auto* s = tape_type::getActive())
         {
@@ -268,7 +268,7 @@ struct AReal
                 tape->unregisterVariable(slot_);
     }
 
-    XAD_INLINE AReal& operator=(const AReal& o);
+    XAD_FORCE_INLINE AReal& operator=(const AReal& o);
 
     XAD_INLINE AReal& operator=(nested_type x)
     {
@@ -284,8 +284,8 @@ struct AReal
     }
 
     template <class Expr>
-    XAD_INLINE AReal(const Expression<Scalar, Expr, derivative_type>&
-                         expr);  // cppcheck-suppress noExplicitConstructor
+    XAD_FORCE_INLINE AReal(const Expression<Scalar, Expr, derivative_type>&
+                               expr);  // cppcheck-suppress noExplicitConstructor
 
     template <class Expr>
     XAD_INLINE AReal& operator=(const Expression<Scalar, Expr, derivative_type>& expr);
@@ -357,9 +357,10 @@ struct AReal
     }
     XAD_INLINE void dropJitNode(std::false_type) {}
 
+    // out of line: inlined into the force-inlined constructor, it slowed down JIT recording
     template <class Expr>
-    XAD_INLINE void tryRecordJitFromExprCtor(const Expression<Scalar, Expr, derivative_type>& expr,
-                                             std::true_type)
+    XAD_NEVER_INLINE void tryRecordJitFromExprCtor(
+        const Expression<Scalar, Expr, derivative_type>& expr, std::true_type)
     {
         if (auto* j = jit_type::getActive())
         {
@@ -632,7 +633,7 @@ struct ADVar
 };
 
 template <class Scalar, std::size_t M>
-XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
+XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
     if (auto* s = tape_type::getActive())
     {
@@ -660,7 +661,7 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 
 template <class Scalar, std::size_t M>
 template <class Expr>
-XAD_INLINE AReal<Scalar, M>::AReal(
+XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
     : base_type(expr.getValue()), slot_(INVALID_SLOT)
 {
