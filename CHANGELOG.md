@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `+=`, `-=`, `*=` and `/=` of a `double` on nested types such as `AReal<FReal<double>>` were ambiguous
+- `copysign` of a nested active magnitude and a `double` was ambiguous with `StdCompatibility.hpp` on libc++
+- Two `frexp` in one expression sharing the exponent pointer gave the first one the second's derivative
+- `remquo` of two active values did not compile in vector modes
 - `registerInput` and `registerOutput` after `clearAll` skipped variables kept from the previous recording, whose slot the next variable then shared
 - Adjoint `computeJacobian` returned swapped columns when the function swapped or move-assigned its arguments
 - `JITCompiler` passed one-value buffers to backends with `vectorWidth() > 1` (inputs, outputs, output adjoints and input gradients): it now fills every lane and reads lane 0
