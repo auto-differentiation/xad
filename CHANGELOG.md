@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complex `+ - * /` with a scalar of the inner type, and so `log10`, did not compile for second-order types
 - Complex `acosh` of a real in (-1, 1) had a real part of -1e-16, not +0
 - JIT recording took quadratic time in the number of distinct constants
+- `max` and `min` of second-order types rounded, overflowed or gave NaN for distant, huge, infinite or NaN operands: they now return the operand as `std::max` and `std::min`
+- `max` and `min` with a NaN operand split the derivative half to each operand: it now goes to the operand returned
 - `XAD/Version.hpp` defined empty version numbers
 - Linux aarch64 builds no longer get x86 SIMD flags
 - Debug builds with Visual Studio 2026 (MSVC 14.5x): its standard library no longer has `stdext::checked_array_iterator`
