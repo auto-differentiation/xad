@@ -394,26 +394,14 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
                 nodeAdjoints[b] += adj * vResult * std::log(va);
             break;
         case JITOpCode::Min:
-            if (va < vb)
-                nodeAdjoints[a] += adj;
-            else if (vb < va)
-                nodeAdjoints[b] += adj;
-            else  // va == vb
-            {
-                nodeAdjoints[a] += adj * Scalar(0.5);
-                nodeAdjoints[b] += adj * Scalar(0.5);
-            }
-            break;
         case JITOpCode::Max:
-            if (vb < va)
-                nodeAdjoints[a] += adj;
-            else if (va < vb)
-                nodeAdjoints[b] += adj;
-            else  // va == vb
+            if (va == vb)
             {
                 nodeAdjoints[a] += adj * Scalar(0.5);
                 nodeAdjoints[b] += adj * Scalar(0.5);
             }
+            else  // to the result: va unless vb is beyond it, also with a NaN operand
+                nodeAdjoints[(op == JITOpCode::Min ? vb < va : va < vb) ? b : a] += adj;
             break;
         case JITOpCode::Mod:
         case JITOpCode::Fmod:

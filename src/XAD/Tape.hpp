@@ -148,7 +148,7 @@ class Tape
 
     XAD_INLINE void registerInput(active_type& inp)
     {
-        if (!inp.isOn(this))  // already registered
+        if (!isRegistered(inp))
         {
             inp.registerOn(this);
             pushLhs(inp.slot_);
@@ -174,7 +174,7 @@ class Tape
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (!outp.isOn(this))
+        if (!isRegistered(outp))
         {
             outp.registerOn(this);
             pushLhs(outp.slot_);
@@ -301,6 +301,10 @@ class Tape
         --currentRec_->numDerivatives_;
         if (slot == currentRec_->iDerivative_ - 1)  // it's at the end of the tape
             --currentRec_->iDerivative_;
+#ifdef XAD_TAPE_TRACK_LIVE_SLOTS
+        if (XAD_UNLIKELY(slot < watch_.below))  // 0 unless getPosition was called
+            freeWatchedSlot(slot);
+#endif
 #else
         SubRecording* r = currentRec_;
         if (slot == r->iDerivative_ - 1 &&
@@ -372,6 +376,15 @@ class Tape
             r->maxDerivative_ = n;
         return s;
     }
+    // whether v holds a live slot of this tape, not one clearAll or resetTo gave up
+    XAD_INLINE bool isRegistered(const active_type& v) const
+    {
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
+        if (!v.isOn(this))  // another tape's or a JIT slot
+            return false;
+#endif
+        return v.slot_ < currentRec_->iDerivative_;  // false for INVALID_SLOT too
+    }
 
 #ifndef XAD_SHARED_LIBS
     static XAD_THREAD_LOCAL Tape* active_tape_;
@@ -385,6 +398,25 @@ class Tape
     // slot counter per position given out, restored by resetTo
     typedef std::pair<position_type, slot_type> position_slots_type;
     mutable std::vector<position_slots_type> positionSlots_;
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+    // resetTo rewinds the slot counter only when no variable at or above from, the lowest counter
+    // of the positions given out, can be live: liveBelow were live when it was set, all below it,
+    // and freedBelow slots below it were freed since. Else the rewind is pending until a later
+    // free allows it. Frees of slots below below (0 without positions) update these.
+    struct SlotWatch
+    {
+        slot_type below = 0;
+        slot_type from = 0;
+        slot_type liveBelow = 0;
+        slot_type freedBelow = 0;
+        slot_type pending = INVALID_SLOT;
+    };
+    mutable SlotWatch watch_;
+    void watchSlots() const;
+    void rewindSlots(slot_type to) const;
+    XAD_NEVER_INLINE void freeWatchedSlot(slot_type slot);
+    void dropPendingRewind();
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     slot_type registerVariableReuseSlots();
     void unregisterVariableReuseSlots(slot_type slot);
@@ -421,6 +453,9 @@ class Tape
               opStartPos_(),
               startDerivative_(),
               prevMax_(slot_type(-1)),
+#ifdef XAD_TAPE_TRACK_LIVE_SLOTS
+              startCounter_(),
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
               startRange_(parent->reusable_ranges_.end()),
               latestRange_(parent->reusable_ranges_.end()),
@@ -436,6 +471,9 @@ class Tape
         slot_type opStartPos_;
         slot_type startDerivative_;
         slot_type prevMax_;
+#ifdef XAD_TAPE_TRACK_LIVE_SLOTS
+        slot_type startCounter_;
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
         range_list::iterator startRange_;
         range_list::iterator latestRange_;

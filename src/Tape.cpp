@@ -84,6 +84,9 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       checkpoints_(std::move(o.checkpoints_)),
       callbacks_(std::move(o.callbacks_)),
       positionSlots_(std::move(o.positionSlots_)),
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+      watch_(o.watch_),
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
       reusable_ranges_(std::move(o.reusable_ranges_)),
       range_index_(std::move(o.range_index_)),
@@ -128,6 +131,9 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     clearCallbacks();
     callbacks_.swap(o.callbacks_);
     positionSlots_ = std::move(o.positionSlots_);
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+    watch_ = o.watch_;
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_ = std::move(o.reusable_ranges_);
     range_index_ = std::move(o.range_index_);
@@ -170,6 +176,9 @@ void Tape<T, N>::resetMovedFrom()
     while (!nestedRecordings_.empty()) nestedRecordings_.pop();
     nestedRecordings_.push(SubRecording(this));
     currentRec_ = &nestedRecordings_.top();
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+    watch_ = SlotWatch();
+#endif
 }
 
 template <class T, std::size_t N>
@@ -191,6 +200,9 @@ void Tape<T, N>::clearAll()
     derivatives_.clear();
     checkpoints_.clear();
     positionSlots_.clear();
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+    watch_ = SlotWatch();
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_.clear();
     range_index_.clear();
@@ -511,6 +523,16 @@ void Tape<T, N>::foldSubrecording()
     //     << ", cur max: " << cur->maxDerivative_ << "\n";
     if (derivatives_.size() > cur->maxDerivative_)
         derivatives_.resize(cur->maxDerivative_);
+#ifdef XAD_TAPE_TRACK_LIVE_SLOTS
+    // variables registered in the nested recording can outlive it: keep the slots up to its
+    // counter, which is above all live slots
+    if (prev.iDerivative_ > prev.startCounter_)
+    {
+        cur->iDerivative_ = (std::max)(cur->iDerivative_, prev.iDerivative_);
+        cur->maxDerivative_ = (std::max)(cur->maxDerivative_, cur->iDerivative_);
+    }
+    cur->numDerivatives_ = prev.numDerivatives_;
+#endif
     if (operations_.size() > prev.opStartPos_)
     {
         operations_.resize(prev.opStartPos_);
@@ -525,6 +547,12 @@ void Tape<T, N>::foldSubrecording()
     positionSlots_.erase(std::lower_bound(positionSlots_.begin(), positionSlots_.end(),
                                           position_slots_type(prev.statementStartPos_, 0)),
                          positionSlots_.end());
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+    if (positionSlots_.empty())
+        watch_ = SlotWatch();
+    else
+        dropPendingRewind();
+#endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     for (auto range = prev.startRange_; range != reusable_ranges_.end();) range = eraseRange(range);
 #endif
@@ -557,6 +585,13 @@ void Tape<T, N>::newNestedRecording()
     newr.startDerivative_ = currentRec_->maxDerivative_;
     // above the outer recording's slots, whose adjoints may be pending
     newr.iDerivative_ = (std::max)(newr.iDerivative_, newr.startDerivative_);
+#ifdef XAD_TAPE_TRACK_LIVE_SLOTS
+    newr.startCounter_ = newr.iDerivative_;
+#ifndef XAD_TAPE_REUSE_SLOTS
+    // not into the outer recording's slots
+    dropPendingRewind();
+#endif
+#endif
     nestedRecordings_.push(newr);
 
     currentRec_ = &nestedRecordings_.top();
@@ -581,6 +616,9 @@ void Tape<T, N>::newRecording()
     checkpoints_.clear();
     foldSubrecordings();
     positionSlots_.clear();
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+    watch_ = SlotWatch();
+#endif
     currentRec_->maxDerivative_ = currentRec_->iDerivative_ + 1;
     statement_.push_back(std::make_pair(size_type(operations_.size()), slot_type(INVALID_SLOT)));
     currentRec_->derivativesInitialized_ = false;
@@ -924,9 +962,63 @@ typename Tape<T, N>::position_type Tape<T, N>::getPosition() const
 {
     auto pos = static_cast<position_type>(statement_.size() - 1);
     while (!positionSlots_.empty() && positionSlots_.back().first >= pos) positionSlots_.pop_back();
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+    if (watch_.pending != INVALID_SLOT)
+        rewindSlots(INVALID_SLOT);
+    // all live slots are below the counter: count them, unless an earlier position is lower
+    if (positionSlots_.empty() || currentRec_->iDerivative_ <= watch_.from)
+        watchSlots();
+#endif
     positionSlots_.push_back(position_slots_type(pos, currentRec_->iDerivative_));
     return pos;
 }
+
+#if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
+template <class T, std::size_t N>
+void Tape<T, N>::watchSlots() const
+{
+    watch_.from = currentRec_->iDerivative_;
+    watch_.liveBelow = currentRec_->numDerivatives_;
+    watch_.freedBelow = 0;
+    watch_.pending = INVALID_SLOT;
+    watch_.below = watch_.from;
+}
+
+// rewinds the counter to the lowest of to and a pending rewind, if no slot at or above
+// watch_.from can be live (at most liveBelow - freedBelow are below it), else leaves it pending
+template <class T, std::size_t N>
+void Tape<T, N>::rewindSlots(slot_type to) const
+{
+    if (currentRec_->iDerivative_ <= watch_.from)
+        watchSlots();
+    watch_.pending = (std::min)(watch_.pending, to);
+    if (static_cast<unsigned long long>(currentRec_->numDerivatives_) + watch_.freedBelow <=
+        watch_.liveBelow)
+    {
+        currentRec_->iDerivative_ = (std::min)(currentRec_->iDerivative_, watch_.pending);
+        watch_.pending = INVALID_SLOT;
+    }
+    // while pending, every free can allow it
+    watch_.below = watch_.pending == INVALID_SLOT ? watch_.from : INVALID_SLOT;
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::freeWatchedSlot(slot_type slot)
+{
+    if (slot < watch_.from)
+        ++watch_.freedBelow;
+    if (watch_.pending != INVALID_SLOT)
+        rewindSlots(INVALID_SLOT);
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::dropPendingRewind()
+{
+    watch_.pending = INVALID_SLOT;
+    if (watch_.below == INVALID_SLOT)
+        watch_.below = watch_.from;
+}
+#endif
 
 template <class T, std::size_t N>
 void Tape<T, N>::resetTo(position_type pos)
@@ -946,12 +1038,19 @@ void Tape<T, N>::resetTo(position_type pos)
         checkpoints_.erase(newend, checkpoints_.end());
     }
     // reuse the slots registered after the position, if getPosition gave it out
+    // (XAD_TAPE_TRACK_LIVE_SLOTS: once no variable holds one; reusing slots: freed ones already)
     auto mark =
         std::lower_bound(positionSlots_.begin(), positionSlots_.end(), position_slots_type(pos, 0));
     if (mark != positionSlots_.end() && mark->first == pos &&
         pos + 1 >= currentRec_->statementStartPos_)
     {
+#ifdef XAD_TAPE_TRACK_LIVE_SLOTS
+#ifndef XAD_TAPE_REUSE_SLOTS
+        rewindSlots(mark->second);
+#endif
+#else
         currentRec_->iDerivative_ = (std::min)(currentRec_->iDerivative_, mark->second);
+#endif
         ++mark;
     }
     positionSlots_.erase(mark, positionSlots_.end());
