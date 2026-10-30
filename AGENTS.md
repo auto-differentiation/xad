@@ -25,7 +25,8 @@ ctest --test-dir build -j8 --output-on-failure
 
 - Run one test or sample: `ctest --test-dir build -R <name>`.
 - Useful options (see `cmake/XADSetupOptions.cmake`): `XAD_ENABLE_TESTS`, `XAD_TAPE_REUSE_SLOTS`,
-  `XAD_REDUCED_MEMORY`, `XAD_USE_STRONG_INLINE`, `XAD_ENABLE_ADDRESS_SANITIZER`.
+  `XAD_TAPE_TRACK_LIVE_SLOTS`, `XAD_REDUCED_MEMORY`, `XAD_USE_STRONG_INLINE`,
+  `XAD_ENABLE_ADDRESS_SANITIZER`.
 - Before opening a PR, build and run the tests in both C++11 (`-DCMAKE_CXX_STANDARD=11`) and C++17; CI also
   covers several GCC, Clang, MSVC and macOS versions.
 

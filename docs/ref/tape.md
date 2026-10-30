@@ -204,6 +204,10 @@ adjoints further.
     after this position) are used again after a call to `resetTo`,
     the behaviour is undefined, as their slot in the tape is no longer valid.
 
+Variables registered after the position that are still alive keep their slots only with the CMake
+option `XAD_TAPE_TRACK_LIVE_SLOTS` (e.g. a path-wise Monte Carlo result kept across paths); without
+it, `resetTo` can hand their slots out again. It costs a few percent in recording.
+
 #### `computeAdjointsTo`
 
 `#!c++ void computeAdjointsTo(position_type pos)` works like `computeAdjoints`, but stops rolling back the adjoints at the given position in the tape.
