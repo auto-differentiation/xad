@@ -48,6 +48,9 @@
 // keep track of freed-up slots in the tape and re-use them
 #cmakedefine XAD_TAPE_REUSE_SLOTS
 
+// resetTo after getPosition keeps the slots of variables that are still alive
+#cmakedefine XAD_TAPE_TRACK_LIVE_SLOTS
+
 // Disable thread-local tape usage
 #cmakedefine XAD_NO_THREADLOCAL
 

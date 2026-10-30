@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- CMake option `XAD_TAPE_TRACK_LIVE_SLOTS`: `resetTo` after `getPosition` no longer hands out the slots of variables still alive (e.g. a Monte Carlo result kept across paths), at a few percent recording cost
 - `XAD_OUTLINE_RECORDING` option: one out-of-line call per recorded operation, for faster compiles with `XAD_USE_STRONG_INLINE`
 - CMake option `XAD_SHARED_LIBS` builds XAD as a shared library, with one active tape per thread across all modules linking it, and `XAD_API` macros in the generated `XAD/Export.hpp`
 - `Tape::clearCallbacks()` destroys the callbacks pushed with `pushCallback`, for tapes used for many recordings
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `copysign` of a nested active magnitude and a `double` was ambiguous with `StdCompatibility.hpp` on libc++
 - Two `frexp` in one expression sharing the exponent pointer gave the first one the second's derivative
 - `remquo` of two active values did not compile in vector modes
+- `registerInput` and `registerOutput` after `clearAll` skipped variables kept from the previous recording, whose slot the next variable then shared
 - Adjoint `computeJacobian` returned swapped columns when the function swapped or move-assigned its arguments
 - `JITCompiler` passed one-value buffers to backends with `vectorWidth() > 1` (inputs, outputs, output adjoints and input gradients): it now fills every lane and reads lane 0
 - Forward `computeJacobian` and `computeHessian` passed one copy of the inputs to every call, so a function changing its argument gave wrong results
