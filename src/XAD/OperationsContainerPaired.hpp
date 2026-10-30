@@ -218,6 +218,29 @@ class OperationsContainerPaired
         }
     }
 
+    // The entries of one chunk, for for_each without chunk lookups; empty if [startidx, endidx)
+    // is empty or spans chunks
+    struct flat_view
+    {
+        const std::pair<mul_type, slot_type>* chunk;
+        size_type offset;
+        explicit operator bool() const { return chunk != nullptr; }
+        template <class Func>
+        XAD_FORCE_INLINE void for_each(size_type startidx, size_type endidx, Func f) const
+        {
+            for (size_type i = startidx - offset, e = endidx - offset; i < e; ++i)
+                f(chunk[i].first, chunk[i].second);
+        }
+    };
+
+    XAD_FORCE_INLINE flat_view flat(size_type startidx, size_type endidx) const
+    {
+        size_type c = startidx / ChunkSize;
+        if (startidx >= endidx || (endidx - 1) / ChunkSize != c)
+            return {nullptr, 0};
+        return {chunk(c), c * ChunkSize};
+    }
+
   private:
     XAD_FORCE_INLINE std::pair<mul_type, slot_type>* chunk(size_type chunk)
     {

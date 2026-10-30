@@ -235,6 +235,30 @@ class OperationsContainer
         }
     }
 
+    // The entries of one chunk, for for_each without chunk lookups; empty if [startidx, endidx)
+    // is empty or spans chunks
+    struct flat_view
+    {
+        const mul_type* muls;
+        const slot_type* slots;
+        size_type offset;
+        explicit operator bool() const { return muls != nullptr; }
+        template <class Func>
+        XAD_FORCE_INLINE void for_each(size_type startidx, size_type endidx, Func f) const
+        {
+            for (size_type i = startidx - offset, e = endidx - offset; i < e; ++i)
+                f(muls[i], slots[i]);
+        }
+    };
+
+    XAD_FORCE_INLINE flat_view flat(size_type startidx, size_type endidx) const
+    {
+        size_type c = startidx / ChunkSize;
+        if (startidx >= endidx || (endidx - 1) / ChunkSize != c)
+            return {nullptr, nullptr, 0};
+        return {mul_chunk(c), slot_chunk(c), c * ChunkSize};
+    }
+
   private:
     XAD_FORCE_INLINE mul_type* mul_chunk(size_type chunk)
     {

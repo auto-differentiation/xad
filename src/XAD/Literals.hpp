@@ -210,7 +210,7 @@ struct AReal
     {
     }
 
-    XAD_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
+    XAD_FORCE_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
     {
         if (auto* s = tape_type::getActive())
         {
@@ -261,7 +261,7 @@ struct AReal
                 tape->unregisterVariable(slot_);
     }
 
-    XAD_INLINE AReal& operator=(const AReal& o);
+    XAD_FORCE_INLINE AReal& operator=(const AReal& o);
 
     XAD_INLINE AReal& operator=(nested_type x)
     {
@@ -626,7 +626,7 @@ struct ADVar
 };
 
 template <class Scalar, std::size_t M>
-XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
+XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
     if (auto* s = tape_type::getActive())
     {

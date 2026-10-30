@@ -364,10 +364,13 @@ class Tape
     derivative_type& derivativeSlow(slot_type s);
     XAD_INLINE slot_type registerVariableAtEnd()
     {
-        ++currentRec_->iDerivative_;
-        currentRec_->maxDerivative_ =
-            (std::max)(currentRec_->iDerivative_, currentRec_->maxDerivative_);
-        return currentRec_->iDerivative_ - 1;
+        SubRecording* r = currentRec_;
+        const slot_type s = r->iDerivative_;
+        const slot_type n = s + 1;
+        r->iDerivative_ = n;
+        if (n > r->maxDerivative_)
+            r->maxDerivative_ = n;
+        return s;
     }
 
 #ifndef XAD_SHARED_LIBS
@@ -412,8 +415,7 @@ class Tape
     struct SubRecording
     {
         explicit SubRecording(Tape<Real, N>* parent)
-            : numDerivatives_(),
-              iDerivative_(),
+            : iDerivative_(),
               maxDerivative_(),
               statementStartPos_(1),
               opStartPos_(),
@@ -423,11 +425,11 @@ class Tape
               startRange_(parent->reusable_ranges_.end()),
               latestRange_(parent->reusable_ranges_.end()),
 #endif
-              derivativesInitialized_(false)
+              derivativesInitialized_(false),
+              numDerivatives_()
         {
             XAD_UNUSED_VARIABLE(parent);
         }
-        slot_type numDerivatives_;
         slot_type iDerivative_;
         slot_type maxDerivative_;
         slot_type statementStartPos_;
@@ -439,6 +441,7 @@ class Tape
         range_list::iterator latestRange_;
 #endif
         bool derivativesInitialized_;
+        slot_type numDerivatives_;
     };
     std::stack<SubRecording> nestedRecordings_;
     SubRecording* currentRec_;
