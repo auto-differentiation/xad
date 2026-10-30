@@ -101,13 +101,20 @@ struct ADTypeBase : public Expression<Scalar, Derived, DerivativeType>
         return derived() = (derived() / x);
     }
 
+    // ints and passive floats, e.g. a double for AReal<FReal<double>>, where Scalar and value_type
+    // would both need a conversion
+    template <class I>
+    using passive_result =
+        typename std::enable_if<std::is_arithmetic<I>::value && !ExprTraits<I>::isExpr,
+                                Derived>::type;
+
     XAD_INLINE Derived& operator+=(Scalar x)
     {
         a_ += x;
         return derived();
     }
     template <class I>
-    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator+=(I x)
+    XAD_INLINE passive_result<I>& operator+=(I x)
     {
         return derived() += Scalar(x);
     }
@@ -117,21 +124,21 @@ struct ADTypeBase : public Expression<Scalar, Derived, DerivativeType>
         return derived();
     }
     template <class I>
-    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator-=(I x)
+    XAD_INLINE passive_result<I>& operator-=(I x)
     {
         return derived() -= Scalar(x);
     }
     XAD_INLINE Derived& operator*=(Scalar x) { return derived() = (derived() * x); }
     template <class I>
-    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator*=(I x)
+    XAD_INLINE passive_result<I>& operator*=(I x)
     {
-        return *this *= Scalar(x);
+        return derived() = (derived() * nested_type(x));
     }
     XAD_INLINE Derived& operator/=(Scalar x) { return derived() = (derived() / x); }
     template <class I>
-    XAD_INLINE typename std::enable_if<std::is_integral<I>::value, Derived>::type& operator/=(I x)
+    XAD_INLINE passive_result<I>& operator/=(I x)
     {
-        return *this /= Scalar(x);
+        return derived() = (derived() / nested_type(x));
     }
     XAD_INLINE Derived& operator+=(const value_type& x) { return derived() = derived() + x; }
     XAD_INLINE Derived& operator-=(const value_type& x) { return derived() = derived() - x; }
