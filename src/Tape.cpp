@@ -613,7 +613,7 @@ void Tape<T, N>::initDerivatives()
 }
 
 template <class T, std::size_t N>
-typename Tape<T, N>::derivative_type& Tape<T, N>::derivative(slot_type s)
+typename Tape<T, N>::derivative_type& Tape<T, N>::derivativeSlow(slot_type s)
 {
     if (s >= currentRec_->maxDerivative_)
         throw OutOfRange("given derivative slot is out of range - did you register the outputs?");

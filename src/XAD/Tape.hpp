@@ -235,7 +235,13 @@ class Tape
 
     // derivatives
     void clearDerivatives();
-    derivative_type& derivative(slot_type s);
+    derivative_type& derivative(slot_type s)
+    {
+        if (XAD_LIKELY(s < currentRec_->maxDerivative_ && currentRec_->derivativesInitialized_ &&
+                       derivatives_.size() == currentRec_->maxDerivative_))
+            return derivatives_[s];
+        return derivativeSlow(s);
+    }
     const derivative_type& derivative(slot_type s) const;
 
     derivative_type getDerivative(slot_type s) const { return derivative(s); }
@@ -281,6 +287,8 @@ class Tape
     {
         ++currentRec_->numDerivatives_;
 #ifdef XAD_TAPE_REUSE_SLOTS
+        if (currentRec_->startRange_ == reusable_ranges_.end())  // no free slots
+            return registerVariableAtEnd();
         return registerVariableReuseSlots();
 #else
         return registerVariableAtEnd();
@@ -294,11 +302,19 @@ class Tape
         if (slot == currentRec_->iDerivative_ - 1)  // it's at the end of the tape
             --currentRec_->iDerivative_;
 #else
+        SubRecording* r = currentRec_;
+        if (slot == r->iDerivative_ - 1 &&
+            r->startRange_ == reusable_ranges_.end())  // at the end, no free slots
+        {
+            --r->numDerivatives_;
+            r->iDerivative_ = slot;
+            return;
+        }
         unregisterVariableReuseSlots(slot);
 #endif
     }
 
-    XAD_INLINE void pushLhs(slot_type slot)
+    XAD_FORCE_INLINE void pushLhs(slot_type slot)
     {
         assert(slot != INVALID_SLOT);
         statement_.emplace_back(size_type(operations_.size()), slot);
@@ -345,6 +361,7 @@ class Tape
     void resetMovedFrom();
     void computeAdjointsToImpl(position_type pos, position_type start);
     void initDerivatives();
+    derivative_type& derivativeSlow(slot_type s);
     XAD_INLINE slot_type registerVariableAtEnd()
     {
         ++currentRec_->iDerivative_;
