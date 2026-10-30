@@ -608,7 +608,7 @@ void Tape<T, N>::initDerivatives()
         std::fill(derivatives_.begin() + currentRec_->startDerivative_, derivatives_.end(), T());
     }
 
-    derivatives_.resize(currentRec_->maxDerivative_, Tape<T, N>::derivative_type());
+    derivatives_.resize(currentRec_->maxDerivative_);
     currentRec_->derivativesInitialized_ = true;
 }
 
