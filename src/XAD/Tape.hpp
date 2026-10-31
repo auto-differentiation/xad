@@ -318,7 +318,7 @@ class Tape
 #endif
     }
 
-    XAD_FORCE_INLINE void pushLhs(slot_type slot)
+    XAD_RECORDING_INLINE void pushLhs(slot_type slot)
     {
         assert(slot != INVALID_SLOT);
         statement_.emplace_back(size_type(operations_.size()), slot);

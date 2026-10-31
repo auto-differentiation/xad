@@ -217,7 +217,7 @@ struct AReal
     {
     }
 
-    XAD_FORCE_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
+    XAD_RECORDING_INLINE AReal(const AReal& o) : base_type(), slot_(INVALID_SLOT)
     {
         if (auto* s = tape_type::getActive())
         {
@@ -524,6 +524,8 @@ struct AReal
 #endif
 
   private:
+    XAD_RECORDING_OUTLINE void recordCopy(tape_type* s, const AReal& o);
+
     // Stage the partials in stack arrays, then append them to the tape in one
     // batch. The arrays are locals, so the compiler can keep them in registers.
     template <int Size, typename Expr>
@@ -633,17 +635,21 @@ struct ADVar
 };
 
 template <class Scalar, std::size_t M>
+XAD_RECORDING_OUTLINE void AReal<Scalar, M>::recordCopy(tape_type* s, const AReal& o)
+{
+    if (!isOn(s))
+        registerOn(s);
+    pushAll<1>(s, o);
+    s->pushLhs(slot_);
+}
+
+template <class Scalar, std::size_t M>
 XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
     if (auto* s = tape_type::getActive())
     {
         if (o.shouldRecord() || this->shouldRecord())
-        {
-            if (!isOn(s))
-                registerOn(s);
-            pushAll<1>(s, o);
-            s->pushLhs(slot_);
-        }
+            recordCopy(s, o);
     }
 #ifdef XAD_ENABLE_JIT
     else if (getActiveJit() != nullptr)
