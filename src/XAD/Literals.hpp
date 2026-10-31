@@ -282,7 +282,16 @@ struct AReal
         this->a_ = x;
         auto tape = tape_type::getActive();
         if (tape && isOn(tape))
+#ifdef XAD_LINEAR_SLOTS
+        {
+            // linear slots: copies may share the old slot, so the constant gets a new one;
+            // the variable stays active, so an input registered before stays an input
+            registerOn(tape);
             tape->pushLhs(slot_);
+        }
+#else
+            tape->pushLhs(slot_);
+#endif
 #ifdef XAD_ENABLE_JIT
         else
             dropJitNode(std::integral_constant<bool, jit_supported>());
@@ -694,10 +703,16 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
             slot_ = o.slot_;
             copyTape(o);
         }
-        else
-#endif
+        else if (isOn(s))
+        {
+            // a passive value: a new slot with no partials, so the variable stays active
+            registerOn(s);
+            s->pushLhs(slot_);
+        }
+#else
         if (o.shouldRecord() || this->shouldRecord())
             recordCopy(s, o);
+#endif
     }
 #ifdef XAD_ENABLE_JIT
     else if (getActiveJit() != nullptr)
