@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `JITBackend::forwardAndBackwardSeeded` runs the backward pass from given output adjoints
 - CMake option `XAD_SKIP_ZERO_PARTIALS` (off by default): partial derivatives that are exactly zero are not recorded, and results with only zero partials stay passive (smaller tapes for sparse code; a skipped zero no longer turns an infinite or NaN adjoint into NaN)
 - CMake option `XAD_TLS_INITIAL_EXEC` (off by default): the thread-local active tape uses the initial-exec TLS model with GCC/Clang, so libraries built with `-fPIC` reach it without a `__tls_get_addr` call (needs to be OFF for libraries loaded with `dlopen`, e.g. Python extensions)
+- CMake option `XAD_LINEAR_SLOTS` (off by default): copies share the slot of their source and record nothing, every assignment takes a new slot, and destructors free no slots (fewer statements for copy-heavy code; `getNumVariables` then also counts variables already destroyed)
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
 
 ### Changed
