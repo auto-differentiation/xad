@@ -47,6 +47,15 @@ void ignore_unused_variable(const T&)
 #define XAD_NEVER_INLINE __attribute__((noinline))
 #endif
 
+// MSVC takes very long to optimise code that has these force-inlined (e.g. Eigen)
+#if defined(_MSC_VER) && !defined(__clang__)
+#define XAD_RECORDING_INLINE XAD_INLINE
+#define XAD_RECORDING_OUTLINE XAD_NEVER_INLINE
+#else
+#define XAD_RECORDING_INLINE XAD_FORCE_INLINE
+#define XAD_RECORDING_OUTLINE XAD_FORCE_INLINE
+#endif
+
 #if defined(__GNUC__) || defined(__clang__)
 #define XAD_LIKELY(x) __builtin_expect(!!(x), 1)
 #define XAD_UNLIKELY(x) __builtin_expect(!!(x), 0)
