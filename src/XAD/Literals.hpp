@@ -270,9 +270,11 @@ struct AReal
 
     XAD_INLINE ~AReal()
     {
+#ifndef XAD_LINEAR_SLOTS  // linear slots: a copy may still use the slot, so it is never freed
         if (auto tape = tape_type::getActive())
             if (isOn(tape))
                 tape->unregisterVariable(slot_);
+#endif
     }
 
     XAD_FORCE_INLINE AReal& operator=(const AReal& o);
