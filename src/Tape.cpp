@@ -839,6 +839,80 @@ XAD_INLINE bool isZeroAdjoint(const ARealDirect<T, N>& a)
     return isZeroAdjoint(a.base());
 }
 
+// der += mul * a of the adjoint sweep; for FReal tapes without the multiplications by the constant
+// partials (one, zero) of the expression templates: far less code, the same values for finite
+// numbers. GCC inlines all of it (it can run out of inline-unit-growth); MSVC keeps the expression
+// templates.
+#if defined(__GNUC__) && !defined(__clang__)
+#define XAD_ADJOINT_LAMBDA_INLINE __attribute__((always_inline))
+#define XAD_ADJOINT_KERNEL_INLINE XAD_FORCE_INLINE
+#else
+#define XAD_ADJOINT_LAMBDA_INLINE
+#define XAD_ADJOINT_KERNEL_INLINE XAD_INLINE
+#endif
+
+template <class D, class T>
+XAD_FORCE_INLINE void addAdjointInline(D& der, const T& mul, const D& a)
+{
+    der += mul * a;
+}
+
+#if !defined(_MSC_VER) || defined(__clang__)
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE T adjointMul(const T& x, const T& y);
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE FReal<T, 1> adjointMul(const FReal<T, 1>& x, const FReal<T, 1>& y);
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE T adjointAdd(const T& x, const T& y);
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE FReal<T, 1> adjointAdd(const FReal<T, 1>& x, const FReal<T, 1>& y);
+
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE T adjointMul(const T& x, const T& y)
+{
+    return T(x * y);
+}
+
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE FReal<T, 1> adjointMul(const FReal<T, 1>& x, const FReal<T, 1>& y)
+{
+    FReal<T, 1> r;
+    r.value() = adjointMul(x.value(), y.value());
+    r.derivative() =
+        adjointAdd(adjointMul(y.value(), x.derivative()), adjointMul(x.value(), y.derivative()));
+    return r;
+}
+
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE T adjointAdd(const T& x, const T& y)
+{
+    return T(x + y);
+}
+
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE FReal<T, 1> adjointAdd(const FReal<T, 1>& x, const FReal<T, 1>& y)
+{
+    FReal<T, 1> r;
+    r.value() = adjointAdd(x.value(), y.value());
+    r.derivative() = adjointAdd(x.derivative(), y.derivative());
+    return r;
+}
+
+template <class T>
+XAD_ADJOINT_KERNEL_INLINE void addAdjointInline(FReal<T, 1>& der, const FReal<T, 1>& mul,
+                                                const FReal<T, 1>& a)
+{
+    der = adjointAdd(der, adjointMul(mul, a));
+}
+#endif
+
+// the same, inlined where the compiler sees fit
+template <class D, class T>
+XAD_INLINE void addAdjoint(D& der, const T& mul, const D& a)
+{
+    addAdjointInline(der, mul, a);
+}
+
 }  // namespace detail
 
 template <class T, std::size_t N>
@@ -879,7 +953,8 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
                 der[st.second] = derivative_type();
                 if (!detail::isZeroAdjoint(a))
                     ops.for_each(sts[i - 1].first, st.first,
-                                 [&](const T& mul, slot_type slot) { der[slot] += mul * a; });
+                                 [&](const T& mul, slot_type slot) XAD_ADJOINT_LAMBDA_INLINE
+                                 { detail::addAdjointInline(der[slot], mul, a); });
             }
             return;
         }
@@ -898,7 +973,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             if (!detail::isZeroAdjoint(a))
             {
                 operations_.for_each(it[-1].first, st.first, [&](const T& mul, slot_type slot)
-                                     { derivatives_[slot] += mul * a; });
+                                     { detail::addAdjoint(derivatives_[slot], mul, a); });
             }
         }
         // last iteration separate
@@ -911,7 +986,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             if (!detail::isZeroAdjoint(a))
             {
                 operations_.for_each(prevendpoint, st.first, [&](const T& mul, slot_type slot)
-                                     { derivatives_[slot] += mul * a; });
+                                     { detail::addAdjoint(derivatives_[slot], mul, a); });
             }
         }
 
