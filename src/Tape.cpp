@@ -841,8 +841,8 @@ XAD_INLINE bool isZeroAdjoint(const ARealDirect<T, N>& a)
 
 // der += mul * a of the adjoint sweep; for FReal tapes without the multiplications by the constant
 // partials (one, zero) of the expression templates: far less code, the same values for finite
-// numbers. GCC inlines all of it (it can run out of inline-unit-growth); MSVC keeps the expression
-// templates.
+// numbers. GCC inlines all of it (it can run out of inline-unit-growth); MSVC keeps der += mul * a.
+#if !defined(_MSC_VER) || defined(__clang__)
 #if defined(__GNUC__) && !defined(__clang__)
 #define XAD_ADJOINT_LAMBDA_INLINE __attribute__((always_inline))
 #define XAD_ADJOINT_KERNEL_INLINE XAD_FORCE_INLINE
@@ -857,7 +857,6 @@ XAD_FORCE_INLINE void addAdjointInline(D& der, const T& mul, const D& a)
     der += mul * a;
 }
 
-#if !defined(_MSC_VER) || defined(__clang__)
 template <class T>
 XAD_ADJOINT_KERNEL_INLINE T adjointMul(const T& x, const T& y);
 template <class T>
@@ -904,7 +903,6 @@ XAD_ADJOINT_KERNEL_INLINE void addAdjointInline(FReal<T, 1>& der, const FReal<T,
 {
     der = adjointAdd(der, adjointMul(mul, a));
 }
-#endif
 
 // the same, inlined where the compiler sees fit
 template <class D, class T>
@@ -912,6 +910,14 @@ XAD_INLINE void addAdjoint(D& der, const T& mul, const D& a)
 {
     addAdjointInline(der, mul, a);
 }
+
+#define XAD_ADD_ADJOINT_INLINE(der, mul, a) detail::addAdjointInline(der, mul, a)
+#define XAD_ADD_ADJOINT(der, mul, a) detail::addAdjoint(der, mul, a)
+#else
+#define XAD_ADJOINT_LAMBDA_INLINE
+#define XAD_ADD_ADJOINT_INLINE(der, mul, a) der += mul * a
+#define XAD_ADD_ADJOINT(der, mul, a) der += mul * a
+#endif
 
 }  // namespace detail
 
@@ -954,7 +960,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
                 if (!detail::isZeroAdjoint(a))
                     ops.for_each(sts[i - 1].first, st.first,
                                  [&](const T& mul, slot_type slot) XAD_ADJOINT_LAMBDA_INLINE
-                                 { detail::addAdjointInline(der[slot], mul, a); });
+                                 { XAD_ADD_ADJOINT_INLINE(der[slot], mul, a); });
             }
             return;
         }
@@ -973,7 +979,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             if (!detail::isZeroAdjoint(a))
             {
                 operations_.for_each(it[-1].first, st.first, [&](const T& mul, slot_type slot)
-                                     { detail::addAdjoint(derivatives_[slot], mul, a); });
+                                     { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
             }
         }
         // last iteration separate
@@ -986,7 +992,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             if (!detail::isZeroAdjoint(a))
             {
                 operations_.for_each(prevendpoint, st.first, [&](const T& mul, slot_type slot)
-                                     { detail::addAdjoint(derivatives_[slot], mul, a); });
+                                     { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
             }
         }
 
