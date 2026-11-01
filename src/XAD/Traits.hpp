@@ -26,6 +26,8 @@
 
 #include <XAD/Vec.hpp>
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <type_traits>
 
 namespace xad
@@ -152,6 +154,12 @@ struct is_active : public std::integral_constant<bool, ExprTraits<T>::isExpr || 
 // constant operand). Derivatives are computed as usual and redone with tangentTerm if NaN,
 // except for ops whose partials are finite where their arguments are, or which give the
 // tangent themselves (op.tangent).
+// GCC on x86-64 compiles that check to compares and branches per op (and per lane), so there
+// tangentTerm is used directly, with a bit mask instead of a compare.
+#if defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)
+#define XAD_BRANCH_FREE_TANGENTS
+#endif
+
 template <class Op>
 struct HasFinitePartials : std::false_type
 {
@@ -197,11 +205,24 @@ XAD_INLINE bool isNaNTangent(const D& d, std::false_type)
     return isNaNTangent(d);
 }
 
+// partial * tangent, but 0 where the tangent is +-0
 template <class P, class D>
 XAD_INLINE typename std::enable_if<float_or_double<D>::value, D>::type tangentTerm(
     const P& partial, const D& tangent)
 {
+#ifdef XAD_BRANCH_FREE_TANGENTS
+    typedef typename std::conditional<sizeof(D) == 8, std::uint64_t, std::uint32_t>::type U;
+    const D d = D(partial * tangent);
+    U t, r;
+    std::memcpy(&t, &tangent, sizeof(D));
+    std::memcpy(&r, &d, sizeof(D));
+    r &= U(0) - U((t << 1) != 0);
+    D ret;
+    std::memcpy(&ret, &r, sizeof(D));
+    return ret;
+#else
     return tangent == D() ? D() : D(partial * tangent);
+#endif
 }
 
 template <class P, class D>
@@ -217,6 +238,21 @@ XAD_INLINE Vec<T, N> tangentTerm(const P& partial, const Vec<T, N>& tangent)
     Vec<T, N> r(tangent);
     for (std::size_t i = 0; i < N; ++i) r[i] = tangentTerm(partial, tangent[i]);
     return r;
+}
+
+// tangentTerm, or partial * tangent for ops with finite partials (HasFinitePartials<Op>())
+template <class P, class D>
+XAD_INLINE auto tangentTerm(const P& partial, const D& tangent, std::true_type)
+    -> decltype(partial * tangent)
+{
+    return partial * tangent;
+}
+
+template <class P, class D>
+XAD_INLINE auto tangentTerm(const P& partial, const D& tangent, std::false_type)
+    -> decltype(tangentTerm(partial, tangent))
+{
+    return tangentTerm(partial, tangent);
 }
 
 // the tangent of v = a / b: (ta - v * tb) / b, where 1 / b * ta would be 0 * inf for b = 0
