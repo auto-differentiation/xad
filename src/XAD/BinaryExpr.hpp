@@ -104,10 +104,8 @@ struct BinaryExpr
         const Scalar& pb = der_impl::template derivative_b<>(op_, value(a_), value(b_), v_);
         const DerivativeType& ta = derivative(a_);
         const DerivativeType& tb = derivative(b_);
-        DerivativeType d = pa * ta + pb * tb;
-        if (XAD_VERY_UNLIKELY(detail::isNaNTangent(d, detail::HasFinitePartials<Op>())))
-            d = detail::tangentTerm(pa, ta) + detail::tangentTerm(pb, tb);
-        return d;
+        return detail::tangentTerm(pa, ta, detail::HasFinitePartials<Op>()) +
+               detail::tangentTerm(pb, tb, detail::HasFinitePartials<Op>());
     }
 
     Expr1 a_;
