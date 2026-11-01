@@ -154,8 +154,16 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
     {
         using xad::derivative;
         using xad::value;
-        return detail::tangentTerm(der_impl::template derivative<>(op_, value(a_), v_),
-                                   derivative(a_), detail::HasFinitePartials<Op>());
+        const Scalar& p = der_impl::template derivative<>(op_, value(a_), v_);
+        const DerivativeType& t = derivative(a_);
+#ifdef XAD_BRANCH_FREE_TANGENTS
+        return detail::tangentTerm(p, t, detail::HasFinitePartials<Op>());
+#else
+        DerivativeType d = p * t;
+        if (XAD_VERY_UNLIKELY(detail::isNaNTangent(d, detail::HasFinitePartials<Op>())))
+            d = detail::tangentTerm(p, t);
+        return d;
+#endif
     }
 
     Expr a_;

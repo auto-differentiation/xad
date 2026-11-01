@@ -151,8 +151,15 @@ struct is_active : public std::integral_constant<bool, ExprTraits<T>::isExpr || 
 };
 
 // Forward mode: a zero tangent adds nothing, even with an infinite or NaN partial (as for a
-// constant operand). Ops whose partials are finite where their arguments are, or which give the
-// tangent themselves (op.tangent), skip this.
+// constant operand). Derivatives are computed as usual and redone with tangentTerm if NaN,
+// except for ops whose partials are finite where their arguments are, or which give the
+// tangent themselves (op.tangent).
+// GCC on x86-64 compiles that check to compares and branches per op (and per lane), so there
+// tangentTerm is used directly, with a bit mask instead of a compare.
+#if defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)
+#define XAD_BRANCH_FREE_TANGENTS
+#endif
+
 template <class Op>
 struct HasFinitePartials : std::false_type
 {
@@ -163,11 +170,47 @@ struct HasTangentRule : std::false_type
 {
 };
 
-// partial * tangent, but 0 where the tangent is +-0: a bit mask, as a compare would be a branch
+template <class D>
+XAD_INLINE typename std::enable_if<float_or_double<D>::value, bool>::type isNaNTangent(const D& d)
+{
+    return std::isnan(d);
+}
+
+// active tangents (higher order) can carry dependencies with a zero value, so they are kept
+template <class D>
+XAD_INLINE typename std::enable_if<!float_or_double<D>::value, bool>::type isNaNTangent(const D&)
+{
+    return false;
+}
+
+template <class T, std::size_t N>
+XAD_INLINE bool isNaNTangent(const Vec<T, N>& d)
+{
+    for (std::size_t i = 0; i < N; ++i)
+        if (isNaNTangent(d[i]))
+            return true;
+    return false;
+}
+
+// isNaNTangent(d), or false for ops with finite partials (a tag: MSVC warns on constant conditions)
+template <class D>
+XAD_INLINE bool isNaNTangent(const D&, std::true_type)
+{
+    return false;
+}
+
+template <class D>
+XAD_INLINE bool isNaNTangent(const D& d, std::false_type)
+{
+    return isNaNTangent(d);
+}
+
+// partial * tangent, but 0 where the tangent is +-0
 template <class P, class D>
 XAD_INLINE typename std::enable_if<float_or_double<D>::value, D>::type tangentTerm(
     const P& partial, const D& tangent)
 {
+#ifdef XAD_BRANCH_FREE_TANGENTS
     typedef typename std::conditional<sizeof(D) == 8, std::uint64_t, std::uint32_t>::type U;
     const D d = D(partial * tangent);
     U t, r;
@@ -177,9 +220,11 @@ XAD_INLINE typename std::enable_if<float_or_double<D>::value, D>::type tangentTe
     D ret;
     std::memcpy(&ret, &r, sizeof(D));
     return ret;
+#else
+    return tangent == D() ? D() : D(partial * tangent);
+#endif
 }
 
-// active tangents (higher order) can carry dependencies with a zero value, so they are kept
 template <class P, class D>
 XAD_INLINE auto tangentTerm(const P& partial, const D& tangent) ->
     typename std::enable_if<!float_or_double<D>::value, decltype(partial * tangent)>::type
