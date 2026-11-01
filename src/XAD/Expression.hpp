@@ -26,9 +26,33 @@
 #include <XAD/Macros.hpp>
 
 #include <utility>
+#ifdef XAD_SKIP_ZERO_PARTIALS
+#include <type_traits>
+#endif
 
 namespace xad
 {
+
+#ifdef XAD_SKIP_ZERO_PARTIALS
+// whether a partial can be left off the tape (floating-point values only)
+template <typename T>
+XAD_INLINE bool isSkippedPartial(const T& m, std::true_type)
+{
+    return m == T(0);
+}
+
+template <typename T>
+XAD_INLINE bool isSkippedPartial(const T&, std::false_type)
+{
+    return false;
+}
+
+template <typename T>
+XAD_INLINE bool isSkippedPartial(const T& m)
+{
+    return isSkippedPartial(m, std::is_floating_point<T>());
+}
+#endif
 
 // keeps information about multipliers and slots for an expression
 // locally on stack
@@ -41,6 +65,10 @@ struct DerivInfo
 
     XAD_INLINE void add(const typename TapeType::value_type& m, typename TapeType::slot_type slot)
     {
+#ifdef XAD_SKIP_ZERO_PARTIALS
+        if (isSkippedPartial(m))
+            return;
+#endif
         multipliers[index] = m;
         slots[index++] = slot;
     }
@@ -57,6 +85,10 @@ struct DerivInfoDirect
 
     XAD_INLINE void add(const typename TapeType::value_type& m, typename TapeType::slot_type slot)
     {
+#ifdef XAD_SKIP_ZERO_PARTIALS
+        if (isSkippedPartial(m))
+            return;
+#endif
         dst[index++] = pair_type(m, slot);
     }
 };

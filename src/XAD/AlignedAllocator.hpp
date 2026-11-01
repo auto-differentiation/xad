@@ -24,8 +24,14 @@
 
 #pragma once
 
+#include <XAD/Config.hpp>
+
 #if defined(__APPLE__)
 #include <AvailabilityMacros.h>
+#endif
+
+#if defined(XAD_HUGE_PAGES) && defined(__linux__)
+#include <sys/mman.h>
 #endif
 
 #include <algorithm>
@@ -49,6 +55,22 @@ struct AlignedAllocator {
                 return nullptr;
             size += alignment - size % alignment;
         }
+
+    #if defined(XAD_HUGE_PAGES) && defined(__linux__)
+        // 2 MiB-align large blocks so the kernel can back them with huge pages
+        const std::size_t hugePage = std::size_t(2) << 20;
+        if (size >= hugePage && alignment <= hugePage &&
+            size <= (std::numeric_limits<std::size_t>::max)() - hugePage) {
+            void* pointer = nullptr;
+            const std::size_t hugeSize = (size + hugePage - 1) / hugePage * hugePage;
+            if (posix_memalign(&pointer, hugePage, hugeSize) == 0) {
+    #if defined(MADV_HUGEPAGE)
+                ::madvise(pointer, hugeSize, MADV_HUGEPAGE);  // best effort
+    #endif
+                return pointer;
+            }
+        }
+    #endif
 
     #if defined(_WIN32)
         return ::_aligned_malloc(size, alignment);
