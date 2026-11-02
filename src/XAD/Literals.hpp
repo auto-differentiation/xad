@@ -221,12 +221,19 @@ struct AReal
     {
         if (auto* s = tape_type::getActive())
         {
+#ifdef XAD_LINEAR_SLOTS
+            // linear slots: a slot is written by one statement only, so a copy shares it
+            XAD_UNUSED_VARIABLE(s);
+            slot_ = o.slot_;
+            copyTape(o);
+#else
             if (o.shouldRecord())
             {
                 registerOn(s);
                 pushAll<1>(s, o);
                 s->pushLhs(slot_);
             }
+#endif
         }
 #ifdef XAD_ENABLE_JIT
         else if (getActiveJit() != nullptr)
@@ -263,9 +270,11 @@ struct AReal
 
     XAD_INLINE ~AReal()
     {
+#ifndef XAD_LINEAR_SLOTS  // linear slots: a copy may still use the slot, so it is never freed
         if (auto tape = tape_type::getActive())
             if (isOn(tape))
                 tape->unregisterVariable(slot_);
+#endif
     }
 
     XAD_FORCE_INLINE AReal& operator=(const AReal& o);
@@ -275,7 +284,16 @@ struct AReal
         this->a_ = x;
         auto tape = tape_type::getActive();
         if (tape && isOn(tape))
+#ifdef XAD_LINEAR_SLOTS
+        {
+            // linear slots: copies may share the old slot, so the constant gets a new one;
+            // the variable stays active, so an input registered before stays an input
+            registerOn(tape);
             tape->pushLhs(slot_);
+        }
+#else
+            tape->pushLhs(slot_);
+#endif
 #ifdef XAD_ENABLE_JIT
         else
             dropJitNode(std::integral_constant<bool, jit_supported>());
@@ -526,6 +544,7 @@ struct AReal
   private:
     XAD_RECORDING_OUTLINE void recordCopy(tape_type* s, const AReal& o);
 
+#ifndef XAD_SKIP_ZERO_PARTIALS
     // Stage the partials in stack arrays, then append them to the tape in one
     // batch. The arrays are locals, so the compiler can keep them in registers.
     template <int Size, typename Expr>
@@ -557,6 +576,31 @@ struct AReal
         expr.calc_derivatives(info, *t);
         t->commitOperations(info.index);
     }
+#else
+    // as above, returning the number of partials recorded
+    template <int Size, typename Expr>
+    XAD_FORCE_INLINE unsigned pushStaged(tape_type* t, const Expr& expr) const
+    {
+        DerivInfo<tape_type, Size> info;
+        expr.calc_derivatives(info, *t);
+        t->pushAll(info.multipliers, info.slots, info.index);
+        return info.index;
+    }
+
+    template <int Size, typename Expr>
+    XAD_FORCE_INLINE unsigned pushAll(tape_type* t, const Expr& expr) const
+    {
+        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
+            return pushStaged<Size>(t, expr);
+        DerivInfoDirect<tape_type> info;
+        info.dst = t->tryReserveOperations(Size);
+        if (XAD_VERY_UNLIKELY(info.dst == nullptr))
+            return pushStaged<Size>(t, expr);
+        expr.calc_derivatives(info, *t);
+        t->commitOperations(info.index);
+        return info.index;
+    }
+#endif
 
     XAD_INLINE void registerOn(tape_type* t)
     {
@@ -568,10 +612,16 @@ struct AReal
     XAD_INLINE bool isOn(const tape_type* t) const { return shouldRecord() && tapeId_ == t->id_; }
     XAD_INLINE void setTape(const tape_type* t) { tapeId_ = t->id_; }
     XAD_INLINE void swapTape(AReal& o) { std::swap(tapeId_, o.tapeId_); }
+#ifdef XAD_LINEAR_SLOTS
+    XAD_INLINE void copyTape(const AReal& o) { tapeId_ = o.tapeId_; }
+#endif
 #else
     XAD_INLINE bool isOn(const tape_type*) const { return shouldRecord(); }
     XAD_INLINE void setTape(const tape_type*) {}
     XAD_INLINE void swapTape(AReal&) {}
+#ifdef XAD_LINEAR_SLOTS
+    XAD_INLINE void copyTape(const AReal&) {}
+#endif
 #endif
 
     template <class T, std::size_t d__cnt>
@@ -648,8 +698,23 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
 {
     if (auto* s = tape_type::getActive())
     {
+#ifdef XAD_LINEAR_SLOTS
+        if (o.shouldRecord())
+        {
+            // linear slots: share the slot of o, which no later statement writes
+            slot_ = o.slot_;
+            copyTape(o);
+        }
+        else if (isOn(s))
+        {
+            // a passive value: a new slot with no partials, so the variable stays active
+            registerOn(s);
+            s->pushLhs(slot_);
+        }
+#else
         if (o.shouldRecord() || this->shouldRecord())
             recordCopy(s, o);
+#endif
     }
 #ifdef XAD_ENABLE_JIT
     else if (getActiveJit() != nullptr)
@@ -679,8 +744,19 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
             expr.calc_derivatives(info, *s);
+#ifdef XAD_SKIP_ZERO_PARTIALS
+            if (info.index == 0)
+                return;  // all partials zero: the result stays passive
+#endif
             slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
             setTape(s);
+#elif defined(XAD_SKIP_ZERO_PARTIALS)
+            // all partials zero: the result stays passive
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0)
+            {
+                registerOn(s);
+                s->pushLhs(slot_);
+            }
 #else
             registerOn(s);
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
@@ -713,15 +789,44 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
             if (!isOn(s))
                 slot_ = INVALID_SLOT;  // a slot of another tape: register on s
 #endif
-            s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
-            setTape(s);
+#ifdef XAD_SKIP_ZERO_PARTIALS
+            // all partials zero: a passive lhs stays passive, an active one gets an empty statement
+            if (info.index != 0 || isOn(s))
+            {
+#endif
+#ifdef XAD_LINEAR_SLOTS
+                // linear slots: every assignment writes a new slot, as copies may share the old one
+                slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
+#else
+                s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
+#endif
+                setTape(s);
+#ifdef XAD_SKIP_ZERO_PARTIALS
+            }
+#endif
+#elif defined(XAD_SKIP_ZERO_PARTIALS)
+            // all partials zero: a passive lhs stays passive, an active one gets an empty statement
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0 || isOn(s))
+            {
+#ifdef XAD_LINEAR_SLOTS
+                registerOn(s);  // linear slots: a new slot, as copies may share the old one
+#else
+                if (!isOn(s))
+                    registerOn(s);
+#endif
+                s->pushLhs(slot_);
+            }
 #else
             pushAll<ExprTraits<Expr>::numVariables>(s, expr);
             // only register this variable after evaluating the expression, as this
             // variable might appear on the rhs of the equation too and if not yet
             // registered, it doesn't need recording of derivatives
+#ifdef XAD_LINEAR_SLOTS
+            registerOn(s);  // linear slots: a new slot, as copies may share the old one
+#else
             if (!isOn(s))
                 registerOn(s);
+#endif
             s->pushLhs(slot_);
 #endif
         }

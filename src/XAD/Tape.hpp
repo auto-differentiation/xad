@@ -286,7 +286,7 @@ class Tape
     XAD_INLINE slot_type registerVariable()
     {
         ++currentRec_->numDerivatives_;
-#ifdef XAD_TAPE_REUSE_SLOTS
+#if defined(XAD_TAPE_REUSE_SLOTS) && !defined(XAD_LINEAR_SLOTS)  // linear slots free none
         if (currentRec_->startRange_ == reusable_ranges_.end())  // no free slots
             return registerVariableAtEnd();
         return registerVariableReuseSlots();
