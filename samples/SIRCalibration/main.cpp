@@ -127,14 +127,13 @@ T modelLoss(const std::vector<T>& u, const std::vector<double>& observed)
 }
 
 // Loss and its gradient with respect to u, from one adjoint sweep
-double lossAndGradient(const std::vector<double>& u, const std::vector<double>& observed,
-                       std::vector<double>& grad)
+double lossAndGradient(xad::adj<double>::tape_type& tape, const std::vector<double>& u,
+                       const std::vector<double>& observed, std::vector<double>& grad)
 {
     typedef xad::adj<double> mode;
-    typedef mode::tape_type tape_type;
     typedef mode::active_type AD;
 
-    tape_type tape;
+    tape.clearAll();
     std::vector<AD> uAd(NUM_PARAMS);
     for (int j = 0; j < NUM_PARAMS; ++j)
     {
@@ -178,7 +177,8 @@ int main()
 
     std::vector<double> u0 = {std::log(0.2), std::log(0.2), std::log(10.0)};
     std::vector<double> grad(NUM_PARAMS);
-    double loss0 = lossAndGradient(u0, observed, grad);
+    xad::adj<double>::tape_type tape;
+    double loss0 = lossAndGradient(tape, u0, observed, grad);
 
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "initial guess: loss = " << loss0 << "\n";
@@ -224,7 +224,7 @@ int main()
     const double GRAD_TOLERANCE = 1e-10;
     for (int iter = 0; iter < MAX_ITERATIONS; ++iter)
     {
-        double loss = lossAndGradient(u, observed, grad);
+        double loss = lossAndGradient(tape, u, observed, grad);
 
         double gradNormSq = 0.0;
         for (int j = 0; j < NUM_PARAMS; ++j)
