@@ -30,11 +30,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
+
+const double PI = 3.14159265358979323846;
 
 struct Point
 {
@@ -217,12 +221,12 @@ int main()
 
     // Initial guess for projectile launch parameters (will miss target)
     double v0Init = 45.0;
-    double thetaInit = 40.0 * (M_PI / 180.0);  // 40 degrees
+    double thetaInit = 40.0 * (PI / 180.0);  // 40 degrees
 
     std::cout << "=== XAD Projectile Aiming Optimization ===\n";
     std::cout << "Simulation: fixed-step integrator, " << N_STEPS << " steps, dt = " << DT << "s\n";
     std::cout << "Target: (" << TARGET_X << ", " << TARGET_Y << ")\n";
-    std::cout << "Initial guess: v0 = " << v0Init << " m/s, theta = " << (thetaInit * 180.0 / M_PI)
+    std::cout << "Initial guess: v0 = " << v0Init << " m/s, theta = " << (thetaInit * 180.0 / PI)
               << " deg\n\n";
 
     tape_type tape;
@@ -295,10 +299,11 @@ int main()
 
     double v0Current = v0Init;
     double thetaCurrent = thetaInit;
-    const double LR_V = 0.002;
+    const double LR_V = 0.05;
     const double LR_TH = 0.00005;
 
     std::vector<std::pair<int, std::vector<Point>>> trajectories;
+    double finalLoss = value(lossActive);
 
     for (int iter = 0; iter < 25; ++iter)
     {
@@ -319,15 +324,17 @@ int main()
         derivative(loss) = 1.0;
         tape.computeAdjoints();
 
+        finalLoss = value(loss);
+
         if (iter % 5 == 0 || iter == 24)
         {
             trajectories.push_back({iter, traj});
             const Point& finalPt = traj.back();
-            std::cout << "Iter " << std::setw(2) << iter << ": loss = " << std::setw(8)
-                      << value(loss) << ", final pos = (" << std::setw(6) << finalPt.x << ", "
-                      << std::setw(5) << finalPt.y << ")"
-                      << ", v0 = " << std::setw(5) << v0Current << " m/s, theta = " << std::setw(5)
-                      << (thetaCurrent * 180.0 / M_PI) << " deg\n";
+            std::cout << "Iter " << std::setw(2) << iter << ": loss = " << std::setw(8) << finalLoss
+                      << ", final pos = (" << std::setw(7) << finalPt.x << ", " << std::setw(6)
+                      << finalPt.y << ")"
+                      << ", v0 = " << std::setw(7) << v0Current << " m/s, theta = " << std::setw(5)
+                      << (thetaCurrent * 180.0 / PI) << " deg\n";
         }
 
         // Gradient descent step
@@ -336,6 +343,16 @@ int main()
     }
 
     std::cout << "\n";
+
+    // Exit non-zero if the final miss is above tolerance
+    const double FINAL_TOLERANCE = 0.01;
+    if (finalLoss > FINAL_TOLERANCE)
+    {
+        std::cerr << "Error: Final loss exceeds tolerance (" << finalLoss << " > "
+                  << FINAL_TOLERANCE << ")\n";
+        return 1;
+    }
+
     exportSvg("trajectory.svg", trajectories, TARGET_X, TARGET_Y);
 
     std::cout << "\nSample completed successfully.\n";

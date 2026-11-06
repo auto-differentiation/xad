@@ -22,4 +22,4 @@
 #
 ##############################################################################
 
-xad_add_sample(projectile SOURCES main.cpp)
+xad_add_sample(Projectile SOURCES main.cpp)

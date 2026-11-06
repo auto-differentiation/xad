@@ -68,12 +68,12 @@ the target.
 From the repository root:
 
     cmake -S . -B build
-    cmake --build build --target projectile
-    build/samples/projectile/projectile
+    cmake --build build --target Projectile
+    build/samples/Projectile/Projectile
 
 Or run via `ctest`:
 
-    ctest --test-dir build -R sample_projectile --output-on-failure
+    ctest --test-dir build -R sample_Projectile --output-on-failure
 
 ## Expected Output
 
@@ -96,11 +96,11 @@ Or run via `ctest`:
 
     Running gradient descent optimization (25 iterations):
     Iter  0: loss =  96.9610, final pos = (82.6458, 9.4848), v0 = 45.0000 m/s, theta = 40.0000 deg
-    Iter  5: loss =  49.1302, final pos = (86.0118, 3.6040), v0 = 44.7595 m/s, theta = 36.2175 deg
-    Iter 10: loss =  44.2964, final pos = (85.7061, 3.4260), v0 = 44.5392 m/s, theta = 36.2567 deg
-    Iter 15: loss =  39.9091, final pos = (85.4140, 3.2554), v0 = 44.3293 m/s, theta = 36.2941 deg
-    Iter 20: loss =  35.9311, final pos = (85.1352, 3.0921), v0 = 44.1294 m/s, theta = 36.3299 deg
-    Iter 24: loss =  33.0201, final pos = (84.9214, 2.9665), v0 = 43.9764 m/s, theta = 36.3573 deg
+    Iter  5: loss =   2.0343, final pos = (81.2703, 0.6485), v0 = 41.3691 m/s, theta = 36.7664 deg
+    Iter 10: loss =   0.0692, final pos = (80.2345, 0.1192), v0 = 40.6890 m/s, theta = 36.9475 deg
+    Iter 15: loss =   0.0022, final pos = (80.0422, 0.0214), v0 = 40.5638 m/s, theta = 36.9818 deg
+    Iter 20: loss =   0.0001, final pos = (80.0076, 0.0038), v0 = 40.5413 m/s, theta = 36.9880 deg
+    Iter 24: loss =   0.0000, final pos = (80.0019, 0.0010), v0 = 40.5376 m/s, theta = 36.9890 deg
 
     Exported trajectory visualization to trajectory.svg
 
