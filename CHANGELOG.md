@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sample `projectile`: 2D projectile motion with gravity and air drag, showing differentiation through a simulation and optimization of launch angle and speed using XAD's adjoint mode, with SVG trajectory export and finite-difference validation
+
 - CMake option `XAD_TAPE_TRACK_LIVE_SLOTS`: `resetTo` after `getPosition` no longer hands out the slots of variables still alive (e.g. a Monte Carlo result kept across paths), at a few percent recording cost
 - `XAD_OUTLINE_RECORDING` option: one out-of-line call per recorded operation, for faster compiles with `XAD_USE_STRONG_INLINE`
 - CMake option `XAD_SHARED_LIBS` builds XAD as a shared library, with one active tape per thread across all modules linking it, and `XAD_API` macros in the generated `XAD/Export.hpp`
