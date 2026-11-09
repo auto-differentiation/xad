@@ -43,6 +43,9 @@ struct BinaryExpr
 {
     typedef detail::BinaryDerivativeImpl<OperatorTraits<Op>::useResultBasedDerivatives == 1>
         der_impl;
+    // Eigen's numext math functions (numext::sqrt, ...) evaluate this expression as its active type
+    typedef typename ExprTraits<Expr1>::value_type
+        Eigen_BaseClassForSpecializationOfGlobalMathFuncImpl;
     XAD_INLINE BinaryExpr(const Expr1& a, const Expr2& b, Op op = Op())
         : a_(a), b_(b), op_(op), v_(op_(a_.value(), b_.value()))
     {
@@ -146,3 +149,17 @@ struct ExprTraits<BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>>
                   "both expressions must be the same underlying type");
 };
 }  // namespace xad
+
+namespace Eigen
+{
+template <typename T>
+struct NumTraits;
+
+// Eigen's numext functions (numext::abs, ...) take their result type from NumTraits: that of the
+// active type, not of the expression
+template <class Scalar, class Op, class Expr1, class Expr2, class DerivativeType>
+struct NumTraits<xad::BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>>
+    : NumTraits<typename xad::ExprTraits<Expr1>::value_type>
+{
+};
+}  // namespace Eigen

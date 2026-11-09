@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Eigen's scalar math functions (`numext::sqrt`, `abs2`, `abs`, ...) accept XAD expressions: Householder-based decompositions (QR, SVD, eigenvalue solvers) with newer Eigen releases and `stableNorm`/`blueNorm` compile, and `numext::abs` of an expression no longer returns the expression unchanged (with `XAD/StdCompatibility.hpp` included). Eigen's comparisons at default precision (`isApprox`, `isOnes`, `isIdentity`, `isUnitary`, Geometry `isApprox`) on active types are now exact: active types have no default tolerance, and before they tested `x <= y`
 - `+=`, `-=`, `*=` and `/=` of a `double` on nested types such as `AReal<FReal<double>>` were ambiguous
 - `copysign` of a nested active magnitude and a `double` was ambiguous with `StdCompatibility.hpp` on libc++
 - Two `frexp` in one expression sharing the exponent pointer gave the first one the second's derivative
