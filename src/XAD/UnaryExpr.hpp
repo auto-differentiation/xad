@@ -67,6 +67,9 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
 {
     typedef detail::UnaryDerivativeImpl<OperatorTraits<Op>::useResultBasedDerivatives == 1>
         der_impl;
+    // Eigen's numext math functions (numext::sqrt, ...) evaluate this expression as its active type
+    typedef typename ExprTraits<Expr>::value_type
+        Eigen_BaseClassForSpecializationOfGlobalMathFuncImpl;
     XAD_INLINE explicit UnaryExpr(const Expr& a, Op op = Op()) : a_(a), op_(op), v_(op_(a_.value()))
     {
     }
@@ -187,3 +190,17 @@ struct ExprTraits<UnaryExpr<Scalar, Op, Expr, DerivativeType> >
     typedef typename ExprTraits<Expr>::value_type value_type;
 };
 }  // namespace xad
+
+namespace Eigen
+{
+template <typename T>
+struct NumTraits;
+
+// Eigen's numext functions (numext::abs, ...) take their result type from NumTraits: that of the
+// active type, not of the expression
+template <class Scalar, class Op, class Expr, class DerivativeType>
+struct NumTraits<xad::UnaryExpr<Scalar, Op, Expr, DerivativeType>>
+    : NumTraits<typename xad::ExprTraits<Expr>::value_type>
+{
+};
+}  // namespace Eigen
