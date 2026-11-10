@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sample `Projectile`: 2D projectile motion with gravity and air drag, showing differentiation through a simulation and optimization of launch angle and speed using XAD's adjoint mode, with SVG trajectory export and finite-difference validation
 - `samples/SIRCalibration`: fits an SIR epidemic model written as plain C++ loops to synthetic daily cases, with the gradients from adjoint mode checked against finite differences
+- `samples/CurveFit`: fits a Nelson-Siegel zero curve to noisy zero rates with Gauss-Newton, taking the Jacobian of the residuals from vector forward mode in one pass and checking it against finite differences
 - Sample `Eigen`: gradients through Eigen decompositions with XAD's adjoint mode, for a least-squares residual solved with `ColPivHouseholderQR` and for `log|det(M)|` via `PartialPivLU`, validated against finite differences and the analytical gradient; built when Eigen 3.4 or later is found
 - CMake option `XAD_TAPE_TRACK_LIVE_SLOTS`: `resetTo` after `getPosition` no longer hands out the slots of variables still alive (e.g. a Monte Carlo result kept across paths), at a few percent recording cost
 - `XAD_OUTLINE_RECORDING` option: one out-of-line call per recorded operation, for faster compiles with `XAD_USE_STRONG_INLINE`
