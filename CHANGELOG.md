@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The adjoint sweep visits each statement's operands last to first, counting down over the operation arrays (adjoints of repeated operands may differ in the last bits)
 - With `XAD_SKIP_ZERO_PARTIALS`, recording writes all partials and drops the zero ones afterwards, with one test for all of them instead of a branch per partial
 - Vector forward mode divides the tangents of a division by multiplying with the reciprocal once (results may differ in the last bits; zero, infinite, NaN and subnormal divisors give the same kinds of results as before)
+- Forward-mode expressions over larger `FReal` types hold their operands by reference, as reverse mode does: evaluate them within the full expression, and don't keep one past it (e.g. bound to `auto` over a temporary)
+- With MSVC, expression nodes copy their members one by one, avoiding store-forwarding stalls in forward and adjoint mode (not with MSVC 14.4)
 
 ### Deprecated
 

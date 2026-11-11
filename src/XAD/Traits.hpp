@@ -42,6 +42,42 @@
 namespace xad
 {
 
+template <class, std::size_t>
+struct FReal;
+
+// How an expression node holds an operand: FReal leaves larger than two doubles (five with
+// clang-cl), or nested ones larger than four, by reference (as ADVar holds an AReal), so they
+// must outlive the full expression; smaller ones, which copy at less cost, and everything else
+// by value.
+template <class Expr>
+struct ExprStorage
+{
+    typedef Expr type;
+};
+
+template <class Scalar, std::size_t N>
+struct ExprStorage<FReal<Scalar, N>>
+{
+#if defined(_MSC_VER) && defined(__clang__)
+    // clang-cl outlines the tangent of by-reference expressions up to this size
+    static const std::size_t byValueDoubles = 5;
+#else
+    static const std::size_t byValueDoubles = 2;
+#endif
+    typedef typename std::conditional<(sizeof(FReal<Scalar, N>) > byValueDoubles * sizeof(double)),
+                                      const FReal<Scalar, N>&, FReal<Scalar, N>>::type type;
+};
+
+// nested FReal up to four doubles by value: gcc outlines the by-reference form, reloads the
+// operands after each partial store and splits the result into scalars, which costs more than
+// the copy
+template <class Scalar, std::size_t M, std::size_t N>
+struct ExprStorage<FReal<FReal<Scalar, M>, N>>
+{
+    typedef FReal<FReal<Scalar, M>, N> T;
+    typedef typename std::conditional<(sizeof(T) > 4 * sizeof(double)), const T&, T>::type type;
+};
+
 enum Direction
 {
     DIR_NONE,

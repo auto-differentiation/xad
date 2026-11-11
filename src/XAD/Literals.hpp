@@ -824,6 +824,9 @@ struct ADVar
     typedef typename areal_type::tape_type tape_type;
 
     XAD_INLINE explicit ADVar(const areal_type& a) : ar_(a), shouldRecord_(a.shouldRecord()) {}
+#ifdef XAD_EXPR_COPY_MEMBERWISE
+    XAD_FORCE_INLINE ADVar(const ADVar& o) : ar_(o.ar_), shouldRecord_(o.shouldRecord_) {}
+#endif
 
     XAD_INLINE Scalar getValue() const { return ar_.getValue(); }
 
@@ -1160,6 +1163,11 @@ struct FReal
     }
 
   private:
+    template <class Expr>
+    XAD_INLINE void assign(const Expression<Scalar, Expr, derivative_type>& expr, std::true_type);
+    template <class Expr>
+    XAD_INLINE void assign(const Expression<Scalar, Expr, derivative_type>& expr, std::false_type);
+
     derivative_type der_;
 };
 
@@ -1176,11 +1184,34 @@ template <class Expr>
 XAD_INLINE FReal<Scalar, N>& FReal<Scalar, N>::operator=(
     const Expression<Scalar, Expr, typename FReal<Scalar, N>::derivative_type>& expr)
 {
+    assign(expr, std::is_reference<typename ExprStorage<FReal>::type>());
+    return *this;
+}
+
+// held by reference: the tangent first, as expr may read this variable's value
+template <class Scalar, std::size_t N>
+template <class Expr>
+XAD_INLINE void FReal<Scalar, N>::assign(
+    const Expression<Scalar, Expr, typename FReal<Scalar, N>::derivative_type>& expr,
+    std::true_type)
+{
+    using xad::derivative;
+    using xad::value;
+    der_ = derivative(expr);
+    this->a_ = value(expr);
+}
+
+// held by value: expr has its own copy, and this order is the cheaper one
+template <class Scalar, std::size_t N>
+template <class Expr>
+XAD_INLINE void FReal<Scalar, N>::assign(
+    const Expression<Scalar, Expr, typename FReal<Scalar, N>::derivative_type>& expr,
+    std::false_type)
+{
     using xad::derivative;
     using xad::value;
     this->a_ = value(expr);
     der_ = derivative(expr);
-    return *this;
 }
 
 template <class Scalar, std::size_t M = 1>

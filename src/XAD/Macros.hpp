@@ -86,6 +86,13 @@ void ignore_unused_variable(const T&)
 #define XAD_INLINE inline
 #endif
 
+// MSVC copies a trivially copyable expression node with one wide load right after the narrow
+// stores of its members, which defeats store forwarding: nodes copy their members one by one.
+// Not with MSVC 14.4, which miscompiles those copies (wrong tangents).
+#if defined(_MSC_VER) && !defined(__clang__) && !(_MSC_VER >= 1940 && _MSC_VER < 1950)
+#define XAD_EXPR_COPY_MEMBERWISE
+#endif
+
 #ifdef XAD_NO_THREADLOCAL
 #define XAD_THREAD_LOCAL
 #else

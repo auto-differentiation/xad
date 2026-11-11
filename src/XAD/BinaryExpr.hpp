@@ -37,6 +37,12 @@
 namespace xad
 {
 
+// A partial of a constant zero operand inlined here is infinite by design (a zero tangent masks
+// it); MSVC reports that as C4723, an error with /WX.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4723)
+#endif
 template <class Scalar, class Op, class Expr1, class Expr2, class DerivativeType = Scalar>
 struct BinaryExpr
     : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>, DerivativeType>
@@ -50,6 +56,9 @@ struct BinaryExpr
         : a_(a), b_(b), op_(op), v_(op_(a_.value(), b_.value()))
     {
     }
+#ifdef XAD_EXPR_COPY_MEMBERWISE
+    XAD_FORCE_INLINE BinaryExpr(const BinaryExpr& o) : a_(o.a_), b_(o.b_), op_(o.op_), v_(o.v_) {}
+#endif
     XAD_INLINE Scalar value() const { return v_; }
 
     template <class Info, class Tape>
@@ -118,11 +127,14 @@ struct BinaryExpr
 #endif
     }
 
-    Expr1 a_;
-    Expr2 b_;
+    typename ExprStorage<Expr1>::type a_;
+    typename ExprStorage<Expr2>::type b_;
     Op op_;
     Scalar v_;
 };
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 template <class Scalar, class Op, class Expr1, class Expr2, class DerivativeType>
 struct ExprTraits<BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>>
