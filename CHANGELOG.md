@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [unreleased]
+## [2.2.0] - 2026-11-11
 
 ### Added
 
@@ -52,10 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docs: new Build Options page: what each performance-related CMake option does, when it helps or hurts, and starting sets per kind of workload
 - Higher-order tapes over `FReal` write their partials straight into the tape instead of staging them
 - Recording passes the multiplier through sums, differences and negations instead of multiplying by their partials of 1 and -1 (fewer nested products for higher-order types). First-order tapes are unchanged; at higher order finite tangents are unchanged up to the sign of zero, and a partial's tangent is now exact where an infinite value made it NaN. Leaf partials at the top level of an expression are not multiplied by 1 either. Expression types defined outside XAD (deriving from `xad::Expression`) need `calc_derivatives(info, tape)` and `calc_derivatives(info, tape, detail::minus_unit)` overloads besides the one taking a multiplier
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -148,6 +144,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rolling back to a position at the end of a full tape chunk, or sweeping a statement without operations there, accessed memory past the chunk list
 - With `XAD_OUTLINE_RECORDING` and JIT, assigning an expression on the tape to a variable holding a JIT slot recorded the statement for the JIT slot instead of registering the variable on the tape
 - With `XAD_SKIP_ZERO_PARTIALS` and `StdCompatibility.hpp`, higher-order types dropped partials whose value was zero but that still carried a derivative (a tangent or an inner-tape dependency)
+
+
+## [2.1.0] - 2026-03-31
+
+### Added
+
+- Support for xad-codegen, a native code generation backend for the JIT interface: CMake options `XAD_ENABLE_CODEGEN` (off by default) and `XAD_CODEGEN_DIR`, backend classes `xad::codegen::CodegenBackend` and `CodegenBackendAVX`, and an updated `LiborSwaptionPricerJIT` sample. xad-codegen is available under a separate commercial licence.
 
 
 ## [2.0.0] - 2026-02-06
@@ -344,7 +347,9 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 
 Initial open-source release
 
-[unreleased]: https://github.com/auto-differentiation/xad/compare/v2.0.0...HEAD
+[2.2.0]: https://github.com/auto-differentiation/xad/compare/v2.1.0...v2.2.0
+
+[2.1.0]: https://github.com/auto-differentiation/xad/compare/v2.0.0...v2.1.0
 
 [2.0.0]: https://github.com/auto-differentiation/xad/compare/v1.8.0...v2.0.0
 

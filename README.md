@@ -88,7 +88,7 @@ With CMake, straight from GitHub:
 
 ```cmake
 include(FetchContent)
-FetchContent_Declare(XAD GIT_REPOSITORY https://github.com/auto-differentiation/xad.git GIT_TAG v2.1.0)
+FetchContent_Declare(XAD GIT_REPOSITORY https://github.com/auto-differentiation/xad.git GIT_TAG v2.2.0)
 FetchContent_MakeAvailable(XAD)
 target_link_libraries(my_app PRIVATE XAD::xad)
 ```
