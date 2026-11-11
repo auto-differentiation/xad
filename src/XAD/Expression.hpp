@@ -24,7 +24,10 @@
 
 #pragma once
 #include <XAD/Macros.hpp>
+#include <XAD/Traits.hpp>
 
+#include <new>
+#include <type_traits>
 #include <utility>
 #ifdef XAD_SKIP_ZERO_PARTIALS
 #include <cstdint>
@@ -113,6 +116,22 @@ XAD_FORCE_INLINE unsigned dropZeroPartials(std::pair<T, S>* ops, unsigned n)
 #endif
 #endif
 
+namespace detail
+{
+// T(args...) into tape memory at p, assigned or constructed in place (see is_assigned_partial);
+// directly recorded types are trivially destructible, so constructing over an old value is fine
+template <class T, class... Args>
+XAD_FORCE_INLINE void storeAt(T* p, std::true_type, const Args&... args)
+{
+    *p = T(args...);
+}
+template <class T, class... Args>
+XAD_FORCE_INLINE void storeAt(T* p, std::false_type, const Args&... args)
+{
+    ::new (static_cast<void*>(p)) T(args...);
+}
+}  // namespace detail
+
 // keeps information about multipliers and slots for an expression
 // locally on stack
 template <typename TapeType, int N>
@@ -155,6 +174,9 @@ struct DerivInfo
 template <typename TapeType>
 struct DerivInfoDirect
 {
+    // how partials are written: assigned, or constructed in place (see detail::storeAt)
+    typedef detail::is_assigned_partial<typename TapeType::value_type> IsAssigned;
+
     typename TapeType::value_type* multipliers = nullptr;
     typename TapeType::slot_type* slots = nullptr;
     std::size_t pos = 0;  // where the next one goes
@@ -168,7 +190,7 @@ struct DerivInfoDirect
 #ifdef XAD_SKIP_ZERO_PARTIALS
         zeroCount += isSkippedPartial(m);
 #endif
-        multipliers[pos] = m;
+        detail::storeAt(multipliers + pos, IsAssigned(), m);
         slots[pos++] = slot;
     }
 
@@ -201,6 +223,9 @@ struct DerivInfoDirect
 template <typename TapeType>
 struct DerivInfoDirect
 {
+    // how partials are written: assigned, or constructed in place (see detail::storeAt)
+    typedef detail::is_assigned_partial<typename TapeType::value_type> IsAssigned;
+
     using pair_type = std::pair<typename TapeType::value_type, typename TapeType::slot_type>;
 
     unsigned index = 0;
@@ -214,7 +239,7 @@ struct DerivInfoDirect
 #ifdef XAD_SKIP_ZERO_PARTIALS
         zeroCount += isSkippedPartial(m);
 #endif
-        dst[index++] = pair_type(m, slot);
+        detail::storeAt(dst + index++, IsAssigned(), m, slot);
     }
 
 #ifdef XAD_SKIP_ZERO_PARTIALS

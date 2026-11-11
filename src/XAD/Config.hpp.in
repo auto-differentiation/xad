@@ -76,7 +76,7 @@
 #cmakedefine XAD_TLS_INITIAL_EXEC
 
 // Keep the tape's multipliers and slots in separate arrays: less memory per operation;
-// first-order tapes record straight into them, others stage as before
+// recording writes straight into them, except nested active types and outline-recorded assignments
 #cmakedefine XAD_REDUCED_MEMORY
 
 // Use and free a variable's slot only on the tape it is registered on (default in Debug builds)

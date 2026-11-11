@@ -619,6 +619,11 @@ struct AReal
   private:
     XAD_RECORDING_OUTLINE void recordCopy(tape_type* s, const AReal& o);
 
+    // written into tape memory, never destroyed there
+    static_assert(!detail::is_direct_recordable<typename tape_type::value_type>::value ||
+                      std::is_trivially_destructible<typename tape_type::value_type>::value,
+                  "a directly recorded tape value must be trivially destructible");
+
 #ifndef XAD_SKIP_ZERO_PARTIALS
     // Stage the partials in stack arrays, then append them to the tape in one
     // batch. The arrays are locals, so the compiler can keep them in registers.
@@ -632,11 +637,11 @@ struct AReal
 
     // Write the partials into the tape as they are computed, saving the copy.
     // Falls back to staging when the run would cross a chunk boundary, and for
-    // value types that are not trivially copyable.
+    // value types that are not directly recordable (active types).
     template <int Size, typename Expr>
     XAD_FORCE_INLINE void pushAll(tape_type* t, const Expr& expr) const
     {
-        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
+        if (!detail::is_direct_recordable<typename tape_type::value_type>::value)
         {
             pushStaged<Size>(t, expr);
             return;
@@ -693,7 +698,7 @@ struct AReal
     template <int Size, typename Expr>
     XAD_FORCE_INLINE bool pushAll(tape_type* t, const Expr& expr) const
     {
-        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
+        if (!detail::is_direct_recordable<typename tape_type::value_type>::value)
             return pushStaged<Size>(t, expr);
 #ifdef XAD_REDUCED_MEMORY
         using mul_type = typename tape_type::value_type;

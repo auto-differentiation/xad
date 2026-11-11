@@ -140,6 +140,50 @@ template <class, std::size_t>
 struct ARealDirect;
 template <class, std::size_t>
 struct FRealDirect;
+template <class, std::size_t>
+struct AReal;
+
+namespace detail
+{
+// Whether recording writes a T straight into tape memory: trivially copyable types, and FReal /
+// FRealDirect over them. Not built on the std traits of XAD's types, which StdCompatibility.hpp
+// specialises.
+template <class T>
+struct is_direct_recordable : std::is_trivially_copyable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_direct_recordable<FReal<T, N>> : is_direct_recordable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_direct_recordable<FRealDirect<T, N>> : is_direct_recordable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_direct_recordable<AReal<T, N>> : std::false_type
+{
+};
+template <class T, std::size_t N>
+struct is_direct_recordable<ARealDirect<T, N>> : std::false_type
+{
+};
+
+// Whether a directly recorded partial is assigned (trivially copyable non-XAD types) or
+// constructed in place (FReal, FRealDirect)
+template <class T>
+struct is_assigned_partial : std::is_trivially_copyable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_assigned_partial<FReal<T, N>> : std::false_type
+{
+};
+template <class T, std::size_t N>
+struct is_assigned_partial<FRealDirect<T, N>> : std::false_type
+{
+};
+}  // namespace detail
 
 namespace detail
 {
