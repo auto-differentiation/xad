@@ -639,6 +639,20 @@ struct AReal
             pushStaged<Size>(t, expr);
             return;
         }
+#ifdef XAD_REDUCED_MEMORY
+        auto run = t->tryReserveOperationRun(Size);
+        if (XAD_VERY_UNLIKELY(run.multipliers == nullptr))
+        {
+            pushStaged<Size>(t, expr);
+            return;
+        }
+        DerivInfoDirect<tape_type> info;
+        info.multipliers = run.multipliers;
+        info.slots = run.slots;
+        info.pos = run.pos;
+        expr.calc_derivatives(info, *t);
+        t->commitOperationRun(info.pos);
+#else
         DerivInfoDirect<tape_type> info;
         info.dst = t->tryReserveOperations(Size);
         if (XAD_VERY_UNLIKELY(info.dst == nullptr))
@@ -648,6 +662,7 @@ struct AReal
         }
         expr.calc_derivatives(info, *t);
         t->commitOperations(info.index);
+#endif
     }
 #else
     // as above; false if there were partials and all were zero, which are not recorded
@@ -661,10 +676,12 @@ struct AReal
         return keep;
     }
 
+#ifndef XAD_REDUCED_MEMORY
     using staged_pair = typename DerivInfoDirect<tape_type>::pair_type;
+#endif
 
 #if defined(__GNUC__) && !defined(__clang__)
-// GCC cannot see that the partials written through info.dst fill the stack buffer
+// GCC cannot see that the partials written through info fill the stack buffer(s)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
@@ -674,14 +691,32 @@ struct AReal
     template <int Size, typename Expr>
     XAD_FORCE_INLINE bool pushAll(tape_type* t, const Expr& expr) const
     {
-#ifdef XAD_REDUCED_MEMORY
-        const bool canWriteDirect = false;  // try_reserve always fails
-#else
-        const bool canWriteDirect =
-            std::is_trivially_copyable<typename tape_type::value_type>::value;
-#endif
-        if (!canWriteDirect)
+        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
             return pushStaged<Size>(t, expr);
+#ifdef XAD_REDUCED_MEMORY
+        using mul_type = typename tape_type::value_type;
+        alignas(mul_type) unsigned char stagedMuls[Size * sizeof(mul_type)];
+        alignas(slot_type) unsigned char stagedSlots[Size * sizeof(slot_type)];
+        auto run = t->tryReserveOperationRun(Size);
+        const bool direct = run.multipliers != nullptr;
+        if (XAD_VERY_UNLIKELY(!direct))
+        {
+            run.multipliers = reinterpret_cast<mul_type*>(stagedMuls);
+            run.slots = reinterpret_cast<slot_type*>(stagedSlots);
+            run.pos = 0;
+        }
+        DerivInfoDirect<tape_type> info;
+        info.multipliers = run.multipliers;
+        info.slots = run.slots;
+        info.pos = info.start = run.pos;
+        expr.calc_derivatives(info, *t);
+        bool keep = info.dropZeros();
+        if (XAD_VERY_LIKELY(direct))
+            t->commitOperationRun(info.pos);
+        else
+            appendStaged(t, info.multipliers, info.slots, unsigned(info.pos));
+        return keep;
+#else
         alignas(staged_pair) unsigned char staged[Size * sizeof(staged_pair)];
         DerivInfoDirect<tape_type> info;
         info.dst = t->tryReserveOperations(Size);
@@ -695,16 +730,26 @@ struct AReal
         else
             appendStaged(t, info.dst, info.index);
         return keep;
+#endif
     }
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
+#ifdef XAD_REDUCED_MEMORY
+    static XAD_NEVER_INLINE XAD_COLD void appendStaged(tape_type* t,
+                                                       const typename tape_type::value_type* muls,
+                                                       const slot_type* slots, unsigned n)
+    {
+        t->pushAll(muls, slots, n);
+    }
+#else
     static XAD_NEVER_INLINE XAD_COLD void appendStaged(tape_type* t, const staged_pair* ops,
                                                        unsigned n)
     {
         for (unsigned i = 0; i < n; ++i) t->pushAll(&ops[i].first, &ops[i].second, 1);
     }
+#endif
 #endif
 
     XAD_INLINE void registerOn(tape_type* t)

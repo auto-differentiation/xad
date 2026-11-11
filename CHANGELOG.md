@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vector forward mode divides the tangents of a division by multiplying with the reciprocal once (results may differ in the last bits; zero, infinite, NaN and subnormal divisors give the same kinds of results as before)
 - Forward-mode expressions over larger `FReal` types hold their operands by reference, as reverse mode does: evaluate them within the full expression, and don't keep one past it (e.g. bound to `auto` over a temporary)
 - With MSVC, expression nodes copy their members one by one, avoiding store-forwarding stalls in forward and adjoint mode (binary nodes not with MSVC 14.4)
+- CMake option `XAD_REDUCED_MEMORY`: first-order tapes record straight into the tape's separate multiplier and slot arrays; nested active types, assignments with `XAD_OUTLINE_RECORDING`, custom traits naming the paired container and statements crossing a chunk stage as before. The reverse sweep reads less memory per operand (faster adjoints for large tapes that do not fit in cache; small recordings run many times can be slower than the default layout)
 
 ### Deprecated
 

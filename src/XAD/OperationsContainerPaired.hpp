@@ -133,6 +133,17 @@ class OperationsContainerPaired
 
     XAD_FORCE_INLINE void commit(size_type n) { idx_ += n; }
 
+#ifdef XAD_REDUCED_MEMORY
+    // Reduced memory's direct writes go to separate arrays, which this container does not have:
+    // tapes with traits that name it stage their partials and append them.
+    XAD_FORCE_INLINE OperationsRun<T, S> try_reserve_run(size_type)
+    {
+        return {nullptr, nullptr, 0};
+    }
+
+    XAD_FORCE_INLINE void commit_run(size_type) {}
+#endif
+
     XAD_FORCE_INLINE void push_back_unsafe(T multiplier, S slot)
     {
         if (XAD_VERY_UNLIKELY(idx_ == ChunkSize))

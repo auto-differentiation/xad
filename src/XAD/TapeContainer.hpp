@@ -25,11 +25,8 @@
 #pragma once
 
 #include <XAD/ChunkContainer.hpp>
-#ifdef XAD_REDUCED_MEMORY
 #include <XAD/OperationsContainer.hpp>
-#else
 #include <XAD/OperationsContainerPaired.hpp>
-#endif
 
 #include <utility>
 

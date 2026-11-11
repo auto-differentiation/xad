@@ -371,6 +371,17 @@ class Tape
         operations_.append_n(multipliers, slots, n);
     }
 
+#ifdef XAD_REDUCED_MEMORY
+    // Space for n operations in the tape, for writing the partials in place (OperationsRun);
+    // commitOperationRun takes the position after the last one written
+    XAD_FORCE_INLINE OperationsRun<value_type, slot_type> tryReserveOperationRun(unsigned n)
+    {
+        return operations_.try_reserve_run(n);
+    }
+
+    XAD_FORCE_INLINE void commitOperationRun(std::size_t end) { operations_.commit_run(end); }
+#endif
+
     XAD_FORCE_INLINE std::pair<value_type, slot_type>* tryReserveOperations(unsigned n)
     {
         return operations_.try_reserve(n);

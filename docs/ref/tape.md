@@ -181,6 +181,12 @@ It throws [`DerivativesNotInitialized`](exceptions.md) if called without setting
 
 Gives *strong exception safety guarantee* - tape state unchanged in case of exception.
 
+The sweep reads each operation's multiplier and slot, by default stored together as a pair. With the
+CMake option `XAD_REDUCED_MEMORY` they are kept in two separate arrays, which takes less memory and
+reads less of it per operation: faster for large tapes that do not fit in cache, while small recordings
+run many times can be slower. It works with the other tape options (`XAD_SKIP_ZERO_PARTIALS`,
+`XAD_COPY_ELISION`, `XAD_LINEAR_SLOTS`, `XAD_TAPE_REUSE_SLOTS`, `XAD_TAPE_TRACK_LIVE_SLOTS`).
+
 #### `getPosition`
 
 `#!c++ position_type getPosition()` returns the current position in the tape as an opaque integer (its value is internal and should not be relied upon in client code).

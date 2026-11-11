@@ -94,6 +94,7 @@ XAD_FORCE_INLINE unsigned dropZeroPartials(T* multipliers, S* slots, unsigned n)
     return k;
 }
 
+#ifndef XAD_REDUCED_MEMORY
 template <typename T, typename S>
 XAD_FORCE_INLINE unsigned dropZeroPartials(std::pair<T, S>* ops, unsigned n)
 {
@@ -105,6 +106,7 @@ XAD_FORCE_INLINE unsigned dropZeroPartials(std::pair<T, S>* ops, unsigned n)
     }
     return k;
 }
+#endif
 #endif
 
 // keeps information about multipliers and slots for an expression
@@ -144,6 +146,44 @@ struct DerivInfo
 #endif
 };
 
+#ifdef XAD_REDUCED_MEMORY
+// same, but writing straight into the tape's separate multiplier and slot arrays
+template <typename TapeType>
+struct DerivInfoDirect
+{
+    typename TapeType::value_type* multipliers = nullptr;
+    typename TapeType::slot_type* slots = nullptr;
+    std::size_t pos = 0;  // where the next one goes
+#ifdef XAD_SKIP_ZERO_PARTIALS
+    std::size_t start = 0;  // where the first one went
+    unsigned zeroCount = 0;
+#endif
+
+    XAD_INLINE void add(const typename TapeType::value_type& m, typename TapeType::slot_type slot)
+    {
+#ifdef XAD_SKIP_ZERO_PARTIALS
+        zeroCount += isSkippedPartial(m);
+#endif
+        multipliers[pos] = m;
+        slots[pos++] = slot;
+    }
+
+#ifdef XAD_SKIP_ZERO_PARTIALS
+    // as in DerivInfo
+    XAD_FORCE_INLINE bool dropZeros()
+    {
+        if (zeroCount != 0)
+            return (pos = start + dropZeroPartials(multipliers + start, slots + start,
+                                                   unsigned(pos - start))) != start;
+#ifdef XAD_TAPE_CHECKS
+        return pos != start;  // another tape's operands add no partials
+#else
+        return true;
+#endif
+    }
+#endif
+};
+#else
 // same, but writing straight into the tape instead of a local buffer
 template <typename TapeType>
 struct DerivInfoDirect
@@ -178,6 +218,7 @@ struct DerivInfoDirect
     }
 #endif
 };
+#endif
 
 /// Represents a generic expression, for the Scalar base type.
 ///

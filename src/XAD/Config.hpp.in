@@ -74,7 +74,8 @@
 // Use the initial-exec TLS model for the thread-local tape (GCC/Clang)
 #cmakedefine XAD_TLS_INITIAL_EXEC
 
-// Reduce memory usage in the tape, at a slight performance cost
+// Keep the tape's multipliers and slots in separate arrays: less memory per operation;
+// first-order tapes record straight into them, others stage as before
 #cmakedefine XAD_REDUCED_MEMORY
 
 // Use and free a variable's slot only on the tape it is registered on (default in Debug builds)
