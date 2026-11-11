@@ -938,12 +938,15 @@ XAD_RECORDING_OUTLINE void AReal<Scalar, M>::recordCopy(tape_type* s, const ARea
     XAD_UNUSED_VARIABLE(o);
     if (!ownsSlot(s))
         claimSlot(s);
+    s->pushLhs(slot_);
 #else
     if (!isOn(s))
         registerOn(s);
+    // read before the partial is written: the tape's stores may alias slot_
+    const slot_type slot = slot_;
     pushAll<1>(s, o);
+    s->pushLhs(slot);
 #endif
-    s->pushLhs(slot_);
 }
 
 template <class Scalar, std::size_t M>

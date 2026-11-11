@@ -151,38 +151,16 @@ class OperationsContainerPaired
         ++idx_;
     }
 
-#if defined(__GNUC__) && !defined(__clang__)
-// GCC 12 flags this warning in the code below, although it is perfectly safe
-// and tested
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-
     template <class MulIt, class SlotIt>
     XAD_FORCE_INLINE void append_n(MulIt muls, SlotIt slots, size_type n)
     {
-        auto items = (std::min)(ChunkSize - idx_, n);
-        auto dst = chunk(chunk_) + idx_;
-        auto dst_end = dst + items;
-        for (; dst != dst_end; ++dst) ::new (dst) std::pair<T, S>(*muls++, *slots++);
-        idx_ += items;
-
-        while (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
+        if (XAD_VERY_UNLIKELY(n >= ChunkSize - idx_))  // fills the chunk
         {
-            next_chunk();
-            n -= items;
-
-            items = (std::min)(ChunkSize, n);
-            dst = chunk(chunk_);
-            dst_end = dst + items;
-            for (; dst != dst_end; ++dst) ::new (dst) std::pair<T, S>(*muls++, *slots++);
-            idx_ += items;
+            append_across_chunks(muls, slots, n);
+            return;
         }
+        append_here(muls, slots, n);
     }
-
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
 
     XAD_FORCE_INLINE std::pair<mul_type, slot_type> operator[](size_type n) const
     {
@@ -281,6 +259,42 @@ class OperationsContainerPaired
     }
 
   private:
+#if defined(__GNUC__) && !defined(__clang__)
+// GCC 12 flags this warning in the code below, although it is perfectly safe
+// and tested
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
+    // append_n up to or across the end of the chunk: out of line, recording inlines its callers
+    template <class MulIt, class SlotIt>
+    XAD_NEVER_INLINE XAD_COLD void append_across_chunks(MulIt muls, SlotIt slots, size_type n)
+    {
+        auto items = (std::min)(ChunkSize - idx_, n);
+        append_here(muls, slots, items);
+
+        while (idx_ == ChunkSize)
+        {
+            next_chunk();
+            n -= items;
+
+            items = (std::min)(ChunkSize, n);
+            append_here(muls, slots, items);
+        }
+    }
+
+    template <class MulIt, class SlotIt>
+    XAD_FORCE_INLINE void append_here(MulIt& muls, SlotIt& slots, size_type n)
+    {
+        auto dst = chunk(chunk_) + idx_;
+        for (size_type i = 0; i < n; ++i) ::new (dst + i) std::pair<T, S>(*muls++, *slots++);
+        idx_ += n;
+    }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
     // on to the next chunk, adding it if there is none: out of line, recording inlines its callers
     XAD_NEVER_INLINE XAD_COLD void next_chunk()
     {
