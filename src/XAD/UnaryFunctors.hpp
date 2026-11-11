@@ -144,5 +144,21 @@ template <class Scalar, class T2>
 struct HasTangentRule<scalar_div1_op<Scalar, T2> > : std::true_type
 {
 };
+template <class Scalar>
+struct UnitPartialA<negate_op<Scalar> > : std::integral_constant<int, -1>
+{
+};
+template <class Scalar, class T2>
+struct UnitPartialA<scalar_add_op<Scalar, T2> > : std::integral_constant<int, 1>
+{
+};
+template <class Scalar, class T2>
+struct UnitPartialA<scalar_sub1_op<Scalar, T2> > : std::integral_constant<int, -1>
+{
+};
+template <class Scalar, class T2>
+struct UnitPartialA<scalar_sub2_op<Scalar, T2> > : std::integral_constant<int, 1>
+{
+};
 }  // namespace detail
 }  // namespace xad

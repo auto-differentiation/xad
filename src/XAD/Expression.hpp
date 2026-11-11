@@ -258,6 +258,68 @@ struct DerivInfoDirect
 };
 #endif
 
+namespace detail
+{
+// incoming multipliers of calc_derivatives besides a value: none (+1), and -1
+struct unit_multiplier
+{
+};
+struct minus_unit
+{
+};
+
+// -x; FReal and Vec component-wise (Literals.hpp), as FReal's unary minus multiplies its tangent
+template <class T>
+struct Negate
+{
+    static XAD_FORCE_INLINE T apply(const T& x) { return -x; }
+};
+
+template <class T>
+XAD_FORCE_INLINE T negated(const T& x)
+{
+    return Negate<T>::apply(x);
+}
+
+// e's partials with the multiplier m: none, minus_unit or a value
+template <class E, class Info, class Tape>
+XAD_FORCE_INLINE void calcWith(const E& e, Info& info, Tape& s, unit_multiplier)
+{
+    e.calc_derivatives(info, s);
+}
+template <class E, class Info, class Tape, class M>
+XAD_FORCE_INLINE void calcWith(const E& e, Info& info, Tape& s, const M& m)
+{
+    e.calc_derivatives(info, s, m);
+}
+
+// the multiplier m with its sign flipped
+XAD_FORCE_INLINE minus_unit flipSign(unit_multiplier) { return minus_unit(); }
+XAD_FORCE_INLINE unit_multiplier flipSign(minus_unit) { return unit_multiplier(); }
+template <class S>
+XAD_FORCE_INLINE S flipSign(const S& m)
+{
+    return negated(m);
+}
+
+// the multiplier m times the partial d
+template <class S>
+XAD_FORCE_INLINE const S& times(unit_multiplier, const S& d)
+{
+    return d;
+}
+template <class S>
+XAD_FORCE_INLINE S times(minus_unit, const S& d)
+{
+    return negated(d);
+}
+template <class S>
+XAD_FORCE_INLINE S times(const S& m, const S& d)
+{
+    return m * d;
+}
+}  // namespace detail
+
 /// Represents a generic expression, for the Scalar base type.
 ///
 /// It uses the CTRP pattern, where derived classes register themselves with
@@ -320,6 +382,13 @@ struct Expression
     XAD_INLINE void calc_derivatives(Info& info, Tape& s, const Scalar& multiplier) const
     {
         derived().calc_derivatives(info, s, multiplier);
+    }
+
+    /// calculate the derivatives with the multiplier -1
+    template <class Info, class Tape>
+    XAD_INLINE void calc_derivatives(Info& info, Tape& s, detail::minus_unit m) const
+    {
+        derived().calc_derivatives(info, s, m);
     }
 
     XAD_INLINE bool shouldRecord() const { return derived().shouldRecord(); }

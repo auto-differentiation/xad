@@ -253,6 +253,19 @@ struct HasTangentRule : std::false_type
 {
 };
 
+// An op's partial in its first (A) or second (B) operand where it is the constant +1 or -1, else 0.
+// Recording passes the multiplier on for these instead of multiplying by them, which costs nested
+// products for higher-order types.
+template <class Op>
+struct UnitPartialA : std::integral_constant<int, 0>
+{
+};
+
+template <class Op>
+struct UnitPartialB : std::integral_constant<int, 0>
+{
+};
+
 template <class D>
 XAD_INLINE typename std::enable_if<float_or_double<D>::value, bool>::type isNaNTangent(const D& d)
 {

@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - With `XAD_TAPE_TRACK_LIVE_SLOTS`, `newRecording` takes the slot counter back to where the previous recording started once no variable registered since is still alive: repeated recordings on one tape with inputs registered once reuse the same slots; the docs recommend it, or `XAD_TAPE_REUSE_SLOTS`, for code that records many times on one tape
 - Docs: new Build Options page: what each performance-related CMake option does, when it helps or hurts, and starting sets per kind of workload
 - Higher-order tapes over `FReal` write their partials straight into the tape instead of staging them
+- Recording passes the multiplier through sums, differences and negations instead of multiplying by their partials of 1 and -1 (fewer nested products for higher-order types). First-order tapes are unchanged; at higher order finite tangents are unchanged up to the sign of zero, and a partial's tangent is now exact where an infinite value made it NaN. Leaf partials at the top level of an expression are not multiplied by 1 either. Expression types defined outside XAD (deriving from `xad::Expression`) need `calc_derivatives(info, tape)` and `calc_derivatives(info, tape, detail::minus_unit)` overloads besides the one taking a multiplier
 
 ### Deprecated
 

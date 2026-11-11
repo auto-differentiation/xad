@@ -547,6 +547,17 @@ struct AReal
 #endif
     }
 
+    template <class Info>
+    XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type& s, detail::minus_unit) const
+    {
+        if (isOn(&s))
+#ifdef XAD_COPY_ELISION
+            pushRhs(info, Scalar(-1), tapeSlot());
+#else
+            pushRhs(info, Scalar(-1), slot_);
+#endif
+    }
+
     XAD_INLINE derivative_type getDerivative() const { return derivative(); }
 
     XAD_INLINE const derivative_type& derivative() const
@@ -896,6 +907,12 @@ struct ADVar
         ar_.calc_derivatives(info, s);
     }
 
+    template <class Info>
+    XAD_INLINE void calc_derivatives(Info& info, tape_type& s, detail::minus_unit m) const
+    {
+        ar_.calc_derivatives(info, s, m);
+    }
+
     XAD_INLINE const typename areal_type::derivative_type& derivative() const
     {
         return ar_.derivative();
@@ -992,7 +1009,7 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
         {
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
-            expr.calc_derivatives(info, *s);
+            expr.derived().calc_derivatives(info, *s);
 #ifdef XAD_SKIP_ZERO_PARTIALS
             if (!info.dropZeros())
                 return;  // all partials zero: the result stays passive
@@ -1001,14 +1018,14 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
             setTape(s);
 #elif defined(XAD_SKIP_ZERO_PARTIALS)
             // all partials zero: the result stays passive
-            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr))
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr.derived()))
             {
                 registerOn(s);
                 s->pushLhs(slot_);
             }
 #else
             registerOn(s);
-            pushAll<ExprTraits<Expr>::numVariables>(s, expr);
+            pushAll<ExprTraits<Expr>::numVariables>(s, expr.derived());
             s->pushLhs(slot_);
 #endif
         }
@@ -1033,7 +1050,7 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
         {
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
-            expr.calc_derivatives(info, *s);
+            expr.derived().calc_derivatives(info, *s);
 #if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
             if (!isOn(s))
                 slot_ = INVALID_SLOT;  // a slot of another tape or a JIT slot: register on s
@@ -1060,7 +1077,7 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
 #endif
 #elif defined(XAD_SKIP_ZERO_PARTIALS)
             // all partials zero: a passive lhs stays passive, an active one gets an empty statement
-            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) || isOn(s))
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr.derived()) || isOn(s))
             {
 #ifdef XAD_LINEAR_SLOTS
                 registerOn(s);  // linear slots: a new slot, as copies may share the old one
@@ -1074,7 +1091,7 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
                 s->pushLhs(slot_);
             }
 #else
-            pushAll<ExprTraits<Expr>::numVariables>(s, expr);
+            pushAll<ExprTraits<Expr>::numVariables>(s, expr.derived());
             // only register this variable after evaluating the expression, as this
             // variable might appear on the rhs of the equation too and if not yet
             // registered, it doesn't need recording of derivatives
@@ -1222,6 +1239,33 @@ struct FReal
 
     derivative_type der_;
 };
+
+namespace detail
+{
+// -x without FReal's unary minus, whose tangent is a product by -1
+template <class T, std::size_t N>
+struct Negate<FReal<T, N>>
+{
+    static XAD_FORCE_INLINE FReal<T, N> apply(const FReal<T, N>& x)
+    {
+        FReal<T, N> r;
+        r.value() = detail::negated(x.value());
+        r.derivative() = detail::negated(x.derivative());
+        return r;
+    }
+};
+
+template <class T, std::size_t N>
+struct Negate<Vec<T, N>>
+{
+    static XAD_FORCE_INLINE Vec<T, N> apply(const Vec<T, N>& x)
+    {
+        Vec<T, N> r;
+        for (std::size_t i = 0; i < N; ++i) r[i] = detail::negated(x[i]);
+        return r;
+    }
+};
+}  // namespace detail
 
 template <class Scalar, std::size_t N>
 template <class Expr>
