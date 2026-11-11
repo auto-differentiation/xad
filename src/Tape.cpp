@@ -1060,9 +1060,9 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
                 derivative_type a = der[st.second];
                 der[st.second] = derivative_type();
                 if (!detail::isZeroAdjoint(a))
-                    ops.for_each(sts[i - 1].first, st.first,
-                                 [&](const T& mul, slot_type slot) XAD_ADJOINT_LAMBDA_INLINE
-                                 { XAD_ADD_ADJOINT_INLINE(der[slot], mul, a); });
+                    ops.for_each_reverse(sts[i - 1].first, st.first,
+                                         [&](const T& mul, slot_type slot) XAD_ADJOINT_LAMBDA_INLINE
+                                         { XAD_ADD_ADJOINT_INLINE(der[slot], mul, a); });
             }
             return;
         }
@@ -1080,8 +1080,9 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             derivatives_[st.second] = derivative_type();
             if (!detail::isZeroAdjoint(a))
             {
-                operations_.for_each(it[-1].first, st.first, [&](const T& mul, slot_type slot)
-                                     { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
+                operations_.for_each_reverse(it[-1].first, st.first,
+                                             [&](const T& mul, slot_type slot)
+                                             { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
             }
         }
         // last iteration separate
@@ -1093,8 +1094,9 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             derivatives_[st.second] = derivative_type();
             if (!detail::isZeroAdjoint(a))
             {
-                operations_.for_each(prevendpoint, st.first, [&](const T& mul, slot_type slot)
-                                     { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
+                operations_.for_each_reverse(prevendpoint, st.first,
+                                             [&](const T& mul, slot_type slot)
+                                             { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
             }
         }
 

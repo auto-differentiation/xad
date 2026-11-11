@@ -218,13 +218,36 @@ class OperationsContainerPaired
         }
     }
 
-    // The entries of one chunk, for for_each without chunk lookups; empty if [startidx, endidx)
-    // is empty or spans chunks
+    // the same, from the last element to the first
+    template <class Func>
+    void for_each_reverse(size_type startidx, size_type endidx, Func f) const
+    {
+        size_type start_chunk = startidx / ChunkSize;
+        size_type end_chunk = endidx / ChunkSize;
+        size_type e1 = end_chunk != start_chunk ? ChunkSize : endidx % ChunkSize;
+        if (XAD_VERY_UNLIKELY(start_chunk != end_chunk && endidx % ChunkSize != 0))
+        {
+            const auto* p = chunk(end_chunk) + endidx % ChunkSize;
+            for (size_type n = endidx % ChunkSize; n > 0; --n, --p) f(p[-1].first, p[-1].second);
+        }
+        const auto* p = chunk(start_chunk) + e1;
+        for (size_type n = e1 - startidx % ChunkSize; n > 0; --n, --p) f(p[-1].first, p[-1].second);
+    }
+
+    // The entries of one chunk, for for_each/for_each_reverse without chunk lookups;
+    // empty if [startidx, endidx) is empty or spans chunks
     struct flat_view
     {
         const std::pair<mul_type, slot_type>* chunk;
         size_type offset;
         explicit operator bool() const { return chunk != nullptr; }
+        template <class Func>
+        XAD_FORCE_INLINE void for_each_reverse(size_type startidx, size_type endidx, Func f) const
+        {
+            // a count and a pointer: no more instructions per entry and statement than for_each
+            const auto* p = chunk + (endidx - offset);
+            for (size_type n = endidx - startidx; n > 0; --n, --p) f(p[-1].first, p[-1].second);
+        }
         template <class Func>
         XAD_FORCE_INLINE void for_each(size_type startidx, size_type endidx, Func f) const
         {

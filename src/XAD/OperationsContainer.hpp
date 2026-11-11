@@ -235,14 +235,41 @@ class OperationsContainer
         }
     }
 
-    // The entries of one chunk, for for_each without chunk lookups; empty if [startidx, endidx)
-    // is empty or spans chunks
+    // the same, from the last element to the first
+    template <class Func>
+    void for_each_reverse(size_type startidx, size_type endidx, Func f) const
+    {
+        size_type start_chunk = startidx / ChunkSize;
+        size_type end_chunk = endidx / ChunkSize;
+        size_type e1 = end_chunk != start_chunk ? ChunkSize : endidx % ChunkSize;
+        if (XAD_VERY_UNLIKELY(start_chunk != end_chunk && endidx % ChunkSize != 0))
+        {
+            const auto* m = mul_chunk(end_chunk) + endidx % ChunkSize;
+            const auto* s = slot_chunk(end_chunk) + endidx % ChunkSize;
+            for (size_type n = endidx % ChunkSize; n > 0; --n, --m, --s) f(m[-1], s[-1]);
+        }
+        const auto* m = mul_chunk(start_chunk) + e1;
+        const auto* s = slot_chunk(start_chunk) + e1;
+        for (size_type n = e1 - startidx % ChunkSize; n > 0; --n, --m, --s) f(m[-1], s[-1]);
+    }
+
+    // The entries of one chunk, for for_each/for_each_reverse without chunk lookups;
+    // empty if [startidx, endidx) is empty or spans chunks
     struct flat_view
     {
         const mul_type* muls;
         const slot_type* slots;
         size_type offset;
         explicit operator bool() const { return muls != nullptr; }
+        template <class Func>
+        XAD_FORCE_INLINE void for_each_reverse(size_type startidx, size_type endidx, Func f) const
+        {
+            // a count and pointers: no more instructions per entry and statement than for_each
+            const mul_type* m = muls + (endidx - offset);
+            const slot_type* s = slots + (endidx - offset);
+            for (size_type n = endidx - startidx; n > 0; --n, --m, --s)
+                f(m[-1], s[-1]);
+        }
         template <class Func>
         XAD_FORCE_INLINE void for_each(size_type startidx, size_type endidx, Func f) const
         {

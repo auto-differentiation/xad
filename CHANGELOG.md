@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `std::complex<AReal>` arithmetic records fewer statements: each part of a result is one expression, built in place where an operand is a temporary (division by a complex still goes through temporaries)
 - Copying and destroying a `std::complex<ARealDirect>` is always inlined
 - Forward mode with GCC on x86-64 masks the tangent terms of zero tangents with packed SSE/AVX compares instead of an integer bit mask (double tangents, scalar and vector)
+- The adjoint sweep visits each statement's operands last to first, counting down over the operation arrays (adjoints of repeated operands may differ in the last bits)
 
 ### Deprecated
 
