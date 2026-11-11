@@ -169,6 +169,23 @@ inline std::string to_string(const xad::FRealDirect<Scalar, N>& _Val)
 
 }  // namespace std
 
+namespace xad
+{
+namespace detail
+{
+// not IEC 559: an active type has no IEEE bit layout (libc++'s stable_sort bit_casts IEC 559 types)
+template <class T>
+struct active_numeric_limits : std::numeric_limits<T>
+{
+    static constexpr bool is_iec559 = false;
+};
+#if !((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+template <class T>
+constexpr bool active_numeric_limits<T>::is_iec559;
+#endif
+}  // namespace detail
+}  // namespace xad
+
 namespace std
 {
 
@@ -177,22 +194,22 @@ namespace std
 // for the majority of cases
 
 template <class T, std::size_t N>
-struct numeric_limits<xad::AReal<T, N>> : std::numeric_limits<T>
+struct numeric_limits<xad::AReal<T, N>> : xad::detail::active_numeric_limits<T>
 {
 };
 
 template <class T, std::size_t N>
-struct numeric_limits<xad::FReal<T, N>> : std::numeric_limits<T>
+struct numeric_limits<xad::FReal<T, N>> : xad::detail::active_numeric_limits<T>
 {
 };
 
 template <class T, std::size_t N>
-struct numeric_limits<xad::ARealDirect<T, N>> : std::numeric_limits<T>
+struct numeric_limits<xad::ARealDirect<T, N>> : xad::detail::active_numeric_limits<T>
 {
 };
 
 template <class T, std::size_t N>
-struct numeric_limits<xad::FRealDirect<T, N>> : std::numeric_limits<T>
+struct numeric_limits<xad::FRealDirect<T, N>> : xad::detail::active_numeric_limits<T>
 {
 };
 

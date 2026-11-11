@@ -205,8 +205,7 @@ TYPED_TEST(StdCompatibilityTempl, NumericLimits)
                 Eq(std::numeric_limits<nested>::has_denorm_loss));
     EXPECT_THAT(std::numeric_limits<TypeParam>::round_style,
                 Eq(std::numeric_limits<nested>::round_style));
-    EXPECT_THAT(std::numeric_limits<TypeParam>::is_iec559,
-                Eq(std::numeric_limits<nested>::is_iec559));
+    EXPECT_FALSE(std::numeric_limits<TypeParam>::is_iec559);
     EXPECT_THAT(std::numeric_limits<TypeParam>::is_bounded,
                 Eq(std::numeric_limits<nested>::is_bounded));
     EXPECT_THAT(std::numeric_limits<TypeParam>::is_modulo,

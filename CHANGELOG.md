@@ -126,6 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JIT interpreter wrote past its buffers for nodes recorded after `compile()`
 - JIT `newRecording` kept stale slots for inputs registered after other nodes
 - JIT recording missed scalar shifts and assignments on a copy of a registered input, e.g. `std::complex<AReal>` plus or minus a scalar
+- `std::stable_sort` of active types did not compile on libc++ 21 with `StdCompatibility.hpp`: `std::numeric_limits<T>::is_iec559` is now `false` for them
 
 
 ## [2.0.0] - 2026-02-06
