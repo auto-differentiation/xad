@@ -343,8 +343,9 @@ struct AReal
         return getActiveJitImpl(std::integral_constant<bool, jit_supported>());
     }
 
-    // Scalar shifts and assignments change the graph, but not on an input: forward() reads
-    // its value, so they set the value to replay.
+    // Scalar shifts and assignments change the graph, but not on a registered input: forward()
+    // reads its value, so they set the value to replay. A copy sharing the input's node is not
+    // read by forward(), so they change its graph.
     XAD_INLINE bool jitRecordsScalarOp() const
     {
         jit_type* j = jit_type::getActive();
@@ -352,7 +353,7 @@ struct AReal
             return false;
         const JITGraph& g = j->getGraph();
         const uint32_t node = jitNode(slot_);
-        return node >= g.nodeCount() || !g.isInput(node);
+        return node >= g.nodeCount() || !g.isInput(node) || !j->isRegisteredInput(*this, node);
     }
 
     // a shift needs no tape entry, but the JIT graph must record it
