@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recording an `AReal` from an expression and `Tape::pushLhs` are always inlined, `Tape::derivative` is inlined when the adjoints are already initialised, and with `XAD_TAPE_REUSE_SLOTS` so are registering and freeing a slot at the end of the tape
 - Copying an `AReal` (construction and assignment) is always inlined, its slot counters are updated with scalar code (no stalled vector load), and the reverse sweep runs over flat arrays when a recording fits in one chunk
 - Copying, moving and destroying a `std::complex<AReal>` is always inlined: about 2.8x faster AD for complex-heavy code (a Rough Heston engine) with `XAD_USE_STRONG_INLINE`
+- `std::complex<AReal>` arithmetic records fewer statements: each part of a result is one expression, built in place where an operand is a temporary (division by a complex still goes through temporaries)
+- Copying and destroying a `std::complex<ARealDirect>` is always inlined
 
 ### Deprecated
 

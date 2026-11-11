@@ -193,6 +193,11 @@ struct ExprTraits<ADVar<Scalar, M>> : public ExprTraits<AReal<Scalar, M>>
 {
 };
 
+namespace detail
+{
+struct areal_assign;
+}
+
 template <class Scalar, std::size_t N = 1>
 struct AReal
     : public ADTypeBase<Scalar, AReal<Scalar, N>, typename DerivativesTraits<Scalar, N>::type>
@@ -306,8 +311,19 @@ struct AReal
                                expr);  // cppcheck-suppress noExplicitConstructor
 
     template <class Expr>
-    XAD_INLINE AReal& operator=(const Expression<Scalar, Expr, derivative_type>& expr);
+    XAD_INLINE AReal& operator=(const Expression<Scalar, Expr, derivative_type>& expr)
+    {
+        return assignExpression(expr);
+    }
 
+  private:
+    friend struct detail::areal_assign;
+
+    // operator= from an expression, always inlined where std::complex<AReal> assigns its parts
+    template <class Expr>
+    XAD_FORCE_INLINE AReal& assignExpression(const Expression<Scalar, Expr, derivative_type>& expr);
+
+  public:
 #ifdef XAD_ENABLE_JIT
     using base_type::operator+=;
     using base_type::operator-=;
@@ -775,7 +791,7 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
 
 template <class Scalar, std::size_t M>
 template <class Expr>
-XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
+XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
 {
     tape_type* s = tape_type::getActive();

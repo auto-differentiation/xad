@@ -46,13 +46,147 @@ namespace xad
 
 namespace detail
 {
+// tag for constructing a complex from its two parts' expressions, building each part in place
+struct complex_parts
+{
+};
+
+// first-order scalar AReal over float or double, whose parts can be built as plain values when
+// nothing records (not std::is_floating_point: StdCompatibility.hpp makes it true for active types)
+template <class AR, class = void>
+struct complex_parts_plain : std::false_type
+{
+};
+
+template <class T>
+struct complex_parts_plain<AReal<T, 1>, typename std::enable_if<float_or_double<T>::value>::type>
+    : std::true_type
+{
+    // no tape or JIT records the parts
+    static XAD_FORCE_INLINE bool passive()
+    {
+        return AReal<T, 1>::tape_type::getActive() == nullptr
+#ifdef XAD_ENABLE_JIT
+               && AReal<T, 1>::jit_type::getActive() == nullptr
+#endif
+            ;
+    }
+};
+
+template <class C, class R, class I>
+XAD_FORCE_INLINE C complex_from_parts(const R& re, const I& im, std::false_type)
+{
+    return C(complex_parts(), re, im);
+}
+
+template <class C, class R, class I>
+XAD_FORCE_INLINE C complex_from_parts(const R& re, const I& im, std::true_type)
+{
+    if (complex_parts_plain<typename C::value_type>::passive())
+        return C(complex_parts(), re.getValue(), im.getValue());
+    return C(complex_parts(), re, im);
+}
+
+// a std::complex<AReal> from its two parts' expressions
+template <class C, class R, class I>
+XAD_FORCE_INLINE C complex_from_parts(const R& re, const I& im)
+{
+    return complex_from_parts<C>(re, im, complex_parts_plain<typename C::value_type>());
+}
+
+// x = expr, always inlined
+struct areal_assign
+{
+    template <class A, class E>
+    static XAD_FORCE_INLINE void apply(A& x, const E& expr)
+    {
+        x.assignExpression(expr);
+    }
+};
+
+template <class C, class R, class I>
+XAD_FORCE_INLINE C complex_into_parts(C& z, const R& re, const I& im, std::false_type)
+{
+    areal_assign::apply(z.real(), re);
+    areal_assign::apply(z.imag(), im);
+    return std::move(z);
+}
+
+template <class C, class R, class I>
+XAD_FORCE_INLINE C complex_into_parts(C& z, const R& re, const I& im, std::true_type)
+{
+    if (complex_parts_plain<typename C::value_type>::passive())
+        return C(complex_parts(), re.getValue(), im.getValue());
+    return complex_into_parts(z, re, im, std::false_type());
+}
+
+// a std::complex<AReal> from its two parts' expressions, built in the parts of z (an rvalue) to
+// keep their slots; im must not read z.real()
+template <class C, class R, class I>
+XAD_FORCE_INLINE C complex_into_parts(C& z, const R& re, const I& im)
+{
+    return complex_into_parts(z, re, im, complex_parts_plain<typename C::value_type>());
+}
+
+template <class C, class R>
+XAD_FORCE_INLINE C complex_into_real(C& z, const R& re, std::false_type)
+{
+    areal_assign::apply(z.real(), re);
+    return std::move(z);
+}
+
+template <class C, class R>
+XAD_FORCE_INLINE C complex_into_real(C& z, const R& re, std::true_type)
+{
+    if (complex_parts_plain<typename C::value_type>::passive())
+        return C(complex_parts(), re.getValue(), z.imag().getValue());
+    return complex_into_real(z, re, std::false_type());
+}
+
+// z (an rvalue) with its real part set to re, in place
+template <class C, class R>
+XAD_FORCE_INLINE C complex_into_real(C& z, const R& re)
+{
+    return complex_into_real(z, re, complex_parts_plain<typename C::value_type>());
+}
+
+template <class C, class W>
+XAD_FORCE_INLINE C complex_multiply_into(C& z, const W& w, std::false_type)
+{
+    typename C::value_type re = z.real() * w.real() - z.imag() * w.imag();
+    areal_assign::apply(z.imag(), z.real() * w.imag() + w.real() * z.imag());
+    z.real() = std::move(re);
+    return std::move(z);
+}
+
+template <class C, class W>
+XAD_FORCE_INLINE C complex_multiply_into(C& z, const W& w, std::true_type)
+{
+    if (complex_parts_plain<typename C::value_type>::passive())
+        return C(complex_parts(), (z.real() * w.real() - z.imag() * w.imag()).getValue(),
+                 (z.real() * w.imag() + w.real() * z.imag()).getValue());
+    return complex_multiply_into(z, w, std::false_type());
+}
+
+// z * w built in z (an rvalue), one statement per part: the imaginary part keeps its slot, the
+// real part takes a new one, as the new imaginary part reads the old real part
+template <class C, class W>
+XAD_FORCE_INLINE C complex_multiply_into(C& z, const W& w)
+{
+    return complex_multiply_into(z, w, complex_parts_plain<typename C::value_type>());
+}
+
 template <class T>
 class complex_impl
 {
   public:
     typedef T value_type;
 
-    explicit complex_impl(const T& areal = T(), const T& aimag = T()) : real_(areal), imag_(aimag)
+    XAD_FORCE_INLINE complex_impl() : real_(), imag_() {}
+    explicit complex_impl(const T& areal, const T& aimag = T()) : real_(areal), imag_(aimag) {}
+
+    template <class R, class I>
+    XAD_FORCE_INLINE complex_impl(complex_parts, const R& re, const I& im) : real_(re), imag_(im)
     {
     }
 
@@ -123,6 +257,8 @@ class complex_impl
 
 template <class T>
 void complex_div_impl(T& a, T& b, const T& c, const T& d);
+template <class T>
+void complex_div_impl(T& re, T& im, const T& a, const T& b, const T& c, const T& d);
 
 }  // namespace detail
 
@@ -138,7 +274,14 @@ class complex<xad::ADTypeBase<Scalar, T, Deriv>> : public xad::detail::complex_i
     typedef xad::detail::complex_impl<T> base;
     typedef T value_type;
 
-    complex(const T& areal = T(), const T& aimag = T()) : base(areal, aimag) {}
+    XAD_FORCE_INLINE complex() : base() {}
+    complex(const T& areal, const T& aimag = T()) : base(areal, aimag) {}
+
+    template <class R, class I>
+    XAD_FORCE_INLINE complex(xad::detail::complex_parts p, const R& re, const I& im)
+        : base(p, re, im)
+    {
+    }
 
     XAD_FORCE_INLINE complex(const complex&) = default;
     XAD_FORCE_INLINE complex(complex&&) = default;
@@ -230,8 +373,8 @@ class complex<xad::ADTypeBase<Scalar, T, Deriv>> : public xad::detail::complex_i
     complex<T>& operator*=(const std::complex<X>& other)
     {
         T real_t = base::real() * other.real() - base::imag() * other.imag();
-        base::imag(base::real() * other.imag() + other.real() * base::imag());
-        base::real(real_t);
+        base::imag() = base::real() * other.imag() + other.real() * base::imag();
+        base::real() = std::move(real_t);
         return derived();
     }
 
@@ -273,9 +416,16 @@ class complex<xad::AReal<T, N>>
 
     // inheriting template constructors doesn't work in all compilers
 
-    XAD_INLINE complex(const xad::AReal<T, N>& areal = xad::AReal<T, N>(),
+    XAD_FORCE_INLINE complex() : base() {}
+    XAD_INLINE complex(const xad::AReal<T, N>& areal,
                        const xad::AReal<T, N>& aimag = xad::AReal<T, N>())
         : base(areal, aimag)
+    {
+    }
+
+    template <class R, class I>
+    XAD_FORCE_INLINE complex(xad::detail::complex_parts p, const R& re, const I& im)
+        : base(p, re, im)
     {
     }
 
@@ -371,6 +521,12 @@ class complex<xad::RealDirect<Base, T>> : public xad::detail::complex_impl<T>
 
     complex(const T& areal = T(), const T& aimag = T()) : base(areal, aimag) {}
 
+    XAD_FORCE_INLINE complex(const complex&) = default;
+    XAD_FORCE_INLINE complex(complex&&) = default;
+    complex& operator=(const complex&) = default;
+    complex& operator=(complex&&) = default;
+    XAD_FORCE_INLINE ~complex() = default;
+
     XAD_INLINE complex<T>& derived() { return static_cast<complex<T>&>(*this); }
 
     XAD_INLINE complex<T>& operator+=(const T& other)
@@ -463,6 +619,12 @@ class complex<xad::RealDirect<Base, T>> : public xad::detail::complex_impl<T>
             : base(xad::Direct<T, N>(o.real()), xad::Direct<T, N>(o.imag()))                       \
         {                                                                                          \
         }                                                                                          \
+                                                                                                   \
+        XAD_FORCE_INLINE complex(const complex&) = default;                                        \
+        XAD_FORCE_INLINE complex(complex&&) = default;                                             \
+        complex& operator=(const complex&) = default;                                              \
+        complex& operator=(complex&&) = default;                                                   \
+        XAD_FORCE_INLINE ~complex() = default;                                                     \
                                                                                                    \
         using base::operator+=;                                                                    \
         using base::operator-=;                                                                    \
@@ -847,11 +1009,18 @@ XAD_INLINE bool operator!=(const T& rhs, const std::complex<xad::FReal<T, N>>& l
 // operator+
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator+(std::complex<xad::AReal<T, N>> lhs,
-                                                    const std::complex<xad::AReal<T, N>>& rhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator+(const std::complex<xad::AReal<T, N>>& lhs,
+                                                          const std::complex<xad::AReal<T, N>>& rhs)
 {
-    lhs += rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() + rhs.real(), lhs.imag() + rhs.imag());
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator+(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const std::complex<xad::AReal<T, N>>& rhs)
+{
+    return ::xad::detail::complex_into_parts(lhs, lhs.real() + rhs.real(), lhs.imag() + rhs.imag());
 }
 
 template <class T, std::size_t N>
@@ -863,11 +1032,18 @@ XAD_INLINE std::complex<xad::AReal<T, N>> operator+(std::complex<xad::AReal<T, N
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator+(std::complex<xad::AReal<T, N>> lhs,
-                                                    const xad::AReal<T, N>& rhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator+(const std::complex<xad::AReal<T, N>>& lhs,
+                                                          const xad::AReal<T, N>& rhs)
 {
-    lhs += rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() + rhs, lhs.imag());
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator+(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const xad::AReal<T, N>& rhs)
+{
+    return ::xad::detail::complex_into_real(lhs, lhs.real() + rhs);
 }
 
 template <class T, std::size_t N>
@@ -883,7 +1059,7 @@ template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator+(std::complex<xad::AReal<T, N>> lhs,
                                                     const T& rhs)
 {
-    lhs += rhs;
+    lhs.real() += lhs.constant(rhs);
     return lhs;
 }
 
@@ -913,18 +1089,18 @@ XAD_INLINE std::complex<xad::AReal<T, N>> operator+(const std::complex<T>& rhs,
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator+(const xad::AReal<T, N>& rhs,
-                                                    std::complex<xad::AReal<T, N>> lhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator+(const xad::AReal<T, N>& rhs,
+                                                          const std::complex<xad::AReal<T, N>>& lhs)
 {
-    lhs += rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() + rhs, lhs.imag());
 }
 
 template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator+(const T& rhs,
                                                     std::complex<xad::AReal<T, N>> lhs)
 {
-    lhs += rhs;
+    lhs.real() += lhs.constant(rhs);
     return lhs;
 }
 
@@ -1038,11 +1214,18 @@ XAD_INLINE std::complex<xad::FReal<T, N>> operator+(const xad::Expression<T, Exp
 // operator-
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator-(std::complex<xad::AReal<T, N>> lhs,
-                                                    const std::complex<xad::AReal<T, N>>& rhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator-(const std::complex<xad::AReal<T, N>>& lhs,
+                                                          const std::complex<xad::AReal<T, N>>& rhs)
 {
-    lhs -= rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() - rhs.real(), lhs.imag() - rhs.imag());
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator-(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const std::complex<xad::AReal<T, N>>& rhs)
+{
+    return ::xad::detail::complex_into_parts(lhs, lhs.real() - rhs.real(), lhs.imag() - rhs.imag());
 }
 
 template <class T, std::size_t N>
@@ -1055,7 +1238,7 @@ XAD_INLINE std::complex<xad::AReal<T, N>> operator-(std::complex<xad::AReal<T, N
 
 template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator-(const std::complex<T>& lhs,
-                                                    std::complex<xad::AReal<T, N>> rhs)
+                                                    const std::complex<xad::AReal<T, N>>& rhs)
 {
     std::complex<xad::AReal<T, N>> z = lhs;
     z -= rhs;
@@ -1063,11 +1246,18 @@ XAD_INLINE std::complex<xad::AReal<T, N>> operator-(const std::complex<T>& lhs,
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator-(std::complex<xad::AReal<T, N>> lhs,
-                                                    const xad::AReal<T, N>& rhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator-(const std::complex<xad::AReal<T, N>>& lhs,
+                                                          const xad::AReal<T, N>& rhs)
 {
-    lhs -= rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() - rhs, lhs.imag());
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator-(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const xad::AReal<T, N>& rhs)
+{
+    return ::xad::detail::complex_into_real(lhs, lhs.real() - rhs);
 }
 
 template <class T, std::size_t N>
@@ -1083,7 +1273,7 @@ template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator-(std::complex<xad::AReal<T, N>> lhs,
                                                     const T& rhs)
 {
-    lhs -= rhs;
+    lhs.real() -= lhs.constant(rhs);
     return lhs;
 }
 
@@ -1114,18 +1304,19 @@ XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator-(
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator-(const xad::AReal<T, N>& rhs,
-                                                    std::complex<xad::AReal<T, N>> lhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator-(const xad::AReal<T, N>& rhs,
+                                                          const std::complex<xad::AReal<T, N>>& lhs)
 {
-    return std::complex<xad::AReal<T, N>>(rhs - lhs.real(), -lhs.imag());
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(rhs - lhs.real(), -lhs.imag());
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator-(const T& rhs,
-                                                    std::complex<xad::AReal<T, N>> lhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator-(const T& rhs,
+                                                          const std::complex<xad::AReal<T, N>>& lhs)
 {
     typedef std::complex<xad::AReal<T, N>> C;
-    return C(C::constant(rhs) - lhs.real(), -lhs.imag());
+    return ::xad::detail::complex_from_parts<C>(C::constant(rhs) - lhs.real(), -lhs.imag());
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
@@ -1225,19 +1416,29 @@ XAD_INLINE std::complex<xad::FReal<T, N>> operator-(const xad::Expression<T, Exp
 
 // operator*
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator*(std::complex<xad::AReal<T, N>> lhs,
-                                                    const std::complex<xad::AReal<T, N>>& rhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(const std::complex<xad::AReal<T, N>>& lhs,
+                                                          const std::complex<xad::AReal<T, N>>& rhs)
 {
-    lhs *= rhs;
-    return lhs;
+    // one expression per part, no copies of the operands
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() * rhs.real() - lhs.imag() * rhs.imag(),
+                                                lhs.real() * rhs.imag() + rhs.real() * lhs.imag());
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator*(std::complex<xad::AReal<T, N>> lhs,
-                                                    const std::complex<T>& rhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const std::complex<xad::AReal<T, N>>& rhs)
 {
-    lhs *= rhs;
-    return lhs;
+    return ::xad::detail::complex_multiply_into(lhs, rhs);
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(const std::complex<xad::AReal<T, N>>& lhs,
+                                                          const std::complex<T>& rhs)
+{
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() * rhs.real() - lhs.imag() * rhs.imag(),
+                                                lhs.real() * rhs.imag() + rhs.real() * lhs.imag());
 }
 
 template <class T, std::size_t N>
@@ -1248,11 +1449,20 @@ XAD_INLINE std::complex<xad::AReal<T, N>> operator*(const std::complex<T>& lhs,
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator*(std::complex<xad::AReal<T, N>> lhs,
-                                                    const xad::AReal<T, N>& rhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(const std::complex<xad::AReal<T, N>>& lhs,
+                                                          const xad::AReal<T, N>& rhs)
 {
-    lhs *= rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() * rhs, lhs.imag() * rhs);
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const xad::AReal<T, N>& rhs)
+{
+    if (&rhs == &lhs.real())  // the new imaginary part reads the old real part
+        return lhs * rhs;
+    return ::xad::detail::complex_into_parts(lhs, lhs.real() * rhs, lhs.imag() * rhs);
 }
 
 template <class T, std::size_t N>
@@ -1265,11 +1475,21 @@ XAD_INLINE std::complex<xad::AReal<T, N>> operator*(const std::complex<T>& lhs,
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator*(std::complex<xad::AReal<T, N>> lhs,
-                                                    const T& rhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(const std::complex<xad::AReal<T, N>>& lhs,
+                                                          const T& rhs)
 {
-    lhs *= rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() * C::constant(rhs),
+                                                lhs.imag() * C::constant(rhs));
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const T& rhs)
+{
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_into_parts(lhs, lhs.real() * C::constant(rhs),
+                                             lhs.imag() * C::constant(rhs));
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
@@ -1299,19 +1519,20 @@ XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator*(
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator*(const xad::AReal<T, N>& rhs,
-                                                    std::complex<xad::AReal<T, N>> lhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(const xad::AReal<T, N>& rhs,
+                                                          const std::complex<xad::AReal<T, N>>& lhs)
 {
-    lhs *= rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() * rhs, lhs.imag() * rhs);
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator*(const T& rhs,
-                                                    std::complex<xad::AReal<T, N>> lhs)
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator*(const T& rhs,
+                                                          const std::complex<xad::AReal<T, N>>& lhs)
 {
-    lhs *= rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() * C::constant(rhs),
+                                                lhs.imag() * C::constant(rhs));
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
@@ -1417,24 +1638,29 @@ XAD_INLINE std::complex<xad::FReal<T, N>> operator*(const xad::Expression<T, Exp
 // operator/
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator/(std::complex<xad::AReal<T, N>> lhs,
+XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const std::complex<xad::AReal<T, N>>& lhs,
                                                     const std::complex<xad::AReal<T, N>>& rhs)
 {
-    lhs /= rhs;
-    return lhs;
+    std::complex<xad::AReal<T, N>> z;
+    ::xad::detail::complex_div_impl(z.real(), z.imag(), lhs.real(), lhs.imag(), rhs.real(),
+                                    rhs.imag());
+    return z;
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator/(std::complex<xad::AReal<T, N>> lhs,
+XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const std::complex<xad::AReal<T, N>>& lhs,
                                                     const std::complex<T>& rhs)
 {
-    lhs /= rhs;
-    return lhs;
+    std::complex<xad::AReal<T, N>> z;
+    const xad::AReal<T, N>& c = rhs.real();
+    const xad::AReal<T, N>& d = rhs.imag();
+    ::xad::detail::complex_div_impl(z.real(), z.imag(), lhs.real(), lhs.imag(), c, d);
+    return z;
 }
 
 template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const std::complex<T>& lhs,
-                                                    std::complex<xad::AReal<T, N>> rhs)
+                                                    const std::complex<xad::AReal<T, N>>& rhs)
 {
     std::complex<xad::AReal<T, N>> z = lhs;
     z /= rhs;
@@ -1442,11 +1668,20 @@ XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const std::complex<T>& lhs,
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator/(std::complex<xad::AReal<T, N>> lhs,
+XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const std::complex<xad::AReal<T, N>>& lhs,
                                                     const xad::AReal<T, N>& rhs)
 {
-    lhs /= rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() / rhs, lhs.imag() / rhs);
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator/(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const xad::AReal<T, N>& rhs)
+{
+    if (&rhs == &lhs.real())  // the new imaginary part reads the old real part
+        return lhs / rhs;
+    return ::xad::detail::complex_into_parts(lhs, lhs.real() / rhs, lhs.imag() / rhs);
 }
 
 template <class T, std::size_t N>
@@ -1459,11 +1694,21 @@ XAD_INLINE std::complex<xad::AReal<T, N>> operator/(std::complex<T> lhs,
 }
 
 template <class T, std::size_t N>
-XAD_INLINE std::complex<xad::AReal<T, N>> operator/(std::complex<xad::AReal<T, N>> lhs,
+XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const std::complex<xad::AReal<T, N>>& lhs,
                                                     const T& rhs)
 {
-    lhs /= rhs;
-    return lhs;
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_from_parts<C>(lhs.real() / C::constant(rhs),
+                                                lhs.imag() / C::constant(rhs));
+}
+
+template <class T, std::size_t N>
+XAD_FORCE_INLINE std::complex<xad::AReal<T, N>> operator/(std::complex<xad::AReal<T, N>>&& lhs,
+                                                          const T& rhs)
+{
+    typedef std::complex<xad::AReal<T, N>> C;
+    return ::xad::detail::complex_into_parts(lhs, lhs.real() / C::constant(rhs),
+                                             lhs.imag() / C::constant(rhs));
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
@@ -1494,17 +1739,22 @@ XAD_INLINE std::complex<typename xad::ExprTraits<Expr>::value_type> operator/(
 
 template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const xad::AReal<T, N>& rhs,
-                                                    std::complex<xad::AReal<T, N>> lhs)
+                                                    const std::complex<xad::AReal<T, N>>& lhs)
 {
-    return std::complex<xad::AReal<T, N>>(rhs) / lhs;
+    std::complex<xad::AReal<T, N>> z;
+    ::xad::detail::complex_div_impl(z.real(), z.imag(), rhs, xad::AReal<T, N>(), lhs.real(),
+                                    lhs.imag());
+    return z;
 }
 
 template <class T, std::size_t N>
 XAD_INLINE std::complex<xad::AReal<T, N>> operator/(const T& rhs,
-                                                    std::complex<xad::AReal<T, N>> lhs)
+                                                    const std::complex<xad::AReal<T, N>>& lhs)
 {
-    typedef std::complex<xad::AReal<T, N>> C;
-    return C(C::constant(rhs)) / lhs;
+    std::complex<xad::AReal<T, N>> z;
+    z.real() = z.constant(rhs);
+    z /= lhs;
+    return z;
 }
 
 template <class T, std::size_t N, class Expr, class Deriv>
@@ -2971,9 +3221,10 @@ XAD_INLINE typename xad::ExprTraits<T>::nested_type inf_to_unit(const T& v)
     return xad::signbit(v) ? -u : u;
 }
 
-// (a + ib) / (c + id) into a and b, as std::complex<double> with GCC
+// (a + ib) / (c + id) into re and im, as std::complex<double> with GCC; re and im may alias a
+// and b, as they are written last
 template <class T>
-void complex_div_impl(T& a, T& b, const T& c, const T& d)
+void complex_div_impl(T& re, T& im, const T& a, const T& b, const T& c, const T& d)
 {
     typedef typename xad::ExprTraits<T>::nested_type nested;
     typedef std::numeric_limits<nested> lim;
@@ -3016,8 +3267,15 @@ void complex_div_impl(T& a, T& b, const T& c, const T& d)
             y = nested(0) * (b * c1 - a * d1);
         }
     }
-    a = std::move(x);
-    b = std::move(y);
+    re = std::move(x);
+    im = std::move(y);
+}
+
+// (a + ib) / (c + id) into a and b
+template <class T>
+void complex_div_impl(T& a, T& b, const T& c, const T& d)
+{
+    complex_div_impl(a, b, a, b, c, d);
 }
 
 template <class T>
