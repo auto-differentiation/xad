@@ -101,6 +101,8 @@ cmake -S xad -B xad/build
 cmake --build xad/build
 ```
 
+The defaults suit any code; [Build Options](docs/ref/build-options.md) lists the options that make XAD faster for some kinds of code.
+
 Python: `pip install xad`. More in the [Installation Guide](https://auto-differentiation.github.io/installation/cxx/)
 and the [Tutorials](https://auto-differentiation.github.io/tutorials/).
 

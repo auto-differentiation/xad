@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - With MSVC, expression nodes copy their members one by one, avoiding store-forwarding stalls in forward and adjoint mode (binary nodes not with MSVC 14.4)
 - CMake option `XAD_REDUCED_MEMORY`: first-order tapes record straight into the tape's separate multiplier and slot arrays; nested active types, assignments with `XAD_OUTLINE_RECORDING`, custom traits naming the paired container and statements crossing a chunk stage as before. The reverse sweep reads less memory per operand (faster adjoints for large tapes that do not fit in cache; small recordings run many times can be slower than the default layout)
 - With `XAD_TAPE_TRACK_LIVE_SLOTS`, `newRecording` takes the slot counter back to where the previous recording started once no variable registered since is still alive: repeated recordings on one tape with inputs registered once reuse the same slots; the docs recommend it, or `XAD_TAPE_REUSE_SLOTS`, for code that records many times on one tape
+- Docs: new Build Options page: what each performance-related CMake option does, when it helps or hurts, and starting sets per kind of workload
 
 ### Deprecated
 

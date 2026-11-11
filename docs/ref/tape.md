@@ -195,6 +195,7 @@ CMake option `XAD_REDUCED_MEMORY` they are kept in two separate arrays, which ta
 reads less of it per operation: faster for large tapes that do not fit in cache, while small recordings
 run many times can be slower. It works with the other tape options (`XAD_SKIP_ZERO_PARTIALS`,
 `XAD_COPY_ELISION`, `XAD_LINEAR_SLOTS`, `XAD_TAPE_REUSE_SLOTS`, `XAD_TAPE_TRACK_LIVE_SLOTS`).
+[Build Options](build-options.md) says which options to use for which kind of code.
 
 #### `getPosition`
 

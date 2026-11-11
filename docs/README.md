@@ -4,6 +4,7 @@ This folder contains the reference documentation for XAD,
 which is imported to the website at [auto-differentiation.github.io](https://auto-differentiation.github.io).
 
 * [Headers and Namespaces](ref/headers.md)
+* [Build Options](ref/build-options.md)
 * [AD Mode Interface](ref/interface.md)
 * [Forward Mode Type FReal](ref/freal.md)
 * [Adjoint Mode Type AReal](ref/areal.md)
