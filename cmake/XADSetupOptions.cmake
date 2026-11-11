@@ -67,7 +67,7 @@ option(XAD_TAPE_REUSE_SLOTS "Reuse slots in tape that have become free (slower, 
 option(XAD_TAPE_TRACK_LIVE_SLOTS "resetTo keeps the slots of variables still alive, and newRecording reuses the previous recording's slots once none of them is alive (slightly slower recording)" OFF)
 option(XAD_HUGE_PAGES "Back large tape chunks with transparent huge pages on Linux (faster on large tapes with free memory; can stall on fragmented hosts)" OFF)
 option(XAD_LINEAR_SLOTS "Linear slots: copies share the slot of the source, every assignment takes a new slot" OFF)
-option(XAD_COPY_ELISION "Copies share the slot of the source and record nothing; a slot is freed by its last user (not with XAD_LINEAR_SLOTS)" OFF)
+option(XAD_COPY_ELISION "Copies share the slot of the source and record nothing; a slot is freed by its last user (not with XAD_LINEAR_SLOTS, XAD_TAPE_REUSE_SLOTS or XAD_TAPE_TRACK_LIVE_SLOTS)" OFF)
 option(XAD_SKIP_ZERO_PARTIALS "Do not record partial derivatives that are exactly zero" OFF)
 option(XAD_NO_THREADLOCAL "Disable thread-local tape - only for single-threaded tape use" OFF)
 option(XAD_TLS_INITIAL_EXEC "Use the faster initial-exec TLS model for the thread-local tape - needs to be OFF for libraries loaded with dlopen (e.g. Python extensions)" OFF)

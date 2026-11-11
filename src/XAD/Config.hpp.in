@@ -65,6 +65,10 @@
 #if defined(XAD_COPY_ELISION) && defined(XAD_LINEAR_SLOTS)
 #error "XAD_COPY_ELISION and XAD_LINEAR_SLOTS exclude each other"
 #endif
+#if defined(XAD_COPY_ELISION) &&                                                                  \
+    (defined(XAD_TAPE_REUSE_SLOTS) || defined(XAD_TAPE_TRACK_LIVE_SLOTS))
+#error "XAD_COPY_ELISION supports neither XAD_TAPE_REUSE_SLOTS nor XAD_TAPE_TRACK_LIVE_SLOTS"
+#endif
 
 // skip recording partial derivatives that are exactly zero
 #cmakedefine XAD_SKIP_ZERO_PARTIALS

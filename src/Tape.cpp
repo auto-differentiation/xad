@@ -107,7 +107,10 @@ Tape<T, N>::Tape(Tape&& o) noexcept
 #ifdef XAD_COPY_ELISION
       ,
       shares_(std::move(o.shares_)),
-      freedShared_(std::move(o.freedShared_))
+      lastShared_(std::move(o.lastShared_)),
+      freedShared_(std::move(o.freedShared_)),
+      freedFrom_(o.freedFrom_),
+      outerFreedFrom_(std::move(o.outerFreedFrom_))
 #endif
 {
 #ifdef XAD_TAPE_CHECKS
@@ -159,7 +162,10 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     currentRec_ = o.currentRec_;
 #ifdef XAD_COPY_ELISION
     shares_ = std::move(o.shares_);
+    lastShared_ = std::move(o.lastShared_);
     freedShared_ = std::move(o.freedShared_);
+    freedFrom_ = o.freedFrom_;
+    outerFreedFrom_ = std::move(o.outerFreedFrom_);
 #endif
 #ifdef XAD_TAPE_CHECKS
     id_ = o.id_;
@@ -199,7 +205,10 @@ void Tape<T, N>::resetMovedFrom()
     currentRec_ = &nestedRecordings_.top();
 #ifdef XAD_COPY_ELISION
     shares_.clear();
+    lastShared_.clear();
     freedShared_.clear();
+    freedFrom_ = 0;
+    outerFreedFrom_.clear();
 #endif
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = SlotWatch();
@@ -227,7 +236,12 @@ void Tape<T, N>::clearAll()
     checkpoints_.clear();
     positionSlots_.clear();
 #ifdef XAD_COPY_ELISION
-    dropShares(0, slot_type(shares_.size()));
+    // copies must not outlive clearAll: no slot is shared any more
+    shares_.clear();
+    lastShared_.clear();
+    freedShared_.clear();
+    freedFrom_ = 0;
+    outerFreedFrom_.clear();
 #endif
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = SlotWatch();
@@ -274,6 +288,7 @@ template <class T, std::size_t N>
 void Tape<T, N>::growShares(std::size_t n)
 {
     shares_.resize((std::max)(n, 2 * shares_.size()));
+    lastShared_.resize(shares_.size());
 }
 
 template <class T, std::size_t N>
@@ -281,14 +296,16 @@ void Tape<T, N>::unregisterShared(slot_type slot)
 {
     if (slot < shares_.size() && shares_[slot] != 0)
     {
-        --shares_[slot];
+        unshare(slot);
         return;
     }
-#if !defined(XAD_TAPE_REUSE_SLOTS) && !defined(XAD_TAPE_TRACK_LIVE_SLOTS)
+    // the last holder of a current sharing: a stale holder after clearAll is not put on the reuse
+    // list in the common case
+    const bool last = slot < lastShared_.size() && (lastShared_[slot] & LAST_SHARED);
+    unmarkLastShared(slot);
     // not at the end, the slot would stay unused: a detaching variable takes it
-    if (slot + 1 < currentRec_->iDerivative_)
+    if (last && slot >= freedFrom_ && slot + 1 < currentRec_->iDerivative_)
         freedShared_.push_back(slot);
-#endif
     unregisterVariable(slot);
 }
 
@@ -297,8 +314,7 @@ void Tape<T, N>::detachShared(slot_type& slot)
 {
     if (slot < shares_.size() && shares_[slot] != 0)
     {
-        --shares_[slot];
-#if !defined(XAD_TAPE_REUSE_SLOTS) && !defined(XAD_TAPE_TRACK_LIVE_SLOTS)
+        unshare(slot);
         if (!freedShared_.empty())
         {
             // as in a loop keeping the previous value: the slot its last user freed
@@ -307,9 +323,10 @@ void Tape<T, N>::detachShared(slot_type& slot)
             ++currentRec_->numDerivatives_;
             return;
         }
-#endif
         slot = registerVariable();
     }
+    else
+        unmarkLastShared(slot);
 }
 
 template <class T, std::size_t N>
@@ -319,8 +336,11 @@ typename Tape<T, N>::slot_type Tape<T, N>::ownSharedSlot(slot_type slot)
     if (slot >= currentRec_->iDerivative_)
         currentRec_->iDerivative_ = slot + 1;
     if (slot >= shares_.size() || shares_[slot] == 0)
+    {
+        unmarkLastShared(slot);
         return slot;  // the last variable using it
-    --shares_[slot];
+    }
+    unshare(slot);
     const value_type one(1);
     slot_type out = registerVariable();
     pushAll(&one, &slot, 1);
@@ -338,15 +358,48 @@ void Tape<T, N>::tooManySlots(slot_type last)
 }
 
 template <class T, std::size_t N>
-void Tape<T, N>::dropShares(slot_type from, slot_type to)
+void Tape<T, N>::unshare(slot_type slot)
 {
-    freedShared_.erase(std::remove_if(freedShared_.begin(), freedShared_.end(),
-                                      [from](slot_type s) { return s >= from; }),
-                       freedShared_.end());
-    to = (std::min)(to, slot_type(shares_.size()));
-    if (from < to)
-        std::fill(shares_.begin() + from, shares_.begin() + to, slot_type(0));
+    if (--shares_[slot] == 0)
+        lastShared_[slot] |= LAST_SHARED;
 }
+
+template <class T, std::size_t N>
+void Tape<T, N>::unmarkLastShared(slot_type slot)
+{
+    if (slot >= lastShared_.size())
+        return;
+    // a sweep may have left an adjoint in a slot kept without its statement
+    if ((lastShared_[slot] & GIVEN_UP) && slot < derivatives_.size())
+        derivatives_[slot] = derivative_type();
+    lastShared_[slot] = 0;
+}
+
+template <class T, std::size_t N>
+typename Tape<T, N>::slot_type Tape<T, N>::giveUpShared(slot_type from, slot_type to)
+{
+    slot_type keep = 0;
+    for (auto s = from; s < (std::min)(to, slot_type(shares_.size())); ++s)
+        if (shares_[s] != 0 || lastShared_[s] != 0)
+        {
+            lastShared_[s] |= GIVEN_UP;
+            keep = s + 1;
+        }
+    // the freed slots below those kept stay free, above them the counter hands them out
+    const slot_type end = (std::max)(from, keep);
+    freedShared_.erase(std::remove_if(freedShared_.begin(), freedShared_.end(),
+                                      [end](slot_type s) { return s >= end; }),
+                       freedShared_.end());
+    return keep;
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::reuseFreedFrom(slot_type s) const
+{
+    freedShared_.clear();
+    freedFrom_ = (std::max)(freedFrom_, s);
+}
+
 #endif
 
 #ifdef XAD_TAPE_REUSE_SLOTS
@@ -629,6 +682,11 @@ void Tape<T, N>::foldSubrecording()
     nestedRecordings_.pop();
     auto cur = &nestedRecordings_.top();
     currentRec_ = cur;
+#ifdef XAD_COPY_ELISION
+    assert(outerFreedFrom_.size() == nestedRecordings_.size() && "one per nested recording");
+    freedFrom_ = outerFreedFrom_.back();
+    outerFreedFrom_.pop_back();
+#endif
     // std::cout << "prev.max: " << prev.maxDerivative_
     //     << ", cur max: " << cur->maxDerivative_ << "\n";
     if (derivatives_.size() > cur->maxSlot())
@@ -644,7 +702,13 @@ void Tape<T, N>::foldSubrecording()
     cur->numDerivatives_ = prev.numDerivatives_;
 #endif
 #ifdef XAD_COPY_ELISION
-    dropShares(cur->iDerivative_, prev.iDerivative_);
+    // copies of the nested recording's variables kept beyond it keep their slots
+    const slot_type keep = giveUpShared(cur->iDerivative_, prev.iDerivative_);
+    if (keep > cur->iDerivative_)
+    {
+        cur->iDerivative_ = keep;
+        cur->maxDerivative_ = (std::max)(cur->maxDerivative_, keep);
+    }
 #endif
     if (operations_.size() > prev.opStartPos_)
     {
@@ -701,6 +765,10 @@ void Tape<T, N>::newNestedRecording()
     newr.startDerivative_ = currentRec_->maxDerivative_;
     // above the outer recording's slots, whose adjoints may be pending
     newr.iDerivative_ = (std::max)(newr.iDerivative_, newr.startDerivative_);
+#ifdef XAD_COPY_ELISION
+    outerFreedFrom_.push_back(freedFrom_);
+    reuseFreedFrom(newr.iDerivative_);
+#endif
 #ifdef XAD_TAPE_TRACK_LIVE_SLOTS
     newr.startCounter_ = newr.iDerivative_;
 #ifndef XAD_TAPE_REUSE_SLOTS
@@ -1182,6 +1250,9 @@ std::size_t Tape<T, N>::getMemory() const
 #ifdef XAD_TAPE_REUSE_SLOTS
            + sizeof(reusable_ranges_.front()) * reusable_ranges_.size()
 #endif
+#ifdef XAD_COPY_ELISION
+           + sizeof(slot_type) * (shares_.size() + freedShared_.size()) + lastShared_.size()
+#endif
            + checkpoints_.size() * sizeof(chkpt_type) +
            nestedRecordings_.size() * sizeof(nestedRecordings_.top())
         //+ sizeof(*this)
@@ -1221,6 +1292,9 @@ typename Tape<T, N>::position_type Tape<T, N>::getPosition() const
     // all live slots are below the counter: count them, unless an earlier position is lower
     if (positionSlots_.empty() || currentRec_->iDerivative_ <= watch_.from)
         watchSlots();
+#endif
+#ifdef XAD_COPY_ELISION
+    reuseFreedFrom(currentRec_->iDerivative_);
 #endif
     positionSlots_.push_back(position_slots_type(pos, currentRec_->iDerivative_));
     return pos;
@@ -1305,14 +1379,25 @@ void Tape<T, N>::resetTo(position_type pos)
 #endif
 #else
 #ifdef XAD_COPY_ELISION
-        dropShares(mark->second, currentRec_->iDerivative_);
+        // copies kept from after the position keep their slots
+        const slot_type keep = giveUpShared(mark->second, currentRec_->iDerivative_);
+        // the later positions are gone
+        freedFrom_ = (std::min)(freedFrom_, mark->second);
 #endif
         // a stale variable freeing a given-up slot that a live one holds lowers the counter
         // below it, so registerOutput also keeps the slots below the highest counter since
         currentRec_->iDerivative_ = (std::min)(currentRec_->iDerivative_, mark->second);
+#ifdef XAD_COPY_ELISION
+        currentRec_->iDerivative_ = (std::max)(currentRec_->iDerivative_, keep);
+#endif
         currentRec_->prevMax_ = currentRec_->maxSlot();
+#ifdef XAD_COPY_ELISION
+        // the slots kept have derivatives, also after clearDerivativesAfter
+        currentRec_->maxDerivative_ = currentRec_->iDerivative_;
+#else
         currentRec_->maxDerivative_ =
             (std::min)(currentRec_->maxDerivative_, currentRec_->iDerivative_);
+#endif
 #endif
         ++mark;
     }

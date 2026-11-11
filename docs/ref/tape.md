@@ -193,9 +193,10 @@ Gives *strong exception safety guarantee* - tape state unchanged in case of exce
 The sweep reads each operation's multiplier and slot, by default stored together as a pair. With the
 CMake option `XAD_REDUCED_MEMORY` they are kept in two separate arrays, which takes less memory and
 reads less of it per operation: faster for large tapes that do not fit in cache, while small recordings
-run many times can be slower. It works with the other tape options (`XAD_SKIP_ZERO_PARTIALS`,
-`XAD_COPY_ELISION`, `XAD_LINEAR_SLOTS`, `XAD_TAPE_REUSE_SLOTS`, `XAD_TAPE_TRACK_LIVE_SLOTS`).
-[Build Options](build-options.md) says which options to use for which kind of code.
+run many times can be slower. It works with each of the other tape options
+(`XAD_SKIP_ZERO_PARTIALS`, `XAD_COPY_ELISION`, `XAD_LINEAR_SLOTS`, `XAD_TAPE_REUSE_SLOTS`,
+`XAD_TAPE_TRACK_LIVE_SLOTS`), though not all of those combine with each other.
+[Build Options](build-options.md) says which options combine and which to use for which kind of code.
 
 #### `getPosition`
 

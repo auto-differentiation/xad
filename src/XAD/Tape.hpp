@@ -602,12 +602,35 @@ class Tape
     // per slot, the variables using it besides the first (copies share the slot of their source);
     // only those variables read it, and slots beyond its end are not shared
     std::vector<slot_type> shares_;
-    // slots below the counter that the last of the variables sharing them freed (default slot
-    // mode, which reuses only the last slot): detachShared takes them
-    std::vector<slot_type> freedShared_;
+    // per slot in shares_ (both emptied by clearAll): LAST_SHARED, the one variable left using it
+    // is still marked as sharing it; GIVEN_UP, resetTo or the end of a nested recording gave it up
+    // while variables marked as sharing it held it
+    std::vector<unsigned char> lastShared_;
+    enum : unsigned char
+    {
+        LAST_SHARED = 1,
+        GIVEN_UP = 2
+    };
+    // one variable less sharing slot (shares_[slot] > 0)
+    void unshare(slot_type slot);
+    // the last variable marked as sharing slot lets it go (frees, writes or registers it): clears
+    // its flags and, for a GIVEN_UP slot, the adjoint a sweep may have left in it
+    void unmarkLastShared(slot_type slot);
+    // slots below the counter that the last of the variables sharing them freed (the counter
+    // reuses only the last slot): detachShared takes them
+    mutable std::vector<slot_type> freedShared_;
+    // freedShared_ takes only slots from here on: those below may have adjoints pending in a sweep
+    // to a position or in the recording a nested one is in
+    mutable slot_type freedFrom_ = 0;
+    // freedFrom_ of the recordings the nested ones are in
+    std::vector<slot_type> outerFreedFrom_;
+    // drops freedShared_ and takes from s on at least
+    void reuseFreedFrom(slot_type s) const;
     XAD_NEVER_INLINE void growShares(std::size_t n);
-    // no variable shares the slots in [from, to), which were given up
-    void dropShares(slot_type from, slot_type to);
+    // resetTo or the end of a nested recording gives up the slots in [from, to): returns one above
+    // the highest that variables marked as sharing it still hold, else 0; marks those GIVEN_UP and
+    // drops the freedShared_ entries at or above both from and the returned slot
+    slot_type giveUpShared(slot_type from, slot_type to);
     // throws OutOfRange for a slot counter past MAX_SLOTS, leaving it at last
     XAD_NEVER_INLINE void tooManySlots(slot_type last);
 #endif

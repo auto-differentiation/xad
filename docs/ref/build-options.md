@@ -101,13 +101,15 @@ recurrent, sequence-style code. Small recordings run many times can be slower.
 Copies of active variables share the source's slot and record nothing; the last user frees the slot.
 Fewer recorded statements for copy-heavy code, such as dense linear algebra written with
 temporary matrices. Counting the users of each slot costs a little on every copy.
-Register each input once, before copying it: registering an input again after copies of it were
-taken gives it a derivative of 0.
+Register each input once, before copying it: registering it again while a copy taken since is
+alive, in that or a later recording, may give wrong derivatives without an error.
 It is meant for code that records and sweeps, with `clearAll` or `newRecording` between
-recordings; a copy kept across `clearAll` stays usable and is a constant in the next recording.
+recordings. Nothing recorded may outlive `clearAll` except inputs, which are registered again, in
+the same order, before any new variable; such an input must not be assigned to in a recording, and
+its copies must be gone by `clearAll`. Anything else may give wrong derivatives without an error.
 `getPosition`/`resetTo`, `computeAdjointsTo`, checkpoint callbacks and nested recordings are not
 supported with it: they may give wrong derivatives without an error.
-Excludes `XAD_LINEAR_SLOTS`, `XAD_TAPE_REUSE_SLOTS` and `XAD_TAPE_TRACK_LIVE_SLOTS`.
+Combining it with `XAD_LINEAR_SLOTS`, `XAD_TAPE_REUSE_SLOTS` or `XAD_TAPE_TRACK_LIVE_SLOTS` is a compile error.
 
 ### `XAD_LINEAR_SLOTS`
 
