@@ -64,7 +64,7 @@ endif()
 
 # Tape options: these end up in Config.hpp, a cmake-generated file
 option(XAD_TAPE_REUSE_SLOTS "Reuse slots in tape that have become free (slower, less memory)" OFF)
-option(XAD_TAPE_TRACK_LIVE_SLOTS "resetTo keeps the slots of variables still alive (slightly slower recording)" OFF)
+option(XAD_TAPE_TRACK_LIVE_SLOTS "resetTo keeps the slots of variables still alive, and newRecording reuses the previous recording's slots once none of them is alive (slightly slower recording)" OFF)
 option(XAD_HUGE_PAGES "Back large tape chunks with transparent huge pages on Linux (faster on large tapes with free memory; can stall on fragmented hosts)" OFF)
 option(XAD_LINEAR_SLOTS "Linear slots: copies share the slot of the source, every assignment takes a new slot" OFF)
 option(XAD_COPY_ELISION "Copies share the slot of the source and record nothing; a slot is freed by its last user (not with XAD_LINEAR_SLOTS)" OFF)

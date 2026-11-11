@@ -327,8 +327,13 @@ class Tape
         if (slot == currentRec_->iDerivative_ - 1)  // it's at the end of the tape
             --currentRec_->iDerivative_;
 #ifdef XAD_TAPE_TRACK_LIVE_SLOTS
-        if (XAD_UNLIKELY(slot < watch_.below))  // 0 unless getPosition was called
-            freeWatchedSlot(slot);
+        if (XAD_UNLIKELY(slot < watch_.below))  // the recording start, or a position's counter
+        {
+            if (slot < watch_.watched)
+                freeWatchedSlot(slot);
+            else
+                ++recordingStart_.freedBelow;
+        }
 #endif
 #else
         SubRecording* r = currentRec_;
@@ -486,16 +491,33 @@ class Tape
     // resetTo rewinds the slot counter only when no variable at or above from, the lowest counter
     // of the positions given out, can be live: liveBelow were live when it was set, all below it,
     // and freedBelow slots below it were freed since. Else the rewind is pending until a later
-    // free allows it. Frees of slots below below (0 without positions) update these.
+    // free allows it. Frees of slots below watched (0 without positions) update these; below is
+    // the larger of watched and the recording start.
     struct SlotWatch
     {
         slot_type below = 0;
+        slot_type watched = 0;
         slot_type from = 0;
         slot_type liveBelow = 0;
         slot_type freedBelow = 0;
         slot_type pending = INVALID_SLOT;
     };
     mutable SlotWatch watch_;
+    // newRecording rewinds the slot counter to counter, its value at the previous newRecording,
+    // once no variable registered since can be live: live were live then, all below it, and
+    // freedBelow slots below it were freed since
+    struct RecordingStart
+    {
+        slot_type counter = 0;
+        slot_type live = 0;
+        unsigned long long freedBelow = 0;
+    };
+    RecordingStart recordingStart_;
+    void watchBelow(slot_type watched) const
+    {
+        watch_.watched = watched;
+        watch_.below = (std::max)(watched, recordingStart_.counter);
+    }
     void watchSlots() const;
     void rewindSlots(slot_type to) const;
     XAD_NEVER_INLINE void freeWatchedSlot(slot_type slot);

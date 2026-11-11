@@ -96,6 +96,7 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       positionSlots_(std::move(o.positionSlots_)),
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
       watch_(o.watch_),
+      recordingStart_(o.recordingStart_),
 #endif
 #ifdef XAD_TAPE_REUSE_SLOTS
       reusable_ranges_(std::move(o.reusable_ranges_)),
@@ -148,6 +149,7 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     positionSlots_ = std::move(o.positionSlots_);
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = o.watch_;
+    recordingStart_ = o.recordingStart_;
 #endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_ = std::move(o.reusable_ranges_);
@@ -201,6 +203,7 @@ void Tape<T, N>::resetMovedFrom()
 #endif
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = SlotWatch();
+    recordingStart_ = RecordingStart();
 #endif
 }
 
@@ -228,6 +231,7 @@ void Tape<T, N>::clearAll()
 #endif
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = SlotWatch();
+    recordingStart_ = RecordingStart();
 #endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_.clear();
@@ -658,7 +662,10 @@ void Tape<T, N>::foldSubrecording()
                          positionSlots_.end());
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     if (positionSlots_.empty())
+    {
         watch_ = SlotWatch();
+        watchBelow(0);
+    }
     else
         dropPendingRewind();
 #endif
@@ -727,6 +734,16 @@ void Tape<T, N>::newRecording()
     positionSlots_.clear();
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = SlotWatch();
+    // slots freed below the counter stay unused, so the counter goes back to where the previous
+    // recording started once nothing above it is live
+    SubRecording* r = currentRec_;
+    if (r->numDerivatives_ + recordingStart_.freedBelow <= recordingStart_.live &&
+        recordingStart_.counter < r->iDerivative_)
+        r->iDerivative_ = recordingStart_.counter;
+    recordingStart_.counter = r->iDerivative_;
+    recordingStart_.live = r->numDerivatives_;
+    recordingStart_.freedBelow = 0;
+    watchBelow(0);
 #endif
     // the derivatives go one above the counter; registerOutput keeps no slot above it, as the
     // statements are gone
@@ -1217,7 +1234,7 @@ void Tape<T, N>::watchSlots() const
     watch_.liveBelow = currentRec_->numDerivatives_;
     watch_.freedBelow = 0;
     watch_.pending = INVALID_SLOT;
-    watch_.below = watch_.from;
+    watchBelow(watch_.from);
 }
 
 // rewinds the counter to the lowest of to and a pending rewind, if no slot at or above
@@ -1235,7 +1252,7 @@ void Tape<T, N>::rewindSlots(slot_type to) const
         watch_.pending = INVALID_SLOT;
     }
     // while pending, every free can allow it
-    watch_.below = watch_.pending == INVALID_SLOT ? watch_.from : INVALID_SLOT;
+    watchBelow(watch_.pending == INVALID_SLOT ? watch_.from : INVALID_SLOT);
 }
 
 template <class T, std::size_t N>
@@ -1243,6 +1260,8 @@ void Tape<T, N>::freeWatchedSlot(slot_type slot)
 {
     if (slot < watch_.from)
         ++watch_.freedBelow;
+    if (slot < recordingStart_.counter)
+        ++recordingStart_.freedBelow;
     if (watch_.pending != INVALID_SLOT)
         rewindSlots(INVALID_SLOT);
 }
@@ -1252,7 +1271,7 @@ void Tape<T, N>::dropPendingRewind()
 {
     watch_.pending = INVALID_SLOT;
     if (watch_.below == INVALID_SLOT)
-        watch_.below = watch_.from;
+        watchBelow(watch_.from);
 }
 #endif
 

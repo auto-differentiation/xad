@@ -48,7 +48,8 @@
 // keep track of freed-up slots in the tape and re-use them
 #cmakedefine XAD_TAPE_REUSE_SLOTS
 
-// resetTo after getPosition keeps the slots of variables that are still alive
+// resetTo after getPosition keeps the slots of variables that are still alive, and newRecording
+// reuses the previous recording's slots once none of them is alive
 #cmakedefine XAD_TAPE_TRACK_LIVE_SLOTS
 
 // Back large tape chunks with transparent huge pages on Linux

@@ -167,6 +167,15 @@ initialized and registered,
 as the `computeAdjoints` method will roll back the adjoints until
 the point where `newRecording` was called.
 
+`newRecording` keeps the slot counter, and the default allocator only takes back a freed slot when it
+is the last one in use: when temporaries die out of order, or a result lives on into the next recording,
+each recording takes new slots. Code that records many times on one tape with `newRecording` should
+enable one of two CMake options: `XAD_TAPE_REUSE_SLOTS`, which reuses any freed slot (less memory, at
+the cost of slower recording and freeing), or `XAD_TAPE_TRACK_LIVE_SLOTS`, with which `newRecording`
+takes the slot counter back to where the previous recording started once no variable registered since
+is still alive, so that repeated recordings with inputs registered once use the same slots (a few
+percent recording cost).
+
 #### `computeAdjoints`
 
 `#!c++ void computeAdjoints()` propagates adjoints by interpreting the operations on the tape.
