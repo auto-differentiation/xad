@@ -15,7 +15,7 @@ for record-once / replay-many execution.
 [Documentation](https://auto-differentiation.github.io/) ·
 [Install](#install) ·
 [Samples](samples) ·
-[Benchmarks](https://auto-differentiation.github.io/benchmarks/) ·
+[Benchmarks](https://github.com/auto-differentiation/ad-benchmarks) ·
 [Python](https://github.com/auto-differentiation/xad-py) ·
 [Discussions](https://github.com/auto-differentiation/xad/discussions)
 
@@ -108,8 +108,18 @@ and the [Tutorials](https://auto-differentiation.github.io/tutorials/).
 
 ## Benchmarks
 
-Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://github.com/rjhogan/Adept-2), [autodiff](https://github.com/autodiff/autodiff), and finite differences on quant-finance workloads.
-We are rebuilding the suite with new workloads, pinned library versions and gradient checks, run on GitHub CI; new results in November 2026.
+Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://github.com/rjhogan/Adept-2) and [autodiff](https://github.com/autodiff/autodiff) on four quant-finance workloads (LMM, Heston, CVA, SABR), with every gradient checked. XAD computes all sensitivities 6.5x to 83x faster than bump-and-reval and is the fastest of the open-source libraries on all four.
+
+<p align="center">
+  <a href="https://github.com/auto-differentiation/ad-benchmarks">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/auto-differentiation/ad-benchmarks/main/results/amd/speedup-dark.svg">
+      <img src="https://raw.githubusercontent.com/auto-differentiation/ad-benchmarks/main/results/amd/speedup-light.svg" alt="Speed-up over bump-and-reval per workload for XAD, XAD + codegen, Adept 2, CppAD and autodiff" width="600">
+    </picture>
+  </a>
+</p>
+
+XAD v2.2.0, AMD EPYC (Zen 5), one core, GCC 15.2, run 10 November 2026. Full methodology, source code and results: **[auto-differentiation/ad-benchmarks](https://github.com/auto-differentiation/ad-benchmarks)**
 
 ## Key Features
 
