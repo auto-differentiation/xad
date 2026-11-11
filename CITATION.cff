@@ -16,8 +16,8 @@ identifiers:
     value: "10.5281/zenodo.7965850"
     description: "All versions (concept DOI)"
   - type: doi
-    value: "10.5281/zenodo.19354435"
-    description: "Version 2.1.0"
+    value: "10.5281/zenodo.24142852"
+    description: "Version 2.2.0"
 keywords:
   - automatic differentiation
   - algorithmic differentiation
