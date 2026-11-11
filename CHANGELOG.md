@@ -142,6 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adjoints could be lost silently for a statement with more operations than a tape chunk holds
 - A tape recording more than one chunk allocated one unused chunk per boundary on every re-recording
 - Rolling back to a position at the end of a full tape chunk, or sweeping a statement without operations there, accessed memory past the chunk list
+- With `XAD_OUTLINE_RECORDING` and JIT, assigning an expression on the tape to a variable holding a JIT slot recorded the statement for the JIT slot instead of registering the variable on the tape
 
 
 ## [2.0.0] - 2026-02-06

@@ -1029,9 +1029,9 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
             expr.calc_derivatives(info, *s);
-#ifdef XAD_TAPE_CHECKS
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
             if (!isOn(s))
-                slot_ = INVALID_SLOT;  // a slot of another tape: register on s
+                slot_ = INVALID_SLOT;  // a slot of another tape or a JIT slot: register on s
 #endif
 #ifdef XAD_SKIP_ZERO_PARTIALS
             // all partials zero: a passive lhs stays passive, an active one gets an empty statement
