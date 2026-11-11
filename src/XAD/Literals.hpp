@@ -231,6 +231,16 @@ struct AReal
             XAD_UNUSED_VARIABLE(s);
             slot_ = o.slot_;
             copyTape(o);
+#elif defined(XAD_COPY_ELISION)
+            if (o.isOn(s))
+                shareSlotOf(s, o);  // no statement: a statement writing either detaches it first
+#ifdef XAD_TAPE_CHECKS
+            else if (o.shouldRecord())  // another tape's variable: a constant here
+            {
+                registerOn(s);
+                s->pushLhs(slot_);
+            }
+#endif
 #else
             if (o.shouldRecord())
             {
@@ -254,7 +264,16 @@ struct AReal
     }
 
     static constexpr slot_type INVALID_SLOT = tape_type::INVALID_SLOT;
+#ifdef XAD_COPY_ELISION
+    XAD_INLINE slot_type getSlot() const
+    {
+        if (XAD_UNLIKELY(shouldRecord() && (slot_ & SHARED_BIT)))
+            return tapeSlot();
+        return slot_;
+    }
+#else
     XAD_INLINE slot_type getSlot() const { return slot_; }
+#endif
     XAD_INLINE tape_type* getTape() const { return tape_type::getActive(); }
 
     XAD_INLINE AReal(AReal&& o) noexcept : base_type(static_cast<base_type&&>(o)), slot_(o.slot_)
@@ -273,6 +292,20 @@ struct AReal
         return *this;
     }
 
+#ifdef XAD_COPY_ELISION
+    // forced: gcc stopped inlining it when it got the shared-slot branch, costing a call per
+    // passive temporary
+    XAD_FORCE_INLINE ~AReal()
+    {
+        if (auto tape = tape_type::getActive())
+        {
+            if (XAD_LIKELY(ownsSlot(tape)))
+                tape->unregisterVariable(slot_);
+            else if (XAD_UNLIKELY(slot_ != INVALID_SLOT))  // shared, another tape's or JIT
+                releaseOther(tape);
+        }
+    }
+#else
     XAD_INLINE ~AReal()
     {
 #ifndef XAD_LINEAR_SLOTS  // linear slots: a copy may still use the slot, so it is never freed
@@ -281,6 +314,7 @@ struct AReal
                 tape->unregisterVariable(slot_);
 #endif
     }
+#endif
 
     XAD_FORCE_INLINE AReal& operator=(const AReal& o);
 
@@ -294,6 +328,12 @@ struct AReal
             // linear slots: copies may share the old slot, so the constant gets a new one;
             // the variable stays active, so an input registered before stays an input
             registerOn(tape);
+            tape->pushLhs(slot_);
+        }
+#elif defined(XAD_COPY_ELISION)
+        {
+            if (!ownsSlot(tape))
+                claimSlot(tape);  // copies may share the slot
             tape->pushLhs(slot_);
         }
 #else
@@ -487,14 +527,22 @@ struct AReal
     XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type& s, const Scalar& mul) const
     {
         if (isOn(&s))
+#ifdef XAD_COPY_ELISION
+            pushRhs(info, mul, tapeSlot());
+#else
             pushRhs(info, mul, slot_);
+#endif
     }
 
     template <class Info>
     XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type& s) const
     {
         if (isOn(&s))
+#ifdef XAD_COPY_ELISION
+            pushRhs(info, Scalar(1), tapeSlot());
+#else
             pushRhs(info, Scalar(1), slot_);
+#endif
     }
 
     XAD_INLINE derivative_type getDerivative() const { return derivative(); }
@@ -517,7 +565,11 @@ struct AReal
             static const derivative_type zero = derivative_type();
             return zero;
         }
+#ifdef XAD_COPY_ELISION
+        return t->derivative(tapeSlot());
+#else
         return t->derivative(slot_);
+#endif
     }
 
     XAD_INLINE derivative_type& derivative()
@@ -538,7 +590,11 @@ struct AReal
             registerOn(t);
             t->pushLhs(slot_);
         }
+#ifdef XAD_COPY_ELISION
+        return t->derivative(tapeSlot());
+#else
         return t->derivative(slot_);
+#endif
     }
 #ifdef XAD_ENABLE_JIT
     // JIT variables are passive on tapes; the hint keeps GCC's code layout of an INVALID_SLOT check
@@ -624,19 +680,84 @@ struct AReal
         slot_ = t->registerVariable();
         setTape(t);
     }
+#ifdef XAD_COPY_ELISION
+    // SHARED_BIT in slot_ marks a slot that copies may share; only marked variables read the
+    // tape's share counts
+    static constexpr slot_type SHARED_BIT = tape_type::SHARED_SLOT_BIT;
+#ifdef XAD_ENABLE_JIT
+    static_assert((SHARED_BIT | (tape_type::MAX_SLOTS - 1)) < FIRST_JIT_SLOT,
+                  "a marked tape slot is no JIT slot");
+#endif
+
+    // the tape's slot (slot_ is on a tape)
+    XAD_INLINE slot_type tapeSlot() const { return slot_ & ~SHARED_BIT; }
+
+    // whether slot_ is on t and no other variable may share it
+    XAD_INLINE bool ownsSlot(const tape_type* t) const
+    {
+#ifdef XAD_TAPE_CHECKS
+        return slot_ < SHARED_BIT && tapeId_ == t->id_;
+#else
+        XAD_UNUSED_VARIABLE(t);
+        return slot_ < SHARED_BIT;
+#endif
+    }
+
+    XAD_INLINE void shareSlotOf(tape_type* t, const AReal& o)
+    {
+        const slot_type s = o.slot_ | SHARED_BIT;
+        o.slot_ = s;
+        slot_ = s;
+        copyTape(o);
+        t->shareSlot(s & ~SHARED_BIT);
+    }
+
+    // frees slot_ (on t) unless other variables share it
+    XAD_INLINE void releaseSlot(tape_type* t)
+    {
+        if (XAD_UNLIKELY(slot_ & SHARED_BIT))
+            t->unregisterShared(tapeSlot());
+        else
+            t->unregisterVariable(slot_);
+    }
+
+    // the destructor for a slot ownsSlot rejects: out of line, so that the destructor inlines
+    XAD_NEVER_INLINE void releaseOther(tape_type* t)
+    {
+        if (isOn(t))
+            t->unregisterShared(tapeSlot());
+    }
+
+    // before a statement writes slot_, when not ownsSlot: a slot of its own on t
+    XAD_INLINE void claimSlot(tape_type* t)
+    {
+        if (!isOn(t))
+            registerOn(t);
+        else
+            detachSlot(t);
+    }
+
+    // slot_ on t, shared: unmarked, a new slot if others still use it
+    XAD_INLINE void detachSlot(tape_type* t)
+    {
+        slot_type slot = tapeSlot();
+        t->detachShared(slot);
+        slot_ = slot;
+    }
+#endif
 #ifdef XAD_TAPE_CHECKS
     // whether slot_ is one of t's, which the slot alone cannot tell
     XAD_INLINE bool isOn(const tape_type* t) const { return shouldRecord() && tapeId_ == t->id_; }
     XAD_INLINE void setTape(const tape_type* t) { tapeId_ = t->id_; }
     XAD_INLINE void swapTape(AReal& o) { std::swap(tapeId_, o.tapeId_); }
-#ifdef XAD_LINEAR_SLOTS
+#if defined(XAD_LINEAR_SLOTS) || defined(XAD_COPY_ELISION)
     XAD_INLINE void copyTape(const AReal& o) { tapeId_ = o.tapeId_; }
 #endif
 #else
     XAD_INLINE bool isOn(const tape_type*) const { return shouldRecord(); }
     XAD_INLINE void setTape(const tape_type*) {}
     XAD_INLINE void swapTape(AReal&) {}
-#ifdef XAD_LINEAR_SLOTS
+#if defined(XAD_LINEAR_SLOTS) || defined(XAD_COPY_ELISION)
     XAD_INLINE void copyTape(const AReal&) {}
 #endif
 #endif
@@ -649,7 +770,11 @@ struct AReal
     template <class T, std::size_t d__cnt>
     friend class ABool;
 #endif
+#ifdef XAD_COPY_ELISION
+    mutable typename tape_type::slot_type slot_;  // a copy marks the slot of its source shared
+#else
     typename tape_type::slot_type slot_;
+#endif
 #ifdef XAD_TAPE_CHECKS
     unsigned int tapeId_ = 0;  // the tape of slot_
 #endif
@@ -704,9 +829,16 @@ struct ADVar
 template <class Scalar, std::size_t M>
 XAD_RECORDING_OUTLINE void AReal<Scalar, M>::recordCopy(tape_type* s, const AReal& o)
 {
+#ifdef XAD_COPY_ELISION
+    // o is passive here (or another tape's): this variable stays active, holding a constant
+    XAD_UNUSED_VARIABLE(o);
+    if (!ownsSlot(s))
+        claimSlot(s);
+#else
     if (!isOn(s))
         registerOn(s);
     pushAll<1>(s, o);
+#endif
     s->pushLhs(slot_);
 }
 
@@ -728,6 +860,19 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
             registerOn(s);
             s->pushLhs(slot_);
         }
+#elif defined(XAD_COPY_ELISION)
+        if (o.isOn(s))
+        {
+            // share the slot of o, freeing the one held before
+            if ((slot_ | SHARED_BIT) != (o.slot_ | SHARED_BIT) || !isOn(s))
+            {
+                if (isOn(s))
+                    releaseSlot(s);
+                shareSlotOf(s, o);
+            }
+        }
+        else if (o.shouldRecord() || this->shouldRecord())
+            recordCopy(s, o);
 #else
         if (o.shouldRecord() || this->shouldRecord())
             recordCopy(s, o);
@@ -815,6 +960,11 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
                 // linear slots: every assignment writes a new slot, as copies may share the old one
                 slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
 #else
+#ifdef XAD_COPY_ELISION
+                // the partials are taken: a new slot is not among them
+                if (!ownsSlot(s) && isOn(s))
+                    detachSlot(s);
+#endif
                 s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
 #endif
                 setTape(s);
@@ -827,6 +977,9 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
             {
 #ifdef XAD_LINEAR_SLOTS
                 registerOn(s);  // linear slots: a new slot, as copies may share the old one
+#elif defined(XAD_COPY_ELISION)
+                if (!ownsSlot(s))
+                    claimSlot(s);
 #else
                 if (!isOn(s))
                     registerOn(s);
@@ -840,6 +993,9 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
             // registered, it doesn't need recording of derivatives
 #ifdef XAD_LINEAR_SLOTS
             registerOn(s);  // linear slots: a new slot, as copies may share the old one
+#elif defined(XAD_COPY_ELISION)
+            if (!ownsSlot(s))
+                claimSlot(s);
 #else
             if (!isOn(s))
                 registerOn(s);

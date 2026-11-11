@@ -106,6 +106,17 @@ class Tape
     typedef typename DerivativesTraits<Real, N>::type derivative_type;
 
     static constexpr slot_type INVALID_SLOT = slot_type(-1);
+#ifdef XAD_COPY_ELISION
+    // An AReal sharing its slot with copies has this bit set in its slot (see AReal), so the tape
+    // has fewer than MAX_SLOTS slots: a marked slot is then neither INVALID_SLOT nor, with JIT,
+    // a JIT slot (from 0xC0000000). Registering more throws OutOfRange.
+    static constexpr slot_type SHARED_SLOT_BIT = slot_type(1) << 31;
+#ifdef XAD_ENABLE_JIT
+    static constexpr slot_type MAX_SLOTS = slot_type(1) << 30;
+#else
+    static constexpr slot_type MAX_SLOTS = SHARED_SLOT_BIT - 1;
+#endif
+#endif
 
     // construct/destruct/assign
     explicit Tape(bool activate = true);
@@ -153,6 +164,11 @@ class Tape
             inp.registerOn(this);
             pushLhs(inp.slot_);
         }
+#ifdef XAD_COPY_ELISION
+        // a slot shared with other variables: an own one, so that the input has its own adjoint
+        else if (XAD_UNLIKELY(inp.slot_ & SHARED_SLOT_BIT))
+            inp.slot_ = ownSharedSlot(inp.slot_ & ~SHARED_SLOT_BIT);
+#endif
     }
     XAD_INLINE void registerInput(std::complex<active_type>& inp)
     {
@@ -179,6 +195,11 @@ class Tape
             outp.registerOn(this);
             pushLhs(outp.slot_);
         }
+#ifdef XAD_COPY_ELISION
+        // a slot shared with other variables: an own one, so its adjoint seeds this output only
+        else if (XAD_UNLIKELY(outp.slot_ & SHARED_SLOT_BIT))
+            outp.slot_ = ownSharedSlot(outp.slot_ & ~SHARED_SLOT_BIT);
+#endif
     }
 
     XAD_INLINE void registerOutput(ARealDirect<Real, N>& outp) { registerOutput(outp.base()); }
@@ -318,6 +339,22 @@ class Tape
 #endif
     }
 
+#ifdef XAD_COPY_ELISION
+    // a copy uses the slot of its source
+    XAD_INLINE void shareSlot(slot_type slot)
+    {
+        if (XAD_UNLIKELY(slot >= shares_.size()))
+            growShares(std::size_t(slot) + 1);
+        ++shares_[slot];
+    }
+    // unregisterVariable for a variable that may share its slot: freed by the last one using it
+    XAD_NEVER_INLINE void unregisterShared(slot_type slot);
+    // before a statement writes the slot of a variable that may share it: a new slot if shared
+    XAD_NEVER_INLINE void detachShared(slot_type& slot);
+    // the slot of an input or output that may share it: a new one, recorded as a copy, if shared
+    XAD_NEVER_INLINE slot_type ownSharedSlot(slot_type slot);
+#endif
+
     XAD_RECORDING_INLINE void pushLhs(slot_type slot)
     {
         assert(slot != INVALID_SLOT);
@@ -373,7 +410,13 @@ class Tape
         const slot_type n = s + 1;
         r->iDerivative_ = n;
         if (n > r->maxDerivative_)
+        {
             r->maxDerivative_ = n;
+#ifdef XAD_COPY_ELISION
+            if (XAD_UNLIKELY(n > MAX_SLOTS))
+                tooManySlots(s);
+#endif
+        }
         return s;
     }
     // whether v holds a live slot of this tape, not one clearAll or resetTo gave up
@@ -383,7 +426,11 @@ class Tape
         if (!v.isOn(this))  // another tape's or a JIT slot
             return false;
 #endif
+#ifdef XAD_COPY_ELISION
+        return (v.slot_ & ~SHARED_SLOT_BIT) < currentRec_->iDerivative_;  // also INVALID_SLOT
+#else
         return v.slot_ < currentRec_->iDerivative_;  // false for INVALID_SLOT too
+#endif
     }
 
 #ifndef XAD_SHARED_LIBS
@@ -483,6 +530,19 @@ class Tape
     };
     std::stack<SubRecording> nestedRecordings_;
     SubRecording* currentRec_;
+#ifdef XAD_COPY_ELISION
+    // per slot, the variables using it besides the first (copies share the slot of their source);
+    // only those variables read it, and slots beyond its end are not shared
+    std::vector<slot_type> shares_;
+    // slots below the counter that the last of the variables sharing them freed (default slot
+    // mode, which reuses only the last slot): detachShared takes them
+    std::vector<slot_type> freedShared_;
+    XAD_NEVER_INLINE void growShares(std::size_t n);
+    // no variable shares the slots in [from, to), which were given up
+    void dropShares(slot_type from, slot_type to);
+    // throws OutOfRange for a slot counter past MAX_SLOTS, leaving it at last
+    XAD_NEVER_INLINE void tooManySlots(slot_type last);
+#endif
 #ifdef XAD_ENABLE_JIT
     template <class, std::size_t>
     friend class JITCompiler;
