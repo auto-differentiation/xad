@@ -416,6 +416,9 @@ class Tape
   private:
     void resetMovedFrom();
     void computeAdjointsToImpl(position_type pos, position_type start);
+    template <class ChunkIt, class Idx>
+    void computeAdjointsAcrossChunks(ChunkIt chunk_it, ChunkIt chunk_eit, Idx idx, Idx endidx,
+                                     Idx endcidx);
     void initDerivatives();
     derivative_type& derivativeSlow(slot_type s);
     XAD_INLINE slot_type registerVariableAtEnd()

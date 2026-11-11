@@ -1061,7 +1061,6 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
         endidx = 0;
     auto chunk_it = statement_.chunk_begin() + startchunk;
     auto chunk_eit = statement_.chunk_begin() + endchunk - 1;
-    const int chunksz = int(s_type::chunk_size);
 
     // fast path: the statements in one chunk and their operations in one chunk. endcidx > 0 keeps
     // sts[i - 1] inside the chunk (endcidx == 0 needs the previous chunk's last statement).
@@ -1085,6 +1084,25 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             return;
         }
     }
+
+    computeAdjointsAcrossChunks(chunk_it, chunk_eit, idx, endidx, endcidx);
+}
+
+// clang out of line: keeps the fast path's registers; other compilers inline, as before
+#if defined(__clang__)
+#define XAD_SWEEP_ACROSS_CHUNKS XAD_NEVER_INLINE
+#else
+#define XAD_SWEEP_ACROSS_CHUNKS XAD_FORCE_INLINE
+#endif
+
+template <class T, std::size_t N>
+template <class ChunkIt, class Idx>
+XAD_SWEEP_ACROSS_CHUNKS void Tape<T, N>::computeAdjointsAcrossChunks(ChunkIt chunk_it,
+                                                                     ChunkIt chunk_eit, Idx idx,
+                                                                     Idx endidx, Idx endcidx)
+{
+    using s_type = typename TapeContainerTraits<T, slot_type>::statements_type;
+    const int chunksz = int(s_type::chunk_size);
 
     // A range across chunks goes out of line, which would take the adjoint out of a register if its
     // address went along: plain adjoints are held by copy (copying an active one would record).
@@ -1134,6 +1152,8 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
         idx = chunksz - 1;
     }
 }
+
+#undef XAD_SWEEP_ACROSS_CHUNKS
 
 template <class T, std::size_t N>
 std::size_t Tape<T, N>::getMemory() const
