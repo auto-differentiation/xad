@@ -56,7 +56,7 @@ struct BinaryExpr
         : a_(a), b_(b), op_(op), v_(op_(a_.value(), b_.value()))
     {
     }
-#ifdef XAD_EXPR_COPY_MEMBERWISE
+#ifdef XAD_BINARY_EXPR_COPY_MEMBERWISE
     XAD_FORCE_INLINE BinaryExpr(const BinaryExpr& o) : a_(o.a_), b_(o.b_), op_(o.op_), v_(o.v_) {}
 #endif
     XAD_INLINE Scalar value() const { return v_; }

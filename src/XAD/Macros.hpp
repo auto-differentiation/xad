@@ -88,9 +88,12 @@ void ignore_unused_variable(const T&)
 
 // MSVC copies a trivially copyable expression node with one wide load right after the narrow
 // stores of its members, which defeats store forwarding: nodes copy their members one by one.
-// Not with MSVC 14.4, which miscompiles those copies (wrong tangents).
-#if defined(_MSC_VER) && !defined(__clang__) && !(_MSC_VER >= 1940 && _MSC_VER < 1950)
+// Binary nodes not with MSVC 14.4, which miscompiles their copies (wrong tangents).
+#if defined(_MSC_VER) && !defined(__clang__)
 #define XAD_EXPR_COPY_MEMBERWISE
+#if !(_MSC_VER >= 1940 && _MSC_VER < 1950)
+#define XAD_BINARY_EXPR_COPY_MEMBERWISE
+#endif
 #endif
 
 #ifdef XAD_NO_THREADLOCAL
