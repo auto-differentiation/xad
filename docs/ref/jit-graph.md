@@ -37,7 +37,7 @@ Each node contains:
 
 ### Node storage
 
-Nodes are stored in a chunked container (`ChunkContainer<JITNode>`) to avoid large reallocation/copy spikes when building very large graphs.
+Nodes are stored in a chunked container (`ChunkContainer<JITNode, 262144>`, 8 MiB chunks) to avoid large reallocation/copy spikes when building very large graphs, without reserving much memory for small ones.
 
 ### Constant pool
 

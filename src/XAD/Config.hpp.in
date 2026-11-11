@@ -48,7 +48,8 @@
 // keep track of freed-up slots in the tape and re-use them
 #cmakedefine XAD_TAPE_REUSE_SLOTS
 
-// resetTo after getPosition keeps the slots of variables that are still alive
+// resetTo after getPosition keeps the slots of variables that are still alive, and newRecording
+// reuses the previous recording's slots once none of them is alive
 #cmakedefine XAD_TAPE_TRACK_LIVE_SLOTS
 
 // Back large tape chunks with transparent huge pages on Linux
@@ -56,6 +57,18 @@
 
 // linear slots: copies share the slot of the source
 #cmakedefine XAD_LINEAR_SLOTS
+
+// copy elision: copies share the slot of the source, counted, and record nothing
+#ifndef XAD_COPY_ELISION
+#cmakedefine XAD_COPY_ELISION
+#endif
+#if defined(XAD_COPY_ELISION) && defined(XAD_LINEAR_SLOTS)
+#error "XAD_COPY_ELISION and XAD_LINEAR_SLOTS exclude each other"
+#endif
+#if defined(XAD_COPY_ELISION) &&                                                                  \
+    (defined(XAD_TAPE_REUSE_SLOTS) || defined(XAD_TAPE_TRACK_LIVE_SLOTS))
+#error "XAD_COPY_ELISION supports neither XAD_TAPE_REUSE_SLOTS nor XAD_TAPE_TRACK_LIVE_SLOTS"
+#endif
 
 // skip recording partial derivatives that are exactly zero
 #cmakedefine XAD_SKIP_ZERO_PARTIALS
@@ -66,7 +79,8 @@
 // Use the initial-exec TLS model for the thread-local tape (GCC/Clang)
 #cmakedefine XAD_TLS_INITIAL_EXEC
 
-// Reduce memory usage in the tape, at a slight performance cost
+// Keep the tape's multipliers and slots in separate arrays: less memory per operation;
+// recording writes straight into them, except nested active types and outline-recorded assignments
 #cmakedefine XAD_REDUCED_MEMORY
 
 // Use and free a variable's slot only on the tape it is registered on (default in Debug builds)

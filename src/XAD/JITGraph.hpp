@@ -129,7 +129,8 @@ struct JITNode
 
 struct JITGraph
 {
-    ChunkContainer<JITNode> nodes;
+    // 8 MiB chunks; the default 8M-node chunk commits 256 MiB per graph up front
+    ChunkContainer<JITNode, 1024U * 256U> nodes;
     std::vector<double> const_pool;
     std::vector<uint32_t> input_ids;
     std::vector<uint32_t> output_ids;

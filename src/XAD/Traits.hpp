@@ -28,10 +28,55 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <type_traits>
+
+// Forward mode: a zero tangent adds nothing, even with an infinite or NaN partial (as for a
+// constant operand). GCC on x86-64 compiles a compare for that to branches per op (and per
+// lane), so there tangentTerm masks with an SSE compare and AND instead.
+#if defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__) && defined(__SSE2__)
+#define XAD_BRANCH_FREE_TANGENTS
+#include <emmintrin.h>
+#endif
 
 namespace xad
 {
+
+template <class, std::size_t>
+struct FReal;
+
+// How an expression node holds an operand: FReal leaves larger than two doubles (five with
+// clang-cl), or nested ones larger than four, by reference (as ADVar holds an AReal), so they
+// must outlive the full expression; smaller ones, which copy at less cost, and everything else
+// by value.
+template <class Expr>
+struct ExprStorage
+{
+    typedef Expr type;
+};
+
+template <class Scalar, std::size_t N>
+struct ExprStorage<FReal<Scalar, N>>
+{
+#if defined(_MSC_VER) && defined(__clang__)
+    // clang-cl outlines the tangent of by-reference expressions up to this size
+    static const std::size_t byValueDoubles = 5;
+#else
+    static const std::size_t byValueDoubles = 2;
+#endif
+    typedef typename std::conditional<(sizeof(FReal<Scalar, N>) > byValueDoubles * sizeof(double)),
+                                      const FReal<Scalar, N>&, FReal<Scalar, N>>::type type;
+};
+
+// nested FReal up to four doubles by value: gcc outlines the by-reference form, reloads the
+// operands after each partial store and splits the result into scalars, which costs more than
+// the copy
+template <class Scalar, std::size_t M, std::size_t N>
+struct ExprStorage<FReal<FReal<Scalar, M>, N>>
+{
+    typedef FReal<FReal<Scalar, M>, N> T;
+    typedef typename std::conditional<(sizeof(T) > 4 * sizeof(double)), const T&, T>::type type;
+};
 
 enum Direction
 {
@@ -95,6 +140,50 @@ template <class, std::size_t>
 struct ARealDirect;
 template <class, std::size_t>
 struct FRealDirect;
+template <class, std::size_t>
+struct AReal;
+
+namespace detail
+{
+// Whether recording writes a T straight into tape memory: trivially copyable types, and FReal /
+// FRealDirect over them. Not built on the std traits of XAD's types, which StdCompatibility.hpp
+// specialises.
+template <class T>
+struct is_direct_recordable : std::is_trivially_copyable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_direct_recordable<FReal<T, N>> : is_direct_recordable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_direct_recordable<FRealDirect<T, N>> : is_direct_recordable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_direct_recordable<AReal<T, N>> : std::false_type
+{
+};
+template <class T, std::size_t N>
+struct is_direct_recordable<ARealDirect<T, N>> : std::false_type
+{
+};
+
+// Whether a directly recorded partial is assigned (trivially copyable non-XAD types) or
+// constructed in place (FReal, FRealDirect)
+template <class T>
+struct is_assigned_partial : std::is_trivially_copyable<T>
+{
+};
+template <class T, std::size_t N>
+struct is_assigned_partial<FReal<T, N>> : std::false_type
+{
+};
+template <class T, std::size_t N>
+struct is_assigned_partial<FRealDirect<T, N>> : std::false_type
+{
+};
+}  // namespace detail
 
 namespace detail
 {
@@ -150,15 +239,9 @@ struct is_active : public std::integral_constant<bool, ExprTraits<T>::isExpr || 
 {
 };
 
-// Forward mode: a zero tangent adds nothing, even with an infinite or NaN partial (as for a
-// constant operand). Derivatives are computed as usual and redone with tangentTerm if NaN,
-// except for ops whose partials are finite where their arguments are, or which give the
-// tangent themselves (op.tangent).
-// GCC on x86-64 compiles that check to compares and branches per op (and per lane), so there
-// tangentTerm is used directly, with a bit mask instead of a compare.
-#if defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)
-#define XAD_BRANCH_FREE_TANGENTS
-#endif
+// Forward mode: derivatives are computed as usual and redone with tangentTerm if NaN, except
+// for ops whose partials are finite where their arguments are, or which give the tangent
+// themselves (op.tangent). With XAD_BRANCH_FREE_TANGENTS, tangentTerm is used directly.
 
 template <class Op>
 struct HasFinitePartials : std::false_type
@@ -167,6 +250,19 @@ struct HasFinitePartials : std::false_type
 
 template <class Op>
 struct HasTangentRule : std::false_type
+{
+};
+
+// An op's partial in its first (A) or second (B) operand where it is the constant +1 or -1, else 0.
+// Recording passes the multiplier on for these instead of multiplying by them, which costs nested
+// products for higher-order types.
+template <class Op>
+struct UnitPartialA : std::integral_constant<int, 0>
+{
+};
+
+template <class Op>
+struct UnitPartialB : std::integral_constant<int, 0>
 {
 };
 
@@ -205,21 +301,28 @@ XAD_INLINE bool isNaNTangent(const D& d, std::false_type)
     return isNaNTangent(d);
 }
 
+#ifdef XAD_BRANCH_FREE_TANGENTS
+// d, or 0 where t is +-0, in xmm registers (a bit mask on integers moves each lane xmm -> gpr)
+XAD_INLINE double maskedTerm(double t, double d)
+{
+    const __m128d m = _mm_cmpneq_sd(_mm_set_sd(t), _mm_setzero_pd());
+    return _mm_cvtsd_f64(_mm_and_pd(m, _mm_set_sd(d)));
+}
+
+XAD_INLINE float maskedTerm(float t, float d)
+{
+    const __m128 m = _mm_cmpneq_ss(_mm_set_ss(t), _mm_setzero_ps());
+    return _mm_cvtss_f32(_mm_and_ps(m, _mm_set_ss(d)));
+}
+#endif
+
 // partial * tangent, but 0 where the tangent is +-0
 template <class P, class D>
 XAD_INLINE typename std::enable_if<float_or_double<D>::value, D>::type tangentTerm(
     const P& partial, const D& tangent)
 {
 #ifdef XAD_BRANCH_FREE_TANGENTS
-    typedef typename std::conditional<sizeof(D) == 8, std::uint64_t, std::uint32_t>::type U;
-    const D d = D(partial * tangent);
-    U t, r;
-    std::memcpy(&t, &tangent, sizeof(D));
-    std::memcpy(&r, &d, sizeof(D));
-    r &= U(0) - U((t << 1) != 0);
-    D ret;
-    std::memcpy(&ret, &r, sizeof(D));
-    return ret;
+    return maskedTerm(tangent, D(partial * tangent));
 #else
     return tangent == D() ? D() : D(partial * tangent);
 #endif
@@ -239,6 +342,59 @@ XAD_INLINE Vec<T, N> tangentTerm(const P& partial, const Vec<T, N>& tangent)
     for (std::size_t i = 0; i < N; ++i) r[i] = tangentTerm(partial, tangent[i]);
     return r;
 }
+
+#ifdef XAD_BRANCH_FREE_TANGENTS
+// B-byte vectors of doubles (V) and of lane masks (M) that may be unaligned. Written out per size:
+// GCC 7 drops aligned(8) when vector_size depends on a template parameter, giving aligned loads.
+template <std::size_t B>
+struct PackedLanes;
+
+template <>
+struct PackedLanes<16>
+{
+    typedef double V __attribute__((vector_size(16), aligned(8), may_alias));
+    typedef long long M __attribute__((vector_size(16), aligned(8), may_alias));
+};
+
+#ifdef __AVX__
+template <>
+struct PackedLanes<32>
+{
+    typedef double V __attribute__((vector_size(32), aligned(8), may_alias));
+    typedef long long M __attribute__((vector_size(32), aligned(8), may_alias));
+};
+#endif
+
+// lanes in blocks of B bytes from i on, with packed compares and ANDs; returns the next lane
+template <std::size_t B, class P, std::size_t N>
+XAD_INLINE std::size_t maskedTerms(const P& partial, const Vec<double, N>& tangent,
+                                   Vec<double, N>& r, std::size_t i)
+{
+    typedef typename PackedLanes<B>::V V;
+    typedef typename PackedLanes<B>::M M;
+    const std::size_t L = B / sizeof(double);
+    for (; i + L <= N; i += L)
+    {
+        const V t = *reinterpret_cast<const V*>(&tangent[i]);
+        *reinterpret_cast<V*>(&r[i]) = (V)((t != 0) & (M)(double(partial) * t));
+    }
+    return i;
+}
+
+template <class P, std::size_t N>
+XAD_INLINE Vec<double, N> tangentTerm(const P& partial, const Vec<double, N>& tangent)
+{
+    Vec<double, N> r(tangent);
+    std::size_t i = 0;
+#ifdef __AVX__
+    i = maskedTerms<32>(partial, tangent, r, i);
+#endif
+    i = maskedTerms<16>(partial, tangent, r, i);
+    if (i < N)
+        r[i] = maskedTerm(tangent[i], double(partial * tangent[i]));
+    return r;
+}
+#endif
 
 // tangentTerm, or partial * tangent for ops with finite partials (HasFinitePartials<Op>())
 template <class P, class D>
@@ -263,11 +419,39 @@ XAD_INLINE D quotientTangent(const S& b, const S& v, const D& ta, const D& tb)
 }
 
 template <class S, class T, std::size_t N>
-XAD_INLINE Vec<T, N> quotientTangent(const S& b, const S& v, const Vec<T, N>& ta,
-                                     const Vec<T, N>& tb)
+XAD_INLINE typename std::enable_if<!float_or_double<S>::value, Vec<T, N>>::type quotientTangent(
+    const S& b, const S& v, const Vec<T, N>& ta, const Vec<T, N>& tb)
 {
     Vec<T, N> r(ta);
     for (std::size_t i = 0; i < N; ++i) r[i] = quotientTangent(b, v, ta[i], tb[i]);
+    return r;
+}
+
+// 2^64 for a subnormal b (1 / b overflows), else 1. GCC compiles a ?: here to a branch, so there it
+// is a packed compare and blend (which it still folds for a constant b, unlike SSE intrinsics).
+template <class S>
+XAD_INLINE S reciprocalScale(S b)
+{
+#ifdef XAD_BRANCH_FREE_TANGENTS
+    typedef S V __attribute__((vector_size(16)));
+    typedef decltype(V() < V()) M;
+    const M m = V{std::fabs(b)} < V{std::numeric_limits<S>::min()};
+    return V((m & M(V{S(18446744073709551616.0)})) | (~m & M(V{S(1)})))[0];
+#else
+    return std::fabs(b) < std::numeric_limits<S>::min() ? S(18446744073709551616.0) : S(1);
+#endif
+}
+
+// one division for all lanes: (ta - v * tb) * (1 / b), matching the per-lane division for
+// b = 0, inf and NaN; a subnormal b (1 / b overflows) is scaled by 2^64 first, the result back
+template <class S, class T, std::size_t N>
+XAD_INLINE typename std::enable_if<float_or_double<S>::value, Vec<T, N>>::type quotientTangent(
+    const S& b, const S& v, const Vec<T, N>& ta, const Vec<T, N>& tb)
+{
+    Vec<T, N> r(ta);
+    const S scale = reciprocalScale(b);
+    const S rb = S(1) / (b * scale);
+    for (std::size_t i = 0; i < N; ++i) r[i] = (ta[i] - v * tb[i]) * rb * scale;
     return r;
 }
 

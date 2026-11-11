@@ -177,6 +177,15 @@ class JITCompiler
     const JITGraph& getGraph() const { return graph_; }
     JITGraph& getGraph() { return graph_; }
 
+    // x is the variable registered for input node, not a copy sharing its node
+    bool isRegisteredInput(const active_type& x, uint32_t node) const
+    {
+        const std::vector<uint32_t>& ids = graph_.input_ids;
+        std::vector<uint32_t>::const_iterator it = std::lower_bound(ids.begin(), ids.end(), node);
+        return it != ids.end() && *it == node &&
+               inputs_[static_cast<std::size_t>(it - ids.begin())] == &x;
+    }
+
     void newRecording()
     {
         graph_.clear();

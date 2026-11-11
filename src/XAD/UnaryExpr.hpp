@@ -62,6 +62,12 @@ template <class, class, class>
 struct Expression;
 
 /// Base class of all unary expressions
+// A partial of a constant zero operand inlined here is infinite by design (a zero tangent masks
+// it); MSVC reports that as C4723, an error with /WX.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4723)
+#endif
 template <class Scalar, class Op, class Expr, class DerivativeType = Scalar>
 struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType>, DerivativeType>
 {
@@ -73,20 +79,51 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
     XAD_INLINE explicit UnaryExpr(const Expr& a, Op op = Op()) : a_(a), op_(op), v_(op_(a_.value()))
     {
     }
+#ifdef XAD_EXPR_COPY_MEMBERWISE
+    XAD_FORCE_INLINE UnaryExpr(const UnaryExpr& o) : a_(o.a_), op_(o.op_), v_(o.v_) {}
+#endif
     XAD_INLINE Scalar value() const { return v_; }
     template <class Info, class Tape>
     XAD_INLINE void calc_derivatives(Info& info, Tape& s, const Scalar& mul) const
     {
-        using xad::value;
-        a_.calc_derivatives(info, s, mul * der_impl::template derivative<>(op_, a_.value(), v_));
+        calcA(info, s, mul, detail::UnitPartialA<Op>());
     }
     template <class Info, class Tape>
     XAD_INLINE void calc_derivatives(Info& info, Tape& s) const
     {
-        using xad::value;
-        a_.calc_derivatives(info, s, der_impl::template derivative<>(op_, value(a_), v_));
+        calcA(info, s, detail::unit_multiplier(), detail::UnitPartialA<Op>());
+    }
+    template <class Info, class Tape>
+    XAD_INLINE void calc_derivatives(Info& info, Tape& s, detail::minus_unit m) const
+    {
+        calcA(info, s, m, detail::UnitPartialA<Op>());
     }
 
+  private:
+    // the operand's partials with the incoming multiplier m: m passed on (or its sign flipped)
+    // where the op's partial is +1 (-1), else m times the partial
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcA(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, 1>) const
+    {
+        detail::calcWith(a_, info, s, m);
+    }
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcA(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, -1>) const
+    {
+        detail::calcWith(a_, info, s, detail::flipSign(m));
+    }
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcA(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, 0>) const
+    {
+        using xad::value;
+        detail::calcWith(a_, info, s,
+                         detail::times(m, der_impl::template derivative<>(op_, value(a_), v_)));
+    }
+
+  public:
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord(); }
 
 #ifdef XAD_ENABLE_JIT
@@ -169,10 +206,13 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
 #endif
     }
 
-    Expr a_;
+    typename ExprStorage<Expr>::type a_;
     Op op_;
     Scalar v_;
 };
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 template <class Scalar, class Op, class Expr, class DerivativeType>
 struct ExprTraits<UnaryExpr<Scalar, Op, Expr, DerivativeType> >

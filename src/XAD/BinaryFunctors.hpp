@@ -72,6 +72,22 @@ template <class Scalar>
 struct HasFinitePartials<sub_op<Scalar> > : std::true_type
 {
 };
+template <class Scalar>
+struct UnitPartialA<add_op<Scalar> > : std::integral_constant<int, 1>
+{
+};
+template <class Scalar>
+struct UnitPartialB<add_op<Scalar> > : std::integral_constant<int, 1>
+{
+};
+template <class Scalar>
+struct UnitPartialA<sub_op<Scalar> > : std::integral_constant<int, 1>
+{
+};
+template <class Scalar>
+struct UnitPartialB<sub_op<Scalar> > : std::integral_constant<int, -1>
+{
+};
 }  // namespace detail
 
 template <class Scalar>

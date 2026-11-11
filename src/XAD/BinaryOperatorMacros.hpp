@@ -42,16 +42,19 @@ struct FRealDirect;
 template <class, std::size_t>
 struct ARealDirect;
 
+// the passive operand of a mixed operator, as the expression node takes it
 template <class Scalar, class Expr, class Enable = void>
 struct wrapper_type
 {
     typedef typename ExprTraits<Expr>::value_type type;
+    XAD_INLINE static const type& wrap(const type& a) { return a; }
 };
 
 template <class Scalar, class Expr>
 struct wrapper_type<Scalar, Expr, typename std::enable_if<ExprTraits<Expr>::isReverse>::type>
 {
     typedef ADVar<Scalar, ExprTraits<Expr>::vector_size> type;
+    XAD_INLINE static type wrap(const typename ExprTraits<Expr>::value_type& a) { return type(a); }
 };
 
 template <class T>
@@ -101,8 +104,7 @@ struct is_vec<Vec<T, N>> : std::true_type
                                                const Expression<Scalar, Expr, DerivativeType>& b3) \
     {                                                                                              \
         return BinaryExpr<Scalar, func<Scalar>, typename wrapper_type<Scalar, Expr>::type, Expr,   \
-                          DerivativeType>(typename wrapper_type<Scalar, Expr>::type(a3),           \
-                                          b3.derived());                                           \
+                          DerivativeType>(wrapper_type<Scalar, Expr>::wrap(a3), b3.derived());     \
     }                                                                                              \
     template <class Scalar, class Expr, class DerivativeType>                                      \
     XAD_INLINE BinaryExpr<Scalar, func<Scalar>, Expr, typename wrapper_type<Scalar, Expr>::type,   \
@@ -110,8 +112,7 @@ struct is_vec<Vec<T, N>> : std::true_type
                                                const typename ExprTraits<Expr>::value_type& b4)    \
     {                                                                                              \
         return BinaryExpr<Scalar, func<Scalar>, Expr, typename wrapper_type<Scalar, Expr>::type,   \
-                          DerivativeType>(a4.derived(),                                            \
-                                          typename wrapper_type<Scalar, Expr>::type(b4));          \
+                          DerivativeType>(a4.derived(), wrapper_type<Scalar, Expr>::wrap(b4));     \
     }                                                                                              \
     template <class Scalar, std::size_t N>                                                         \
     XAD_INLINE typename std::enable_if<                                                            \

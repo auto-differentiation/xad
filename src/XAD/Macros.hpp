@@ -73,10 +73,27 @@ void ignore_unused_variable(const T&)
 #define XAD_VERY_UNLIKELY(x) (x)
 #endif
 
+// rare paths, kept out of the hot code
+#if defined(__GNUC__) || defined(__clang__)
+#define XAD_COLD __attribute__((cold))
+#else
+#define XAD_COLD
+#endif
+
 #ifdef XAD_USE_STRONG_INLINE
 #define XAD_INLINE XAD_FORCE_INLINE
 #else
 #define XAD_INLINE inline
+#endif
+
+// MSVC copies a trivially copyable expression node with one wide load right after the narrow
+// stores of its members, which defeats store forwarding: nodes copy their members one by one.
+// Binary nodes not with MSVC 14.4, which miscompiles their copies (wrong tangents).
+#if defined(_MSC_VER) && !defined(__clang__)
+#define XAD_EXPR_COPY_MEMBERWISE
+#if !(_MSC_VER >= 1940 && _MSC_VER < 1950)
+#define XAD_BINARY_EXPR_COPY_MEMBERWISE
+#endif
 #endif
 
 #ifdef XAD_NO_THREADLOCAL

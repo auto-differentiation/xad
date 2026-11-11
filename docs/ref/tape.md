@@ -167,6 +167,15 @@ initialized and registered,
 as the `computeAdjoints` method will roll back the adjoints until
 the point where `newRecording` was called.
 
+`newRecording` keeps the slot counter, and the default allocator only takes back a freed slot when it
+is the last one in use: when temporaries die out of order, or a result lives on into the next recording,
+each recording takes new slots. Code that records many times on one tape with `newRecording` should
+enable one of two CMake options: `XAD_TAPE_REUSE_SLOTS`, which reuses any freed slot (less memory, at
+the cost of slower recording and freeing), or `XAD_TAPE_TRACK_LIVE_SLOTS`, with which `newRecording`
+takes the slot counter back to where the previous recording started once no variable registered since
+is still alive, so that repeated recordings with inputs registered once use the same slots (a few
+percent recording cost).
+
 #### `computeAdjoints`
 
 `#!c++ void computeAdjoints()` propagates adjoints by interpreting the operations on the tape.
@@ -180,6 +189,14 @@ can be obtained.
 It throws [`DerivativesNotInitialized`](exceptions.md) if called without setting any derivative first.
 
 Gives *strong exception safety guarantee* - tape state unchanged in case of exception.
+
+The sweep reads each operation's multiplier and slot, by default stored together as a pair. With the
+CMake option `XAD_REDUCED_MEMORY` they are kept in two separate arrays, which takes less memory and
+reads less of it per operation: faster for large tapes that do not fit in cache, while small recordings
+run many times can be slower. It works with each of the other tape options
+(`XAD_SKIP_ZERO_PARTIALS`, `XAD_COPY_ELISION`, `XAD_LINEAR_SLOTS`, `XAD_TAPE_REUSE_SLOTS`,
+`XAD_TAPE_TRACK_LIVE_SLOTS`), though not all of those combine with each other.
+[Build Options](build-options.md) says which options combine and which to use for which kind of code.
 
 #### `getPosition`
 

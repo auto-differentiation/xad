@@ -193,6 +193,11 @@ struct ExprTraits<ADVar<Scalar, M>> : public ExprTraits<AReal<Scalar, M>>
 {
 };
 
+namespace detail
+{
+struct areal_assign;
+}
+
 template <class Scalar, std::size_t N = 1>
 struct AReal
     : public ADTypeBase<Scalar, AReal<Scalar, N>, typename DerivativesTraits<Scalar, N>::type>
@@ -226,12 +231,24 @@ struct AReal
             XAD_UNUSED_VARIABLE(s);
             slot_ = o.slot_;
             copyTape(o);
+#elif defined(XAD_COPY_ELISION)
+            if (o.isOn(s))
+                shareSlotOf(s, o);  // no statement: a statement writing either detaches it first
+#ifdef XAD_TAPE_CHECKS
+            else if (o.shouldRecord())  // another tape's variable: a constant here
+            {
+                registerOn(s);
+                s->pushLhs(slot_);
+            }
+#endif
 #else
             if (o.shouldRecord())
             {
                 registerOn(s);
+                // read before the partial is written: the tape's stores may alias slot_
+                const slot_type slot = slot_;
                 pushAll<1>(s, o);
-                s->pushLhs(slot_);
+                s->pushLhs(slot);
             }
 #endif
         }
@@ -249,7 +266,16 @@ struct AReal
     }
 
     static constexpr slot_type INVALID_SLOT = tape_type::INVALID_SLOT;
+#ifdef XAD_COPY_ELISION
+    XAD_INLINE slot_type getSlot() const
+    {
+        if (XAD_UNLIKELY(shouldRecord() && (slot_ & SHARED_BIT)))
+            return tapeSlot();
+        return slot_;
+    }
+#else
     XAD_INLINE slot_type getSlot() const { return slot_; }
+#endif
     XAD_INLINE tape_type* getTape() const { return tape_type::getActive(); }
 
     XAD_INLINE AReal(AReal&& o) noexcept : base_type(static_cast<base_type&&>(o)), slot_(o.slot_)
@@ -268,6 +294,20 @@ struct AReal
         return *this;
     }
 
+#ifdef XAD_COPY_ELISION
+    // forced: gcc stopped inlining it when it got the shared-slot branch, costing a call per
+    // passive temporary
+    XAD_FORCE_INLINE ~AReal()
+    {
+        if (auto tape = tape_type::getActive())
+        {
+            if (XAD_LIKELY(ownsSlot(tape)))
+                tape->unregisterVariable(slot_);
+            else if (XAD_UNLIKELY(slot_ != INVALID_SLOT))  // shared, another tape's or JIT
+                releaseOther(tape);
+        }
+    }
+#else
     XAD_INLINE ~AReal()
     {
 #ifndef XAD_LINEAR_SLOTS  // linear slots: a copy may still use the slot, so it is never freed
@@ -276,6 +316,7 @@ struct AReal
                 tape->unregisterVariable(slot_);
 #endif
     }
+#endif
 
     XAD_FORCE_INLINE AReal& operator=(const AReal& o);
 
@@ -289,6 +330,12 @@ struct AReal
             // linear slots: copies may share the old slot, so the constant gets a new one;
             // the variable stays active, so an input registered before stays an input
             registerOn(tape);
+            tape->pushLhs(slot_);
+        }
+#elif defined(XAD_COPY_ELISION)
+        {
+            if (!ownsSlot(tape))
+                claimSlot(tape);  // copies may share the slot
             tape->pushLhs(slot_);
         }
 #else
@@ -306,8 +353,19 @@ struct AReal
                                expr);  // cppcheck-suppress noExplicitConstructor
 
     template <class Expr>
-    XAD_INLINE AReal& operator=(const Expression<Scalar, Expr, derivative_type>& expr);
+    XAD_INLINE AReal& operator=(const Expression<Scalar, Expr, derivative_type>& expr)
+    {
+        return assignExpression(expr);
+    }
 
+  private:
+    friend struct detail::areal_assign;
+
+    // operator= from an expression, always inlined where std::complex<AReal> assigns its parts
+    template <class Expr>
+    XAD_FORCE_INLINE AReal& assignExpression(const Expression<Scalar, Expr, derivative_type>& expr);
+
+  public:
 #ifdef XAD_ENABLE_JIT
     using base_type::operator+=;
     using base_type::operator-=;
@@ -343,8 +401,9 @@ struct AReal
         return getActiveJitImpl(std::integral_constant<bool, jit_supported>());
     }
 
-    // Scalar shifts and assignments change the graph, but not on an input: forward() reads
-    // its value, so they set the value to replay.
+    // Scalar shifts and assignments change the graph, but not on a registered input: forward()
+    // reads its value, so they set the value to replay. A copy sharing the input's node is not
+    // read by forward(), so they change its graph.
     XAD_INLINE bool jitRecordsScalarOp() const
     {
         jit_type* j = jit_type::getActive();
@@ -352,7 +411,7 @@ struct AReal
             return false;
         const JITGraph& g = j->getGraph();
         const uint32_t node = jitNode(slot_);
-        return node >= g.nodeCount() || !g.isInput(node);
+        return node >= g.nodeCount() || !g.isInput(node) || !j->isRegisteredInput(*this, node);
     }
 
     // a shift needs no tape entry, but the JIT graph must record it
@@ -470,14 +529,33 @@ struct AReal
     XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type& s, const Scalar& mul) const
     {
         if (isOn(&s))
+#ifdef XAD_COPY_ELISION
+            pushRhs(info, mul, tapeSlot());
+#else
             pushRhs(info, mul, slot_);
+#endif
     }
 
     template <class Info>
     XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type& s) const
     {
         if (isOn(&s))
+#ifdef XAD_COPY_ELISION
+            pushRhs(info, Scalar(1), tapeSlot());
+#else
             pushRhs(info, Scalar(1), slot_);
+#endif
+    }
+
+    template <class Info>
+    XAD_FORCE_INLINE void calc_derivatives(Info& info, tape_type& s, detail::minus_unit) const
+    {
+        if (isOn(&s))
+#ifdef XAD_COPY_ELISION
+            pushRhs(info, Scalar(-1), tapeSlot());
+#else
+            pushRhs(info, Scalar(-1), slot_);
+#endif
     }
 
     XAD_INLINE derivative_type getDerivative() const { return derivative(); }
@@ -500,7 +578,11 @@ struct AReal
             static const derivative_type zero = derivative_type();
             return zero;
         }
+#ifdef XAD_COPY_ELISION
+        return t->derivative(tapeSlot());
+#else
         return t->derivative(slot_);
+#endif
     }
 
     XAD_INLINE derivative_type& derivative()
@@ -521,7 +603,11 @@ struct AReal
             registerOn(t);
             t->pushLhs(slot_);
         }
+#ifdef XAD_COPY_ELISION
+        return t->derivative(tapeSlot());
+#else
         return t->derivative(slot_);
+#endif
     }
 #ifdef XAD_ENABLE_JIT
     // JIT variables are passive on tapes; the hint keeps GCC's code layout of an INVALID_SLOT check
@@ -544,6 +630,11 @@ struct AReal
   private:
     XAD_RECORDING_OUTLINE void recordCopy(tape_type* s, const AReal& o);
 
+    // written into tape memory, never destroyed there
+    static_assert(!detail::is_direct_recordable<typename tape_type::value_type>::value ||
+                      std::is_trivially_destructible<typename tape_type::value_type>::value,
+                  "a directly recorded tape value must be trivially destructible");
+
 #ifndef XAD_SKIP_ZERO_PARTIALS
     // Stage the partials in stack arrays, then append them to the tape in one
     // batch. The arrays are locals, so the compiler can keep them in registers.
@@ -557,15 +648,29 @@ struct AReal
 
     // Write the partials into the tape as they are computed, saving the copy.
     // Falls back to staging when the run would cross a chunk boundary, and for
-    // value types that are not trivially copyable.
+    // value types that are not directly recordable (active types).
     template <int Size, typename Expr>
     XAD_FORCE_INLINE void pushAll(tape_type* t, const Expr& expr) const
     {
-        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
+        if (!detail::is_direct_recordable<typename tape_type::value_type>::value)
         {
             pushStaged<Size>(t, expr);
             return;
         }
+#ifdef XAD_REDUCED_MEMORY
+        auto run = t->tryReserveOperationRun(Size);
+        if (XAD_VERY_UNLIKELY(run.multipliers == nullptr))
+        {
+            pushStaged<Size>(t, expr);
+            return;
+        }
+        DerivInfoDirect<tape_type> info;
+        info.multipliers = run.multipliers;
+        info.slots = run.slots;
+        info.pos = run.pos;
+        expr.calc_derivatives(info, *t);
+        t->commitOperationRun(info.pos);
+#else
         DerivInfoDirect<tape_type> info;
         info.dst = t->tryReserveOperations(Size);
         if (XAD_VERY_UNLIKELY(info.dst == nullptr))
@@ -575,31 +680,94 @@ struct AReal
         }
         expr.calc_derivatives(info, *t);
         t->commitOperations(info.index);
+#endif
     }
 #else
-    // as above, returning the number of partials recorded
+    // as above; false if there were partials and all were zero, which are not recorded
     template <int Size, typename Expr>
-    XAD_FORCE_INLINE unsigned pushStaged(tape_type* t, const Expr& expr) const
+    XAD_FORCE_INLINE bool pushStaged(tape_type* t, const Expr& expr) const
     {
         DerivInfo<tape_type, Size> info;
         expr.calc_derivatives(info, *t);
+        bool keep = info.dropZeros();
         t->pushAll(info.multipliers, info.slots, info.index);
-        return info.index;
+        return keep;
     }
 
+#ifndef XAD_REDUCED_MEMORY
+    using staged_pair = typename DerivInfoDirect<tape_type>::pair_type;
+#endif
+
+#if defined(__GNUC__) && !defined(__clang__)
+// GCC cannot see that the partials written through info fill the stack buffer(s)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
+    // writes all partials and drops the zeros afterwards, with one test; at a chunk boundary
+    // they go to the stack and are appended out of line
     template <int Size, typename Expr>
-    XAD_FORCE_INLINE unsigned pushAll(tape_type* t, const Expr& expr) const
+    XAD_FORCE_INLINE bool pushAll(tape_type* t, const Expr& expr) const
     {
-        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
+        if (!detail::is_direct_recordable<typename tape_type::value_type>::value)
             return pushStaged<Size>(t, expr);
+#ifdef XAD_REDUCED_MEMORY
+        using mul_type = typename tape_type::value_type;
+        alignas(mul_type) unsigned char stagedMuls[Size * sizeof(mul_type)];
+        alignas(slot_type) unsigned char stagedSlots[Size * sizeof(slot_type)];
+        auto run = t->tryReserveOperationRun(Size);
+        const bool direct = run.multipliers != nullptr;
+        if (XAD_VERY_UNLIKELY(!direct))
+        {
+            run.multipliers = reinterpret_cast<mul_type*>(stagedMuls);
+            run.slots = reinterpret_cast<slot_type*>(stagedSlots);
+            run.pos = 0;
+        }
+        DerivInfoDirect<tape_type> info;
+        info.multipliers = run.multipliers;
+        info.slots = run.slots;
+        info.pos = info.start = run.pos;
+        expr.calc_derivatives(info, *t);
+        bool keep = info.template dropZeros<Size>();
+        if (XAD_VERY_LIKELY(direct))
+            t->commitOperationRun(info.pos);
+        else
+            appendStaged(t, info.multipliers, info.slots, unsigned(info.pos));
+        return keep;
+#else
+        alignas(staged_pair) unsigned char staged[Size * sizeof(staged_pair)];
         DerivInfoDirect<tape_type> info;
         info.dst = t->tryReserveOperations(Size);
-        if (XAD_VERY_UNLIKELY(info.dst == nullptr))
-            return pushStaged<Size>(t, expr);
+        const bool direct = info.dst != nullptr;
+        if (XAD_VERY_UNLIKELY(!direct))
+            info.dst = reinterpret_cast<staged_pair*>(staged);
         expr.calc_derivatives(info, *t);
-        t->commitOperations(info.index);
-        return info.index;
+        bool keep = info.dropZeros();
+        if (XAD_VERY_LIKELY(direct))
+            t->commitOperations(info.index);
+        else
+            appendStaged(t, info.dst, info.index);
+        return keep;
+#endif
     }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+#ifdef XAD_REDUCED_MEMORY
+    static XAD_NEVER_INLINE XAD_COLD void appendStaged(tape_type* t,
+                                                       const typename tape_type::value_type* muls,
+                                                       const slot_type* slots, unsigned n)
+    {
+        t->pushAll(muls, slots, n);
+    }
+#else
+    static XAD_NEVER_INLINE XAD_COLD void appendStaged(tape_type* t, const staged_pair* ops,
+                                                       unsigned n)
+    {
+        for (unsigned i = 0; i < n; ++i) t->pushAll(&ops[i].first, &ops[i].second, 1);
+    }
+#endif
 #endif
 
     XAD_INLINE void registerOn(tape_type* t)
@@ -607,19 +775,84 @@ struct AReal
         slot_ = t->registerVariable();
         setTape(t);
     }
+#ifdef XAD_COPY_ELISION
+    // SHARED_BIT in slot_ marks a slot that copies may share; only marked variables read the
+    // tape's share counts
+    static constexpr slot_type SHARED_BIT = tape_type::SHARED_SLOT_BIT;
+#ifdef XAD_ENABLE_JIT
+    static_assert((SHARED_BIT | (tape_type::MAX_SLOTS - 1)) < FIRST_JIT_SLOT,
+                  "a marked tape slot is no JIT slot");
+#endif
+
+    // the tape's slot (slot_ is on a tape)
+    XAD_INLINE slot_type tapeSlot() const { return slot_ & ~SHARED_BIT; }
+
+    // whether slot_ is on t and no other variable may share it
+    XAD_INLINE bool ownsSlot(const tape_type* t) const
+    {
+#ifdef XAD_TAPE_CHECKS
+        return slot_ < SHARED_BIT && tapeId_ == t->id_;
+#else
+        XAD_UNUSED_VARIABLE(t);
+        return slot_ < SHARED_BIT;
+#endif
+    }
+
+    XAD_INLINE void shareSlotOf(tape_type* t, const AReal& o)
+    {
+        const slot_type s = o.slot_ | SHARED_BIT;
+        o.slot_ = s;
+        slot_ = s;
+        copyTape(o);
+        t->shareSlot(s & ~SHARED_BIT);
+    }
+
+    // frees slot_ (on t) unless other variables share it
+    XAD_INLINE void releaseSlot(tape_type* t)
+    {
+        if (XAD_UNLIKELY(slot_ & SHARED_BIT))
+            t->unregisterShared(tapeSlot());
+        else
+            t->unregisterVariable(slot_);
+    }
+
+    // the destructor for a slot ownsSlot rejects: out of line, so that the destructor inlines
+    XAD_NEVER_INLINE void releaseOther(tape_type* t)
+    {
+        if (isOn(t))
+            t->unregisterShared(tapeSlot());
+    }
+
+    // before a statement writes slot_, when not ownsSlot: a slot of its own on t
+    XAD_INLINE void claimSlot(tape_type* t)
+    {
+        if (!isOn(t))
+            registerOn(t);
+        else
+            detachSlot(t);
+    }
+
+    // slot_ on t, shared: unmarked, a new slot if others still use it
+    XAD_INLINE void detachSlot(tape_type* t)
+    {
+        slot_type slot = tapeSlot();
+        t->detachShared(slot);
+        slot_ = slot;
+    }
+#endif
 #ifdef XAD_TAPE_CHECKS
     // whether slot_ is one of t's, which the slot alone cannot tell
     XAD_INLINE bool isOn(const tape_type* t) const { return shouldRecord() && tapeId_ == t->id_; }
     XAD_INLINE void setTape(const tape_type* t) { tapeId_ = t->id_; }
     XAD_INLINE void swapTape(AReal& o) { std::swap(tapeId_, o.tapeId_); }
-#ifdef XAD_LINEAR_SLOTS
+#if defined(XAD_LINEAR_SLOTS) || defined(XAD_COPY_ELISION)
     XAD_INLINE void copyTape(const AReal& o) { tapeId_ = o.tapeId_; }
 #endif
 #else
     XAD_INLINE bool isOn(const tape_type*) const { return shouldRecord(); }
     XAD_INLINE void setTape(const tape_type*) {}
     XAD_INLINE void swapTape(AReal&) {}
-#ifdef XAD_LINEAR_SLOTS
+#if defined(XAD_LINEAR_SLOTS) || defined(XAD_COPY_ELISION)
     XAD_INLINE void copyTape(const AReal&) {}
 #endif
 #endif
@@ -632,7 +865,11 @@ struct AReal
     template <class T, std::size_t d__cnt>
     friend class ABool;
 #endif
+#ifdef XAD_COPY_ELISION
+    mutable typename tape_type::slot_type slot_;  // a copy marks the slot of its source shared
+#else
     typename tape_type::slot_type slot_;
+#endif
 #ifdef XAD_TAPE_CHECKS
     unsigned int tapeId_ = 0;  // the tape of slot_
 #endif
@@ -650,6 +887,9 @@ struct ADVar
     typedef typename areal_type::tape_type tape_type;
 
     XAD_INLINE explicit ADVar(const areal_type& a) : ar_(a), shouldRecord_(a.shouldRecord()) {}
+#ifdef XAD_EXPR_COPY_MEMBERWISE
+    XAD_FORCE_INLINE ADVar(const ADVar& o) : ar_(o.ar_), shouldRecord_(o.shouldRecord_) {}
+#endif
 
     XAD_INLINE Scalar getValue() const { return ar_.getValue(); }
 
@@ -665,6 +905,12 @@ struct ADVar
     XAD_INLINE void calc_derivatives(Info& info, tape_type& s) const
     {
         ar_.calc_derivatives(info, s);
+    }
+
+    template <class Info>
+    XAD_INLINE void calc_derivatives(Info& info, tape_type& s, detail::minus_unit m) const
+    {
+        ar_.calc_derivatives(info, s, m);
     }
 
     XAD_INLINE const typename areal_type::derivative_type& derivative() const
@@ -687,10 +933,20 @@ struct ADVar
 template <class Scalar, std::size_t M>
 XAD_RECORDING_OUTLINE void AReal<Scalar, M>::recordCopy(tape_type* s, const AReal& o)
 {
+#ifdef XAD_COPY_ELISION
+    // o is passive here (or another tape's): this variable stays active, holding a constant
+    XAD_UNUSED_VARIABLE(o);
+    if (!ownsSlot(s))
+        claimSlot(s);
+    s->pushLhs(slot_);
+#else
     if (!isOn(s))
         registerOn(s);
+    // read before the partial is written: the tape's stores may alias slot_
+    const slot_type slot = slot_;
     pushAll<1>(s, o);
-    s->pushLhs(slot_);
+    s->pushLhs(slot);
+#endif
 }
 
 template <class Scalar, std::size_t M>
@@ -711,6 +967,19 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
             registerOn(s);
             s->pushLhs(slot_);
         }
+#elif defined(XAD_COPY_ELISION)
+        if (o.isOn(s))
+        {
+            // share the slot of o, freeing the one held before
+            if ((slot_ | SHARED_BIT) != (o.slot_ | SHARED_BIT) || !isOn(s))
+            {
+                if (isOn(s))
+                    releaseSlot(s);
+                shareSlotOf(s, o);
+            }
+        }
+        else if (o.shouldRecord() || this->shouldRecord())
+            recordCopy(s, o);
 #else
         if (o.shouldRecord() || this->shouldRecord())
             recordCopy(s, o);
@@ -743,23 +1012,23 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
         {
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
-            expr.calc_derivatives(info, *s);
+            expr.derived().calc_derivatives(info, *s);
 #ifdef XAD_SKIP_ZERO_PARTIALS
-            if (info.index == 0)
+            if (!info.dropZeros())
                 return;  // all partials zero: the result stays passive
 #endif
             slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
             setTape(s);
 #elif defined(XAD_SKIP_ZERO_PARTIALS)
             // all partials zero: the result stays passive
-            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0)
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr.derived()))
             {
                 registerOn(s);
                 s->pushLhs(slot_);
             }
 #else
             registerOn(s);
-            pushAll<ExprTraits<Expr>::numVariables>(s, expr);
+            pushAll<ExprTraits<Expr>::numVariables>(s, expr.derived());
             s->pushLhs(slot_);
 #endif
         }
@@ -774,7 +1043,7 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
 
 template <class Scalar, std::size_t M>
 template <class Expr>
-XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
+XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
     const Expression<Scalar, Expr, typename DerivativesTraits<Scalar, M>::type>& expr)
 {
     tape_type* s = tape_type::getActive();
@@ -784,20 +1053,25 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
         {
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
-            expr.calc_derivatives(info, *s);
-#ifdef XAD_TAPE_CHECKS
+            expr.derived().calc_derivatives(info, *s);
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
             if (!isOn(s))
-                slot_ = INVALID_SLOT;  // a slot of another tape: register on s
+                slot_ = INVALID_SLOT;  // a slot of another tape or a JIT slot: register on s
 #endif
 #ifdef XAD_SKIP_ZERO_PARTIALS
             // all partials zero: a passive lhs stays passive, an active one gets an empty statement
-            if (info.index != 0 || isOn(s))
+            if (info.dropZeros() || isOn(s))
             {
 #endif
 #ifdef XAD_LINEAR_SLOTS
                 // linear slots: every assignment writes a new slot, as copies may share the old one
                 slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
 #else
+#ifdef XAD_COPY_ELISION
+                // the partials are taken: a new slot is not among them
+                if (!ownsSlot(s) && isOn(s))
+                    detachSlot(s);
+#endif
                 s->recordAssignment(slot_, info.multipliers, info.slots, info.index);
 #endif
                 setTape(s);
@@ -806,10 +1080,13 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
 #endif
 #elif defined(XAD_SKIP_ZERO_PARTIALS)
             // all partials zero: a passive lhs stays passive, an active one gets an empty statement
-            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0 || isOn(s))
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr.derived()) || isOn(s))
             {
 #ifdef XAD_LINEAR_SLOTS
                 registerOn(s);  // linear slots: a new slot, as copies may share the old one
+#elif defined(XAD_COPY_ELISION)
+                if (!ownsSlot(s))
+                    claimSlot(s);
 #else
                 if (!isOn(s))
                     registerOn(s);
@@ -817,12 +1094,15 @@ XAD_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(
                 s->pushLhs(slot_);
             }
 #else
-            pushAll<ExprTraits<Expr>::numVariables>(s, expr);
+            pushAll<ExprTraits<Expr>::numVariables>(s, expr.derived());
             // only register this variable after evaluating the expression, as this
             // variable might appear on the rhs of the equation too and if not yet
             // registered, it doesn't need recording of derivatives
 #ifdef XAD_LINEAR_SLOTS
             registerOn(s);  // linear slots: a new slot, as copies may share the old one
+#elif defined(XAD_COPY_ELISION)
+            if (!ownsSlot(s))
+                claimSlot(s);
 #else
             if (!isOn(s))
                 registerOn(s);
@@ -955,8 +1235,40 @@ struct FReal
     }
 
   private:
+    template <class Expr>
+    XAD_INLINE void assign(const Expression<Scalar, Expr, derivative_type>& expr, std::true_type);
+    template <class Expr>
+    XAD_INLINE void assign(const Expression<Scalar, Expr, derivative_type>& expr, std::false_type);
+
     derivative_type der_;
 };
+
+namespace detail
+{
+// -x without FReal's unary minus, whose tangent is a product by -1
+template <class T, std::size_t N>
+struct Negate<FReal<T, N>>
+{
+    static XAD_FORCE_INLINE FReal<T, N> apply(const FReal<T, N>& x)
+    {
+        FReal<T, N> r;
+        r.value() = detail::negated(x.value());
+        r.derivative() = detail::negated(x.derivative());
+        return r;
+    }
+};
+
+template <class T, std::size_t N>
+struct Negate<Vec<T, N>>
+{
+    static XAD_FORCE_INLINE Vec<T, N> apply(const Vec<T, N>& x)
+    {
+        Vec<T, N> r;
+        for (std::size_t i = 0; i < N; ++i) r[i] = detail::negated(x[i]);
+        return r;
+    }
+};
+}  // namespace detail
 
 template <class Scalar, std::size_t N>
 template <class Expr>
@@ -971,11 +1283,34 @@ template <class Expr>
 XAD_INLINE FReal<Scalar, N>& FReal<Scalar, N>::operator=(
     const Expression<Scalar, Expr, typename FReal<Scalar, N>::derivative_type>& expr)
 {
+    assign(expr, std::is_reference<typename ExprStorage<FReal>::type>());
+    return *this;
+}
+
+// held by reference: the tangent first, as expr may read this variable's value
+template <class Scalar, std::size_t N>
+template <class Expr>
+XAD_INLINE void FReal<Scalar, N>::assign(
+    const Expression<Scalar, Expr, typename FReal<Scalar, N>::derivative_type>& expr,
+    std::true_type)
+{
+    using xad::derivative;
+    using xad::value;
+    der_ = derivative(expr);
+    this->a_ = value(expr);
+}
+
+// held by value: expr has its own copy, and this order is the cheaper one
+template <class Scalar, std::size_t N>
+template <class Expr>
+XAD_INLINE void FReal<Scalar, N>::assign(
+    const Expression<Scalar, Expr, typename FReal<Scalar, N>::derivative_type>& expr,
+    std::false_type)
+{
     using xad::derivative;
     using xad::value;
     this->a_ = value(expr);
     der_ = derivative(expr);
-    return *this;
 }
 
 template <class Scalar, std::size_t M = 1>

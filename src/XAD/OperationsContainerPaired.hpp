@@ -89,7 +89,7 @@ class OperationsContainerPaired
 
     void resize(size_type s)
     {
-        reserve(s);
+        reserve(s + 1);  // position s needs its chunk, also at the end of the last one
         if (XAD_LIKELY(s < size()))
         {
             destruct_elements(s);
@@ -113,11 +113,7 @@ class OperationsContainerPaired
     void push_back(const T& multiplier, const S& slot)
     {
         if (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
-        {
-            addChunks(1);
-            idx_ = 0;
-            ++chunk_;
-        }
+            next_chunk();
         push_back_unsafe(multiplier, slot);
     }
 
@@ -133,6 +129,17 @@ class OperationsContainerPaired
 
     XAD_FORCE_INLINE void commit(size_type n) { idx_ += n; }
 
+#ifdef XAD_REDUCED_MEMORY
+    // Reduced memory's direct writes go to separate arrays, which this container does not have:
+    // tapes with traits that name it stage their partials and append them.
+    XAD_FORCE_INLINE OperationsRun<T, S> try_reserve_run(size_type)
+    {
+        return {nullptr, nullptr, 0};
+    }
+
+    XAD_FORCE_INLINE void commit_run(size_type) {}
+#endif
+
     XAD_FORCE_INLINE void push_back_unsafe(T multiplier, S slot)
     {
         if (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
@@ -144,40 +151,16 @@ class OperationsContainerPaired
         ++idx_;
     }
 
-#if defined(__GNUC__) && !defined(__clang__)
-// GCC 12 flags this warning in the code below, although it is perfectly safe
-// and tested
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-
     template <class MulIt, class SlotIt>
     XAD_FORCE_INLINE void append_n(MulIt muls, SlotIt slots, size_type n)
     {
-        auto items = (std::min)(ChunkSize - idx_, n);
-        auto dst = chunk(chunk_) + idx_;
-        auto dst_end = dst + items;
-        for (; dst != dst_end; ++dst) ::new (dst) std::pair<T, S>(*muls++, *slots++);
-        idx_ += items;
-
-        while (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
+        if (XAD_VERY_UNLIKELY(n >= ChunkSize - idx_))  // fills the chunk
         {
-            addChunks(1);
-            ++chunk_;
-            idx_ = 0;
-            n -= items;
-
-            items = (std::min)(ChunkSize, n);
-            dst = chunk(chunk_);
-            dst_end = dst + items;
-            for (; dst != dst_end; ++dst) ::new (dst) std::pair<T, S>(*muls++, *slots++);
-            idx_ += items;
+            append_across_chunks(muls, slots, n);
+            return;
         }
+        append_here(muls, slots, n);
     }
-
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
 
     XAD_FORCE_INLINE std::pair<mul_type, slot_type> operator[](size_type n) const
     {
@@ -191,6 +174,8 @@ class OperationsContainerPaired
     template <class Func>
     void for_each(size_type startidx, size_type endidx, Func f) const
     {
+        if (XAD_VERY_UNLIKELY(startidx == endidx))  // may be at the end of the last chunk
+            return;
         size_type start_chunk = startidx / ChunkSize;
         size_type start_idx = startidx % ChunkSize;
         size_type end_chunk = endidx / ChunkSize;
@@ -206,6 +191,15 @@ class OperationsContainerPaired
         if (XAD_VERY_LIKELY(start_chunk == end_chunk))
             return;
 
+        for (size_type c = start_chunk + 1; c != end_chunk; ++c)
+        {
+            chk = chunk(c);
+            for (size_type i = 0; i < ChunkSize; ++i)
+            {
+                f(chk[i].first, chk[i].second);
+            }
+        }
+
         size_type e2 = end_idx;
         if (e2 == 0)
         {
@@ -218,13 +212,36 @@ class OperationsContainerPaired
         }
     }
 
-    // The entries of one chunk, for for_each without chunk lookups; empty if [startidx, endidx)
-    // is empty or spans chunks
+    // the same, from the last element to the first
+    template <class Func>
+    void for_each_reverse(size_type startidx, size_type endidx, Func f) const
+    {
+        if (XAD_VERY_UNLIKELY(startidx == endidx))  // may be at the end of the last chunk
+            return;
+        size_type start_chunk = startidx / ChunkSize;
+        size_type end_chunk = endidx / ChunkSize;
+        if (XAD_VERY_UNLIKELY(start_chunk != end_chunk))
+        {
+            reverse_across_chunks(startidx, endidx, f);
+            return;
+        }
+        reverse_entries(chunk(start_chunk) + endidx % ChunkSize, endidx - startidx, f);
+    }
+
+    // The entries of one chunk, for for_each/for_each_reverse without chunk lookups;
+    // empty if [startidx, endidx) is empty or spans chunks
     struct flat_view
     {
         const std::pair<mul_type, slot_type>* chunk;
         size_type offset;
         explicit operator bool() const { return chunk != nullptr; }
+        template <class Func>
+        XAD_FORCE_INLINE void for_each_reverse(size_type startidx, size_type endidx, Func f) const
+        {
+            // a count and a pointer: no more instructions per entry and statement than for_each
+            const auto* p = chunk + (endidx - offset);
+            for (size_type n = endidx - startidx; n > 0; --n, --p) f(p[-1].first, p[-1].second);
+        }
         template <class Func>
         XAD_FORCE_INLINE void for_each(size_type startidx, size_type endidx, Func f) const
         {
@@ -242,6 +259,73 @@ class OperationsContainerPaired
     }
 
   private:
+#if defined(__GNUC__) && !defined(__clang__)
+// GCC 12 flags this warning in the code below, although it is perfectly safe
+// and tested
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
+    // append_n up to or across the end of the chunk: out of line, recording inlines its callers
+    template <class MulIt, class SlotIt>
+    XAD_NEVER_INLINE XAD_COLD void append_across_chunks(MulIt muls, SlotIt slots, size_type n)
+    {
+        auto items = (std::min)(ChunkSize - idx_, n);
+        append_here(muls, slots, items);
+
+        while (idx_ == ChunkSize)
+        {
+            next_chunk();
+            n -= items;
+
+            items = (std::min)(ChunkSize, n);
+            append_here(muls, slots, items);
+        }
+    }
+
+    template <class MulIt, class SlotIt>
+    XAD_FORCE_INLINE void append_here(MulIt& muls, SlotIt& slots, size_type n)
+    {
+        auto dst = chunk(chunk_) + idx_;
+        for (size_type i = 0; i < n; ++i) ::new (dst + i) std::pair<T, S>(*muls++, *slots++);
+        idx_ += n;
+    }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+    // on to the next chunk, adding it if there is none: out of line, recording inlines its callers
+    XAD_NEVER_INLINE XAD_COLD void next_chunk()
+    {
+        if (chunk_ + 1 == chunks_.size())
+            addChunks(1);
+        ++chunk_;
+        idx_ = 0;
+    }
+
+    // for_each_reverse of a range over several chunks: out of line, to keep the sweep's code small
+    template <class Func>
+    XAD_NEVER_INLINE XAD_COLD void reverse_across_chunks(size_type startidx, size_type endidx,
+                                                         Func& f) const
+    {
+        size_type start_chunk = startidx / ChunkSize;
+        size_type end_chunk = endidx / ChunkSize;
+        if (endidx % ChunkSize != 0)
+            reverse_entries(chunk(end_chunk) + endidx % ChunkSize, endidx % ChunkSize, f);
+        for (size_type c = end_chunk - 1; c != start_chunk; --c)
+            reverse_entries(chunk(c) + ChunkSize, ChunkSize, f);
+        reverse_entries(chunk(start_chunk) + ChunkSize, ChunkSize - startidx % ChunkSize, f);
+    }
+
+    // f on the n entries before end, last to first
+    template <class Func>
+    static XAD_FORCE_INLINE void reverse_entries(const std::pair<mul_type, slot_type>* end,
+                                                 size_type n, Func& f)
+    {
+        for (; n > 0; --n, --end) f(end[-1].first, end[-1].second);
+    }
+
     XAD_FORCE_INLINE std::pair<mul_type, slot_type>* chunk(size_type chunk)
     {
         return reinterpret_cast<std::pair<mul_type, slot_type>*>(chunks_[chunk].get());

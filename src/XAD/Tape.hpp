@@ -33,6 +33,9 @@
 #include <XAD/Traits.hpp>
 #include <XAD/TypeTraits.hpp>
 #include <XAD/Vec.hpp>
+#if defined(__aarch64__) && defined(__clang__)
+#include <atomic>
+#endif
 #include <complex>
 #include <list>
 #include <map>
@@ -106,6 +109,17 @@ class Tape
     typedef typename DerivativesTraits<Real, N>::type derivative_type;
 
     static constexpr slot_type INVALID_SLOT = slot_type(-1);
+#ifdef XAD_COPY_ELISION
+    // An AReal sharing its slot with copies has this bit set in its slot (see AReal), so the tape
+    // has fewer than MAX_SLOTS slots: a marked slot is then neither INVALID_SLOT nor, with JIT,
+    // a JIT slot (from 0xC0000000). Registering more throws OutOfRange.
+    static constexpr slot_type SHARED_SLOT_BIT = slot_type(1) << 31;
+#ifdef XAD_ENABLE_JIT
+    static constexpr slot_type MAX_SLOTS = slot_type(1) << 30;
+#else
+    static constexpr slot_type MAX_SLOTS = SHARED_SLOT_BIT - 1;
+#endif
+#endif
 
     // construct/destruct/assign
     explicit Tape(bool activate = true);
@@ -146,13 +160,20 @@ class Tape
     XAD_INLINE static void deactivateAll() { active_tape_ = nullptr; }
 #endif
 
+    // unlike registerOutput, a slot at or above the counter always registers afresh: a dead
+    // temporary may have raised maxDerivative_ over a given-up slot
     XAD_INLINE void registerInput(active_type& inp)
     {
-        if (!isRegistered(inp))
+        if (!isCounted(inp))
         {
             inp.registerOn(this);
             pushLhs(inp.slot_);
         }
+#ifdef XAD_COPY_ELISION
+        // a slot shared with other variables: an own one, so that the input has its own adjoint
+        else if (XAD_UNLIKELY(inp.slot_ & SHARED_SLOT_BIT))
+            inp.slot_ = ownSharedSlot(inp.slot_ & ~SHARED_SLOT_BIT);
+#endif
     }
     XAD_INLINE void registerInput(std::complex<active_type>& inp)
     {
@@ -174,11 +195,16 @@ class Tape
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (!isRegistered(outp))
+        if (!isCounted(outp) && !isLiveAboveCounter(outp))
         {
             outp.registerOn(this);
             pushLhs(outp.slot_);
         }
+#ifdef XAD_COPY_ELISION
+        // a slot shared with other variables: an own one, so its adjoint seeds this output only
+        else if (XAD_UNLIKELY(outp.slot_ & SHARED_SLOT_BIT))
+            outp.slot_ = ownSharedSlot(outp.slot_ & ~SHARED_SLOT_BIT);
+#endif
     }
 
     XAD_INLINE void registerOutput(ARealDirect<Real, N>& outp) { registerOutput(outp.base()); }
@@ -237,8 +263,7 @@ class Tape
     void clearDerivatives();
     derivative_type& derivative(slot_type s)
     {
-        if (XAD_LIKELY(s < currentRec_->maxDerivative_ && currentRec_->derivativesInitialized_ &&
-                       derivatives_.size() == currentRec_->maxDerivative_))
+        if (XAD_LIKELY(s < derivatives_.size() && currentRec_->derivativesInitialized_))
             return derivatives_[s];
         return derivativeSlow(s);
     }
@@ -302,8 +327,13 @@ class Tape
         if (slot == currentRec_->iDerivative_ - 1)  // it's at the end of the tape
             --currentRec_->iDerivative_;
 #ifdef XAD_TAPE_TRACK_LIVE_SLOTS
-        if (XAD_UNLIKELY(slot < watch_.below))  // 0 unless getPosition was called
-            freeWatchedSlot(slot);
+        if (XAD_UNLIKELY(slot < watch_.below))  // the recording start, or a position's counter
+        {
+            if (slot < watch_.watched)
+                freeWatchedSlot(slot);
+            else
+                ++recordingStart_.freedBelow;
+        }
 #endif
 #else
         SubRecording* r = currentRec_;
@@ -318,6 +348,22 @@ class Tape
 #endif
     }
 
+#ifdef XAD_COPY_ELISION
+    // a copy uses the slot of its source
+    XAD_INLINE void shareSlot(slot_type slot)
+    {
+        if (XAD_UNLIKELY(slot >= shares_.size()))
+            growShares(std::size_t(slot) + 1);
+        ++shares_[slot];
+    }
+    // unregisterVariable for a variable that may share its slot: freed by the last one using it
+    XAD_NEVER_INLINE void unregisterShared(slot_type slot);
+    // before a statement writes the slot of a variable that may share it: a new slot if shared
+    XAD_NEVER_INLINE void detachShared(slot_type& slot);
+    // the slot of an input or output that may share it: a new one, recorded as a copy, if shared
+    XAD_NEVER_INLINE slot_type ownSharedSlot(slot_type slot);
+#endif
+
     XAD_RECORDING_INLINE void pushLhs(slot_type slot)
     {
         assert(slot != INVALID_SLOT);
@@ -329,6 +375,17 @@ class Tape
     {
         operations_.append_n(multipliers, slots, n);
     }
+
+#ifdef XAD_REDUCED_MEMORY
+    // Space for n operations in the tape, for writing the partials in place (OperationsRun);
+    // commitOperationRun takes the position after the last one written
+    XAD_FORCE_INLINE OperationsRun<value_type, slot_type> tryReserveOperationRun(unsigned n)
+    {
+        return operations_.try_reserve_run(n);
+    }
+
+    XAD_FORCE_INLINE void commitOperationRun(std::size_t end) { operations_.commit_run(end); }
+#endif
 
     XAD_FORCE_INLINE std::pair<value_type, slot_type>* tryReserveOperations(unsigned n)
     {
@@ -364,6 +421,9 @@ class Tape
   private:
     void resetMovedFrom();
     void computeAdjointsToImpl(position_type pos, position_type start);
+    template <class ChunkIt, class Idx>
+    void computeAdjointsAcrossChunks(ChunkIt chunk_it, ChunkIt chunk_eit, Idx idx, Idx endidx,
+                                     Idx endcidx);
     void initDerivatives();
     derivative_type& derivativeSlow(slot_type s);
     XAD_INLINE slot_type registerVariableAtEnd()
@@ -373,17 +433,46 @@ class Tape
         const slot_type n = s + 1;
         r->iDerivative_ = n;
         if (n > r->maxDerivative_)
+        {
             r->maxDerivative_ = n;
+#ifdef XAD_COPY_ELISION
+            if (XAD_UNLIKELY(n > MAX_SLOTS))
+                tooManySlots(s);
+#endif
+        }
         return s;
     }
-    // whether v holds a live slot of this tape, not one clearAll or resetTo gave up
-    XAD_INLINE bool isRegistered(const active_type& v) const
+    // whether v holds a slot of this tape below the counter
+    XAD_INLINE bool isCounted(const active_type& v) const
     {
 #if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
         if (!v.isOn(this))  // another tape's or a JIT slot
             return false;
 #endif
+#ifdef XAD_COPY_ELISION
+        return (v.slot_ & ~SHARED_SLOT_BIT) < currentRec_->iDerivative_;  // also INVALID_SLOT
+#else
         return v.slot_ < currentRec_->iDerivative_;  // false for INVALID_SLOT too
+#endif
+    }
+    // whether v, not counted, still holds a live slot of this tape, not one resetTo gave up: a
+    // stale variable freeing the slot number of a live one lowers the counter below it, but not the
+    // highest counter since resetTo
+    XAD_INLINE bool isLiveAboveCounter(const active_type& v) const
+    {
+#if defined(__aarch64__) && defined(__clang__)
+        // emits no code: keeps clang on arm64 from reusing the load below
+        std::atomic_signal_fence(std::memory_order_seq_cst);
+#endif
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
+        if (!v.isOn(this))  // another tape's or a JIT slot
+            return false;
+#endif
+#ifdef XAD_COPY_ELISION
+        return (v.slot_ & ~SHARED_SLOT_BIT) < currentRec_->maxDerivative_;  // also INVALID_SLOT
+#else
+        return v.slot_ < currentRec_->maxDerivative_;  // false for INVALID_SLOT too
+#endif
     }
 
 #ifndef XAD_SHARED_LIBS
@@ -402,22 +491,42 @@ class Tape
     // resetTo rewinds the slot counter only when no variable at or above from, the lowest counter
     // of the positions given out, can be live: liveBelow were live when it was set, all below it,
     // and freedBelow slots below it were freed since. Else the rewind is pending until a later
-    // free allows it. Frees of slots below below (0 without positions) update these.
+    // free allows it. Frees of slots below watched (0 without positions) update these; below is
+    // the larger of watched and the recording start.
     struct SlotWatch
     {
         slot_type below = 0;
+        slot_type watched = 0;
         slot_type from = 0;
         slot_type liveBelow = 0;
         slot_type freedBelow = 0;
         slot_type pending = INVALID_SLOT;
     };
     mutable SlotWatch watch_;
+    // newRecording rewinds the slot counter to counter, its value at the previous newRecording,
+    // once no variable registered since can be live: live were live then, all below it, and
+    // freedBelow slots below it were freed since
+    struct RecordingStart
+    {
+        slot_type counter = 0;
+        slot_type live = 0;
+        unsigned long long freedBelow = 0;
+    };
+    RecordingStart recordingStart_;
+    void watchBelow(slot_type watched) const
+    {
+        watch_.watched = watched;
+        watch_.below = (std::max)(watched, recordingStart_.counter);
+    }
     void watchSlots() const;
     void rewindSlots(slot_type to) const;
     XAD_NEVER_INLINE void freeWatchedSlot(slot_type slot);
     void dropPendingRewind();
 #endif
 #ifdef XAD_TAPE_REUSE_SLOTS
+#if defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)
+    XAD_NEVER_INLINE  // gcc on x86-64: inlined into registerVariable it costs more than the call
+#endif
     slot_type registerVariableReuseSlots();
     void unregisterVariableReuseSlots(slot_type slot);
     typedef ReusableRange<slot_type> slot_range_type;
@@ -466,10 +575,12 @@ class Tape
             XAD_UNUSED_VARIABLE(parent);
         }
         slot_type iDerivative_;
+        // the highest slot counter since slots were last given up; the derivatives go up to it
         slot_type maxDerivative_;
         slot_type statementStartPos_;
         slot_type opStartPos_;
         slot_type startDerivative_;
+        // maxSlot before the last resetTo, newRecording or checkpoint callback, or INVALID_SLOT
         slot_type prevMax_;
 #ifdef XAD_TAPE_TRACK_LIVE_SLOTS
         slot_type startCounter_;
@@ -480,9 +591,49 @@ class Tape
 #endif
         bool derivativesInitialized_;
         slot_type numDerivatives_;
+        slot_type maxSlot() const
+        {
+            return prevMax_ == INVALID_SLOT ? maxDerivative_ : (std::max)(maxDerivative_, prevMax_);
+        }
     };
     std::stack<SubRecording> nestedRecordings_;
     SubRecording* currentRec_;
+#ifdef XAD_COPY_ELISION
+    // per slot, the variables using it besides the first (copies share the slot of their source);
+    // only those variables read it, and slots beyond its end are not shared
+    std::vector<slot_type> shares_;
+    // per slot in shares_ (both emptied by clearAll): LAST_SHARED, the one variable left using it
+    // is still marked as sharing it; GIVEN_UP, resetTo or the end of a nested recording gave it up
+    // while variables marked as sharing it held it
+    std::vector<unsigned char> lastShared_;
+    enum : unsigned char
+    {
+        LAST_SHARED = 1,
+        GIVEN_UP = 2
+    };
+    // one variable less sharing slot (shares_[slot] > 0)
+    void unshare(slot_type slot);
+    // the last variable marked as sharing slot lets it go (frees, writes or registers it): clears
+    // its flags and, for a GIVEN_UP slot, the adjoint a sweep may have left in it
+    void unmarkLastShared(slot_type slot);
+    // slots below the counter that the last of the variables sharing them freed (the counter
+    // reuses only the last slot): detachShared takes them
+    mutable std::vector<slot_type> freedShared_;
+    // freedShared_ takes only slots from here on: those below may have adjoints pending in a sweep
+    // to a position or in the recording a nested one is in
+    mutable slot_type freedFrom_ = 0;
+    // freedFrom_ of the recordings the nested ones are in
+    std::vector<slot_type> outerFreedFrom_;
+    // drops freedShared_ and takes from s on at least
+    void reuseFreedFrom(slot_type s) const;
+    XAD_NEVER_INLINE void growShares(std::size_t n);
+    // resetTo or the end of a nested recording gives up the slots in [from, to): returns one above
+    // the highest that variables marked as sharing it still hold, else 0; marks those GIVEN_UP and
+    // drops the freedShared_ entries at or above both from and the returned slot
+    slot_type giveUpShared(slot_type from, slot_type to);
+    // throws OutOfRange for a slot counter past MAX_SLOTS, leaving it at last
+    XAD_NEVER_INLINE void tooManySlots(slot_type last);
+#endif
 #ifdef XAD_ENABLE_JIT
     template <class, std::size_t>
     friend class JITCompiler;

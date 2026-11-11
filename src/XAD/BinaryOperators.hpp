@@ -434,8 +434,7 @@ remquo(const typename ExprTraits<Expr>::value_type& a,
        const Expression<Scalar, Expr, DerivativeType>& b, int* quo)
 {
     return BinaryExpr<Scalar, remquo_op<Scalar>, typename ExprTraits<Expr>::value_type, Expr,
-                      DerivativeType>(typename ExprTraits<Expr>::value_type(a), b.derived(),
-                                      remquo_op<Scalar>(quo));
+                      DerivativeType>(a, b.derived(), remquo_op<Scalar>(quo));
 }
 
 template <class Scalar, class Expr, class DerivativeType>
@@ -445,8 +444,7 @@ remquo(const Expression<Scalar, Expr, DerivativeType>& a,
        const typename ExprTraits<Expr>::value_type& b, int* quo)
 {
     return BinaryExpr<Scalar, remquo_op<Scalar>, Expr, typename ExprTraits<Expr>::value_type,
-                      DerivativeType>(a.derived(), typename ExprTraits<Expr>::value_type(b),
-                                      remquo_op<Scalar>(quo));
+                      DerivativeType>(a.derived(), b, remquo_op<Scalar>(quo));
 }
 
 template <class T, class = typename std::enable_if<detail::direct_scalar<T>::value>::type,

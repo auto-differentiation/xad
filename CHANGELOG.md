@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CMake option `XAD_TLS_INITIAL_EXEC` (off by default): the thread-local active tape uses the initial-exec TLS model with GCC/Clang, so libraries built with `-fPIC` reach it without a `__tls_get_addr` call (needs to be OFF for libraries loaded with `dlopen`, e.g. Python extensions)
 - CMake option `XAD_LINEAR_SLOTS` (off by default): copies share the slot of their source and record nothing, every assignment takes a new slot, and destructors free no slots (fewer statements for copy-heavy code; `getNumVariables` then also counts variables already destroyed)
 - Direct mode types (`ARealDirect`, `FRealDirect`) are now drop-in replacements for `AReal`/`FReal`: `std::numeric_limits`, `std::hash`, `std::to_string`, type traits, `std::complex`, streams, `++`/`--`, explicit conversions, missing math functions, tape registration and Jacobian/Hessian helpers
+- CMake option `XAD_COPY_ELISION` (off by default): copies of active variables share the slot of their source and record nothing; an assignment to a shared slot takes a new one, and the last user frees it (fewer statements for copy-heavy code). Copies share the adjoint too: `derivative()` of a copy reads and writes the shared one, and `registerInput`/`registerOutput` give a copy its own slot. Register each input once, before copying it: registering it again while a copy taken since is alive, in that or a later recording, may give wrong derivatives without an error. It is meant for code that records and sweeps, with `clearAll` or `newRecording` between recordings: nothing recorded may outlive `clearAll` except inputs, which are registered again, in the same order, before any new variable, are never assigned to in a recording, and whose copies are gone by `clearAll`. `getPosition`/`resetTo`, `computeAdjointsTo`, checkpoint callbacks and nested recordings are not supported with it and may give wrong derivatives without an error. Not with `XAD_LINEAR_SLOTS`, `XAD_TAPE_REUSE_SLOTS` or `XAD_TAPE_TRACK_LIVE_SLOTS` (compile error); `getSlot` and `getNumVariables` see shared slots; at most 2^30 tape slots with JIT, 2^31 - 1 otherwise
 
 ### Changed
 
@@ -38,6 +39,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recording an `AReal` from an expression and `Tape::pushLhs` are always inlined, `Tape::derivative` is inlined when the adjoints are already initialised, and with `XAD_TAPE_REUSE_SLOTS` so are registering and freeing a slot at the end of the tape
 - Copying an `AReal` (construction and assignment) is always inlined, its slot counters are updated with scalar code (no stalled vector load), and the reverse sweep runs over flat arrays when a recording fits in one chunk
 - Copying, moving and destroying a `std::complex<AReal>` is always inlined: about 2.8x faster AD for complex-heavy code (a Rough Heston engine) with `XAD_USE_STRONG_INLINE`
+- `std::complex<AReal>` arithmetic records fewer statements: each part of a result is one expression, built in place where an operand is a temporary (division by a complex still goes through temporaries)
+- Copying and destroying a `std::complex<ARealDirect>` is always inlined
+- Forward mode with GCC on x86-64 masks the tangent terms of zero tangents with packed SSE/AVX compares instead of an integer bit mask (double tangents, scalar and vector)
+- The adjoint sweep visits each statement's operands last to first, counting down over the operation arrays (adjoints of repeated operands may differ in the last bits)
+- With `XAD_SKIP_ZERO_PARTIALS`, recording writes all partials and drops the zero ones afterwards, with one test for all of them instead of a branch per partial
+- Vector forward mode divides the tangents of a division by multiplying with the reciprocal once (results may differ in the last bits; zero, infinite, NaN and subnormal divisors give the same kinds of results as before)
+- Forward-mode expressions over larger `FReal` types hold their operands by reference, as reverse mode does: evaluate them within the full expression, and don't keep one past it (e.g. bound to `auto` over a temporary)
+- With MSVC, expression nodes copy their members one by one, avoiding store-forwarding stalls in forward and adjoint mode (binary nodes not with MSVC 14.4)
+- CMake option `XAD_REDUCED_MEMORY`: first-order tapes record straight into the tape's separate multiplier and slot arrays; nested active types, assignments with `XAD_OUTLINE_RECORDING`, custom traits naming the paired container and statements crossing a chunk stage as before. The reverse sweep reads less memory per operand (faster adjoints for large tapes that do not fit in cache; small recordings run many times can be slower than the default layout)
+- With `XAD_TAPE_TRACK_LIVE_SLOTS`, `newRecording` takes the slot counter back to where the previous recording started once no variable registered since is still alive: repeated recordings on one tape with inputs registered once reuse the same slots; the docs recommend it, or `XAD_TAPE_REUSE_SLOTS`, for code that records many times on one tape
+- Docs: new Build Options page: what each performance-related CMake option does, when it helps or hurts, and starting sets per kind of workload
+- Higher-order tapes over `FReal` write their partials straight into the tape instead of staging them
+- Recording passes the multiplier through sums, differences and negations instead of multiplying by their partials of 1 and -1 (fewer nested products for higher-order types). First-order tapes are unchanged; at higher order finite tangents are unchanged up to the sign of zero, and a partial's tangent is now exact where an infinite value made it NaN. Leaf partials at the top level of an expression are not multiplied by 1 either. Expression types defined outside XAD (deriving from `xad::Expression`) need `calc_derivatives(info, tape)` and `calc_derivatives(info, tape, detail::minus_unit)` overloads besides the one taking a multiplier
 
 ### Deprecated
 
@@ -125,6 +139,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JIT `derivative()` of an unrecorded variable gave it the slot of the next node
 - JIT interpreter wrote past its buffers for nodes recorded after `compile()`
 - JIT `newRecording` kept stale slots for inputs registered after other nodes
+- JIT recording missed scalar shifts and assignments on a copy of a registered input, e.g. `std::complex<AReal>` plus or minus a scalar
+- `std::stable_sort` of active types did not compile on libc++ 21 with `StdCompatibility.hpp`: `std::numeric_limits<T>::is_iec559` is now `false` for them
+- Each `JITGraph` (and so each `JITCompiler`) reserved 256 MiB on construction; node chunks are now 8 MiB
+- After `resetTo`, a variable destroyed after the reset (a stale variable) could free the slot number of a live one, which `registerOutput` then gave away
+- Adjoints could be lost silently for a statement with more operations than a tape chunk holds
+- A tape recording more than one chunk allocated one unused chunk per boundary on every re-recording
+- Rolling back to a position at the end of a full tape chunk, or sweeping a statement without operations there, accessed memory past the chunk list
+- With `XAD_OUTLINE_RECORDING` and JIT, assigning an expression on the tape to a variable holding a JIT slot recorded the statement for the JIT slot instead of registering the variable on the tape
+- With `XAD_SKIP_ZERO_PARTIALS` and `StdCompatibility.hpp`, higher-order types dropped partials whose value was zero but that still carried a derivative (a tangent or an inner-tape dependency)
 
 
 ## [2.0.0] - 2026-02-06

@@ -26,40 +26,23 @@
 
 #include <XAD/ChunkContainer.hpp>
 
-#include <iterator>
 #include <memory>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace xad
 {
 
-namespace detail
+// Space reserved in an operations container: the entries go to multipliers[pos], slots[pos] and on,
+// in the arrays of the current chunk; multipliers is null if there is none
+template <typename T, typename S>
+struct OperationsRun
 {
-
-// The MSVC STL of Visual Studio 2026 (_MSVC_STL_VERSION 145) no longer has
-// stdext::checked_array_iterator
-#if defined(_ITERATOR_DEBUG_LEVEL) && _ITERATOR_DEBUG_LEVEL &&                                     \
-    (!defined(_MSVC_STL_VERSION) || _MSVC_STL_VERSION < 145)
-// Make a checked iterator to avoid MSVC warnings.
-template <typename T>
-using checked_ptr = stdext::checked_array_iterator<T*>;
-template <typename T>
-checked_ptr<T> make_checked(T* p, size_t size)
-{
-    return {p, size};
-}
-#else
-template <typename T>
-using checked_ptr = T*;
-template <typename T>
-inline T* make_checked(T* p, size_t)
-{
-    return p;
-}
-#endif
-
-}  // namespace detail
+    T* multipliers;
+    S* slots;
+    std::size_t pos;
+};
 
 template <typename T, typename S, std::size_t ChunkSize = 1024U * 1024U * 8U,
           class AllocHelper = detail::AlignedAllocator>
@@ -69,6 +52,7 @@ class OperationsContainer
     using size_type = std::size_t;
     using mul_type = T;
     using slot_type = S;
+    using run_type = OperationsRun<T, S>;
     static constexpr std::size_t chunk_size = ChunkSize;
     static constexpr std::size_t ALIGNMENT = 128;
     static_assert(std::is_integral<slot_type>::value, "S type must be an integral type");
@@ -116,7 +100,7 @@ class OperationsContainer
 
     void resize(size_type s)
     {
-        reserve(s);
+        reserve(s + 1);  // position s needs its chunk, also at the end of the last one
         if (s < size())
         {
             destruct_elements(s);
@@ -141,11 +125,7 @@ class OperationsContainer
     void push_back(T multiplier, S slot)
     {
         if (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
-        {
-            addChunks(1);
-            idx_ = 0;
-            ++chunk_;
-        }
+            next_chunk();
         push_back_unsafe(std::move(multiplier), std::move(slot));
     }
 
@@ -161,6 +141,18 @@ class OperationsContainer
         ++idx_;
     }
 
+    // Reserve space for a run of n entries in the current chunk, so callers can write their
+    // partials straight into the tape, from run.pos on, then commit_run the position after the
+    // last one written. Gives null pointers when the run would cross a chunk boundary.
+    XAD_FORCE_INLINE run_type try_reserve_run(size_type n)
+    {
+        if (XAD_VERY_UNLIKELY(idx_ + n > ChunkSize))
+            return {nullptr, nullptr, 0};
+        return {mul_chunk(chunk_), slot_chunk(chunk_), idx_};
+    }
+
+    XAD_FORCE_INLINE void commit_run(size_type end) { idx_ = end; }
+
     // This container keeps multipliers and slots in separate arrays, so it cannot
     // hand out a contiguous run of pairs to write into. Returning null here means
     // callers stage into their own buffer and append.
@@ -171,29 +163,12 @@ class OperationsContainer
     template <class MulIt, class SlotIt>
     XAD_FORCE_INLINE void append_n(MulIt muls, SlotIt slots, size_type n)
     {
-        auto items = (std::min)(ChunkSize - idx_, n);
-        std::uninitialized_copy_n(detail::make_checked(muls, items), items,
-                                  detail::make_checked(mul_chunk(chunk_), ChunkSize) + idx_);
-        std::uninitialized_copy_n(detail::make_checked(slots, items), items,
-                                  detail::make_checked(slot_chunk(chunk_), ChunkSize) + idx_);
-        idx_ += items;
-
-        while (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
+        if (XAD_VERY_UNLIKELY(n >= ChunkSize - idx_))  // fills the chunk
         {
-            addChunks(1);
-            ++chunk_;
-            idx_ = 0;
-            n -= items;
-            muls += items;
-            slots += items;
-
-            items = (std::min)(ChunkSize, n);
-            std::uninitialized_copy_n(detail::make_checked(muls, items), items,
-                                      detail::make_checked(mul_chunk(chunk_), ChunkSize));
-            std::uninitialized_copy_n(detail::make_checked(slots, items), items,
-                                      detail::make_checked(slot_chunk(chunk_), ChunkSize));
-            idx_ += items;
+            append_across_chunks(muls, slots, n);
+            return;
         }
+        append_here(muls, slots, n);
     }
 
     XAD_FORCE_INLINE std::pair<mul_type, slot_type> operator[](size_type n) const
@@ -208,6 +183,8 @@ class OperationsContainer
     template <class Func>
     void for_each(size_type startidx, size_type endidx, Func f) const
     {
+        if (XAD_VERY_UNLIKELY(startidx == endidx))  // may be at the end of the last chunk
+            return;
         size_type start_chunk = startidx / ChunkSize;
         size_type start_idx = startidx % ChunkSize;
         size_type end_chunk = endidx / ChunkSize;
@@ -224,6 +201,16 @@ class OperationsContainer
         if (XAD_VERY_LIKELY(start_chunk == end_chunk))
             return;
 
+        for (size_type c = start_chunk + 1; c != end_chunk; ++c)
+        {
+            chk_mul = mul_chunk(c);
+            chk_slot = slot_chunk(c);
+            for (size_type i = 0; i < ChunkSize; ++i)
+            {
+                f(chk_mul[i], chk_slot[i]);
+            }
+        }
+
         size_type e2 = end_idx;
         if (e2 == 0)
             return;
@@ -235,14 +222,39 @@ class OperationsContainer
         }
     }
 
-    // The entries of one chunk, for for_each without chunk lookups; empty if [startidx, endidx)
-    // is empty or spans chunks
+    // the same, from the last element to the first
+    template <class Func>
+    void for_each_reverse(size_type startidx, size_type endidx, Func f) const
+    {
+        if (XAD_VERY_UNLIKELY(startidx == endidx))  // may be at the end of the last chunk
+            return;
+        size_type start_chunk = startidx / ChunkSize;
+        size_type end_chunk = endidx / ChunkSize;
+        if (XAD_VERY_UNLIKELY(start_chunk != end_chunk))
+        {
+            reverse_across_chunks(startidx, endidx, f);
+            return;
+        }
+        reverse_entries(mul_chunk(start_chunk) + startidx % ChunkSize,
+                        slot_chunk(start_chunk) + startidx % ChunkSize, endidx - startidx, f);
+    }
+
+    // The entries of one chunk, for for_each/for_each_reverse without chunk lookups;
+    // empty if [startidx, endidx) is empty or spans chunks
     struct flat_view
     {
         const mul_type* muls;
         const slot_type* slots;
         size_type offset;
         explicit operator bool() const { return muls != nullptr; }
+        template <class Func>
+        XAD_FORCE_INLINE void for_each_reverse(size_type startidx, size_type endidx, Func f) const
+        {
+            // one index counting down over both arrays: one step per entry
+            const mul_type* m = muls + (startidx - offset);
+            const slot_type* s = slots + (startidx - offset);
+            for (size_type i = endidx - startidx; i > 0; --i) f(m[i - 1], s[i - 1]);
+        }
         template <class Func>
         XAD_FORCE_INLINE void for_each(size_type startidx, size_type endidx, Func f) const
         {
@@ -260,17 +272,101 @@ class OperationsContainer
     }
 
   private:
+    // on to the next chunk, adding it if there is none: out of line, recording inlines its callers
+    XAD_NEVER_INLINE XAD_COLD void next_chunk()
+    {
+        if (chunk_ + 1 == chunks_.size())
+            addChunks(1);
+        ++chunk_;
+        idx_ = 0;
+    }
+
+    // for_each_reverse of a range over several chunks: out of line, to keep the sweep's code small
+    template <class Func>
+    XAD_NEVER_INLINE XAD_COLD void reverse_across_chunks(size_type startidx, size_type endidx,
+                                                         Func& f) const
+    {
+        size_type start_chunk = startidx / ChunkSize;
+        size_type end_chunk = endidx / ChunkSize;
+        if (endidx % ChunkSize != 0)
+            reverse_entries(mul_chunk(end_chunk), slot_chunk(end_chunk), endidx % ChunkSize, f);
+        for (size_type c = end_chunk - 1; c != start_chunk; --c)
+            reverse_entries(mul_chunk(c), slot_chunk(c), ChunkSize, f);
+        reverse_entries(mul_chunk(start_chunk) + startidx % ChunkSize,
+                        slot_chunk(start_chunk) + startidx % ChunkSize,
+                        ChunkSize - startidx % ChunkSize, f);
+    }
+
+    // f on the first n entries of the arrays, last to first
+    template <class Func>
+    static XAD_FORCE_INLINE void reverse_entries(const mul_type* m, const slot_type* s, size_type n,
+                                                 Func& f)
+    {
+        for (size_type i = n; i > 0; --i) f(m[i - 1], s[i - 1]);
+    }
+
+#if defined(__GNUC__) && !defined(__clang__)
+// GCC 12 flags this warning in the code below, although it is perfectly safe
+// and tested
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
+    // append_n up to or across the end of the chunk: out of line, recording inlines its callers
+    template <class MulIt, class SlotIt>
+    XAD_NEVER_INLINE XAD_COLD void append_across_chunks(MulIt muls, SlotIt slots, size_type n)
+    {
+        auto items = (std::min)(ChunkSize - idx_, n);
+        append_here(muls, slots, items);
+
+        while (idx_ == ChunkSize)
+        {
+            next_chunk();
+            n -= items;
+
+            items = (std::min)(ChunkSize, n);
+            append_here(muls, slots, items);
+        }
+    }
+
+    // the next n entries of the current chunk, from the iterators
+    template <class MulIt, class SlotIt>
+    XAD_FORCE_INLINE void append_here(MulIt& muls, SlotIt& slots, size_type n)
+    {
+        auto m = mul_chunk(chunk_) + idx_;
+        auto s = slot_chunk(chunk_) + idx_;
+        for (size_type i = 0; i < n; ++i)
+        {
+            ::new (m + i) T(*muls++);
+            ::new (s + i) S(*slots++);
+        }
+        idx_ += n;
+    }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+    // the slots of a chunk follow its multipliers in the same allocation. Functions, not static
+    // members: Tape's extern template declarations instantiate this class while mul_type may still
+    // be incomplete, and MSVC evaluates static member initializers then.
+    static constexpr std::size_t slot_offset()
+    {
+        return ((ChunkSize * sizeof(mul_type) + alignof(slot_type) - 1) / alignof(slot_type)) *
+               alignof(slot_type);
+    }
+    static constexpr std::size_t chunk_bytes()
+    {
+        return slot_offset() + sizeof(slot_type) * ChunkSize;
+    }
+
     XAD_FORCE_INLINE mul_type* mul_chunk(size_type chunk)
     {
         return reinterpret_cast<mul_type*>(chunks_[chunk].get());
     }
     XAD_FORCE_INLINE slot_type* slot_chunk(size_type chunk)
     {
-        constexpr std::size_t SLOT_OFFSET =
-            ((ChunkSize * sizeof(mul_type) + alignof(slot_type) - 1) / alignof(slot_type)) *
-            sizeof(slot_type);
-
-        return reinterpret_cast<slot_type*>(chunks_[chunk].get() + SLOT_OFFSET);
+        return reinterpret_cast<slot_type*>(chunks_[chunk].get() + slot_offset());
     }
     XAD_FORCE_INLINE const mul_type* mul_chunk(size_type chunk) const
     {
@@ -278,22 +374,14 @@ class OperationsContainer
     }
     XAD_FORCE_INLINE const slot_type* slot_chunk(size_type chunk) const
     {
-        constexpr std::size_t SLOT_OFFSET =
-            ((ChunkSize * sizeof(mul_type) + alignof(slot_type) - 1) / alignof(slot_type)) *
-            sizeof(slot_type);
-        return reinterpret_cast<const slot_type*>(chunks_[chunk].get() + SLOT_OFFSET);
+        return reinterpret_cast<const slot_type*>(chunks_[chunk].get() + slot_offset());
     }
 
     void addChunks(size_type newChunks)
     {
-        constexpr std::size_t SLOT_OFFSET =
-            ((ChunkSize * sizeof(mul_type) + alignof(slot_type) - 1) / alignof(slot_type)) *
-            sizeof(slot_type);
-        constexpr std::size_t CHUNK_BYTES = SLOT_OFFSET + sizeof(slot_type) * ChunkSize;
-
         for (size_type i = 0; i < newChunks; ++i)
         {
-            auto chunk = AllocHelper::aligned_alloc(ALIGNMENT, CHUNK_BYTES);
+            auto chunk = AllocHelper::aligned_alloc(ALIGNMENT, chunk_bytes());
             if (chunk == nullptr)
                 throw std::bad_alloc();
             chunks_.emplace_back(reinterpret_cast<char*>(chunk));

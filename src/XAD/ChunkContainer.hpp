@@ -143,7 +143,7 @@ class ChunkContainer
     void clear()
     {
         destroyAll();
-        if (chunkList_.empty())  // moved from
+        if (XAD_UNLIKELY(chunkList_.empty()))  // moved from
             reserve(1);
     }
 
@@ -376,7 +376,8 @@ class ChunkContainer
     std::vector<char*> chunkList_;
     size_type chunk_, idx_;
 
-    void check_space()
+    // on to the next chunk, adding it if there is none: out of line, recording inlines its callers
+    XAD_NEVER_INLINE XAD_COLD void check_space()
     {
         if (XAD_VERY_LIKELY(chunk_ == chunkList_.size() - 1))
         {

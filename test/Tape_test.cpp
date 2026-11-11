@@ -607,8 +607,12 @@ class SlotSequence : public xad::CheckpointCallback<xad::Tape<double>>
 TEST(Tape, slotSequenceMatchesReference)
 {
     SlotSequence sequence;
-#ifdef XAD_TAPE_REUSE_SLOTS
+#if defined(XAD_TAPE_REUSE_SLOTS) && defined(XAD_TAPE_TRACK_LIVE_SLOTS)
+    EXPECT_EQ(17842625683904008796ULL, sequence.run(300));
+#elif defined(XAD_TAPE_REUSE_SLOTS)
     EXPECT_EQ(5042060922808247158ULL, sequence.run(300));
+#elif defined(XAD_TAPE_TRACK_LIVE_SLOTS)
+    EXPECT_EQ(7463125186007825295ULL, sequence.run(300));
 #else
     EXPECT_EQ(7513799870854399479ULL, sequence.run(300));
 #endif

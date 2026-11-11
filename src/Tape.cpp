@@ -32,12 +32,22 @@
 #include <XAD/Traits.hpp>
 #include <XAD/UnaryOperators.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <iterator>
 #include <numeric>
 #include <sstream>
+#include <type_traits>
 #ifdef XAD_TAPE_CHECKS
 #include <atomic>
+#endif
+
+// gcc on x86-64: inlined, the list operations can go out of line in their callers, at the unit
+// growth limit
+#if defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)
+#define XAD_REUSE_RANGE_INLINE XAD_NEVER_INLINE
+#else
+#define XAD_REUSE_RANGE_INLINE XAD_FORCE_INLINE
 #endif
 
 #if 0
@@ -86,6 +96,7 @@ Tape<T, N>::Tape(Tape&& o) noexcept
       positionSlots_(std::move(o.positionSlots_)),
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
       watch_(o.watch_),
+      recordingStart_(o.recordingStart_),
 #endif
 #ifdef XAD_TAPE_REUSE_SLOTS
       reusable_ranges_(std::move(o.reusable_ranges_)),
@@ -93,6 +104,14 @@ Tape<T, N>::Tape(Tape&& o) noexcept
 #endif
       nestedRecordings_(std::move(o.nestedRecordings_)),
       currentRec_(o.currentRec_)
+#ifdef XAD_COPY_ELISION
+      ,
+      shares_(std::move(o.shares_)),
+      lastShared_(std::move(o.lastShared_)),
+      freedShared_(std::move(o.freedShared_)),
+      freedFrom_(o.freedFrom_),
+      outerFreedFrom_(std::move(o.outerFreedFrom_))
+#endif
 {
 #ifdef XAD_TAPE_CHECKS
     id_ = o.id_;
@@ -133,6 +152,7 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     positionSlots_ = std::move(o.positionSlots_);
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = o.watch_;
+    recordingStart_ = o.recordingStart_;
 #endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_ = std::move(o.reusable_ranges_);
@@ -140,6 +160,13 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
 #endif
     nestedRecordings_ = std::move(o.nestedRecordings_);
     currentRec_ = o.currentRec_;
+#ifdef XAD_COPY_ELISION
+    shares_ = std::move(o.shares_);
+    lastShared_ = std::move(o.lastShared_);
+    freedShared_ = std::move(o.freedShared_);
+    freedFrom_ = o.freedFrom_;
+    outerFreedFrom_ = std::move(o.outerFreedFrom_);
+#endif
 #ifdef XAD_TAPE_CHECKS
     id_ = o.id_;
     o.id_ = nextTapeId();
@@ -176,8 +203,16 @@ void Tape<T, N>::resetMovedFrom()
     while (!nestedRecordings_.empty()) nestedRecordings_.pop();
     nestedRecordings_.push(SubRecording(this));
     currentRec_ = &nestedRecordings_.top();
+#ifdef XAD_COPY_ELISION
+    shares_.clear();
+    lastShared_.clear();
+    freedShared_.clear();
+    freedFrom_ = 0;
+    outerFreedFrom_.clear();
+#endif
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = SlotWatch();
+    recordingStart_ = RecordingStart();
 #endif
 }
 
@@ -200,8 +235,17 @@ void Tape<T, N>::clearAll()
     derivatives_.clear();
     checkpoints_.clear();
     positionSlots_.clear();
+#ifdef XAD_COPY_ELISION
+    // copies must not outlive clearAll: no slot is shared any more
+    shares_.clear();
+    lastShared_.clear();
+    freedShared_.clear();
+    freedFrom_ = 0;
+    outerFreedFrom_.clear();
+#endif
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = SlotWatch();
+    recordingStart_ = RecordingStart();
 #endif
 #ifdef XAD_TAPE_REUSE_SLOTS
     reusable_ranges_.clear();
@@ -238,6 +282,125 @@ void Tape<T, N>::recordAssignment(slot_type& lhs, const value_type* multipliers,
         lhs = registerVariable();
     pushLhs(lhs);
 }
+
+#ifdef XAD_COPY_ELISION
+template <class T, std::size_t N>
+void Tape<T, N>::growShares(std::size_t n)
+{
+    shares_.resize((std::max)(n, 2 * shares_.size()));
+    lastShared_.resize(shares_.size());
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::unregisterShared(slot_type slot)
+{
+    if (slot < shares_.size() && shares_[slot] != 0)
+    {
+        unshare(slot);
+        return;
+    }
+    // the last holder of a current sharing: a stale holder after clearAll is not put on the reuse
+    // list in the common case
+    const bool last = slot < lastShared_.size() && (lastShared_[slot] & LAST_SHARED);
+    unmarkLastShared(slot);
+    // not at the end, the slot would stay unused: a detaching variable takes it
+    if (last && slot >= freedFrom_ && slot + 1 < currentRec_->iDerivative_)
+        freedShared_.push_back(slot);
+    unregisterVariable(slot);
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::detachShared(slot_type& slot)
+{
+    if (slot < shares_.size() && shares_[slot] != 0)
+    {
+        unshare(slot);
+        if (!freedShared_.empty())
+        {
+            // as in a loop keeping the previous value: the slot its last user freed
+            slot = freedShared_.back();
+            freedShared_.pop_back();
+            ++currentRec_->numDerivatives_;
+            return;
+        }
+        slot = registerVariable();
+    }
+    else
+        unmarkLastShared(slot);
+}
+
+template <class T, std::size_t N>
+typename Tape<T, N>::slot_type Tape<T, N>::ownSharedSlot(slot_type slot)
+{
+    // a live slot above the counter (a stale variable freed its number): not for the new one
+    if (slot >= currentRec_->iDerivative_)
+        currentRec_->iDerivative_ = slot + 1;
+    if (slot >= shares_.size() || shares_[slot] == 0)
+    {
+        unmarkLastShared(slot);
+        return slot;  // the last variable using it
+    }
+    unshare(slot);
+    const value_type one(1);
+    slot_type out = registerVariable();
+    pushAll(&one, &slot, 1);
+    pushLhs(out);
+    return out;
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::tooManySlots(slot_type last)
+{
+    currentRec_->iDerivative_ = last;
+    currentRec_->maxDerivative_ = last;
+    throw OutOfRange("too many tape slots: at most " + std::to_string(MAX_SLOTS - 1) +
+                     " in this build");
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::unshare(slot_type slot)
+{
+    if (--shares_[slot] == 0)
+        lastShared_[slot] |= LAST_SHARED;
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::unmarkLastShared(slot_type slot)
+{
+    if (slot >= lastShared_.size())
+        return;
+    // a sweep may have left an adjoint in a slot kept without its statement
+    if ((lastShared_[slot] & GIVEN_UP) && slot < derivatives_.size())
+        derivatives_[slot] = derivative_type();
+    lastShared_[slot] = 0;
+}
+
+template <class T, std::size_t N>
+typename Tape<T, N>::slot_type Tape<T, N>::giveUpShared(slot_type from, slot_type to)
+{
+    slot_type keep = 0;
+    for (auto s = from; s < (std::min)(to, slot_type(shares_.size())); ++s)
+        if (shares_[s] != 0 || lastShared_[s] != 0)
+        {
+            lastShared_[s] |= GIVEN_UP;
+            keep = s + 1;
+        }
+    // the freed slots below those kept stay free, above them the counter hands them out
+    const slot_type end = (std::max)(from, keep);
+    freedShared_.erase(std::remove_if(freedShared_.begin(), freedShared_.end(),
+                                      [end](slot_type s) { return s >= end; }),
+                       freedShared_.end());
+    return keep;
+}
+
+template <class T, std::size_t N>
+void Tape<T, N>::reuseFreedFrom(slot_type s) const
+{
+    freedShared_.clear();
+    freedFrom_ = (std::max)(freedFrom_, s);
+}
+
+#endif
 
 #ifdef XAD_TAPE_REUSE_SLOTS
 namespace
@@ -293,7 +456,7 @@ typename Tape<T, N>::range_list::iterator Tape<T, N>::findRange(slot_type slot)
 }
 
 template <class T, std::size_t N>
-XAD_FORCE_INLINE typename Tape<T, N>::range_list::iterator Tape<T, N>::insertRange(
+XAD_REUSE_RANGE_INLINE typename Tape<T, N>::range_list::iterator Tape<T, N>::insertRange(
     range_list::iterator pos, slot_type slot)
 {
     auto it = reusable_ranges_.emplace(pos, slot, slot + 1);
@@ -303,7 +466,7 @@ XAD_FORCE_INLINE typename Tape<T, N>::range_list::iterator Tape<T, N>::insertRan
 }
 
 template <class T, std::size_t N>
-XAD_FORCE_INLINE typename Tape<T, N>::range_list::iterator Tape<T, N>::eraseRange(
+XAD_REUSE_RANGE_INLINE typename Tape<T, N>::range_list::iterator Tape<T, N>::eraseRange(
     range_list::iterator it)
 {
     if (!range_index_.empty())
@@ -519,10 +682,15 @@ void Tape<T, N>::foldSubrecording()
     nestedRecordings_.pop();
     auto cur = &nestedRecordings_.top();
     currentRec_ = cur;
+#ifdef XAD_COPY_ELISION
+    assert(outerFreedFrom_.size() == nestedRecordings_.size() && "one per nested recording");
+    freedFrom_ = outerFreedFrom_.back();
+    outerFreedFrom_.pop_back();
+#endif
     // std::cout << "prev.max: " << prev.maxDerivative_
     //     << ", cur max: " << cur->maxDerivative_ << "\n";
-    if (derivatives_.size() > cur->maxDerivative_)
-        derivatives_.resize(cur->maxDerivative_);
+    if (derivatives_.size() > cur->maxSlot())
+        derivatives_.resize(cur->maxSlot());
 #ifdef XAD_TAPE_TRACK_LIVE_SLOTS
     // variables registered in the nested recording can outlive it: keep the slots up to its
     // counter, which is above all live slots
@@ -532,6 +700,15 @@ void Tape<T, N>::foldSubrecording()
         cur->maxDerivative_ = (std::max)(cur->maxDerivative_, cur->iDerivative_);
     }
     cur->numDerivatives_ = prev.numDerivatives_;
+#endif
+#ifdef XAD_COPY_ELISION
+    // copies of the nested recording's variables kept beyond it keep their slots
+    const slot_type keep = giveUpShared(cur->iDerivative_, prev.iDerivative_);
+    if (keep > cur->iDerivative_)
+    {
+        cur->iDerivative_ = keep;
+        cur->maxDerivative_ = (std::max)(cur->maxDerivative_, keep);
+    }
 #endif
     if (operations_.size() > prev.opStartPos_)
     {
@@ -549,7 +726,10 @@ void Tape<T, N>::foldSubrecording()
                          positionSlots_.end());
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     if (positionSlots_.empty())
+    {
         watch_ = SlotWatch();
+        watchBelow(0);
+    }
     else
         dropPendingRewind();
 #endif
@@ -585,6 +765,10 @@ void Tape<T, N>::newNestedRecording()
     newr.startDerivative_ = currentRec_->maxDerivative_;
     // above the outer recording's slots, whose adjoints may be pending
     newr.iDerivative_ = (std::max)(newr.iDerivative_, newr.startDerivative_);
+#ifdef XAD_COPY_ELISION
+    outerFreedFrom_.push_back(freedFrom_);
+    reuseFreedFrom(newr.iDerivative_);
+#endif
 #ifdef XAD_TAPE_TRACK_LIVE_SLOTS
     newr.startCounter_ = newr.iDerivative_;
 #ifndef XAD_TAPE_REUSE_SLOTS
@@ -618,8 +802,26 @@ void Tape<T, N>::newRecording()
     positionSlots_.clear();
 #if defined(XAD_TAPE_TRACK_LIVE_SLOTS) && !defined(XAD_TAPE_REUSE_SLOTS)
     watch_ = SlotWatch();
+    // slots freed below the counter stay unused, so the counter goes back to where the previous
+    // recording started once nothing above it is live
+    SubRecording* r = currentRec_;
+    if (r->numDerivatives_ + recordingStart_.freedBelow <= recordingStart_.live &&
+        recordingStart_.counter < r->iDerivative_)
+        r->iDerivative_ = recordingStart_.counter;
+    recordingStart_.counter = r->iDerivative_;
+    recordingStart_.live = r->numDerivatives_;
+    recordingStart_.freedBelow = 0;
+    watchBelow(0);
 #endif
-    currentRec_->maxDerivative_ = currentRec_->iDerivative_ + 1;
+    // the derivatives go one above the counter; registerOutput keeps no slot above it, as the
+    // statements are gone
+    currentRec_->maxDerivative_ = currentRec_->iDerivative_;
+    currentRec_->prevMax_ = currentRec_->iDerivative_ + 1;
+#ifdef XAD_COPY_ELISION
+    // at MAX_SLOTS, so that registerVariableAtEnd checks the next slot
+    if (currentRec_->maxDerivative_ > MAX_SLOTS)
+        currentRec_->maxDerivative_ = MAX_SLOTS;
+#endif
     statement_.push_back(std::make_pair(size_type(operations_.size()), slot_type(INVALID_SLOT)));
     currentRec_->derivativesInitialized_ = false;
 }
@@ -646,14 +848,14 @@ void Tape<T, N>::initDerivatives()
         std::fill(derivatives_.begin() + currentRec_->startDerivative_, derivatives_.end(), T());
     }
 
-    derivatives_.resize(currentRec_->maxDerivative_);
+    derivatives_.resize(currentRec_->maxSlot());
     currentRec_->derivativesInitialized_ = true;
 }
 
 template <class T, std::size_t N>
 typename Tape<T, N>::derivative_type& Tape<T, N>::derivativeSlow(slot_type s)
 {
-    if (s >= currentRec_->maxDerivative_)
+    if (s >= currentRec_->maxSlot())
         throw OutOfRange("given derivative slot is out of range - did you register the outputs?");
 
     initDerivatives();
@@ -664,7 +866,7 @@ template <class T, std::size_t N>
 const typename Tape<T, N>::derivative_type& Tape<T, N>::derivative(slot_type s) const
 {
 #ifndef NDEBUG
-    if (s >= currentRec_->maxDerivative_)
+    if (s >= currentRec_->maxSlot())
         throw OutOfRange("given derivative slot is out of range");
     if (!currentRec_->derivativesInitialized_)
         throw DerivativesNotInitialized(
@@ -719,7 +921,7 @@ void Tape<T, N>::printStatus() const
     std::cout << "XAD Tape Info:\n"
               << "   Statements: " << statement_.size() - 1 << "\n"
               << "   Operations: " << operations_.size() << "\n"
-              << "   Total der : " << currentRec_->maxDerivative_ << "\n"
+              << "   Total der : " << currentRec_->maxSlot() << "\n"
               << "   Der alloc : " << derivatives_.size() << "\n"
               << "   curr der  : " << currentRec_->numDerivatives_ << "\n"
               << "   act. max  : " << actmax << "\n"
@@ -743,9 +945,12 @@ void Tape<T, N>::computeAdjointsTo(position_type pos)
 {
 #ifdef XAD_ENABLE_JIT
     // slots from FIRST_JIT_SLOT on are passive, so their dependencies were not recorded
-    if (currentRec_->maxDerivative_ > FIRST_JIT_SLOT)
+    if (currentRec_->maxSlot() > FIRST_JIT_SLOT)
         throw OutOfRange("too many tape slots with JIT enabled");
 #endif
+    // variables recorded after the derivatives were sized have slots the sweep visits
+    if (derivatives_.size() < currentRec_->maxSlot())
+        derivatives_.resize(currentRec_->maxSlot());
     position_type start = position_type(statement_.size() - 1);
     LOG_DEBUG("number checkpoints: " << checkpoints_.size());
     for (unsigned i = unsigned(checkpoints_.size()); i > 0; --i)
@@ -763,7 +968,7 @@ void Tape<T, N>::computeAdjointsTo(position_type pos)
 
         // keep the prevMax stored, so we can resize the der. vector on a
         // subrecording
-        currentRec_->prevMax_ = currentRec_->maxDerivative_;
+        currentRec_->prevMax_ = currentRec_->maxSlot();
         {
             // a nested recording keeps the callback's variables off slots with pending adjoints
             ScopedNestedRecording<Tape> nested(this);
@@ -941,7 +1146,6 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
         endidx = 0;
     auto chunk_it = statement_.chunk_begin() + startchunk;
     auto chunk_eit = statement_.chunk_begin() + endchunk - 1;
-    const int chunksz = int(s_type::chunk_size);
 
     // fast path: the statements in one chunk and their operations in one chunk. endcidx > 0 keeps
     // sts[i - 1] inside the chunk (endcidx == 0 needs the previous chunk's last statement).
@@ -958,13 +1162,47 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
                 derivative_type a = der[st.second];
                 der[st.second] = derivative_type();
                 if (!detail::isZeroAdjoint(a))
-                    ops.for_each(sts[i - 1].first, st.first,
-                                 [&](const T& mul, slot_type slot) XAD_ADJOINT_LAMBDA_INLINE
-                                 { XAD_ADD_ADJOINT_INLINE(der[slot], mul, a); });
+                    ops.for_each_reverse(sts[i - 1].first, st.first,
+                                         [&](const T& mul, slot_type slot) XAD_ADJOINT_LAMBDA_INLINE
+                                         { XAD_ADD_ADJOINT_INLINE(der[slot], mul, a); });
             }
             return;
         }
     }
+
+    computeAdjointsAcrossChunks(chunk_it, chunk_eit, idx, endidx, endcidx);
+}
+
+// clang out of line: keeps the fast path's registers; other compilers inline, as before
+#if defined(__clang__)
+#define XAD_SWEEP_ACROSS_CHUNKS XAD_NEVER_INLINE
+#else
+#define XAD_SWEEP_ACROSS_CHUNKS XAD_FORCE_INLINE
+#endif
+
+template <class T, std::size_t N>
+template <class ChunkIt, class Idx>
+XAD_SWEEP_ACROSS_CHUNKS void Tape<T, N>::computeAdjointsAcrossChunks(ChunkIt chunk_it,
+                                                                     ChunkIt chunk_eit, Idx idx,
+                                                                     Idx endidx, Idx endcidx)
+{
+    using s_type = typename TapeContainerTraits<T, slot_type>::statements_type;
+    const int chunksz = int(s_type::chunk_size);
+
+    // A range across chunks goes out of line, which would take the adjoint out of a register if its
+    // address went along: plain adjoints are held by copy (copying an active one would record).
+    using held_adjoint =
+        typename std::conditional<std::is_trivially_copyable<derivative_type>::value,
+                                  derivative_type, const derivative_type&>::type;
+    struct AddToAdjoints
+    {
+        std::vector<derivative_type>& derivatives;
+        held_adjoint a;
+        void operator()(const T& mul, slot_type slot) const
+        {
+            XAD_ADD_ADJOINT(derivatives[slot], mul, a);
+        }
+    };
 
     for (; chunk_it != chunk_eit; --chunk_it)
     {
@@ -978,8 +1216,8 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             derivatives_[st.second] = derivative_type();
             if (!detail::isZeroAdjoint(a))
             {
-                operations_.for_each(it[-1].first, st.first, [&](const T& mul, slot_type slot)
-                                     { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
+                operations_.for_each_reverse(it[-1].first, st.first,
+                                             AddToAdjoints{derivatives_, a});
             }
         }
         // last iteration separate
@@ -991,14 +1229,16 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             derivatives_[st.second] = derivative_type();
             if (!detail::isZeroAdjoint(a))
             {
-                operations_.for_each(prevendpoint, st.first, [&](const T& mul, slot_type slot)
-                                     { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
+                operations_.for_each_reverse(prevendpoint, st.first,
+                                             AddToAdjoints{derivatives_, a});
             }
         }
 
         idx = chunksz - 1;
     }
 }
+
+#undef XAD_SWEEP_ACROSS_CHUNKS
 
 template <class T, std::size_t N>
 std::size_t Tape<T, N>::getMemory() const
@@ -1009,6 +1249,9 @@ std::size_t Tape<T, N>::getMemory() const
                                 2 * statement_.size())
 #ifdef XAD_TAPE_REUSE_SLOTS
            + sizeof(reusable_ranges_.front()) * reusable_ranges_.size()
+#endif
+#ifdef XAD_COPY_ELISION
+           + sizeof(slot_type) * (shares_.size() + freedShared_.size()) + lastShared_.size()
 #endif
            + checkpoints_.size() * sizeof(chkpt_type) +
            nestedRecordings_.size() * sizeof(nestedRecordings_.top())
@@ -1050,6 +1293,9 @@ typename Tape<T, N>::position_type Tape<T, N>::getPosition() const
     if (positionSlots_.empty() || currentRec_->iDerivative_ <= watch_.from)
         watchSlots();
 #endif
+#ifdef XAD_COPY_ELISION
+    reuseFreedFrom(currentRec_->iDerivative_);
+#endif
     positionSlots_.push_back(position_slots_type(pos, currentRec_->iDerivative_));
     return pos;
 }
@@ -1062,7 +1308,7 @@ void Tape<T, N>::watchSlots() const
     watch_.liveBelow = currentRec_->numDerivatives_;
     watch_.freedBelow = 0;
     watch_.pending = INVALID_SLOT;
-    watch_.below = watch_.from;
+    watchBelow(watch_.from);
 }
 
 // rewinds the counter to the lowest of to and a pending rewind, if no slot at or above
@@ -1080,7 +1326,7 @@ void Tape<T, N>::rewindSlots(slot_type to) const
         watch_.pending = INVALID_SLOT;
     }
     // while pending, every free can allow it
-    watch_.below = watch_.pending == INVALID_SLOT ? watch_.from : INVALID_SLOT;
+    watchBelow(watch_.pending == INVALID_SLOT ? watch_.from : INVALID_SLOT);
 }
 
 template <class T, std::size_t N>
@@ -1088,6 +1334,8 @@ void Tape<T, N>::freeWatchedSlot(slot_type slot)
 {
     if (slot < watch_.from)
         ++watch_.freedBelow;
+    if (slot < recordingStart_.counter)
+        ++recordingStart_.freedBelow;
     if (watch_.pending != INVALID_SLOT)
         rewindSlots(INVALID_SLOT);
 }
@@ -1097,7 +1345,7 @@ void Tape<T, N>::dropPendingRewind()
 {
     watch_.pending = INVALID_SLOT;
     if (watch_.below == INVALID_SLOT)
-        watch_.below = watch_.from;
+        watchBelow(watch_.from);
 }
 #endif
 
@@ -1130,14 +1378,33 @@ void Tape<T, N>::resetTo(position_type pos)
         rewindSlots(mark->second);
 #endif
 #else
+#ifdef XAD_COPY_ELISION
+        // copies kept from after the position keep their slots
+        const slot_type keep = giveUpShared(mark->second, currentRec_->iDerivative_);
+        // the later positions are gone
+        freedFrom_ = (std::min)(freedFrom_, mark->second);
+#endif
+        // a stale variable freeing a given-up slot that a live one holds lowers the counter
+        // below it, so registerOutput also keeps the slots below the highest counter since
         currentRec_->iDerivative_ = (std::min)(currentRec_->iDerivative_, mark->second);
+#ifdef XAD_COPY_ELISION
+        currentRec_->iDerivative_ = (std::max)(currentRec_->iDerivative_, keep);
+#endif
+        currentRec_->prevMax_ = currentRec_->maxSlot();
+#ifdef XAD_COPY_ELISION
+        // the slots kept have derivatives, also after clearDerivativesAfter
+        currentRec_->maxDerivative_ = currentRec_->iDerivative_;
+#else
+        currentRec_->maxDerivative_ =
+            (std::min)(currentRec_->maxDerivative_, currentRec_->iDerivative_);
+#endif
 #endif
         ++mark;
     }
     positionSlots_.erase(mark, positionSlots_.end());
 #ifdef XAD_TAPE_REUSE_SLOTS
-    // drop the reusable slots at or above maxDerivative_ or the slot counter
-    auto limit = (std::min)(currentRec_->maxDerivative_, currentRec_->iDerivative_);
+    // drop the reusable slots at or above maxSlot or the slot counter
+    auto limit = (std::min)(currentRec_->maxSlot(), currentRec_->iDerivative_);
     while (!reusable_ranges_.empty() && reusable_ranges_.back().second() > limit)
     {
         auto last = std::prev(reusable_ranges_.end());
@@ -1215,6 +1482,7 @@ void Tape<T, N>::clearDerivativesAfter(position_type pos)
         return;
     derivatives_.resize(end);
     currentRec_->maxDerivative_ = end;
+    currentRec_->prevMax_ = INVALID_SLOT;
 }
 
 template <class T, std::size_t N>

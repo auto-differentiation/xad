@@ -37,6 +37,12 @@
 namespace xad
 {
 
+// A partial of a constant zero operand inlined here is infinite by design (a zero tangent masks
+// it); MSVC reports that as C4723, an error with /WX.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4723)
+#endif
 template <class Scalar, class Op, class Expr1, class Expr2, class DerivativeType = Scalar>
 struct BinaryExpr
     : Expression<Scalar, BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>, DerivativeType>
@@ -50,25 +56,28 @@ struct BinaryExpr
         : a_(a), b_(b), op_(op), v_(op_(a_.value(), b_.value()))
     {
     }
+#ifdef XAD_BINARY_EXPR_COPY_MEMBERWISE
+    XAD_FORCE_INLINE BinaryExpr(const BinaryExpr& o) : a_(o.a_), b_(o.b_), op_(o.op_), v_(o.v_) {}
+#endif
     XAD_INLINE Scalar value() const { return v_; }
 
     template <class Info, class Tape>
     XAD_INLINE void calc_derivatives(Info& info, Tape& s, const Scalar& mul) const
     {
-        using xad::value;
-        a_.calc_derivatives(info, s,
-                            mul * der_impl::template derivative_a<>(op_, value(a_), value(b_), v_));
-        b_.calc_derivatives(info, s,
-                            mul * der_impl::template derivative_b<>(op_, value(a_), value(b_), v_));
+        calcA(info, s, mul, detail::UnitPartialA<Op>());
+        calcB(info, s, mul, detail::UnitPartialB<Op>());
     }
     template <class Info, class Tape>
     XAD_INLINE void calc_derivatives(Info& info, Tape& s) const
     {
-        using xad::value;
-        a_.calc_derivatives(info, s,
-                            der_impl::template derivative_a<>(op_, value(a_), value(b_), v_));
-        b_.calc_derivatives(info, s,
-                            der_impl::template derivative_b<>(op_, value(a_), value(b_), v_));
+        calcA(info, s, detail::unit_multiplier(), detail::UnitPartialA<Op>());
+        calcB(info, s, detail::unit_multiplier(), detail::UnitPartialB<Op>());
+    }
+    template <class Info, class Tape>
+    XAD_INLINE void calc_derivatives(Info& info, Tape& s, detail::minus_unit m) const
+    {
+        calcA(info, s, m, detail::UnitPartialA<Op>());
+        calcB(info, s, m, detail::UnitPartialB<Op>());
     }
 
     XAD_INLINE DerivativeType derivative() const
@@ -92,6 +101,51 @@ struct BinaryExpr
 #endif
 
   private:
+    // an operand's partials with the incoming multiplier m: m passed on (or its sign flipped) where
+    // the op's partial is +1 (-1), else m times the partial
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcA(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, 1>) const
+    {
+        detail::calcWith(a_, info, s, m);
+    }
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcA(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, -1>) const
+    {
+        detail::calcWith(a_, info, s, detail::flipSign(m));
+    }
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcA(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, 0>) const
+    {
+        using xad::value;
+        detail::calcWith(
+            a_, info, s,
+            detail::times(m, der_impl::template derivative_a<>(op_, value(a_), value(b_), v_)));
+    }
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcB(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, 1>) const
+    {
+        detail::calcWith(b_, info, s, m);
+    }
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcB(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, -1>) const
+    {
+        detail::calcWith(b_, info, s, detail::flipSign(m));
+    }
+    template <class Info, class Tape, class M>
+    XAD_FORCE_INLINE void calcB(Info& info, Tape& s, const M& m,
+                                std::integral_constant<int, 0>) const
+    {
+        using xad::value;
+        detail::calcWith(
+            b_, info, s,
+            detail::times(m, der_impl::template derivative_b<>(op_, value(a_), value(b_), v_)));
+    }
+
     XAD_INLINE DerivativeType derivative(std::true_type) const
     {
         using xad::derivative;
@@ -118,11 +172,14 @@ struct BinaryExpr
 #endif
     }
 
-    Expr1 a_;
-    Expr2 b_;
+    typename ExprStorage<Expr1>::type a_;
+    typename ExprStorage<Expr2>::type b_;
     Op op_;
     Scalar v_;
 };
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 template <class Scalar, class Op, class Expr1, class Expr2, class DerivativeType>
 struct ExprTraits<BinaryExpr<Scalar, Op, Expr1, Expr2, DerivativeType>>
