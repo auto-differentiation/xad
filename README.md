@@ -143,6 +143,8 @@ Contributions are welcome. Please see the
 discussion in our
 [**GitHub Discussions**](https://github.com/auto-differentiation/xad/discussions).
 
+If XAD is useful to you, a star on GitHub helps others find it.
+
 New here? Pick a [good first issue](https://github.com/auto-differentiation/xad/labels/good%20first%20issue). Each one is small, self-contained and comes with a clear task.
 
 Thanks to everyone who has contributed:
