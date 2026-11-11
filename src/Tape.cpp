@@ -37,6 +37,7 @@
 #include <iterator>
 #include <numeric>
 #include <sstream>
+#include <type_traits>
 #ifdef XAD_TAPE_CHECKS
 #include <atomic>
 #endif
@@ -1085,6 +1086,21 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
         }
     }
 
+    // A range across chunks goes out of line, which would take the adjoint out of a register if its
+    // address went along: plain adjoints are held by copy (copying an active one would record).
+    using held_adjoint =
+        typename std::conditional<std::is_trivially_copyable<derivative_type>::value,
+                                  derivative_type, const derivative_type&>::type;
+    struct AddToAdjoints
+    {
+        std::vector<derivative_type>& derivatives;
+        held_adjoint a;
+        void operator()(const T& mul, slot_type slot) const
+        {
+            XAD_ADD_ADJOINT(derivatives[slot], mul, a);
+        }
+    };
+
     for (; chunk_it != chunk_eit; --chunk_it)
     {
         if (chunk_it == chunk_eit + 1)
@@ -1098,8 +1114,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             if (!detail::isZeroAdjoint(a))
             {
                 operations_.for_each_reverse(it[-1].first, st.first,
-                                             [&](const T& mul, slot_type slot)
-                                             { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
+                                             AddToAdjoints{derivatives_, a});
             }
         }
         // last iteration separate
@@ -1112,8 +1127,7 @@ void Tape<T, N>::computeAdjointsToImpl(position_type pos, position_type start)
             if (!detail::isZeroAdjoint(a))
             {
                 operations_.for_each_reverse(prevendpoint, st.first,
-                                             [&](const T& mul, slot_type slot)
-                                             { XAD_ADD_ADJOINT(derivatives_[slot], mul, a); });
+                                             AddToAdjoints{derivatives_, a});
             }
         }
 

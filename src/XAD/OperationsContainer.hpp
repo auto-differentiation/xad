@@ -100,7 +100,7 @@ class OperationsContainer
 
     void resize(size_type s)
     {
-        reserve(s);
+        reserve(s + 1);  // position s needs its chunk, also at the end of the last one
         if (s < size())
         {
             destruct_elements(s);
@@ -125,11 +125,7 @@ class OperationsContainer
     void push_back(T multiplier, S slot)
     {
         if (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
-        {
-            addChunks(1);
-            idx_ = 0;
-            ++chunk_;
-        }
+            next_chunk();
         push_back_unsafe(std::move(multiplier), std::move(slot));
     }
 
@@ -179,9 +175,7 @@ class OperationsContainer
 
         while (XAD_VERY_UNLIKELY(idx_ == ChunkSize))
         {
-            addChunks(1);
-            ++chunk_;
-            idx_ = 0;
+            next_chunk();
             n -= items;
 
             items = (std::min)(ChunkSize, n);
@@ -205,6 +199,8 @@ class OperationsContainer
     template <class Func>
     void for_each(size_type startidx, size_type endidx, Func f) const
     {
+        if (XAD_VERY_UNLIKELY(startidx == endidx))  // may be at the end of the last chunk
+            return;
         size_type start_chunk = startidx / ChunkSize;
         size_type start_idx = startidx % ChunkSize;
         size_type end_chunk = endidx / ChunkSize;
@@ -221,6 +217,16 @@ class OperationsContainer
         if (XAD_VERY_LIKELY(start_chunk == end_chunk))
             return;
 
+        for (size_type c = start_chunk + 1; c != end_chunk; ++c)
+        {
+            chk_mul = mul_chunk(c);
+            chk_slot = slot_chunk(c);
+            for (size_type i = 0; i < ChunkSize; ++i)
+            {
+                f(chk_mul[i], chk_slot[i]);
+            }
+        }
+
         size_type e2 = end_idx;
         if (e2 == 0)
             return;
@@ -236,18 +242,17 @@ class OperationsContainer
     template <class Func>
     void for_each_reverse(size_type startidx, size_type endidx, Func f) const
     {
+        if (XAD_VERY_UNLIKELY(startidx == endidx))  // may be at the end of the last chunk
+            return;
         size_type start_chunk = startidx / ChunkSize;
         size_type end_chunk = endidx / ChunkSize;
-        size_type e1 = end_chunk != start_chunk ? ChunkSize : endidx % ChunkSize;
-        if (XAD_VERY_UNLIKELY(start_chunk != end_chunk && endidx % ChunkSize != 0))
+        if (XAD_VERY_UNLIKELY(start_chunk != end_chunk))
         {
-            const auto* m = mul_chunk(end_chunk);
-            const auto* s = slot_chunk(end_chunk);
-            for (size_type i = endidx % ChunkSize; i > 0; --i) f(m[i - 1], s[i - 1]);
+            reverse_across_chunks(startidx, endidx, f);
+            return;
         }
-        const auto* m = mul_chunk(start_chunk) + startidx % ChunkSize;
-        const auto* s = slot_chunk(start_chunk) + startidx % ChunkSize;
-        for (size_type i = e1 - startidx % ChunkSize; i > 0; --i) f(m[i - 1], s[i - 1]);
+        reverse_entries(mul_chunk(start_chunk) + startidx % ChunkSize,
+                        slot_chunk(start_chunk) + startidx % ChunkSize, endidx - startidx, f);
     }
 
     // The entries of one chunk, for for_each/for_each_reverse without chunk lookups;
@@ -283,6 +288,39 @@ class OperationsContainer
     }
 
   private:
+    // on to the next chunk, adding it if there is none: out of line, recording inlines its callers
+    XAD_NEVER_INLINE XAD_COLD void next_chunk()
+    {
+        if (chunk_ + 1 == chunks_.size())
+            addChunks(1);
+        ++chunk_;
+        idx_ = 0;
+    }
+
+    // for_each_reverse of a range over several chunks: out of line, to keep the sweep's code small
+    template <class Func>
+    XAD_NEVER_INLINE XAD_COLD void reverse_across_chunks(size_type startidx, size_type endidx,
+                                                         Func& f) const
+    {
+        size_type start_chunk = startidx / ChunkSize;
+        size_type end_chunk = endidx / ChunkSize;
+        if (endidx % ChunkSize != 0)
+            reverse_entries(mul_chunk(end_chunk), slot_chunk(end_chunk), endidx % ChunkSize, f);
+        for (size_type c = end_chunk - 1; c != start_chunk; --c)
+            reverse_entries(mul_chunk(c), slot_chunk(c), ChunkSize, f);
+        reverse_entries(mul_chunk(start_chunk) + startidx % ChunkSize,
+                        slot_chunk(start_chunk) + startidx % ChunkSize,
+                        ChunkSize - startidx % ChunkSize, f);
+    }
+
+    // f on the first n entries of the arrays, last to first
+    template <class Func>
+    static XAD_FORCE_INLINE void reverse_entries(const mul_type* m, const slot_type* s, size_type n,
+                                                 Func& f)
+    {
+        for (size_type i = n; i > 0; --i) f(m[i - 1], s[i - 1]);
+    }
+
     // the next n entries of the current chunk, from the iterators
     template <class MulIt, class SlotIt>
     XAD_FORCE_INLINE void append_here(MulIt& muls, SlotIt& slots, size_type n)

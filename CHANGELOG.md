@@ -139,6 +139,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `std::stable_sort` of active types did not compile on libc++ 21 with `StdCompatibility.hpp`: `std::numeric_limits<T>::is_iec559` is now `false` for them
 - Each `JITGraph` (and so each `JITCompiler`) reserved 256 MiB on construction; node chunks are now 8 MiB
 - After `resetTo`, a variable destroyed after the reset (a stale variable) could free the slot number of a live one, which `registerOutput` then gave away
+- Adjoints could be lost silently for a statement with more operations than a tape chunk holds
+- A tape recording more than one chunk allocated one unused chunk per boundary on every re-recording
+- Rolling back to a position at the end of a full tape chunk, or sweeping a statement without operations there, accessed memory past the chunk list
 
 
 ## [2.0.0] - 2026-02-06
