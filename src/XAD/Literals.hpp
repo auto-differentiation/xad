@@ -650,28 +650,60 @@ struct AReal
         t->commitOperations(info.index);
     }
 #else
-    // as above, returning the number of partials recorded
+    // as above; false if there were partials and all were zero, which are not recorded
     template <int Size, typename Expr>
-    XAD_FORCE_INLINE unsigned pushStaged(tape_type* t, const Expr& expr) const
+    XAD_FORCE_INLINE bool pushStaged(tape_type* t, const Expr& expr) const
     {
         DerivInfo<tape_type, Size> info;
         expr.calc_derivatives(info, *t);
+        bool keep = info.dropZeros();
         t->pushAll(info.multipliers, info.slots, info.index);
-        return info.index;
+        return keep;
     }
 
+    using staged_pair = typename DerivInfoDirect<tape_type>::pair_type;
+
+#if defined(__GNUC__) && !defined(__clang__)
+// GCC cannot see that the partials written through info.dst fill the stack buffer
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
+    // writes all partials and drops the zeros afterwards, with one test; at a chunk boundary
+    // they go to the stack and are appended out of line
     template <int Size, typename Expr>
-    XAD_FORCE_INLINE unsigned pushAll(tape_type* t, const Expr& expr) const
+    XAD_FORCE_INLINE bool pushAll(tape_type* t, const Expr& expr) const
     {
-        if (!std::is_trivially_copyable<typename tape_type::value_type>::value)
+#ifdef XAD_REDUCED_MEMORY
+        const bool canWriteDirect = false;  // try_reserve always fails
+#else
+        const bool canWriteDirect =
+            std::is_trivially_copyable<typename tape_type::value_type>::value;
+#endif
+        if (!canWriteDirect)
             return pushStaged<Size>(t, expr);
+        alignas(staged_pair) unsigned char staged[Size * sizeof(staged_pair)];
         DerivInfoDirect<tape_type> info;
         info.dst = t->tryReserveOperations(Size);
-        if (XAD_VERY_UNLIKELY(info.dst == nullptr))
-            return pushStaged<Size>(t, expr);
+        const bool direct = info.dst != nullptr;
+        if (XAD_VERY_UNLIKELY(!direct))
+            info.dst = reinterpret_cast<staged_pair*>(staged);
         expr.calc_derivatives(info, *t);
-        t->commitOperations(info.index);
-        return info.index;
+        bool keep = info.dropZeros();
+        if (XAD_VERY_LIKELY(direct))
+            t->commitOperations(info.index);
+        else
+            appendStaged(t, info.dst, info.index);
+        return keep;
+    }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+    static XAD_NEVER_INLINE XAD_COLD void appendStaged(tape_type* t, const staged_pair* ops,
+                                                       unsigned n)
+    {
+        for (unsigned i = 0; i < n; ++i) t->pushAll(&ops[i].first, &ops[i].second, 1);
     }
 #endif
 
@@ -907,14 +939,14 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
             expr.calc_derivatives(info, *s);
 #ifdef XAD_SKIP_ZERO_PARTIALS
-            if (info.index == 0)
+            if (!info.dropZeros())
                 return;  // all partials zero: the result stays passive
 #endif
             slot_ = s->recordStatement(info.multipliers, info.slots, info.index);
             setTape(s);
 #elif defined(XAD_SKIP_ZERO_PARTIALS)
             // all partials zero: the result stays passive
-            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0)
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr))
             {
                 registerOn(s);
                 s->pushLhs(slot_);
@@ -953,7 +985,7 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
 #endif
 #ifdef XAD_SKIP_ZERO_PARTIALS
             // all partials zero: a passive lhs stays passive, an active one gets an empty statement
-            if (info.index != 0 || isOn(s))
+            if (info.dropZeros() || isOn(s))
             {
 #endif
 #ifdef XAD_LINEAR_SLOTS
@@ -973,7 +1005,7 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
 #endif
 #elif defined(XAD_SKIP_ZERO_PARTIALS)
             // all partials zero: a passive lhs stays passive, an active one gets an empty statement
-            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) != 0 || isOn(s))
+            if (pushAll<ExprTraits<Expr>::numVariables>(s, expr) || isOn(s))
             {
 #ifdef XAD_LINEAR_SLOTS
                 registerOn(s);  // linear slots: a new slot, as copies may share the old one

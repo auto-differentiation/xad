@@ -73,6 +73,13 @@ void ignore_unused_variable(const T&)
 #define XAD_VERY_UNLIKELY(x) (x)
 #endif
 
+// rare paths, kept out of the hot code
+#if defined(__GNUC__) || defined(__clang__)
+#define XAD_COLD __attribute__((cold))
+#else
+#define XAD_COLD
+#endif
+
 #ifdef XAD_USE_STRONG_INLINE
 #define XAD_INLINE XAD_FORCE_INLINE
 #else

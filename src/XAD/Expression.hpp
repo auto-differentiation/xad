@@ -27,6 +27,9 @@
 
 #include <utility>
 #ifdef XAD_SKIP_ZERO_PARTIALS
+#include <cstdint>
+#include <cstring>
+#include <limits>
 #include <type_traits>
 #endif
 
@@ -34,23 +37,73 @@ namespace xad
 {
 
 #ifdef XAD_SKIP_ZERO_PARTIALS
-// whether a partial can be left off the tape (floating-point values only)
+// whether a partial can be left off the tape (floating-point values only): +0 or -0, not NaN
 template <typename T>
-XAD_INLINE bool isSkippedPartial(const T& m, std::true_type)
+XAD_INLINE bool isSkippedPartial(const T& m, std::integral_constant<int, 8>)
+{
+    std::uint64_t b;
+    std::memcpy(&b, &m, sizeof(b));
+    return (b << 1) == 0;
+}
+
+template <typename T>
+XAD_INLINE bool isSkippedPartial(const T& m, std::integral_constant<int, 4>)
+{
+    std::uint32_t b;
+    std::memcpy(&b, &m, sizeof(b));
+    return std::uint32_t(b << 1) == 0;
+}
+
+template <typename T>
+XAD_INLINE bool isSkippedPartial(const T& m, std::integral_constant<int, 1>)
 {
     return m == T(0);
 }
 
 template <typename T>
-XAD_INLINE bool isSkippedPartial(const T&, std::false_type)
+XAD_INLINE bool isSkippedPartial(const T&, std::integral_constant<int, 0>)
 {
     return false;
 }
 
 template <typename T>
+using SkippedPartialKind =
+    std::integral_constant<int, !std::is_floating_point<T>::value ? 0
+                                : sizeof(T) == 8 && std::numeric_limits<T>::is_iec559 ? 8
+                                : sizeof(T) == 4 && std::numeric_limits<T>::is_iec559 ? 4
+                                                                                      : 1>;
+
+template <typename T>
 XAD_INLINE bool isSkippedPartial(const T& m)
 {
-    return isSkippedPartial(m, std::is_floating_point<T>());
+    return isSkippedPartial(m, SkippedPartialKind<T>());
+}
+
+// drops the zero partials, keeping the order of the others; returns how many are left
+template <typename T, typename S>
+XAD_FORCE_INLINE unsigned dropZeroPartials(T* multipliers, S* slots, unsigned n)
+{
+    unsigned k = 0;
+    for (unsigned i = 0; i < n; ++i)
+    {
+        if (isSkippedPartial(multipliers[i]))
+            continue;
+        multipliers[k] = multipliers[i];
+        slots[k++] = slots[i];
+    }
+    return k;
+}
+
+template <typename T, typename S>
+XAD_FORCE_INLINE unsigned dropZeroPartials(std::pair<T, S>* ops, unsigned n)
+{
+    unsigned k = 0;
+    for (unsigned i = 0; i < n; ++i)
+    {
+        if (!isSkippedPartial(ops[i].first))
+            ops[k++] = ops[i];
+    }
+    return k;
 }
 #endif
 
@@ -62,16 +115,33 @@ struct DerivInfo
     unsigned index = 0;
     typename TapeType::value_type multipliers[N];
     typename TapeType::slot_type slots[N];
+#ifdef XAD_SKIP_ZERO_PARTIALS
+    unsigned zeroCount = 0;
+#endif
 
     XAD_INLINE void add(const typename TapeType::value_type& m, typename TapeType::slot_type slot)
     {
 #ifdef XAD_SKIP_ZERO_PARTIALS
-        if (isSkippedPartial(m))
-            return;
+        // stored anyway, dropped later if zero: no branch per partial
+        zeroCount += isSkippedPartial(m);
 #endif
         multipliers[index] = m;
         slots[index++] = slot;
     }
+
+#ifdef XAD_SKIP_ZERO_PARTIALS
+    // drops the zero partials; false if there were partials and all were zero
+    XAD_FORCE_INLINE bool dropZeros()
+    {
+        if (zeroCount != 0)
+            return (index = dropZeroPartials(multipliers, slots, index)) != 0;
+#ifdef XAD_TAPE_CHECKS
+        return index != 0;  // another tape's operands add no partials
+#else
+        return true;
+#endif
+    }
+#endif
 };
 
 // same, but writing straight into the tape instead of a local buffer
@@ -82,15 +152,31 @@ struct DerivInfoDirect
 
     unsigned index = 0;
     pair_type* dst = nullptr;
+#ifdef XAD_SKIP_ZERO_PARTIALS
+    unsigned zeroCount = 0;
+#endif
 
     XAD_INLINE void add(const typename TapeType::value_type& m, typename TapeType::slot_type slot)
     {
 #ifdef XAD_SKIP_ZERO_PARTIALS
-        if (isSkippedPartial(m))
-            return;
+        zeroCount += isSkippedPartial(m);
 #endif
         dst[index++] = pair_type(m, slot);
     }
+
+#ifdef XAD_SKIP_ZERO_PARTIALS
+    // as in DerivInfo
+    XAD_FORCE_INLINE bool dropZeros()
+    {
+        if (zeroCount != 0)
+            return (index = dropZeroPartials(dst, index)) != 0;
+#ifdef XAD_TAPE_CHECKS
+        return index != 0;  // another tape's operands add no partials
+#else
+        return true;
+#endif
+    }
+#endif
 };
 
 /// Represents a generic expression, for the Scalar base type.

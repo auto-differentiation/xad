@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Copying and destroying a `std::complex<ARealDirect>` is always inlined
 - Forward mode with GCC on x86-64 masks the tangent terms of zero tangents with packed SSE/AVX compares instead of an integer bit mask (double tangents, scalar and vector)
 - The adjoint sweep visits each statement's operands last to first, counting down over the operation arrays (adjoints of repeated operands may differ in the last bits)
+- With `XAD_SKIP_ZERO_PARTIALS`, recording writes all partials and drops the zero ones afterwards, with one test for all of them instead of a branch per partial
 
 ### Deprecated
 
