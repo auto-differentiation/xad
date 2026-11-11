@@ -169,12 +169,21 @@ struct DerivInfoDirect
     }
 
 #ifdef XAD_SKIP_ZERO_PARTIALS
-    // as in DerivInfo
+    // as in DerivInfo, for Size variables; with one variable the drop itself is the all-zero test
+    template <int Size>
     XAD_FORCE_INLINE bool dropZeros()
     {
         if (zeroCount != 0)
-            return (pos = start + dropZeroPartials(multipliers + start, slots + start,
-                                                   unsigned(pos - start))) != start;
+        {
+            if (Size > 1 && zeroCount == pos - start)
+            {
+                pos = start;
+                return false;
+            }
+            pos =
+                start + dropZeroPartials(multipliers + start, slots + start, unsigned(pos - start));
+            return Size > 1 || pos != start;  // with more, all zero was handled above
+        }
 #ifdef XAD_TAPE_CHECKS
         return pos != start;  // another tape's operands add no partials
 #else

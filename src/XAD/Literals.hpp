@@ -245,8 +245,10 @@ struct AReal
             if (o.shouldRecord())
             {
                 registerOn(s);
+                // read before the partial is written: the tape's stores may alias slot_
+                const slot_type slot = slot_;
                 pushAll<1>(s, o);
-                s->pushLhs(slot_);
+                s->pushLhs(slot);
             }
 #endif
         }
@@ -710,7 +712,7 @@ struct AReal
         info.slots = run.slots;
         info.pos = info.start = run.pos;
         expr.calc_derivatives(info, *t);
-        bool keep = info.dropZeros();
+        bool keep = info.template dropZeros<Size>();
         if (XAD_VERY_LIKELY(direct))
             t->commitOperationRun(info.pos);
         else
