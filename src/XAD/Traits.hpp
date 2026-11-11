@@ -28,6 +28,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <type_traits>
 
 // Forward mode: a zero tangent adds nothing, even with an infinite or NaN partial (as for a
@@ -325,11 +326,39 @@ XAD_INLINE D quotientTangent(const S& b, const S& v, const D& ta, const D& tb)
 }
 
 template <class S, class T, std::size_t N>
-XAD_INLINE Vec<T, N> quotientTangent(const S& b, const S& v, const Vec<T, N>& ta,
-                                     const Vec<T, N>& tb)
+XAD_INLINE typename std::enable_if<!float_or_double<S>::value, Vec<T, N>>::type quotientTangent(
+    const S& b, const S& v, const Vec<T, N>& ta, const Vec<T, N>& tb)
 {
     Vec<T, N> r(ta);
     for (std::size_t i = 0; i < N; ++i) r[i] = quotientTangent(b, v, ta[i], tb[i]);
+    return r;
+}
+
+// 2^64 for a subnormal b (1 / b overflows), else 1. GCC compiles a ?: here to a branch, so there it
+// is a packed compare and blend (which it still folds for a constant b, unlike SSE intrinsics).
+template <class S>
+XAD_INLINE S reciprocalScale(S b)
+{
+#ifdef XAD_BRANCH_FREE_TANGENTS
+    typedef S V __attribute__((vector_size(16)));
+    typedef decltype(V() < V()) M;
+    const M m = V{std::fabs(b)} < V{std::numeric_limits<S>::min()};
+    return V((m & M(V{S(18446744073709551616.0)})) | (~m & M(V{S(1)})))[0];
+#else
+    return std::fabs(b) < std::numeric_limits<S>::min() ? S(18446744073709551616.0) : S(1);
+#endif
+}
+
+// one division for all lanes: (ta - v * tb) * (1 / b), matching the per-lane division for
+// b = 0, inf and NaN; a subnormal b (1 / b overflows) is scaled by 2^64 first, the result back
+template <class S, class T, std::size_t N>
+XAD_INLINE typename std::enable_if<float_or_double<S>::value, Vec<T, N>>::type quotientTangent(
+    const S& b, const S& v, const Vec<T, N>& ta, const Vec<T, N>& tb)
+{
+    Vec<T, N> r(ta);
+    const S scale = reciprocalScale(b);
+    const S rb = S(1) / (b * scale);
+    for (std::size_t i = 0; i < N; ++i) r[i] = (ta[i] - v * tb[i]) * rb * scale;
     return r;
 }
 
