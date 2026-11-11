@@ -66,9 +66,13 @@ XAD_INLINE bool isSkippedPartial(const T&, std::integral_constant<int, 0>)
     return false;
 }
 
+// built-in floating-point types only: a nested partial (e.g. FReal) equals zero by value even with
+// a non-zero tangent, and StdCompatibility.hpp makes std::is_floating_point true for it
 template <typename T>
 using SkippedPartialKind =
-    std::integral_constant<int, !std::is_floating_point<T>::value ? 0
+    std::integral_constant<int, !(std::is_same<T, float>::value || std::is_same<T, double>::value ||
+                                  std::is_same<T, long double>::value)
+                                    ? 0
                                 : sizeof(T) == 8 && std::numeric_limits<T>::is_iec559 ? 8
                                 : sizeof(T) == 4 && std::numeric_limits<T>::is_iec559 ? 4
                                                                                       : 1>;

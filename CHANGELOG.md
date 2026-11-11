@@ -145,6 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A tape recording more than one chunk allocated one unused chunk per boundary on every re-recording
 - Rolling back to a position at the end of a full tape chunk, or sweeping a statement without operations there, accessed memory past the chunk list
 - With `XAD_OUTLINE_RECORDING` and JIT, assigning an expression on the tape to a variable holding a JIT slot recorded the statement for the JIT slot instead of registering the variable on the tape
+- With `XAD_SKIP_ZERO_PARTIALS` and `StdCompatibility.hpp`, higher-order types dropped partials whose value was zero but that still carried a derivative (a tangent or an inner-tape dependency)
 
 
 ## [2.0.0] - 2026-02-06

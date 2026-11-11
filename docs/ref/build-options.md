@@ -87,6 +87,8 @@ Does not record partial derivatives that are exactly zero.
 A large win for code with many zero partials: ODE solvers, piecewise functions,
 code heavy in `max`, `min` or branches. Slower for dense code where almost no partial is zero,
 which includes most finance models, as every partial is checked when recording.
+Only partials of the built-in types `float`, `double` and `long double` are skipped;
+higher-order partials (e.g. with `AReal<FReal<double>>`) are always recorded.
 
 ### `XAD_REDUCED_MEMORY`
 
