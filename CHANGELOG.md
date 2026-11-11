@@ -127,6 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JIT `newRecording` kept stale slots for inputs registered after other nodes
 - JIT recording missed scalar shifts and assignments on a copy of a registered input, e.g. `std::complex<AReal>` plus or minus a scalar
 - `std::stable_sort` of active types did not compile on libc++ 21 with `StdCompatibility.hpp`: `std::numeric_limits<T>::is_iec559` is now `false` for them
+- Each `JITGraph` (and so each `JITCompiler`) reserved 256 MiB on construction; node chunks are now 8 MiB
 
 
 ## [2.0.0] - 2026-02-06
