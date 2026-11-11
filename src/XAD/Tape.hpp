@@ -33,6 +33,9 @@
 #include <XAD/Traits.hpp>
 #include <XAD/TypeTraits.hpp>
 #include <XAD/Vec.hpp>
+#if defined(__aarch64__) && defined(__clang__)
+#include <atomic>
+#endif
 #include <complex>
 #include <list>
 #include <map>
@@ -157,9 +160,11 @@ class Tape
     XAD_INLINE static void deactivateAll() { active_tape_ = nullptr; }
 #endif
 
+    // unlike registerOutput, a slot at or above the counter always registers afresh: a dead
+    // temporary may have raised maxDerivative_ over a given-up slot
     XAD_INLINE void registerInput(active_type& inp)
     {
-        if (!isRegistered(inp))
+        if (!isCounted(inp))
         {
             inp.registerOn(this);
             pushLhs(inp.slot_);
@@ -190,7 +195,7 @@ class Tape
 
     XAD_INLINE void registerOutput(active_type& outp)
     {
-        if (!isRegistered(outp))
+        if (!isCounted(outp) && !isLiveAboveCounter(outp))
         {
             outp.registerOn(this);
             pushLhs(outp.slot_);
@@ -258,8 +263,7 @@ class Tape
     void clearDerivatives();
     derivative_type& derivative(slot_type s)
     {
-        if (XAD_LIKELY(s < currentRec_->maxDerivative_ && currentRec_->derivativesInitialized_ &&
-                       derivatives_.size() == currentRec_->maxDerivative_))
+        if (XAD_LIKELY(s < derivatives_.size() && currentRec_->derivativesInitialized_))
             return derivatives_[s];
         return derivativeSlow(s);
     }
@@ -419,8 +423,8 @@ class Tape
         }
         return s;
     }
-    // whether v holds a live slot of this tape, not one clearAll or resetTo gave up
-    XAD_INLINE bool isRegistered(const active_type& v) const
+    // whether v holds a slot of this tape below the counter
+    XAD_INLINE bool isCounted(const active_type& v) const
     {
 #if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
         if (!v.isOn(this))  // another tape's or a JIT slot
@@ -430,6 +434,25 @@ class Tape
         return (v.slot_ & ~SHARED_SLOT_BIT) < currentRec_->iDerivative_;  // also INVALID_SLOT
 #else
         return v.slot_ < currentRec_->iDerivative_;  // false for INVALID_SLOT too
+#endif
+    }
+    // whether v, not counted, still holds a live slot of this tape, not one resetTo gave up: a
+    // stale variable freeing the slot number of a live one lowers the counter below it, but not the
+    // highest counter since resetTo
+    XAD_INLINE bool isLiveAboveCounter(const active_type& v) const
+    {
+#if defined(__aarch64__) && defined(__clang__)
+        // emits no code: keeps clang on arm64 from reusing the load below
+        std::atomic_signal_fence(std::memory_order_seq_cst);
+#endif
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
+        if (!v.isOn(this))  // another tape's or a JIT slot
+            return false;
+#endif
+#ifdef XAD_COPY_ELISION
+        return (v.slot_ & ~SHARED_SLOT_BIT) < currentRec_->maxDerivative_;  // also INVALID_SLOT
+#else
+        return v.slot_ < currentRec_->maxDerivative_;  // false for INVALID_SLOT too
 #endif
     }
 
@@ -465,6 +488,9 @@ class Tape
     void dropPendingRewind();
 #endif
 #ifdef XAD_TAPE_REUSE_SLOTS
+#if defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)
+    XAD_NEVER_INLINE  // gcc on x86-64: inlined into registerVariable it costs more than the call
+#endif
     slot_type registerVariableReuseSlots();
     void unregisterVariableReuseSlots(slot_type slot);
     typedef ReusableRange<slot_type> slot_range_type;
@@ -513,10 +539,12 @@ class Tape
             XAD_UNUSED_VARIABLE(parent);
         }
         slot_type iDerivative_;
+        // the highest slot counter since slots were last given up; the derivatives go up to it
         slot_type maxDerivative_;
         slot_type statementStartPos_;
         slot_type opStartPos_;
         slot_type startDerivative_;
+        // maxSlot before the last resetTo, newRecording or checkpoint callback, or INVALID_SLOT
         slot_type prevMax_;
 #ifdef XAD_TAPE_TRACK_LIVE_SLOTS
         slot_type startCounter_;
@@ -527,6 +555,10 @@ class Tape
 #endif
         bool derivativesInitialized_;
         slot_type numDerivatives_;
+        slot_type maxSlot() const
+        {
+            return prevMax_ == INVALID_SLOT ? maxDerivative_ : (std::max)(maxDerivative_, prevMax_);
+        }
     };
     std::stack<SubRecording> nestedRecordings_;
     SubRecording* currentRec_;

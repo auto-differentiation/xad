@@ -143,7 +143,7 @@ class ChunkContainer
     void clear()
     {
         destroyAll();
-        if (chunkList_.empty())  // moved from
+        if (XAD_UNLIKELY(chunkList_.empty()))  // moved from
             reserve(1);
     }
 

@@ -77,7 +77,15 @@ class JITGraphInterpreter : public JITBackend<Scalar>
     std::unique_ptr<Impl> impl_;
 
     static Scalar invSqrtPi();
+    // the interpreter's hot functions start on a cache line, so that their speed does not depend
+    // on the code linked before them
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((aligned(64)))
+#endif
     void evaluateNode(uint32_t nodeId);
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((aligned(64)))
+#endif
     void propagateAdjoint(uint32_t nodeId);
 };
 
