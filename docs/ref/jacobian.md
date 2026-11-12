@@ -13,9 +13,10 @@ The `computeJacobian()` function takes a set of variables packaged in a
 `std::vector<T>` and a function with signature
 `std::vector<T> foo(std::vector<T>)`, where `T` is either a forward-mode
 or adjoint-mode active type (`FReal` or `AReal`).
+The same overloads exist for the direct mode types `FRealDirect` and `ARealDirect`.
 
 Optionally, the function also takes the codomain of the input function as an
-`unsigned int` and/or the active `Tape` to be used if `adj` mode is specified.
+`std::size_t` and/or the active `Tape` to be used if `adj` mode is specified.
 
 If the codomain is not passed, an extra function evaluation will be required.
 

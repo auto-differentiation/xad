@@ -23,14 +23,15 @@ as expected.
 #### `abs`
 
 `#!c++ T abs(T x)` computes the absolute value of `x`.
-Note that for defined second-order derivatives, this computes `#!c++ (x>0)-(x<0)`
+Its derivative is `#!c++ (x>0)-(x<0)`, i.e. 0 at `x == 0`.
 
 #### `max`
 
-`#!c++ T max(T x, T y)` returns the maximum of `x` and `y`.
-
-Note that for well-defined second order derivative, this is implemented as
-`#!c++ (x + y + abs(x-y)) / 2`.
+`#!c++ T max(T x, T y)` returns the maximum of `x` and `y`, as `std::max` does:
+`x` unless `x < y`.
+The derivative goes to the operand returned.
+On a tie (`x == y`) it is split, 0.5 to each operand.
+With a NaN operand the result is `x`, as with `std::max`, and so is the derivative.
 
 #### `fmax`
 
@@ -39,9 +40,11 @@ the result and its derivative are those of the other argument (NaN if both are N
 
 #### `min`
 
-`#!c++ T min(T x, T y)` returns the minimum of `x` and `y`.
-Note that for well-defined second order derivative, this is
-implemented as `(x + y - abs(x-y)) / 2`.
+`#!c++ T min(T x, T y)` returns the minimum of `x` and `y`, as `std::min` does:
+`x` unless `y < x`.
+As for `#!c++ max`, the derivative goes to the operand returned,
+is split 0.5 to each operand on a tie,
+and goes to `x` (the result) with a NaN operand.
 
 #### `fmin`
 
@@ -111,7 +114,7 @@ each with the same type and sign as `x`. The integral part is stored in `iptr`.
 `#!c++ T nextafter(T from, T to)` returns the next representable value of `from`
 in the direction of `to`.
 
-Mathmatically, the difference of `from` to the return value is very small.
+Mathematically, the difference of `from` to the return value is very small.
 For derivatives, we therefore consider them both the same and calculate
 derivative accordingly.
 
@@ -159,8 +162,8 @@ and 0 with respect to `y`.
 
 #### `atan2`
 
-`#!c++ T atan2(T x, T y)` computes the four-quadrant inverse tangent of
-a point located at `(x, y)`.
+`#!c++ T atan2(T y, T x)` computes the four-quadrant inverse tangent of
+a point located at `(x, y)`, as `std::atan2` does.
 
 #### `sinh`
 
@@ -214,7 +217,7 @@ a point located at `(x, y)`.
 
 #### `log1p`
 
-`#!c++ T log1p(T x)` cmputes `log(1 + x)` with higher precision around 0.
+`#!c++ T log1p(T x)` computes `log(1 + x)` with higher precision around 0.
 
 #### `sqrt`
 

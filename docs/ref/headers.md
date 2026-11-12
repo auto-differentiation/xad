@@ -6,12 +6,17 @@ For brevity, this namespace has been omitted in the reference section.
 XAD provides a general header `XAD/XAD.hpp`,
 which includes all headers that are commonly needed to work with XAD.
 Typically, this is all that clients need to include.
-
-There are four additional headers provided that can be included on demand:
+Among them are:
 
 * `XAD/Complex.hpp` - For using complex numbers with XAD data types
   (see [Complex](complex.md)).
-  This header should be included wherever [`#!c++ std::complex`](https://en.cppreference.com/w/cpp/numeric/complex) is used.
+* `XAD/Version.hpp` - The version macros (see [Version Information](version.md)).
+* `XAD/Config.hpp` and `XAD/Export.hpp` - Generated when XAD is configured:
+  the build options XAD was built with (see [Build Options](build-options.md)),
+  and the export macros for a shared library build.
+
+There are three additional headers provided that can be included on demand:
+
 * `XAD/StdCompatibility.hpp` - This header imports the XAD math functions
   into the `std` namespace, for compatibility reasons.
   It enables using constructs like [`#!c++ std::sin(x)`](https://en.cppreference.com/w/cpp/numeric/math/sin) where `x` is an XAD type.
@@ -26,7 +31,8 @@ There are four additional headers provided that can be included on demand:
 
 ## Optional JIT headers
 
-When XAD is compiled with `XAD_ENABLE_CODEGEN`, additional JIT headers are available:
+When XAD is compiled with `XAD_ENABLE_CODEGEN`, which needs the separately licensed xad-codegen library,
+additional JIT headers are available (`XAD/XAD.hpp` includes `XAD/JITCompiler.hpp` and `XAD/ABool.hpp`):
 
 * `XAD/JITCompiler.hpp` - JIT recorder/executor (see [JITCompiler](jit-compiler.md)).
 * `XAD/JITGraph.hpp` - Graph representation (see [JITGraph](jit-graph.md)).

@@ -41,8 +41,10 @@ before adding XAD, so XAD and your code are both built with it.
 
 ### `XAD_SIMD_OPTION`
 
-Instruction set for XAD's own sources (`AVX` by default on x86).
-`NATIVE` builds for the host CPU and helps finance code a little;
+Instruction set for XAD's own sources.
+The default is `AVX` on x86 (choices `SSE2`, `AVX`, `AVX2`, `AVX512`, `NATIVE`),
+`NATIVE` on Linux on ARM, and `APPLE_M1` (`-march=armv8.5-a`) on Apple silicon (choices `APPLE_M1`, `NATIVE`).
+On x86, `NATIVE` builds for the host CPU and helps finance code a little;
 build your own code with the same flag (e.g. `-march=native`).
 The binaries then need a CPU at least as new as the build host.
 
@@ -60,6 +62,17 @@ several shared modules must share one active tape per thread.
 
 Records each operation with one out-of-line call. This is for compile time:
 much faster compiles with `XAD_USE_STRONG_INLINE` in large code bases, at some cost in run time.
+
+## Checks
+
+### `XAD_TAPE_CHECKS`
+
+Checks that each variable uses and frees slots only on the tape it is registered on:
+a variable used while another tape is active is a constant there, and destroying it leaves that
+tape's slots alone (see [Tape](tape.md#tape)).
+On by default when configured with `CMAKE_BUILD_TYPE=Debug`, off otherwise.
+Every active variable then also stores the id of its tape, so it takes more memory and recording is
+slower: leave it off in release builds.
 
 ## Threads
 

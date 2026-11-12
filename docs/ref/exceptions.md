@@ -6,7 +6,7 @@ continue as if the throwing function was not called.
 
 Some functions can only give the *weak guarantee*,
 i.e., the object is in an undefined state but the application can recover
-be re-initializing the object.
+by re-initializing the object.
 This is notably the case if the user-defined [`CheckpointCallback::computeAdjoint`](chkpt_cb.md#computeadjoint) function throws an exception.
 
 XAD defines the following exception types.
@@ -33,13 +33,13 @@ Exception thrown when an argument is out of the acceptable range.
 
 #### `DerivativesNotInitialized`
 
-`#!c++ DerivativesNotInitialized : public Exception`
+`#!c++ class DerivativesNotInitialized : public Exception`
 
 Exception thrown if adjoints are attempted to be computed without setting
 at least one derivative first.
 
 #### `NoTapeException`
 
-`#!c++ NoTapeException : public Exception`
+`#!c++ class NoTapeException : public Exception`
 
 Exception thrown if a derivative of an [`AReal`](areal.md#derivative) object is created without an active tape for the current thread.

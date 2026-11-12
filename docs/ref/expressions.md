@@ -3,8 +3,8 @@
 ## Expression Template
 
 ```c++
-template <typename T, typename Derived>
-class Expression
+template <typename T, typename Derived, typename DerivativeType = T>
+struct Expression
 ```
 
 Represents a mathematical expression in a type.
@@ -14,6 +14,9 @@ All mathematical operations are defined on this type, rather
 than any specific derived class.
 
 The derived classes are typically created transparently to the user.
+Expressions may hold their operands by reference: evaluate an expression within the
+full expression that creates it, and do not keep one past it (e.g. bound to `#!c++ auto`);
+assign it to an active type instead.
 
 Note that this class uses the CRTP pattern, where `Derived` is
 the derived class itself, so that static polymorphism can be used.
@@ -23,7 +26,7 @@ for `Expression`, so that `double` or `float` can be replaced seamlessly with
 an active data type from XAD.
 This also includes comparisons.
 
-!!! node "See also"
+!!! note "See also"
 
     [Mathematical Operations](math.md)
 
@@ -42,7 +45,7 @@ This enum indicates the direction of algorithmic differentiation associated with
 enum Direction {
     DIR_NONE,       // Not an algorithmic differentiation type
     DIR_FORWARD,    // Forward mode AD type
-    DIR_REVERSABLE  // Reverse mode AD type
+    DIR_REVERSE     // Reverse mode AD type
 };
 ```
 
@@ -60,6 +63,7 @@ struct ExprTraits {
     static const bool isLiteral;   // true if it's an elementary XAD active type
                                    // and not an expression
     static const Direction direction;  // direction of the expression or type
+    static const std::size_t vector_size; // number of derivatives (N)
 
 
     typedef ... nested_type; // underlying type of the expression
