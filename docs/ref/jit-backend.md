@@ -9,7 +9,8 @@ JIT backends execute a recorded [`JITGraph`](jit-graph.md). XAD exposes:
 
 !!! note "Compile-time feature flag"
 
-    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`.
+    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`,
+    which needs the separately licensed xad-codegen library.
 
 ## `JITBackend`
 
@@ -65,7 +66,18 @@ Run a forward pass. The `outputs` array must have space for `numOutputs() * vect
 
 `#!c++ virtual void forwardAndBackward(Scalar* outputs, Scalar* inputGradients) = 0;`
 
-Run forward and backward passes combined. The `outputs` array must have space for `numOutputs() * vectorWidth()` elements, and `inputGradients` must have space for `numInputs() * vectorWidth()` elements.
+Run forward and backward passes combined, with all output adjoints seeded to 1. The `outputs` array must have space for `numOutputs() * vectorWidth()` elements, and `inputGradients` must have space for `numInputs() * vectorWidth()` elements.
+
+#### `forwardAndBackwardSeeded`
+
+`#!c++ virtual void forwardAndBackwardSeeded(Scalar* outputs, const Scalar* outputAdjoints, Scalar* inputGradients);`
+
+As `forwardAndBackward`, but the backward pass starts from the given output adjoints
+(`numOutputs() * vectorWidth()` values). `JITCompiler::computeAdjoints` uses it.
+
+It is not pure virtual: the default implementation calls `forwardAndBackward` and scales the gradients,
+which works only when all output adjoints are equal; otherwise it throws `#!c++ std::runtime_error`.
+Backends that support different output adjoints override it, as `JITGraphInterpreter` does.
 
 #### `reset`
 
@@ -77,7 +89,7 @@ Reset any cached backend state.
 
 `#!c++ template <class Scalar> class JITGraphInterpreter : public JITBackend<Scalar>`
 
-Reference backend that interprets the graph directly. It is mainly intended as:
+Reference backend that interprets the graph directly, one evaluation at a time (`vectorWidth()` is 1). It is mainly intended as:
 
 - a correctness reference implementation
 - a simple fallback backend

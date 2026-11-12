@@ -11,7 +11,8 @@
 
 !!! note "Compile-time feature flag"
 
-    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`.
+    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`,
+    which needs the separately licensed xad-codegen library.
 
 ## Convenience Typedef
 

@@ -3,12 +3,11 @@
 ## Overview
 
 XAD implements specialisations of [`#!c++ std::complex`](https://en.cppreference.com/w/cpp/numeric/complex) for the XAD active data types
-[`AReal`](areal.md) and [`FReal`](freal.md).
-They are are provided in the header `XAD/Complex.hpp`,
+[`AReal`](areal.md) and [`FReal`](freal.md),
+and their direct mode counterparts [`ARealDirect`](areal_direct.md) and [`FRealDirect`](freal_direct.md).
+They are provided in the header `XAD/Complex.hpp`,
 along with all the mathematical operations defined in the standard.
-
-Note that the complex header is not automatically included with `XAD/XAD.hpp`.
-Users must include it as needed.
+This header is included by `XAD/XAD.hpp`.
 
 #### `std::complex` Specialisations
 
@@ -28,11 +27,11 @@ using the placeholder `#!c++ XReal<T>` as a placeholder inner type, which can be
 
 `#!c++ XReal<T>& complex::real()` returns a reference rather than a copy of the real part,
 to allow for easy access and adjusting of derivatives using [`derivative()`](#derivative).
-This applies to both the modifyable and the `#!c++ const` versions.
+This applies to both the modifiable and the `#!c++ const` versions.
 
 #### `imag`
 
-Returns a reference rather than a copy, for both the modifyable and the `#!c++ const` versions.
+Returns a reference rather than a copy, for both the modifiable and the `#!c++ const` versions.
 
 #### `setDerivative`
 
@@ -46,13 +45,13 @@ and imaginary parts.
 
 #### `getDerivative`
 
-`#!c++ std::complex<T> getDerivative() const` gets the derivatives (either $\dot{x}$ or $\bar{x}$ for both the real and imaginary parts, represented as a complex of the underlying (`#!c++ double`) type.
+`#!c++ std::complex<T> getDerivative() const` gets the derivatives (either $\dot{x}$ or $\bar{x}$) for both the real and imaginary parts, represented as a complex of the underlying (`#!c++ double`) type.
 
 #### `getAdjoint`
 
 `#!c++ std::complex<T> getAdjoint() const` is an alias for `getDerivative`
 
-## None-Member Functions
+## Non-Member Functions
 
 #### `derivative`
 
