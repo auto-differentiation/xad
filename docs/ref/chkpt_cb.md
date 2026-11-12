@@ -8,7 +8,7 @@ class CheckpointCallback
 Base class of any checkpoint callbacks associated with the given `TapeType`.
 
 User-defined checkpoints should derive from this class and implement
-`computeAdjoints` to implement the adjoint computation of the checkpoint.
+`computeAdjoint` to implement the adjoint computation of the checkpoint.
 An object of this class should then be registered with the tape using
 [`Tape<T>::insertCallback`](tape.md#insertcallback).
 During computing adjoints, XAD then calls this registered callback
@@ -30,7 +30,7 @@ That is:
 `#!c++ virtual void computeAdjoint(TapeType* tape) = 0`
 
 This function is called by XAD during rolling back the tape,
-giving a reference to itself.
+giving a pointer to the tape.
 Gives *weak exception guarantee* - if this user-implemented function
 throws an exception, the tape is in an undefined state and needs to
 be reset/re-initialized before it can be used again.

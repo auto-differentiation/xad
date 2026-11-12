@@ -9,7 +9,7 @@ class AReal : public Expression<T, AReal<T, N>>
 
 The class `AReal` defines an active data type for adjoint mode for the underlying type `T`,
 which tracks derivative information on a tape.
-This can be scalar derivatives (`N=1`, the default) or vector-valued derivatves (`N>1`)
+This can be scalar derivatives (`N=1`, the default) or vector-valued derivatives (`N>1`)
 for computing adjoints of multiple outputs at once.
 It is designed to behave exactly like the built-in type `double`,
 with all mathematical operations defined for this custom type.

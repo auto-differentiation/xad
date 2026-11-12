@@ -9,7 +9,7 @@ class FReal : public Expression<T, FReal<T, N> >
 
 The class `FReal` defines an active data type for forward mode for the underlying type `T`
 which tracks derivatives without tape.
-This can be scalar derivatives (`N=1`, the default) or vector-valued derivatves (`N>1`)
+This can be scalar derivatives (`N=1`, the default) or vector-valued derivatives (`N>1`)
 for computing derivatives w.r.t. multiple inputs at once.
 It is designed to behave exactly like the built-in type `double`,
 with all mathematical operations defined for this custom type.
@@ -50,7 +50,7 @@ FReal(const Expression<T,Expr>& expr)  // (4) from expression
 The constructors create new instances of this class.
 
 Variant `(1)` creates an instance from a value, as well as optionally sets
-its derivativ.
+its derivative.
 
 Variants `(2)` and `(3)` copy or move from other values.
 

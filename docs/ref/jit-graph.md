@@ -12,7 +12,8 @@ It consists of:
 
 !!! note "Compile-time feature flag"
 
-    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`.
+    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`,
+    which needs the separately licensed xad-codegen library.
 
 ## `JITOpCode`
 
@@ -28,7 +29,7 @@ Each node contains:
 
 - `op`: opcode (`JITOpCode`, stored as `#!c++ uint16_t`)
 - `a`, `b`, `c`: operand node IDs (stored as `#!c++ uint32_t`)
-- `imm`: immediate value (used for op-specific data, e.g. constant pool index or integer exponent)
+- `imm`: immediate value, a `#!c++ double` (used for op-specific data, e.g. constant pool index or integer exponent)
 - `flags`: node flags (e.g. “active”)
 
 ## `JITGraph`

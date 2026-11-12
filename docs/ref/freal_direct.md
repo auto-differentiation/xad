@@ -7,9 +7,10 @@ template <class Scalar, std::size_t N = 1>
 struct FRealDirect : public RealDirect<FReal<Scalar, N>, FRealDirect<Scalar, N>>
 ```
 
-The class `FRealDirect` has the same interface as `FReal`, but does not use expression templates for the operations.
-This is to make debugging easier and to fit better with existing code bases,
-which may have issues integrating with expression templates.
+The class `FRealDirect` has the same interface as `FReal`, but does not use expression templates for the operations:
+each operation returns an `FRealDirect` straight away.
+It is a drop-in replacement for `FReal` (see below), for existing code bases which may have
+issues integrating with expression templates; it also makes debugging easier.
 
 ## Compatibility with `FReal`
 

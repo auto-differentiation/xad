@@ -315,7 +315,7 @@ tape destroy the callbacks automatically.
 `#!c++ derivative_type getAndResetOutputAdjoint(slot_type slot)` obtains the output adjoint stored
 in `slot` and resets it to 0.
 
-This function should be called by [`#!c++ CheckpointCallback<TapeType>::computeAdjoints`](chkpt_cb.md) to get the current value of the adjoint.
+This function should be called by [`#!c++ CheckpointCallback<TapeType>::computeAdjoint`](chkpt_cb.md#computeadjoint) to get the current value of the adjoint.
 It also resets its adjoint to 0 on the tape to allow re-use of that variable.
 
 It throws [`OutOfRange`](exceptions.md) if the given slot is not associated with a stored derivative.
@@ -329,7 +329,7 @@ Gives *strong exception safety guarantee* - tape state unchanged in case of exce
 In vector mode (`N > 1`), `#!c++ void incrementAdjoint(slot_type slot, const derivative_type& x)`
 increments each element of the adjoint by the matching element of `x`.
 
-This function should be called at the end of a [`CheckpointCallback<TapeType>::computeAdjoints`](chkpt_cb.md)
+This function should be called at the end of a [`CheckpointCallback<TapeType>::computeAdjoint`](chkpt_cb.md#computeadjoint)
 implementation, to update the input adjoints with the
 computed adjoint increments.
 
@@ -350,7 +350,7 @@ each with its position in the tape, in the order they were inserted.
 `#!c++ void newNestedRecording()` starts a new nested recording that can be rolled-back on its own.
 It must be ended with `endNestedRecording`.
 
-It is intended for use within a [`CheckpointCallback<TapeType>::computeAdjoints`](chkpt_cb.md) implementation,
+It is intended for use within a [`CheckpointCallback<TapeType>::computeAdjoint`](chkpt_cb.md#computeadjoint) implementation,
 when from a checkpoint, the adjoints are computed using XAD in a nested recording.
 
 To avoid forgetting the call to `endNestedRecording`, consider
@@ -418,7 +418,7 @@ It should be constructed on the stack. On creation it starts a nested
 recording on the corresponding tape, and on destruction it ends the nested
 recording.
 This is useful for checkpoint callbacks, i.e. within the implementation of
-[`CheckpointCallback<TapeType>::computeAdjoints`](chkpt_cb.md).
+[`CheckpointCallback<TapeType>::computeAdjoint`](chkpt_cb.md#computeadjoint).
 
 ### Construct and Destruct
 

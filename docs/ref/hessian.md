@@ -7,7 +7,9 @@ XAD implements a set of methods to compute the Hessian matrix of a function in `
 Note that the Hessian header is not automatically included with `XAD/XAD.hpp`.
 Users must include it as needed.
 
-Hessians can be computed in `fwd_adj` or `fwd_fwd` higher-order mode.
+Hessians can be computed in `fwd_adj` or `fwd_fwd` higher-order mode,
+and in their direct mode counterparts `fwdd_adjd` (`ARealDirect<FRealDirect<T>>`)
+and `fwdd_fwdd` (`FRealDirect<FRealDirect<T>>`), with the same overloads.
 
 The `computeHessian()` method takes a set of variables packaged in a
 `std::vector<T>` and a function with signature `T foo(std::vector<T>)`.

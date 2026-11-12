@@ -8,6 +8,8 @@ which is imported to the website at [auto-differentiation.github.io](https://aut
 * [AD Mode Interface](ref/interface.md)
 * [Forward Mode Type FReal](ref/freal.md)
 * [Adjoint Mode Type AReal](ref/areal.md)
+* [Direct Forward Mode Type FRealDirect](ref/freal_direct.md)
+* [Direct Adjoint Mode Type ARealDirect](ref/areal_direct.md)
 * [Global Functions](ref/global.md)
 * [Mathematical Operations](ref/math.md)
 * [Complex](ref/complex.md)

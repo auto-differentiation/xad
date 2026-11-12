@@ -7,9 +7,10 @@ template <class Scalar, std::size_t N=1>
 struct ARealDirect : public RealDirect<AReal<Scalar, N>, ARealDirect<Scalar, N>>
 ```
 
-The class `ARealDirect` has the same interface as `AReal`, but does not use expression templates for the operations.
-This is to make debugging easier and to fit better with existing code bases with may have
-issues with expression templates.
+The class `ARealDirect` has the same interface as `AReal`, but does not use expression templates for the operations:
+each operation returns an `ARealDirect` straight away.
+It is a drop-in replacement for `AReal` (see below), for existing code bases which may have
+issues with expression templates; it also makes debugging easier.
 
 ## Compatibility with `AReal`
 
