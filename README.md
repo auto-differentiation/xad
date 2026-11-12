@@ -20,27 +20,13 @@ for record-once / replay-many execution.
 [Discussions](https://github.com/auto-differentiation/xad/discussions)
 
 <p align="center" dir="auto">
-    <a href="https://github.com/auto-differentiation/xad/releases/latest">
-        <img src="https://img.shields.io/github/v/release/auto-differentiation/xad?label=Download&sort=semver" alt="Download" style="max-width: 100%;">
-    </a>
-    <a href="https://github.com/auto-differentiation/xad/actions/workflows/ci.yml">
-        <img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/xad/ci.yml?label=Build&logo" alt="Build Status" style="max-width: 100%;">
-    </a>
-    <a href="https://coveralls.io/github/auto-differentiation/xad?branch=main">
-        <img src="https://coveralls.io/repos/github/auto-differentiation/xad/badge.svg?branch=main&v=2" alt="Coverage" style="max-width: 100%;">
-    </a>
-    <a href="https://pypi.org/project/xad/">
-        <img src="https://img.shields.io/pypi/v/xad?label=PyPI" alt="PyPI" style="max-width: 100%;">
-    </a>
-    <a href="https://github.com/microsoft/vcpkg/tree/master/ports/xad">
-        <img src="https://img.shields.io/vcpkg/v/xad?label=vcpkg" alt="vcpkg" style="max-width: 100%;">
-    </a>
-    <a href="https://doi.org/10.5281/zenodo.7965850">
-        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.7965850.svg" alt="DOI" style="max-width: 100%;">
-    </a>
-    <a href="#license">
-        <img src="https://img.shields.io/badge/license-AGPL--3.0%20%7C%20commercial-blue" alt="License: AGPL-3.0 or commercial" style="max-width: 100%;">
-    </a>
+    <a href="https://github.com/auto-differentiation/xad/releases/latest"><img src="https://img.shields.io/github/v/release/auto-differentiation/xad?label=Download&sort=semver" alt="Download" style="max-width: 100%;"></a>
+    <a href="https://github.com/auto-differentiation/xad/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/auto-differentiation/xad/ci.yml?label=Build&logo" alt="Build Status" style="max-width: 100%;"></a>
+    <a href="https://coveralls.io/github/auto-differentiation/xad?branch=main"><img src="https://coveralls.io/repos/github/auto-differentiation/xad/badge.svg?branch=main&v=2" alt="Coverage" style="max-width: 100%;"></a>
+    <a href="https://pypi.org/project/xad/"><img src="https://img.shields.io/pypi/v/xad?label=PyPI" alt="PyPI" style="max-width: 100%;"></a>
+    <a href="https://github.com/microsoft/vcpkg/tree/master/ports/xad"><img src="https://img.shields.io/vcpkg/v/xad?label=vcpkg" alt="vcpkg" style="max-width: 100%;"></a>
+    <a href="https://doi.org/10.5281/zenodo.7965850"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.7965850.svg" alt="DOI" style="max-width: 100%;"></a>
+    <a href="#license"><img src="https://img.shields.io/badge/license-AGPL--3.0%20%7C%20commercial-blue" alt="License: AGPL-3.0 or commercial" style="max-width: 100%;"></a>
 </p>
 
 ## Example
