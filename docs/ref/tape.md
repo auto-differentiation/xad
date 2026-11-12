@@ -2,11 +2,12 @@
 
 ## `Tape`
 
-`#!c++ template <typename T> class Tape;`
+`#!c++ template <class T, std::size_t N = 1> class Tape;`
 
 Tape data type to record operations for adjoint computations,
 using the underlying scalar type `T` (which may in turn be an active type
-for higher-order derivative calculations).
+for higher-order derivative calculations) and `N` derivatives per variable
+(vector mode for `N > 1`).
 
 Typical usage
 
@@ -31,7 +32,7 @@ std::cout << "y = " << value(y) << "\n"
         << "dy/dx2 = " << derivative(x2) << "\n";
 ```
 
-For usability, it is recommended to use the type definitions decribed in
+For usability, it is recommended to use the type definitions described in
 [AD Mode Interfaces](interface.md) instead of using this tape type directly.
 
 A variable belongs to the tape it is registered on. With the CMake option `XAD_TAPE_CHECKS`
@@ -68,6 +69,10 @@ The tape's type itself - for generic code
 #### `callback_type`
 
 The callback type used for checkpoints, i.e. `#!c++ CheckpointCallback<tape_type>*`
+
+#### `derivative_type`
+
+The type of a variable's derivative: `T` for `N == 1`, a vector of `N` values of `T` otherwise
 
 ### Construct, Destruct, and Assign
 
@@ -111,7 +116,7 @@ already active for the current thread.
 #### `getActive`
 
 `#!c++ static Tape* getActive()` get a pointer to the currently active tape,
-or `!c++ nullptr` if no active tape has been set.
+or `#!c++ nullptr` if no active tape has been set.
 
 Note that this is a thread-local pointer - calling this function in different
 threads gives different results.
@@ -136,6 +141,9 @@ Equivalent to `auto t = Tape::getActive(); if (t) t->deactivate();`.
 Other overloads are:
 
 *   `#!c++ void registerInput(std::complex<active_type>& inp)` for complex values
+*   `#!c++ void registerInput(ARealDirect<T, N>& inp)` and
+    `#!c++ void registerInput(std::complex<ARealDirect<T, N>>& inp)` for the
+    [direct mode type](areal_direct.md)
 
 #### `registerInputs`
 
@@ -151,10 +159,13 @@ iterator interface to register variables in a range with the tape.
 Other overloads are:
 
 *   `#!c++ void registerOutput(std::complex<active_type>& inp)` registers a complex-valued output.
+*   `#!c++ void registerOutput(ARealDirect<T, N>& inp)` and
+    `#!c++ void registerOutput(std::complex<ARealDirect<T, N>>& inp)` for the
+    [direct mode type](areal_direct.md)
 
 #### `registerOutputs`
 
-`#!c++ template <typename Inner> void registerOutputs(std::vector<Inner>& v)` is a convenience function to register all variables in a vector as an input.
+`#!c++ void registerOutputs(std::vector<active_type>& v)` (and the same for a vector of `ARealDirect<T, N>`) is a convenience function to register all variables in a vector as an output.
 
 `#!c++ template <typename It> void registerOutputs(It first, It last)` is a convenience iterator interface to register variables in a range with the tape.
 
@@ -201,7 +212,7 @@ run many times can be slower. It works with each of the other tape options
 #### `getPosition`
 
 `#!c++ position_type getPosition()` returns the current position in the tape as an opaque integer (its value is internal and should not be relied upon in client code).
-This posiiton can later be used in the methods `clearDerivativesAfter`,
+This position can later be used in the methods `clearDerivativesAfter`,
 `resetTo`, and `computeAdjointsTo`.
 
 #### `clearDerivativesAfter`
@@ -217,7 +228,7 @@ adjoints further.
 
 !!! warning
 
-    If variables registered after the given postion (i.e. dependent variables computed
+    If variables registered after the given position (i.e. dependent variables computed
     after this position) are used again after a call to `resetTo`,
     the behaviour is undefined, as their slot in the tape is no longer valid.
 
@@ -235,24 +246,24 @@ it, `resetTo` can hand their slots out again. It costs a few percent in recordin
 
 While this clears the content, it leaves allocated memory untouched.
 This may be a performance gain compared to repeated construction/destruction
-of tapes of the same time, for example in a path-wise AD Monte-Carlo.
+of tapes of the same type, for example in a path-wise AD Monte-Carlo.
 
 ### Derivatives
 
 #### `derivative`
 
-`#!c++ T& derivative(slot_type s)` gets a reference to the derivative associated with the slot `s`.
+`#!c++ derivative_type& derivative(slot_type s)` gets a reference to the derivative associated with the slot `s`.
 
 It throws [`OutOfRange`](exceptions.md) if the given slot is not associated with a stored derivative.
 (Note that it is only thrown in debug mode for performance reasons, otherwise the behaviour is undefined in this case)
 
 Gives *strong exception safety guarantee* - tape state unchanged in case of exception.
 
-The const version `#!c++ const T& derivative(slot_type s) const` gets a const reference to the derivative associated with the slot `s` and otherwise behaves the same.
+The const version `#!c++ const derivative_type& derivative(slot_type s) const` gets a const reference to the derivative associated with the slot `s` and otherwise behaves the same.
 
 #### `getDerivative`
 
-`#!c++ T getDerivative(slot_type s) const` gets a copy of the value of the derivative associated with the slot `s`.
+`#!c++ derivative_type getDerivative(slot_type s) const` gets a copy of the value of the derivative associated with the slot `s`.
 
 It throws [`OutOfRange`](exceptions.md) if the given slot is not associated with a stored derivative.
 (Note that it is only thrown in debug mode for performance reasons, otherwise the behaviour is undefined in this case)
@@ -261,7 +272,7 @@ Gives *strong exception safety guarantee* - tape state unchanged in case of exce
 
 #### `setDerivative`
 
-`#!c++ void setDerivative(slot_type s, const T& v)` sets the value of the derivative associated with the slot `s` to `v`.
+`#!c++ void setDerivative(slot_type s, const derivative_type& v)` sets the value of the derivative associated with the slot `s` to `v`.
 
 It throws [`OutOfRange`](exceptions.md) if the given slot is not associated with a stored derivative.
 (Note that it is only thrown in debug mode for performance reasons, otherwise the behaviour is undefined in this case)
@@ -301,8 +312,8 @@ tape destroy the callbacks automatically.
 
 #### `getAndResetOutputAdjoint`
 
-`#!c++ T getAndResetOutputAdjoint(slot_type slot)` obtains the output adjoint stored
-in `slot`and resets it to 0.
+`#!c++ derivative_type getAndResetOutputAdjoint(slot_type slot)` obtains the output adjoint stored
+in `slot` and resets it to 0.
 
 This function should be called by [`#!c++ CheckpointCallback<TapeType>::computeAdjoints`](chkpt_cb.md) to get the current value of the adjoint.
 It also resets its adjoint to 0 on the tape to allow re-use of that variable.
@@ -326,6 +337,13 @@ It throws [`OutOfRange`](exceptions.md) if the given slot is not associated with
 (Note that it is only thrown in debug mode, otherwise the behaviour is undefined)
 
 Gives *strong exception safety guarantee* - tape state unchanged in case of exception.
+
+#### `getCheckpoints`
+
+`#!c++ const std::vector<std::pair<position_type, callback_type>>& getCheckpoints() const`
+returns the checkpoint callbacks inserted with `insertCallback` in the current recording,
+each with its position in the tape, in the order they were inserted.
+`newRecording` and `clearAll` empty it, and `resetTo` drops the callbacks after the given position.
 
 #### `newNestedRecording`
 
@@ -412,7 +430,7 @@ ScopedNestedRecording(TapeType* t);
 The constructor starts a new nested recording on the given tape and track it with this object.
 It calls `newNestedRecording` on the given tape.
 
-The destructor calles `endNestedRecording` on the given tape automatically.
+The destructor calls `endNestedRecording` on the given tape automatically.
 
 ### Member Functions
 
