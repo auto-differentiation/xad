@@ -10,7 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sample `ImpliedVolatility`: solves Black-Scholes for the implied volatility with Newton's method and computes its sensitivities to the option price, spot and rate via the implicit function theorem (one adjoint sweep at the converged root, without differentiating the solver), validated against closed-form values and finite differences of the full solve
+
+- Sample `BlackScholesGreeks`: delta, vega, rho and theta of a European call and put from one templated Black-Scholes pricer, with forward mode (one pass per input) and adjoint mode (one pass for all), checked against the closed-form Greeks to 1e-12
+
 - Sample `HeatEquation`: gradient of the final midpoint temperature of an explicit 1D heat equation solver with respect to the whole initial profile in one adjoint pass, using checkpointing to bound the tape memory (about 0.6 MiB instead of 21 MiB for 2,000 time steps), checked against finite differences, with the gradient profile written to CSV
+
 ### Changed
 
 - Docs: reference pages updated for 2.2 (JIT compiler and backend members, tape checkpoints, version macros, max/min derivatives, build options for tape checks and ARM, headers, direct mode types)
