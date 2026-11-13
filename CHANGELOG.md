@@ -10,7 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sample `ImpliedVolatility`: solves Black-Scholes for the implied volatility with Newton's method and computes its sensitivities to the option price, spot and rate via the implicit function theorem (one adjoint sweep at the converged root, without differentiating the solver), validated against closed-form values and finite differences of the full solve
+
 - Sample `BlackScholesGreeks`: delta, vega, rho and theta of a European call and put from one templated Black-Scholes pricer, with forward mode (one pass per input) and adjoint mode (one pass for all), checked against the closed-form Greeks to 1e-12
+
 ### Changed
 
 - Docs: reference pages updated for 2.2 (JIT compiler and backend members, tape checkpoints, version macros, max/min derivatives, build options for tape checks and ARM, headers, direct mode types)
