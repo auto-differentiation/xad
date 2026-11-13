@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sample `BlackScholesGreeks`: delta, vega, rho and theta of a European call and put from one templated Black-Scholes pricer, with forward mode (one pass per input) and adjoint mode (one pass for all), checked against the closed-form Greeks to 1e-12
 ### Changed
 
 - Docs: reference pages updated for 2.2 (JIT compiler and backend members, tape checkpoints, version macros, max/min derivatives, build options for tape checks and ARM, headers, direct mode types)
