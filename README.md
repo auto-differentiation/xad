@@ -29,6 +29,9 @@ for record-once / replay-many execution.
     <a href="#license"><img src="https://img.shields.io/badge/license-AGPL--3.0%20%7C%20commercial-blue" alt="License: AGPL-3.0 or commercial" style="max-width: 100%;"></a>
 </p>
 
+> [!IMPORTANT]
+> **Using XAD in your organization?** XAD is open source under the AGPL, to try it, for research and for open-source projects. The AGPL is not suitable for enterprise settings: for use in your organization you need a separate commercial license from Xcelerit, by annual XAD subscription. See [XAD licensing](https://www.xcelerit.com/xad/licensing/) for the terms, a quote within one business day, or a free, confidential license check.
+
 ## Example
 
 Every derivative of a function in one adjoint sweep:
@@ -154,5 +157,5 @@ Please report bugs and issues via the
 
 ## License
 
-XAD is free under the [AGPL-3.0](LICENSE.md) for evaluation, research and open-source use.
-For production use without AGPL obligations, a [commercial subscription](https://www.xcelerit.com/xad/licensing/) is available.
+XAD is open source under the [AGPL-3.0](LICENSE.md), to try it, for research and for open-source projects.
+For use in your organization you need a separate commercial license from Xcelerit: see [XAD licensing](https://www.xcelerit.com/xad/licensing/).
