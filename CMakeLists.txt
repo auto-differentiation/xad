@@ -29,7 +29,7 @@ cmake_policy(SET CMP0092 NEW)   # avoid setting warning flags by default in Wind
 project(xad
     LANGUAGES CXX
     DESCRIPTION "Comprehensive C++ library for automatic differentiation."
-    HOMEPAGE_URL "https://auto-differentiation.github.io"
+    HOMEPAGE_URL "https://www.xcelerit.com/xad/docs/"
 )
 
 
@@ -66,7 +66,7 @@ if(NOT XAD_DOCS_ONLY)
                     "  3. Place xad-codegen source in ${CMAKE_CURRENT_SOURCE_DIR}/codegen/\n"
                     "\n"
                     "xad-codegen requires a commercial license.\n"
-                    "See https://www.xcelerit.com/xad-enterprise-support"
+                    "See https://www.xcelerit.com/xad/licensing/"
                 )
             endif()
         endif()

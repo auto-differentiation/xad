@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://auto-differentiation.github.io" target="_blank">
-    <img src="https://xcelerit.com/img/docs/xad-logo.svg" height="80" alt="XAD">
+  <a href="https://www.xcelerit.com/xad/docs/" target="_blank">
+    <img src="https://www.xcelerit.com/img/docs/xad-logo.svg" height="80" alt="XAD">
   </a>
 </p>
 
@@ -12,7 +12,7 @@ with low runtime overhead and a small memory footprint. Python bindings: `pip in
 For Monte Carlo and other repetitive workloads, XAD also provides a JIT backend interface
 for record-once / replay-many execution.
 
-[Documentation](https://auto-differentiation.github.io/) ·
+[Documentation](https://www.xcelerit.com/xad/docs/) ·
 [Install](#install) ·
 [Samples](samples) ·
 [Benchmarks](https://github.com/auto-differentiation/ad-benchmarks) ·
@@ -89,8 +89,8 @@ cmake --build xad/build
 
 The defaults suit any code; [Build Options](docs/ref/build-options.md) lists the options that make XAD faster for some kinds of code.
 
-Python: `pip install xad`. More in the [Installation Guide](https://auto-differentiation.github.io/installation/cxx/)
-and the [Tutorials](https://auto-differentiation.github.io/tutorials/).
+Python: `pip install xad`. More in the [Installation Guide](https://www.xcelerit.com/xad/docs/installation/cxx/)
+and the [Tutorials](https://www.xcelerit.com/xad/docs/tutorials/aad/).
 
 ## Benchmarks
 
@@ -124,13 +124,13 @@ XAD v2.2.0, AMD EPYC (Zen 5), one core, GCC 15.2, run 10 November 2026. Full met
 | [xad-py](https://github.com/auto-differentiation/xad-py) | Python bindings for XAD |
 | [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD) | Full QuantLib integration — compute all Greeks at once, up to 3 orders of magnitude faster than bump-and-reval |
 | [QuantLib-Risks-Py](https://github.com/auto-differentiation/QuantLib-Risks-Py) | QuantLib risks from Python |
-| [xad-codegen](https://www.xcelerit.com/xad-enterprise-support) | Native code generation backend — maximum throughput (commercial) |
-| [AAD Training](https://www.xcelerit.com/solutions/training-aad) | Hands-on AAD training for quants and quant developers - delivered to dozens of tier 1 banks and financial services firms |
+| [xad-codegen](https://www.xcelerit.com/xad/licensing/) | Native code generation backend — maximum throughput (commercial) |
+| [AAD Training](https://www.xcelerit.com/training/) | Hands-on AAD training for quants and quant developers - delivered to dozens of tier 1 banks and financial services firms |
 
 ## Documentation
 
 Full documentation, including API reference and usage examples, is available at:
-[**https://auto-differentiation.github.io/**](https://auto-differentiation.github.io/)
+[**https://www.xcelerit.com/xad/docs/**](https://www.xcelerit.com/xad/docs/)
 
 ## Contributing
 
@@ -155,4 +155,4 @@ Please report bugs and issues via the
 ## License
 
 XAD is free under the [AGPL-3.0](LICENSE.md) for evaluation, research and open-source use.
-For production use without AGPL obligations, a [commercial subscription](https://www.xcelerit.com/xad-enterprise-support) is available.
+For production use without AGPL obligations, a [commercial subscription](https://www.xcelerit.com/xad/licensing/) is available.

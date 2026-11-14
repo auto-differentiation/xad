@@ -1,7 +1,7 @@
 # XAD Reference Documentation
 
 This folder contains the reference documentation for XAD,
-which is imported to the website at [auto-differentiation.github.io](https://auto-differentiation.github.io).
+which is imported to the website at [xcelerit.com/xad/docs](https://www.xcelerit.com/xad/docs/).
 
 * [Headers and Namespaces](ref/headers.md)
 * [Build Options](ref/build-options.md)
