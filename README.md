@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://auto-differentiation.github.io" target="_blank">
-    <img src="https://auto-differentiation.github.io/images/logo.svg" height="80" alt="XAD">
+    <img src="https://xcelerit.com/img/docs/xad-logo.svg" height="80" alt="XAD">
   </a>
 </p>
 
