@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sample `BasketMonteCarlo`: Monte Carlo price and pathwise delta and vega of all 12 assets of a correlated basket call in adjoint mode, with the paths split across threads, one tape per thread recording one path at a time (constant tape memory), checked against bump-and-revalue with the same random numbers and against a single-threaded run, which gives identical results
 
+- Sample `CrossGamma`: full cross-gamma matrix of a multi-asset basket option in forward-over-adjoint mode using closed-form lognormal moment matching, checked for matrix symmetry and validated against central finite differences of first-order adjoint deltas, with benchmark cost comparisons against bumping
+
 ### Changed
 
 - Docs: reference pages updated for 2.2 (JIT compiler and backend members, tape checkpoints, version macros, max/min derivatives, build options for tape checks and ARM, headers, direct mode types)
