@@ -45,7 +45,7 @@ If any check fails, the binary exits with a non-zero exit code to alert CTest of
 The sample benchmarks and reports execution costs relative to single pricing baseline ($1.0\times$), comparing AD forward-over-adjoint against finite-difference bumping:
 - **Baseline:** Single pricing evaluation.
 - **AD Forward-over-Adjoint:** Full $N \times N$ matrix via $N$ passes.
-- **Finite-Difference Bumping:** Bumping upper triangle requires $N(N+1)$ pricing evaluations.
+- **Finite-Difference Bumping:** Bumping requires $2$ pricings per diagonal element and $4$ per off-diagonal element, totaling $2N^2$ pricing evaluations ($450$ for $N = 15$).
 
 ## Build and Run
 
