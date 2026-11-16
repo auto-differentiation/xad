@@ -110,6 +110,12 @@ Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://gi
 
 XAD v2.2.0, AMD EPYC (Zen 5), one core, GCC 15.2, run 10 November 2026. Full methodology, source code and results: **[auto-differentiation/ad-benchmarks](https://github.com/auto-differentiation/ad-benchmarks)**
 
+With code generation ([xad-codegen](https://www.xcelerit.com/xad/licensing/), commercial), XAD is the fastest of the C and C++ AD tools on all 11 [GradBench](https://gradben.ch) problems,
+and on average 2.4x faster than the next-fastest tool (geometric mean of the ratios to the fastest other AD tool, open-source XAD excluded).
+On seven of the nine problems with hand-written derivatives, the generated code beats them.
+Without code generation, open-source XAD is the fastest tape-based AD tool on 7 of the 11 and second on the other four.
+Measured by Xcelerit with GradBench's harness and tool images, 16 Nov 2026: [GradBench results](https://www.xcelerit.com/xad/benchmarks/#bench-gradbench).
+
 ## Key Features
 
 - **Forward & Reverse (Adjoint) Mode**: Supports any order using operator overloading.
