@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sample `CrossGamma`: full cross-gamma matrix of a multi-asset basket option in forward-over-adjoint mode using closed-form lognormal moment matching, checked for matrix symmetry and validated against central finite differences of first-order adjoint deltas, with benchmark cost comparisons against bumping
 
+- Sample `AmericanPDE`: prices an American put option with a Crank-Nicolson finite-difference solver under a local volatility surface and computes sensitivities to all grid points in one adjoint pass; wraps the tridiagonal matrix solve (Thomas algorithm) as an external function with a hand-written adjoint (solving with the transposed matrix), with early exercise handled via `xad::max()`, Rannacher smoothing, and sensitivity validation against bumping
+
 ### Changed
 
 - Docs: reference pages updated for 2.2 (JIT compiler and backend members, tape checkpoints, version macros, max/min derivatives, build options for tape checks and ARM, headers, direct mode types)
