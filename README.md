@@ -97,6 +97,8 @@ and the [Tutorials](https://www.xcelerit.com/xad/docs/tutorials/aad/).
 
 ## Benchmarks
 
+### Quant-finance workloads
+
 Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://github.com/rjhogan/Adept-2) and [autodiff](https://github.com/autodiff/autodiff) on four quant-finance workloads (LMM, Heston, CVA, SABR), with every gradient checked. XAD computes all sensitivities 6.5x to 83x faster than bump-and-reval and is the fastest of the open-source libraries on all four.
 
 <p align="center">
@@ -109,6 +111,10 @@ Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://gi
 </p>
 
 XAD v2.2.0, AMD EPYC (Zen 5), one core, GCC 15.2, run 10 November 2026; ad-benchmarks [v1.0.0](https://github.com/auto-differentiation/ad-benchmarks/tree/v1.0.0). Full methodology, source code and [results](https://github.com/auto-differentiation/ad-benchmarks#results): **[auto-differentiation/ad-benchmarks](https://github.com/auto-differentiation/ad-benchmarks)**
+
+### GradBench
+
+GradBench is an independent suite of 11 general AD problems run in the same harness for every tool.
 
 With code generation ([xad-codegen](https://www.xcelerit.com/xad/licensing/), commercial), XAD is the fastest of the C and C++ AD tools on all 11 [GradBench](https://gradben.ch) problems,
 and on average 2.4x faster than the next-fastest tool (geometric mean of the ratios to the fastest other AD tool, open-source XAD excluded).
