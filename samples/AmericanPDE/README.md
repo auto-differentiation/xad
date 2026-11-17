@@ -9,7 +9,7 @@ The sample implements:
 - Early exercise constraint evaluated with `xad::max()`.
 - Tridiagonal matrix solve (Thomas algorithm) wrapped as an external function with
   a hand-written adjoint (solving the transposed system $A^T \lambda = \bar{x}$).
-- Comparison of tape memory and runtime between the external function callback and
+- Comparison of memory and runtime between the external function callback and
   recording the solve operation-by-operation.
 - Sensitivity validation against finite-difference bumping across grid points.
 - Benchmark comparing the cost of computing all sensitivities in one adjoint pass
@@ -60,8 +60,10 @@ After each solve, early exercise is applied using `xad::max()`:
 
 $$V_i^{m+1} = \operatorname{xad::max}(V_i^{m+1}, K - S_i)$$
 
-Using XAD's `max()` rather than `std::max()` ensures derivative information flows
-correctly through the exercise boundary during the reverse pass.
+Both `std::max()` and `xad::max()` propagate derivatives through active arguments.
+What `xad::max()` adds is a defined derivative at a tie ($V_i = K - S_i$), splitting
+the derivative equally (weight 0.5) between both branches rather than arbitrarily
+taking one.
 
 ---
 
@@ -101,9 +103,10 @@ Wrapping the tridiagonal solve in `TridiagonalSolveCallback<Tape>` (inheriting f
 2. In the reverse pass, `computeAdjoint` solves $A^T \lambda = \bar{x}$ and propagates
    adjoints directly to inputs using `tape->incrementAdjoint(...)`.
 
-This avoids recording hundreds of thousands of intermediate arithmetic operations on
-the tape, reducing tape memory by ~26% and boosting execution speed while producing
-identical sensitivities to machine precision ($\approx 10^{-14}$).
+This avoids recording about 80,000 intermediate arithmetic operations of the linear
+solver on the tape across the 102 steps, saving ~2.7 MiB (~24%) of total memory
+(tape + callback storage) while producing identical sensitivities to machine
+precision ($\approx 10^{-14}$).
 
 ---
 
@@ -121,11 +124,11 @@ A single reverse AD pass computes $\frac{\partial V}{\partial \sigma_{k, l}}$ fo
 ## Validation & Verification Checks
 
 1. **Tape Consistency**: Sensitivities from the external function callback match those
-   from operation-by-operation recording to within $10^{-11}$ (observed diff $\approx 1.7 \times 10^{-14}$).
+   from operation-by-operation recording to within $10^{-11}$ (observed diff $\approx 1.9 \times 10^{-14}$).
 2. **Finite-Difference Bumping**: Sensitivities at representative grid knots agree with
    two-sided bumping ($h = 10^{-5}$) to within $10^{-4}$ (observed diff $\approx 5.8 \times 10^{-10}$).
-3. **Memory Reduction**: The external function reduces tape memory compared to
-   operation-by-operation recording.
+3. **Memory Reduction**: The external function reduces total memory (tape plus callback
+   storage) compared to operation-by-operation recording.
 4. **Automated Testing**: Any failure in the above checks returns a non-zero exit code.
 
 ---
@@ -135,7 +138,7 @@ A single reverse AD pass computes $\frac{\partial V}{\partial \sigma_{k, l}}$ fo
 From the repository root:
 
 ```bash
-cmake -B build -S .
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target AmericanPDE
 build/samples/AmericanPDE/AmericanPDE
 ```
@@ -160,16 +163,18 @@ Local volatility grid: 10 x 10 = 100 parameters
 Parameters: S0 = 100, K = 100, T = 1, r = 0.05
 
 Option Price (passive PDE): 6.086968
-Passive pricing time:       9.580687 ms
+Passive pricing time:       1.763690 ms
 
 --- Solver Comparison: External Function vs. Operation-by-Operation ---
-Metric                      External Function   Operation-by-Operation
---------------------------------------------------------------------
-Tape Memory (KiB)           10743.183594        14512.820312        
-Adjoint Pass Time (ms)      85.587965           88.691088           
-Tape Memory Ratio           1.00x               1.350886            
+Metric                        External Function     Operation-by-Operation
+--------------------------------------------------------------------------
+Tape Memory (KiB)             7785.972656           11553.281250          
+Callbacks Storage (KiB)       1045.500000           0.000000              
+Total Memory (KiB)            8831.472656           11553.281250          
+Record + adjoint time (ms)    16.593292             11.213576             
+Total Memory Ratio            1.00x                 1.308194              
 
-Max sensitivity difference: 1.69e-14
+Max sensitivity difference: 1.91e-14
 
 --- Finite Difference Bumping Validation (step h = 1e-5) ---
 Knot (k,l)  S_knot        t_knot        Adjoint dV/dSigma FD dV/dSigma      Abs. Error    
@@ -186,10 +191,11 @@ Knot (k,l)  S_knot        t_knot        Adjoint dV/dSigma FD dV/dSigma      Abs.
 Max finite difference error: 5.84e-10
 
 --- Performance Cost Analysis ---
-1 Passive PDE pricing:              9.58 ms  (1.00x)
-All 100 sensitivities via Adjoint:  85.59 ms  (8.93x pricing)
-All 100 sensitivities via Bumping:  760.74 ms  (79.40x pricing)
-Adjoint speedup vs. full bumping:   8.89x faster
+1 Passive PDE pricing:              1.76 ms  (1.00x)
+All 100 sensitivities via Adjoint:  16.59 ms  (9.41x pricing)
+All 100 sensitivities via Bumping:  116.84 ms  (66.25x pricing)
+Adjoint speedup vs. full bumping:   7.04x faster
+Note: Timings and exact ratios depend on the machine, compiler, and CPU load.
 
 AmericanPDE sample validation PASSED successfully.
 ```

@@ -9,7 +9,7 @@
    - Early exercise constraint handled via xad::max().
    - Tridiagonal solver wrapped as an external function with a hand-written adjoint
      (transposed matrix solve A^T lambda = x_bar).
-   - Comparison of tape memory and runtime: external function vs. operation-by-operation.
+   - Comparison of memory and runtime: external function vs. operation-by-operation.
    - Validation against two-sided finite-difference bumping.
    - Reporting of adjoint speedup relative to bumping every parameter.
 
@@ -44,9 +44,9 @@
 #include <iostream>
 #include <vector>
 
-typedef xad::adj<double> mode;
-typedef mode::tape_type tape_type;
-typedef mode::active_type AD;
+typedef xad::adj<double> adj_mode;
+typedef adj_mode::tape_type tape_type;
+typedef adj_mode::active_type AD;
 
 // American put problem parameters
 const double SPOT = 100.0;
@@ -226,11 +226,12 @@ class TridiagonalSolveCallback : public xad::CheckpointCallback<Tape>
         for (std::size_t i = 0; i < M; ++i) diag_val_[i] = value(diag[i]);
         sup_val_.resize(sup.size());
         for (std::size_t i = 0; i < sup.size(); ++i) sup_val_[i] = value(sup[i]);
-        rhs_val_.resize(M);
-        for (std::size_t i = 0; i < M; ++i) rhs_val_[i] = value(rhs[i]);
+
+        std::vector<value_type> rhs_val(M);
+        for (std::size_t i = 0; i < M; ++i) rhs_val[i] = value(rhs[i]);
 
         sol_val_.resize(M);
-        solveTridiagonalPassive(sub_val_, diag_val_, sup_val_, rhs_val_, sol_val_);
+        solveTridiagonalPassive(sub_val_, diag_val_, sup_val_, rhs_val, sol_val_);
 
         sol.resize(M);
         sol_slots_.resize(M);
@@ -281,35 +282,49 @@ class TridiagonalSolveCallback : public xad::CheckpointCallback<Tape>
         }
     }
 
+    std::size_t getMemory() const
+    {
+        return sizeof(*this) +
+               (sub_slots_.capacity() + diag_slots_.capacity() + sup_slots_.capacity() +
+                rhs_slots_.capacity() + sol_slots_.capacity()) *
+                   sizeof(slot_type) +
+               (sub_val_.capacity() + diag_val_.capacity() + sup_val_.capacity() +
+                sol_val_.capacity()) *
+                   sizeof(value_type);
+    }
+
   private:
     std::vector<slot_type> sub_slots_, diag_slots_, sup_slots_, rhs_slots_, sol_slots_;
-    std::vector<value_type> sub_val_, diag_val_, sup_val_, rhs_val_, sol_val_;
+    std::vector<value_type> sub_val_, diag_val_, sup_val_, sol_val_;
 };
 
 inline void solveTridiagonalExternal(const std::vector<AD>& sub, const std::vector<AD>& diag,
                                      const std::vector<AD>& sup, const std::vector<AD>& rhs,
-                                     std::vector<AD>& sol)
+                                     std::vector<AD>& sol, std::size_t* callback_memory = nullptr)
 {
     tape_type* tape = tape_type::getActive();
     TridiagonalSolveCallback<tape_type>* cb = new TridiagonalSolveCallback<tape_type>;
     tape->pushCallback(cb);
     cb->compute(sub, diag, sup, rhs, sol);
+    if (callback_memory)
+        *callback_memory += cb->getMemory();
 }
 
 // Solver dispatch helpers
 inline void solveStep(const std::vector<double>& sub, const std::vector<double>& diag,
                       const std::vector<double>& sup, const std::vector<double>& rhs,
-                      std::vector<double>& sol, SolverMode /*mode*/)
+                      std::vector<double>& sol, SolverMode /*mode*/,
+                      std::size_t* /*callback_memory*/ = nullptr)
 {
     solveTridiagonalPassive(sub, diag, sup, rhs, sol);
 }
 
 inline void solveStep(const std::vector<AD>& sub, const std::vector<AD>& diag,
                       const std::vector<AD>& sup, const std::vector<AD>& rhs, std::vector<AD>& sol,
-                      SolverMode mode)
+                      SolverMode mode, std::size_t* callback_memory = nullptr)
 {
     if (mode == ModeExternalFunction)
-        solveTridiagonalExternal(sub, diag, sup, rhs, sol);
+        solveTridiagonalExternal(sub, diag, sup, rhs, sol, callback_memory);
     else
         solveTridiagonalActive(sub, diag, sup, rhs, sol);
 }
@@ -318,7 +333,8 @@ inline void solveStep(const std::vector<AD>& sub, const std::vector<AD>& diag,
 // American Option PDE Pricer
 // -----------------------------------------------------------------------------
 template <typename T>
-T priceAmericanPut(const LocalVolGrid<T>& volGrid, SolverMode mode = ModeExternalFunction)
+T priceAmericanPut(const LocalVolGrid<T>& volGrid, SolverMode mode = ModeExternalFunction,
+                   std::size_t* callback_memory = nullptr)
 {
     const double dS = S_MAX / (N_S - 1);
     const double dt = MATURITY / N_T;
@@ -339,37 +355,37 @@ T priceAmericanPut(const LocalVolGrid<T>& volGrid, SolverMode mode = ModeExterna
     double tau = 0.0;
     const int total_substeps = N_RANNACHER * 2 + (N_T - N_RANNACHER);
 
+    std::vector<T> alpha_old(N_S), beta_old(N_S), gamma_old(N_S);
+    std::vector<T> alpha_new(N_S), beta_new(N_S), gamma_new(N_S);
+
     for (int step = 0; step < total_substeps; ++step)
     {
         const double dtau = (step < N_RANNACHER * 2) ? (dt / 2.0) : dt;
         const double theta = (step < N_RANNACHER * 2) ? 1.0 : 0.5;
 
-        const double tau_old = tau;
-        const double tau_new = tau + dtau;
-        tau = tau_new;
+        tau += dtau;
+        const double t_new = MATURITY - tau;
 
-        const double t_old = MATURITY - tau_old;
-        const double t_new = MATURITY - tau_new;
+        // Compute local volatilities once per grid point at the new time level
+        for (int i = 1; i < N_S - 1; ++i)
+        {
+            T vol = volGrid.getVol(S[i], t_new);
+            T vol2_S2 = vol * vol * (S[i] * S[i]);
+            alpha_new[i] = 0.5 * vol2_S2 / (dS * dS) - 0.5 * RATE * S[i] / dS;
+            beta_new[i] = -vol2_S2 / (dS * dS) - RATE;
+            gamma_new[i] = 0.5 * vol2_S2 / (dS * dS) + 0.5 * RATE * S[i] / dS;
+        }
 
         // Build LHS tridiagonal matrix (I - theta * dtau * L_new)
         for (std::size_t j = 0; j < M; ++j)
         {
             int i = static_cast<int>(j + 1);
-            T vol_new = volGrid.getVol(S[i], t_new);
-            T vol2_S2 = vol_new * vol_new * (S[i] * S[i]);
-            T beta_new = -vol2_S2 / (dS * dS) - RATE;
-            diag[j] = 1.0 - theta * dtau * beta_new;
+            diag[j] = 1.0 - theta * dtau * beta_new[i];
 
             if (j < M - 1)
             {
-                T gamma_new = 0.5 * vol2_S2 / (dS * dS) + 0.5 * RATE * S[i] / dS;
-                sup[j] = -theta * dtau * gamma_new;
-
-                int i_next = static_cast<int>(j + 2);
-                T vol_next = volGrid.getVol(S[i_next], t_new);
-                T vol2_S2_next = vol_next * vol_next * (S[i_next] * S[i_next]);
-                T alpha_next = 0.5 * vol2_S2_next / (dS * dS) - 0.5 * RATE * S[i_next] / dS;
-                sub[j] = -theta * dtau * alpha_next;
+                sup[j] = -theta * dtau * gamma_new[i];
+                sub[j] = -theta * dtau * alpha_new[i + 1];
             }
         }
 
@@ -383,26 +399,17 @@ T priceAmericanPut(const LocalVolGrid<T>& volGrid, SolverMode mode = ModeExterna
             }
             else
             {
-                T vol_old = volGrid.getVol(S[i], t_old);
-                T vol2_S2 = vol_old * vol_old * (S[i] * S[i]);
-                T alpha_old = 0.5 * vol2_S2 / (dS * dS) - 0.5 * RATE * S[i] / dS;
-                T beta_old = -vol2_S2 / (dS * dS) - RATE;
-                T gamma_old = 0.5 * vol2_S2 / (dS * dS) + 0.5 * RATE * S[i] / dS;
-
-                rhs[j] = (1.0 - theta) * dtau * alpha_old * V[i - 1] +
-                         (1.0 + (1.0 - theta) * dtau * beta_old) * V[i] +
-                         (1.0 - theta) * dtau * gamma_old * V[i + 1];
+                rhs[j] = (1.0 - theta) * dtau * alpha_old[i] * V[i - 1] +
+                         (1.0 + (1.0 - theta) * dtau * beta_old[i]) * V[i] +
+                         (1.0 - theta) * dtau * gamma_old[i] * V[i + 1];
             }
         }
 
         // Boundary condition at S = 0: V(0, tau) = STRIKE
-        T vol_1 = volGrid.getVol(S[1], t_new);
-        T vol2_S2_1 = vol_1 * vol_1 * (S[1] * S[1]);
-        T alpha_1 = 0.5 * vol2_S2_1 / (dS * dS) - 0.5 * RATE * S[1] / dS;
-        rhs[0] += theta * dtau * alpha_1 * T(STRIKE);
+        rhs[0] += theta * dtau * alpha_new[1] * T(STRIKE);
 
         // Solve tridiagonal system
-        solveStep(sub, diag, sup, rhs, sol, mode);
+        solveStep(sub, diag, sup, rhs, sol, mode, callback_memory);
 
         // Apply early exercise constraint using xad::max()
         using std::max;
@@ -410,11 +417,16 @@ T priceAmericanPut(const LocalVolGrid<T>& volGrid, SolverMode mode = ModeExterna
         for (std::size_t j = 0; j < M; ++j)
         {
             int i = static_cast<int>(j + 1);
-            T exercise = (STRIKE > S[i]) ? T(STRIKE - S[i]) : T(0.0);
+            double exercise = std::max(0.0, STRIKE - S[i]);
             V[i] = max(sol[j], exercise);
         }
         V[0] = T(STRIKE);
         V[N_S - 1] = T(0.0);
+
+        // Save new operator coefficients as old coefficients for next step
+        alpha_old = alpha_new;
+        beta_old = beta_new;
+        gamma_old = gamma_new;
     }
 
     // Linearly interpolate V at SPOT
@@ -447,11 +459,21 @@ int main()
 
     LocalVolGrid<double> passive_grid{VOL_GRID_S, VOL_GRID_T, S_MAX, MATURITY, base_vols};
 
-    // 1. Passive pricing baseline
-    auto t_start = std::chrono::high_resolution_clock::now();
-    double price_passive = priceAmericanPut(passive_grid);
-    auto t_end = std::chrono::high_resolution_clock::now();
-    double t_price_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+    // Warmup
+    priceAmericanPut(passive_grid);
+
+    // 1. Passive pricing baseline (best of multiple runs)
+    const int PRICE_REPEATS = 10;
+    double t_price_ms = 1e9;
+    double price_passive = 0.0;
+    for (int r = 0; r < PRICE_REPEATS; ++r)
+    {
+        auto t_start = std::chrono::high_resolution_clock::now();
+        price_passive = priceAmericanPut(passive_grid);
+        auto t_end = std::chrono::high_resolution_clock::now();
+        double ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+        t_price_ms = std::min(t_price_ms, ms);
+    }
 
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "Option Price (passive PDE): " << price_passive << "\n";
@@ -459,9 +481,13 @@ int main()
 
     // 2. Adjoint pass using External Function
     std::vector<double> grad_external(num_params);
-    std::size_t mem_external = 0;
-    double t_ad_external_ms = 0.0;
+    std::size_t mem_external_tape = 0;
+    std::size_t mem_external_callbacks = 0;
+    double t_ad_external_ms = 1e9;
     double price_external = 0.0;
+
+    const int AD_REPEATS = 5;
+    for (int r = 0; r < AD_REPEATS; ++r)
     {
         tape_type tape;
         std::vector<AD> vols_ad(num_params);
@@ -469,26 +495,35 @@ int main()
         tape.registerInputs(vols_ad);
         tape.newRecording();
 
-        t_start = std::chrono::high_resolution_clock::now();
+        std::size_t cb_mem = 0;
+        auto t_start = std::chrono::high_resolution_clock::now();
         LocalVolGrid<AD> ad_grid{VOL_GRID_S, VOL_GRID_T, S_MAX, MATURITY, vols_ad};
-        AD price_ad = priceAmericanPut(ad_grid, ModeExternalFunction);
+        AD price_ad = priceAmericanPut(ad_grid, ModeExternalFunction, &cb_mem);
 
         tape.registerOutput(price_ad);
         derivative(price_ad) = 1.0;
-        mem_external = tape.getMemory();
+        std::size_t tape_mem = tape.getMemory();
         tape.computeAdjoints();
-        t_end = std::chrono::high_resolution_clock::now();
+        auto t_end = std::chrono::high_resolution_clock::now();
 
-        t_ad_external_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-        price_external = value(price_ad);
-        for (int i = 0; i < num_params; ++i) grad_external[i] = derivative(vols_ad[i]);
+        double ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+        if (ms < t_ad_external_ms)
+        {
+            t_ad_external_ms = ms;
+            price_external = value(price_ad);
+            mem_external_tape = tape_mem;
+            mem_external_callbacks = cb_mem;
+            for (int i = 0; i < num_params; ++i) grad_external[i] = derivative(vols_ad[i]);
+        }
     }
 
     // 3. Adjoint pass using Operation-by-Operation
     std::vector<double> grad_opbyop(num_params);
     std::size_t mem_opbyop = 0;
-    double t_ad_opbyop_ms = 0.0;
+    double t_ad_opbyop_ms = 1e9;
     double price_opbyop = 0.0;
+
+    for (int r = 0; r < AD_REPEATS; ++r)
     {
         tape_type tape;
         std::vector<AD> vols_ad(num_params);
@@ -496,19 +531,24 @@ int main()
         tape.registerInputs(vols_ad);
         tape.newRecording();
 
-        t_start = std::chrono::high_resolution_clock::now();
+        auto t_start = std::chrono::high_resolution_clock::now();
         LocalVolGrid<AD> ad_grid{VOL_GRID_S, VOL_GRID_T, S_MAX, MATURITY, vols_ad};
         AD price_ad = priceAmericanPut(ad_grid, ModeOperationByOperation);
 
         tape.registerOutput(price_ad);
         derivative(price_ad) = 1.0;
-        mem_opbyop = tape.getMemory();
+        std::size_t tape_mem = tape.getMemory();
         tape.computeAdjoints();
-        t_end = std::chrono::high_resolution_clock::now();
+        auto t_end = std::chrono::high_resolution_clock::now();
 
-        t_ad_opbyop_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-        price_opbyop = value(price_ad);
-        for (int i = 0; i < num_params; ++i) grad_opbyop[i] = derivative(vols_ad[i]);
+        double ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+        if (ms < t_ad_opbyop_ms)
+        {
+            t_ad_opbyop_ms = ms;
+            price_opbyop = value(price_ad);
+            mem_opbyop = tape_mem;
+            for (int i = 0; i < num_params; ++i) grad_opbyop[i] = derivative(vols_ad[i]);
+        }
     }
 
     // Compare external function vs. op-by-op
@@ -518,16 +558,22 @@ int main()
         max_diff_ext_op = std::max(max_diff_ext_op, std::abs(grad_external[i] - grad_opbyop[i]));
     }
 
+    std::size_t mem_external_total = mem_external_tape + mem_external_callbacks;
+
     std::cout << "--- Solver Comparison: External Function vs. Operation-by-Operation ---\n";
-    std::cout << std::left << std::setw(28) << "Metric" << std::setw(20) << "External Function"
-              << std::setw(20) << "Operation-by-Operation" << "\n";
-    std::cout << std::string(68, '-') << "\n";
-    std::cout << std::setw(28) << "Tape Memory (KiB)" << std::setw(20) << (mem_external / 1024.0)
-              << std::setw(20) << (mem_opbyop / 1024.0) << "\n";
-    std::cout << std::setw(28) << "Adjoint Pass Time (ms)" << std::setw(20) << t_ad_external_ms
-              << std::setw(20) << t_ad_opbyop_ms << "\n";
-    std::cout << std::setw(28) << "Tape Memory Ratio" << std::setw(20) << "1.00x" << std::setw(20)
-              << (double(mem_opbyop) / mem_external) << "\n\n";
+    std::cout << std::left << std::setw(30) << "Metric" << std::setw(22) << "External Function"
+              << std::setw(22) << "Operation-by-Operation" << "\n";
+    std::cout << std::string(74, '-') << "\n";
+    std::cout << std::setw(30) << "Tape Memory (KiB)" << std::setw(22)
+              << (mem_external_tape / 1024.0) << std::setw(22) << (mem_opbyop / 1024.0) << "\n";
+    std::cout << std::setw(30) << "Callbacks Storage (KiB)" << std::setw(22)
+              << (mem_external_callbacks / 1024.0) << std::setw(22) << 0.0 << "\n";
+    std::cout << std::setw(30) << "Total Memory (KiB)" << std::setw(22)
+              << (mem_external_total / 1024.0) << std::setw(22) << (mem_opbyop / 1024.0) << "\n";
+    std::cout << std::setw(30) << "Record + adjoint time (ms)" << std::setw(22) << t_ad_external_ms
+              << std::setw(22) << t_ad_opbyop_ms << "\n";
+    std::cout << std::setw(30) << "Total Memory Ratio" << std::setw(22) << "1.00x" << std::setw(22)
+              << (double(mem_opbyop) / mem_external_total) << "\n\n";
 
     std::cout << "Max sensitivity difference: " << std::scientific << std::setprecision(2)
               << max_diff_ext_op << "\n\n";
@@ -577,20 +623,28 @@ int main()
               << max_fd_error << "\n\n";
 
     // 5. Cost comparison: Adjoint pass vs. bumping all 100 parameters
-    t_start = std::chrono::high_resolution_clock::now();
-    for (int p = 0; p < num_params; ++p)
+    const int BUMP_REPEATS = 3;
+    double t_bump_all_ms = 1e9;
+    for (int r = 0; r < BUMP_REPEATS; ++r)
     {
-        std::vector<double> bumped_up = base_vols;
-        std::vector<double> bumped_dn = base_vols;
-        bumped_up[p] += FD_H;
-        bumped_dn[p] -= FD_H;
-        LocalVolGrid<double> g_up{VOL_GRID_S, VOL_GRID_T, S_MAX, MATURITY, bumped_up};
-        LocalVolGrid<double> g_dn{VOL_GRID_S, VOL_GRID_T, S_MAX, MATURITY, bumped_dn};
-        priceAmericanPut(g_up);
-        priceAmericanPut(g_dn);
+        auto t_start = std::chrono::high_resolution_clock::now();
+        for (int p = 0; p < num_params; ++p)
+        {
+            std::vector<double> bumped_up = base_vols;
+            std::vector<double> bumped_dn = base_vols;
+            bumped_up[p] += FD_H;
+            bumped_dn[p] -= FD_H;
+            LocalVolGrid<double> g_up{VOL_GRID_S, VOL_GRID_T, S_MAX, MATURITY, bumped_up};
+            LocalVolGrid<double> g_dn{VOL_GRID_S, VOL_GRID_T, S_MAX, MATURITY, bumped_dn};
+            double p_up = priceAmericanPut(g_up);
+            double p_dn = priceAmericanPut(g_dn);
+            (void)p_up;
+            (void)p_dn;
+        }
+        auto t_end = std::chrono::high_resolution_clock::now();
+        double ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+        t_bump_all_ms = std::min(t_bump_all_ms, ms);
     }
-    t_end = std::chrono::high_resolution_clock::now();
-    double t_bump_all_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
 
     std::cout << "--- Performance Cost Analysis ---\n";
     std::cout << std::fixed << std::setprecision(2);
@@ -600,11 +654,14 @@ int main()
     std::cout << "All 100 sensitivities via Bumping:  " << t_bump_all_ms << " ms  ("
               << (t_bump_all_ms / t_price_ms) << "x pricing)\n";
     std::cout << "Adjoint speedup vs. full bumping:   " << (t_bump_all_ms / t_ad_external_ms)
-              << "x faster\n\n";
+              << "x faster\n";
+    std::cout
+        << "Note: Timings and exact ratios depend on the machine, compiler, and CPU load.\n\n";
 
     // Validation checks
     bool success = true;
-    if (std::abs(price_external - price_passive) > 1e-12)
+    if (std::abs(price_external - price_passive) > 1e-12 ||
+        std::abs(price_opbyop - price_passive) > 1e-12)
     {
         std::cerr << "FAIL: AD price does not match passive price!\n";
         success = false;
@@ -619,9 +676,9 @@ int main()
         std::cerr << "FAIL: Sensitivities do not match finite difference bumping!\n";
         success = false;
     }
-    if (mem_external >= mem_opbyop)
+    if (mem_external_total >= mem_opbyop)
     {
-        std::cerr << "FAIL: External function did not reduce tape memory!\n";
+        std::cerr << "FAIL: External function did not reduce total memory!\n";
         success = false;
     }
 
