@@ -108,7 +108,13 @@ Compared against [CppAD](https://github.com/coin-or/CppAD), [Adept 2](https://gi
   </a>
 </p>
 
-XAD v2.2.0, AMD EPYC (Zen 5), one core, GCC 15.2, run 10 November 2026. Full methodology, source code and results: **[auto-differentiation/ad-benchmarks](https://github.com/auto-differentiation/ad-benchmarks)**
+XAD v2.2.0, AMD EPYC (Zen 5), one core, GCC 15.2, run 10 November 2026; ad-benchmarks [v1.0.0](https://github.com/auto-differentiation/ad-benchmarks/tree/v1.0.0). Full methodology, source code and [results](https://github.com/auto-differentiation/ad-benchmarks#results): **[auto-differentiation/ad-benchmarks](https://github.com/auto-differentiation/ad-benchmarks)**
+
+With code generation ([xad-codegen](https://www.xcelerit.com/xad/licensing/), commercial), XAD is the fastest of the C and C++ AD tools on all 11 [GradBench](https://gradben.ch) problems,
+and on average 2.4x faster than the next-fastest tool (geometric mean of the ratios to the fastest other AD tool, open-source XAD excluded).
+On seven of the nine problems with hand-written derivatives, the generated code beats them.
+Without code generation, open-source XAD is the fastest tape-based AD tool on 7 of the 11 and second on the other four.
+Measured by Xcelerit with GradBench's harness and tool images, 16 Nov 2026: [GradBench results](https://www.xcelerit.com/xad/benchmarks/#bench-gradbench).
 
 ## Key Features
 
@@ -116,7 +122,7 @@ XAD v2.2.0, AMD EPYC (Zen 5), one core, GCC 15.2, run 10 November 2026. Full met
 - **Vector mode**: Compute multiple derivatives at once.
 - **Checkpointing Support**: Efficient tape memory management for large-scale applications.
 - **External Function Interface**: Seamlessly connect with external libraries.
-- **Eigen support**: Works with the popular linear algebra library [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page).
+- **Eigen support**: Works with the popular linear algebra library [Eigen](https://gitlab.com/libeigen/eigen).
 - **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many
   workflows. See [samples/jit_tutorial](samples/jit_tutorial).
 
@@ -126,7 +132,7 @@ XAD v2.2.0, AMD EPYC (Zen 5), one core, GCC 15.2, run 10 November 2026. Full met
 |---|---|
 | [xad-py](https://github.com/auto-differentiation/xad-py) | Python bindings for XAD |
 | [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD) | Full QuantLib integration — compute all Greeks at once, up to 3 orders of magnitude faster than bump-and-reval |
-| [QuantLib-Risks-Py](https://github.com/auto-differentiation/QuantLib-Risks-Py) | QuantLib risks from Python |
+| [QuantLibAAD-Py](https://github.com/auto-differentiation/QuantLibAAD-Py) | QuantLibAAD from Python |
 | [xad-codegen](https://www.xcelerit.com/xad/licensing/) | Native code generation backend — maximum throughput (commercial) |
 | [AAD Training](https://www.xcelerit.com/training/) | Hands-on AAD training for quants and quant developers - delivered to dozens of tier 1 banks and financial services firms |
 
