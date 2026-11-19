@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sample `AmericanPDE`: prices an American put option with a Crank-Nicolson finite-difference solver under a local volatility surface and computes sensitivities to all grid points in one adjoint pass; wraps the tridiagonal matrix solve (Thomas algorithm) as an external function with a hand-written adjoint (solving with the transposed matrix), with early exercise handled via `xad::max()`, Rannacher smoothing, and sensitivity validation against bumping
 
+- Sample `HestonCalibration`: calibrates the five Heston parameters to 35 call prices (5 maturities x 7 strikes) with Levenberg-Marquardt; the semi-analytic pricer (Lewis formula, "little Heston trap" characteristic function, Gauss-Legendre quadrature) runs on `std::complex<xad::AReal<double>>`, the residual Jacobian comes from adjoint mode and is checked against finite differences
+
 ### Changed
 
 - Docs: reference pages updated for 2.2 (JIT compiler and backend members, tape checkpoints, version macros, max/min derivatives, build options for tape checks and ARM, headers, direct mode types)
