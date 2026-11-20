@@ -272,17 +272,17 @@ if provided by the compiler's math library.
 
 ---
 
-#### `tgamma`
+### `tgamma`
 
 `#!c++ T tgamma(T x)` computes the gamma function of `x`.
 Its derivative is `tgamma(x) * digamma(x)`.
 
-#### `lgamma`
+### `lgamma`
 
 `#!c++ T lgamma(T x)` computes the natural logarithm of the absolute value of
 the gamma function of `x`. Its derivative is `digamma(x)`.
 
-#### `digamma`
+### `digamma`
 
 `#!c++ T digamma(T x)` computes the digamma function, the derivative of `lgamma`,
 for positive and negative arguments, to about double precision. It returns NaN at
