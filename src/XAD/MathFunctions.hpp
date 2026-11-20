@@ -130,12 +130,14 @@ using ::std::isfinite;
 using ::std::isinf;
 using ::std::isnan;
 using ::std::isnormal;
+using ::std::lgamma;
 using ::std::log1p;
 using ::std::log2;
 using ::std::nextafter;
 using ::std::remainder;
 using ::std::round;
 using ::std::signbit;
+using ::std::tgamma;
 using ::std::trunc;
 
 namespace detail
@@ -192,5 +194,110 @@ XAD_INLINE Scalar invSqrtOfSquarePlus(const Scalar& x, const Scalar& c)
     return Scalar(1) / abs(x);
 }
 }  // namespace detail
+
+namespace detail
+{
+// pi and pi^2 in the precision of T's innermost scalar
+template <class T>
+XAD_INLINE T piOf()
+{
+    typedef typename ExprTraits<T>::nested_type nested;
+    return T(nested(3.14159265358979323846264338327950288419716939937510));
+}
+
+template <class T>
+XAD_INLINE T quietNaNOf()
+{
+    typedef typename ExprTraits<T>::nested_type nested;
+    return T(std::numeric_limits<nested>::quiet_NaN());
+}
+
+// digamma (psi) function, the derivative of lgamma: the recurrence psi(x) = psi(x + 1) - 1 / x
+// shifts x to at least 10, where the asymptotic series is accurate to double precision; negative
+// arguments use the reflection psi(x) = psi(1 - x) - pi / tan(pi x), with poles (NaN) at the
+// non-positive integers
+template <class T>
+T digamma(const T& x0)
+{
+    using std::floor;
+    using std::log;
+    using std::round;
+    using std::tan;
+    T x = x0;
+    T result = T(0);
+    if (x != x)
+        return x;
+    if (x <= T(0))
+    {
+        if (x == floor(x))
+            return quietNaNOf<T>();
+        // x - round(x) is exact, so pi times it keeps its relative precision near the poles
+        result = -piOf<T>() / tan(piOf<T>() * (x - round(x)));
+        x = T(1) - x;
+    }
+    while (x < T(10))
+    {
+        result -= T(1) / x;
+        x += T(1);
+    }
+    const T ix2 = T(1) / (x * x);
+    // Bernoulli terms B_2k / (2k x^2k), k = 1..7
+    const T series =
+        ix2 *
+        (T(1.0 / 12) -
+         ix2 * (T(1.0 / 120) -
+                ix2 * (T(1.0 / 252) -
+                       ix2 * (T(1.0 / 240) - ix2 * (T(1.0 / 132) - ix2 * (T(691.0 / 32760) -
+                                                                          ix2 * T(1.0 / 12)))))));
+    return result + log(x) - T(0.5) / x - series;
+}
+
+// trigamma function, the derivative of digamma, in the same way: psi1(x) = psi1(x + 1) + 1 / x^2
+// up to x >= 10, then the asymptotic series; reflection psi1(x) = pi^2 / sin^2(pi x) - psi1(1 - x).
+// Written with arithmetic only, so it also works on active types (higher-order derivatives)
+template <class T>
+T trigamma(const T& x0)
+{
+    using std::floor;
+    using std::round;
+    using std::sin;
+    T x = x0;
+    if (x != x)
+        return x;
+    T result = T(0);
+    T sign = T(1);
+    if (x <= T(0))
+    {
+        if (x == floor(x))
+            return quietNaNOf<T>();
+        const T s = sin(piOf<T>() * (x - round(x)));
+        result = piOf<T>() * piOf<T>() / (s * s);
+        sign = T(-1);
+        x = T(1) - x;
+    }
+    T shifted = T(0);
+    while (x < T(10))
+    {
+        shifted += T(1) / (x * x);
+        x += T(1);
+    }
+    const T ix = T(1) / x;
+    const T ix2 = ix * ix;
+    // 1/x + 1/(2x^2) + sum of B_2k / x^(2k+1), k = 1..7
+    const T series =
+        ix + T(0.5) * ix2 +
+        ix * ix2 *
+            (T(1.0 / 6) -
+             ix2 * (T(1.0 / 30) -
+                    ix2 * (T(1.0 / 42) -
+                           ix2 * (T(1.0 / 30) - ix2 * (T(5.0 / 66) - ix2 * (T(691.0 / 2730) -
+                                                                            ix2 * T(7.0 / 6)))))));
+    return result + sign * (shifted + series);
+}
+}  // namespace detail
+
+// digamma (psi) function, the logarithmic derivative of the gamma function
+XAD_INLINE double digamma(double x) { return detail::digamma(x); }
+XAD_INLINE float digamma(float x) { return static_cast<float>(detail::digamma(double(x))); }
 
 }  // namespace xad
