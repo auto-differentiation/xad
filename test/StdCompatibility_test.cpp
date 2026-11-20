@@ -87,6 +87,8 @@ TEST(StdCompatibility, canUseStdMath)
     EXPECT_THAT(std::pow(x, x).getValue(), DoubleNear(std::pow(xd, xd), 1e-9));
     EXPECT_THAT(std::erf(x).getValue(), DoubleNear(std::erf(xd), 1e-9));
     EXPECT_THAT(std::erfc(x).getValue(), DoubleNear(std::erfc(xd), 1e-9));
+    EXPECT_THAT(std::tgamma(x).getValue(), DoubleNear(std::tgamma(xd), 1e-9));
+    EXPECT_THAT(std::lgamma(x).getValue(), DoubleNear(std::lgamma(xd), 1e-9));
     EXPECT_THAT(std::scalbn(x, 2).getValue(), DoubleNear(std::scalbn(xd, 2), 1e-9));
 
     EXPECT_THAT(std::ldexp(x, 3).getValue(), DoubleNear(std::ldexp(xd, 3), 1e-9));
@@ -414,6 +416,7 @@ XAD_STD_FUNCTOR(StdRoots, std::sqrt(x) + std::cbrt(x));
 XAD_STD_FUNCTOR(StdPow, std::pow(x, x) + std::pow(x, 2) + std::pow(x, 2.5) + std::pow(2.5, x) +
                             std::pow(2, x));
 XAD_STD_FUNCTOR(StdErf, std::erf(x) + std::erfc(x));
+XAD_STD_FUNCTOR(StdGamma, std::tgamma(x) + std::lgamma(x));
 XAD_STD_FUNCTOR(StdScaling, std::scalbn(x, 2) + std::ldexp(x, 3));
 XAD_STD_FUNCTOR(StdCopysign, std::copysign(x, -1.0) + std::copysign(x, T(-x)));
 
@@ -458,6 +461,7 @@ TYPED_TEST(StdCompatibilityMath, ValuesAndDerivatives)
     checkStdFunction<TypeParam>(StdRoots(), 0.3, "roots");
     checkStdFunction<TypeParam>(StdPow(), 0.3, "pow");
     checkStdFunction<TypeParam>(StdErf(), 0.3, "erf");
+    checkStdFunction<TypeParam>(StdGamma(), 0.3, "tgamma/lgamma");
     checkStdFunction<TypeParam>(StdScaling(), 0.3, "scalbn/ldexp");
     checkStdFunction<TypeParam>(StdCopysign(), 0.3, "copysign");
     checkStdFunction<TypeParam>(StdFrexpModf(), 0.3, "frexp/modf");

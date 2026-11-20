@@ -26,6 +26,8 @@
 #include <XAD/XAD.hpp>
 #include <gtest/gtest.h>
 #include "TestHelpers.hpp"
+#include <cmath>
+#include <limits>
 
 LOCAL_TEST_FUNCTOR1(degreesAD, degrees(x))
 TEST(ExpressionsMath, degreesAD)
@@ -324,6 +326,98 @@ TEST(ExpressionsMath, erfcExpr)
     mathTest_all(
         0.3, std::erfc(2.3 * 0.3), -2.3 * 2.0 / std::sqrt(M_PI) * std::exp(-2.3 * 2.3 * 0.3 * 0.3),
         4. * 2.3 * 2.3 * 2.3 * 0.3 * std::exp(-2.3 * 2.3 * 0.3 * 0.3) / std::sqrt(M_PI), erfcExpr);
+}
+
+LOCAL_TEST_FUNCTOR1(tgammaAD, tgamma(x))
+TEST(ExpressionsMath, tgammaAD)
+{
+    // derivatives tgamma(x) * digamma(x) and tgamma(x) * (digamma(x)^2 + trigamma(x))
+    mathTest_all(2.7, std::tgamma(2.7), 1.2307796833525972, 1.6714666893832903, tgammaAD);
+    mathTest_all(0.3, std::tgamma(0.3), -10.478042841758517, 73.332451673574937, tgammaAD);
+    mathTest_all(-1.3, std::tgamma(-1.3), 9.5940952077655055, 76.039137001296766, tgammaAD);
+}
+
+LOCAL_TEST_FUNCTOR1(tgammaExpr, tgamma(0.5 * x))
+TEST(ExpressionsMath, tgammaExpr)
+{
+    mathTest_all(2.7, std::tgamma(0.5 * 2.7), -0.050763556394748485, 0.242877383360948, tgammaExpr);
+}
+
+LOCAL_TEST_FUNCTOR1(lgammaAD, lgamma(x))
+TEST(ExpressionsMath, lgammaAD)
+{
+    // derivatives digamma(x) and trigamma(x), also for negative x (log of |tgamma(x)|)
+    mathTest_all(3.5, std::lgamma(3.5), 1.1031566406452431, 0.33035775610023488, lgammaAD);
+    mathTest_all(0.3, std::lgamma(0.3), -3.5025242222001332, 12.24536454610773, lgammaAD);
+    mathTest_all(-2.5, std::lgamma(-2.5), 1.1031566406452431, 9.5392466449891238, lgammaAD);
+}
+
+LOCAL_TEST_FUNCTOR1(lgammaExpr, lgamma(2.3 * x))
+TEST(ExpressionsMath, lgammaExpr)
+{
+    mathTest_all(0.3, std::lgamma(2.3 * 0.3), -2.8719873893028152, 15.339506080762495, lgammaExpr);
+}
+
+LOCAL_TEST_FUNCTOR1(digammaAD, xad::digamma(x))
+TEST(ExpressionsMath, digammaAD)
+{
+    // derivatives trigamma(x) and tetragamma(x)
+    mathTest_all(0.3, xad::digamma(0.3), 12.24536454610773, -75.272536588726027, digammaAD);
+    mathTest_all(-0.7, xad::digamma(-0.7), 14.286180872638342, -69.441632798638565, digammaAD);
+}
+
+TEST(ExpressionsMath, digammaKnownValues)
+{
+    // reference values from mpmath (40 digits), rounded to double
+    const double x[] = {1.0, 0.5, 2.0, 10.5, 25.0, 1e6, 0.3, -0.7, -2.5, -100.25, 1e-8};
+    const double psi[] = {-0.57721566490153287, -1.9635100260214235, 0.42278433509846713,
+                          2.3030010342976865,   3.198742512851974,   13.815510057964191,
+                          -3.5025242222001332,  -2.0739527936287043, 1.1031566406452431,
+                          7.7542389592086458,   -100000000.57721564};
+    const double psi1[] = {1.6449340668482264,   4.934802200544679,    0.64493406684822641,
+                           0.099916956059126733, 0.040810663257225578, 1.0000005000001667e-06,
+                           12.24536454610773,    14.286180872638342,   9.5392466449891238,
+                           19.729283325349364,   10000000000000002.0};
+    for (std::size_t i = 0; i < sizeof(x) / sizeof(x[0]); ++i)
+    {
+        EXPECT_NEAR(psi[i], xad::digamma(x[i]), 1e-14 * std::abs(psi[i])) << "digamma " << x[i];
+        EXPECT_NEAR(psi1[i], xad::detail::trigamma(x[i]), 1e-14 * std::abs(psi1[i]))
+            << "trigamma " << x[i];
+    }
+    EXPECT_NEAR(-0.57721566490153287, xad::digamma(1.0f), 1e-6);
+}
+
+TEST(ExpressionsMath, digammaPoles)
+{
+    for (double x : {0.0, -1.0, -2.0, -1e10})
+    {
+        EXPECT_TRUE(std::isnan(xad::digamma(x))) << x;
+        EXPECT_TRUE(std::isnan(xad::detail::trigamma(x))) << x;
+    }
+    EXPECT_TRUE(std::isnan(xad::digamma(std::numeric_limits<double>::quiet_NaN())));
+    EXPECT_EQ(std::numeric_limits<double>::infinity(),
+              xad::digamma(std::numeric_limits<double>::infinity()));
+}
+
+TEST(ExpressionsMath, gammaDerivativesMatchFiniteDifferences)
+{
+    typedef xad::adj<double> mode;
+    for (double x0 : {0.05, 0.7, 1.4616321449683623, 3.0, 7.25, 42.0, -0.4, -3.6})
+    {
+        mode::tape_type tape;
+        mode::active_type x = x0;
+        tape.registerInput(x);
+        tape.newRecording();
+        mode::active_type y = tgamma(x) + lgamma(x) + xad::digamma(x);
+        tape.registerOutput(y);
+        derivative(y) = 1.0;
+        tape.computeAdjoints();
+
+        auto f = [](double v) { return std::tgamma(v) + std::lgamma(v) + xad::digamma(v); };
+        const double h = 1e-6 * (std::max)(1.0, std::abs(x0));
+        const double fd = (f(x0 + h) - f(x0 - h)) / (2 * h);
+        EXPECT_NEAR(fd, derivative(x), 1e-6 * (std::max)(1.0, std::abs(fd))) << x0;
+    }
 }
 
 LOCAL_TEST_FUNCTOR1(tanhAD, tanh(x))

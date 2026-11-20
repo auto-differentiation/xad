@@ -91,6 +91,8 @@ XAD_MAKE_UNARY_FUNCTOR(floor, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(ceil, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(trunc, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(round, Scalar())
+XAD_MAKE_UNARY_FUNCTOR(lgamma, digamma(a))
+XAD_MAKE_UNARY_FUNCTOR(digamma, detail::trigamma(a))
 
 // expressed in terms of result
 #define XAD_MAKE_UNARY_FUNCTOR_RES(func, der)                                                      \
@@ -117,6 +119,7 @@ XAD_MAKE_UNARY_FUNCTOR_RES(exp, v)
 XAD_MAKE_UNARY_FUNCTOR_RES(tanh, Scalar(1) - v * v)
 XAD_MAKE_UNARY_FUNCTOR_RES(sqrt, Scalar(0.5) / v)
 XAD_MAKE_UNARY_FUNCTOR_RES(cbrt, Scalar(1) / Scalar(3) / (v * v))
+XAD_MAKE_UNARY_FUNCTOR_RES(tgamma, digamma(a) * v)
 
 // tangent
 
@@ -530,8 +533,6 @@ struct scalar_remquo2_op
 /*
  * TODO:
 logb
-tgamma
-lgamma
 
 scalbln
 rint

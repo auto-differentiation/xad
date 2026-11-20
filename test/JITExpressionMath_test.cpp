@@ -224,6 +224,24 @@ TEST(JITExpressionMath, erfcAD)
     mathTest_jit(0.3, std::erfc(0.3), -2.0 / std::sqrt(M_PI) * std::exp(-0.3 * 0.3), jitErfcAD);
 }
 
+JIT_TEST_FUNCTOR1(jitTgammaAD, tgamma(x))
+TEST(JITExpressionMath, tgammaAD)
+{
+    mathTest_jit(2.7, std::tgamma(2.7), 1.2307796833525972, jitTgammaAD);
+}
+
+JIT_TEST_FUNCTOR1(jitLgammaAD, lgamma(x))
+TEST(JITExpressionMath, lgammaAD)
+{
+    mathTest_jit(-2.5, std::lgamma(-2.5), 1.1031566406452431, jitLgammaAD);
+}
+
+JIT_TEST_FUNCTOR1(jitDigammaAD, xad::digamma(x))
+TEST(JITExpressionMath, digammaAD)
+{
+    mathTest_jit(0.3, xad::digamma(0.3), 12.24536454610773, jitDigammaAD);
+}
+
 JIT_TEST_FUNCTOR1(jitExpm1AD, expm1(x))
 TEST(JITExpressionMath, expm1AD)
 {

@@ -268,6 +268,29 @@ compiler's math library.
 `#!c++ T erfc(T x)` computes the complementary error function of `x`,
 if provided by the compiler's math library.
 
+## Gamma Functions
+
+---
+
+#### `tgamma`
+
+`#!c++ T tgamma(T x)` computes the gamma function of `x`.
+Its derivative is `tgamma(x) * digamma(x)`.
+
+#### `lgamma`
+
+`#!c++ T lgamma(T x)` computes the natural logarithm of the absolute value of
+the gamma function of `x`. Its derivative is `digamma(x)`.
+
+#### `digamma`
+
+`#!c++ T digamma(T x)` computes the digamma function, the derivative of `lgamma`,
+for positive and negative arguments, to about double precision. It returns NaN at
+the poles (zero and the negative integers). It is also defined for `double` and
+`float`, as the standard library has no digamma function, and its derivative
+(the trigamma function) is computed in the same way, so second-order derivatives
+of `tgamma` and `lgamma` work too.
+
 ## Floating Point Classification
 
 #### `isinf`
