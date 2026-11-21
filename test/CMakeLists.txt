@@ -42,6 +42,7 @@ set(testfiles
     ExpressionMeta_test.cpp
     Tbr_test.cpp
     StreamOps_test.cpp
+    Format_test.cpp
     StdCompatibility_test.cpp
     ReusableRange_test.cpp
     PartialRollback_test.cpp

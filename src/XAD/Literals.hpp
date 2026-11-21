@@ -39,6 +39,11 @@
 #include <iosfwd>
 #include <utility>
 
+#if (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L) || \
+    (!defined(_MSVC_LANG) && __cplusplus >= 202002L)
+#include <format>
+#endif
+
 namespace xad
 {
 template <class, std::size_t>
@@ -1416,6 +1421,25 @@ XAD_INLINE std::basic_istream<C, T>& operator>>(std::basic_istream<C, T>& is, FR
     return is;
 }
 
+namespace detail
+{
+
+template <class T>
+typename std::enable_if<std::is_arithmetic<T>::value, const T&>::type formatValue(const T& value)
+{
+    return value;
+}
+
+template <class T>
+typename std::enable_if<!std::is_arithmetic<T>::value,
+                        const typename ExprTraits<T>::nested_type&>::type
+formatValue(const T& value)
+{
+    return formatValue(xad::value(value));
+}
+
+}  // namespace detail
+
 typedef AReal<double> AD;
 typedef AReal<float> AF;
 
@@ -1425,6 +1449,43 @@ typedef FReal<float> FAF;
 typedef ARealDirect<double, 1> ADD;
 typedef ARealDirect<float, 1> AFD;
 }  // namespace xad
+
+#if defined(__cpp_lib_format)
+namespace std
+{
+
+template <class Scalar, std::size_t N, class CharT>
+struct formatter<xad::AReal<Scalar, N>, CharT>
+    : formatter<typename xad::ExprTraits<xad::AReal<Scalar, N>>::nested_type, CharT>
+{
+    using Base =
+        formatter<typename xad::ExprTraits<xad::AReal<Scalar, N>>::nested_type, CharT>;
+
+    template <class FormatContext>
+    typename FormatContext::iterator format(const xad::AReal<Scalar, N>& value,
+                                            FormatContext& context) const
+    {
+        return Base::format(xad::detail::formatValue(value), context);
+    }
+};
+
+template <class Scalar, std::size_t N, class CharT>
+struct formatter<xad::FReal<Scalar, N>, CharT>
+    : formatter<typename xad::ExprTraits<xad::FReal<Scalar, N>>::nested_type, CharT>
+{
+    using Base =
+        formatter<typename xad::ExprTraits<xad::FReal<Scalar, N>>::nested_type, CharT>;
+
+    template <class FormatContext>
+    typename FormatContext::iterator format(const xad::FReal<Scalar, N>& value,
+                                            FormatContext& context) const
+    {
+        return Base::format(xad::detail::formatValue(value), context);
+    }
+};
+
+}  // namespace std
+#endif
 
 
 // libc++ 21 replaced the __promote class template with the SFINAE-friendly

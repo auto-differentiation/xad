@@ -277,6 +277,14 @@ jobs:
         include:
           - memory: lowmem
             cmake_mem_flag: -DXAD_REDUCED_MEMORY=ON
+          # C++20 std::format coverage
+          - version: "14"
+            config: Release
+            reuse_slots: OFF
+            standard: c++20
+            memory: default
+            jit: OFF
+            shared: "OFF"
           # Coverage job: uses compiler key as unique differentiator
           # (not in base matrix, so creates a standalone job)
           - version: "11"
