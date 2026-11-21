@@ -51,6 +51,14 @@ and goes to `x` (the result) with a NaN operand.
 `#!c++ T fmin(T x, T y)` is `#!c++ min`, except that, as in `std::fmin`, a NaN argument is ignored:
 the result and its derivative are those of the other argument (NaN if both are NaN).
 
+#### `fdim`
+
+`#!c++ T fdim(T x, T y)` returns the positive difference: `x - y` if `x > y`,
+and 0 otherwise.
+The derivatives are 1 with respect to `x` and -1 with respect to `y` on the
+`x > y` branch, and 0 otherwise, including at `x == y`
+(unlike `#!c++ max`/`#!c++ min`, ties are not split).
+
 #### `floor`
 
 `#!c++ T floor(T x)` rounds towards negative infinity.
@@ -72,6 +80,16 @@ infinite precision and rounded only once to fit the result type.
 
 `#!c++ T round(T x)` rounds to the nearest integer value.
 
+#### `rint`
+
+`#!c++ T rint(T x)` rounds to the nearest integer value in the current
+rounding mode. Its derivative is 0.
+
+#### `nearbyint`
+
+`#!c++ T nearbyint(T x)` is like `#!c++ rint`, but never raises the inexact
+floating-point exception. Its derivative is 0.
+
 #### `lround`
 
 `#!c++ long lround(T x)` is like `#!c++ round`, but converts the
@@ -81,6 +99,14 @@ result to a `#!c++ long` type.
 
 `#!c++ long long llround(T x)` is like `#!c++ round`, but converts the
 result to a `#!c++ long long` type.
+
+#### `lrint`
+
+`#!c++ long lrint(T x)` is like `#!c++ rint`, but converts the result to a `#!c++ long` type.
+
+#### `llrint`
+
+`#!c++ long long llrint(T x)` is like `#!c++ rint`, but converts the result to a `#!c++ long long` type.
 
 #### `fmod`
 
@@ -250,9 +276,19 @@ arg into a normalised fraction and an integral power of two.
 `#!c++ int ilogb(T arg)` returns the integral part of the logarithm of `abs(x)`,
 using `FLT_RADIX` as base for the log.
 
+#### `logb`
+
+`#!c++ T logb(T x)` extracts the exponent of the floating-point value `x`,
+using `FLT_RADIX` as base, as a floating-point value. Its derivative is 0.
+
 #### `scalbn`
 
 `#!c++ T scalbn(T arg, int exp)` calculates `arg * pow(FLT_RADIX, exp)`.
+
+#### `scalbln`
+
+`#!c++ T scalbln(T arg, long exp)` calculates `arg * pow(FLT_RADIX, exp)`,
+as `#!c++ scalbn` does, but with a `#!c++ long` exponent.
 
 ## Error Functions
 

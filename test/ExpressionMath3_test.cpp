@@ -102,6 +102,32 @@ TEST(ExpressionsMath, scalbnExpr)
                  scalbnExpr);
 }
 
+LOCAL_TEST_FUNCTOR1(scalblnAD, scalbln(x, 2))
+TEST(ExpressionsMath, scalblnAD)
+{
+    mathTest_all(0.1, std::scalbln(0.1, 2), std::pow(double(FLT_RADIX), 2.0), 0.0, scalblnAD);
+}
+
+LOCAL_TEST_FUNCTOR1(scalblnExpr, scalbln(x * 2.3, 2))
+TEST(ExpressionsMath, scalblnExpr)
+{
+    mathTest_all(0.1, std::scalbln(0.1 * 2.3, 2), std::pow(double(FLT_RADIX), 2.0) * 2.3, 0.0,
+                 scalblnExpr);
+}
+
+LOCAL_TEST_FUNCTOR1(scalblnNegAD, scalbln(x, -1))
+TEST(ExpressionsMath, scalblnNegAD)
+{
+    mathTest_all(0.1, std::scalbln(0.1, -1), std::pow(double(FLT_RADIX), -1.0), 0.0, scalblnNegAD);
+}
+
+LOCAL_TEST_FUNCTOR1(scalblnLongAD, scalbln(x, 40L))
+TEST(ExpressionsMath, scalblnLongAD)
+{
+    mathTest_all(0.1, std::scalbln(0.1, 40L), std::pow(double(FLT_RADIX), 40.0), 0.0,
+                 scalblnLongAD);
+}
+
 LOCAL_TEST_FUNCTOR2(maxADAD, max(x1, x2))
 LOCAL_TEST_FUNCTOR2(fmaxADAD, fmax(x1, x2))
 TEST(ExpressionsMath, maxADAD)
@@ -499,6 +525,22 @@ TEST(ExpressionsMath, frexpExpr)
 {
     mathTest_all(1024.0, 0.5, 1.0 / (1 << 11), 0.0, frexpExpr);
     EXPECT_EQ(testFunctor_frexpExpr::exponent, 11);
+}
+
+LOCAL_TEST_FUNCTOR1(logbAD, logb(x))
+TEST(ExpressionsMath, logbAD)
+{
+    mathTest_all(1024.0, std::logb(1024.0), 0.0, 0.0, logbAD);
+    mathTest_all(1.3, std::logb(1.3), 0.0, 0.0, logbAD);
+    mathTest_all(0.5, std::logb(0.5), 0.0, 0.0, logbAD);
+    mathTest_all(-8.0, std::logb(-8.0), 0.0, 0.0, logbAD);
+}
+
+LOCAL_TEST_FUNCTOR1(logbExpr, logb(2.3 * x))
+TEST(ExpressionsMath, logbExpr)
+{
+    mathTest_all(1.3, std::logb(2.3 * 1.3), 0.0, 0.0, logbExpr);
+    mathTest_all(4.0, std::logb(2.3 * 4.0), 0.0, 0.0, logbExpr);
 }
 
 struct testFunctor_modfADScalar

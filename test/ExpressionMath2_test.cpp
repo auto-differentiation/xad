@@ -236,26 +236,40 @@ TEST(ExpressionsMath, sabsExprExpr)
 LOCAL_TEST_FUNCTOR1(floorAD, floor(x))
 LOCAL_TEST_FUNCTOR1(ceilAD, ceil(x))
 LOCAL_TEST_FUNCTOR1(truncAD, trunc(x))
+LOCAL_TEST_FUNCTOR1(rintAD, rint(x))
+LOCAL_TEST_FUNCTOR1(nearbyintAD, nearbyint(x))
 LOCAL_TEST_FUNCTOR1(roundAD, round(x))
-TEST(ExpressionsMath, ceil_floor_trunc_round_AD)
+TEST(ExpressionsMath, ceil_floor_trunc_rint_nearbyint_round_AD)
 {
     using xad::round;
     using xad::trunc;
     mathTest_all(1.3, std::floor(1.3), 0.0, 0.0, floorAD);
     mathTest_all(1.3, std::ceil(1.3), 0.0, 0.0, ceilAD);
     mathTest_all(1.3, trunc(1.3), 0.0, 0.0, truncAD);
+    mathTest_all(1.3, std::rint(1.3), 0.0, 0.0, rintAD);
+    mathTest_all(1.3, std::nearbyint(1.3), 0.0, 0.0, nearbyintAD);
     mathTest_all(1.3, round(1.3), 0.0, 0.0, roundAD);
     mathTest_all(1.0, std::floor(1.0), 0.0, 0.0, floorAD);
     mathTest_all(1.0, std::ceil(1.0), 0.0, 0.0, ceilAD);
     mathTest_all(1.0, trunc(1.0), 0.0, 0.0, truncAD);
+    mathTest_all(1.0, std::rint(1.0), 0.0, 0.0, rintAD);
+    mathTest_all(1.0, std::nearbyint(1.0), 0.0, 0.0, nearbyintAD);
     mathTest_all(1.0, round(1.0), 0.0, 0.0, roundAD);
+    mathTest_all(-1.3, std::rint(-1.3), 0.0, 0.0, rintAD);
+    mathTest_all(-1.3, std::nearbyint(-1.3), 0.0, 0.0, nearbyintAD);
+    mathTest_all(2.5, std::rint(2.5), 0.0, 0.0, rintAD);
+    mathTest_all(2.5, std::nearbyint(2.5), 0.0, 0.0, nearbyintAD);
+    mathTest_all(3.5, std::rint(3.5), 0.0, 0.0, rintAD);
+    mathTest_all(3.5, std::nearbyint(3.5), 0.0, 0.0, nearbyintAD);
 }
 
 LOCAL_TEST_FUNCTOR1(floorExpr, floor(2.3 * x))
 LOCAL_TEST_FUNCTOR1(ceilExpr, ceil(2.3 * x))
 LOCAL_TEST_FUNCTOR1(truncExpr, trunc(2.3 * x))
+LOCAL_TEST_FUNCTOR1(rintExpr, rint(2.3 * x))
+LOCAL_TEST_FUNCTOR1(nearbyintExpr, nearbyint(2.3 * x))
 LOCAL_TEST_FUNCTOR1(roundExpr, round(2.3 * x))
-TEST(ExpressionsMath, ceil_floor_trunc_round_Expr)
+TEST(ExpressionsMath, ceil_floor_trunc_rint_round_Expr)
 {
     using xad::round;
     using xad::trunc;
@@ -263,7 +277,11 @@ TEST(ExpressionsMath, ceil_floor_trunc_round_Expr)
     mathTest_all(1.3, std::floor(2.3 * 1.3), 0.0, 0.0, floorExpr);
     mathTest_all(1.3, std::ceil(2.3 * 1.3), 0.0, 0.0, ceilExpr);
     mathTest_all(1.3, trunc(2.3 * 1.3), 0.0, 0.0, truncExpr);
+    mathTest_all(1.3, std::rint(2.3 * 1.3), 0.0, 0.0, rintExpr);
+    mathTest_all(1.3, std::nearbyint(2.3 * 1.3), 0.0, 0.0, nearbyintExpr);
     mathTest_all(1.3, round(2.3 * 1.3), 0.0, 0.0, roundExpr);
+    mathTest_all(-1.3, std::rint(2.3 * -1.3), 0.0, 0.0, rintExpr);
+    mathTest_all(-1.3, std::nearbyint(2.3 * -1.3), 0.0, 0.0, nearbyintExpr);
 }
 
 #ifndef __FAST_MATH__
@@ -335,6 +353,40 @@ TEST(ExpressionsMath, fmod_Expr)
     mathTest_all(1.3, std::fmod(2.3 * 1.3, 0.5), 2.3, 0.0, fmodExprScalar);
     mathTest_all(0.5, std::fmod(1.3, 2.3 * 0.5), -2.3 * std::trunc(1.3 / 0.5 / 2.3), 0.0,
                  fmodScalarExpr);
+}
+
+LOCAL_TEST_FUNCTOR2(fdimAD, xad::fdim(x1, x2))
+LOCAL_TEST_FUNCTOR1(fdimADScalar, xad::fdim(x, 0.5))
+LOCAL_TEST_FUNCTOR1(fdimScalarAD, xad::fdim(1.3, x))
+TEST(ExpressionsMath, fdim_AD)
+{
+    // x > y: value x - y, derivatives 1 / -1
+    mathTest2_all(1.3, 0.5, std::fdim(1.3, 0.5), 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, fdimAD);
+    // x < y: value 0, derivatives 0 / 0
+    mathTest2_all(0.5, 1.3, std::fdim(0.5, 1.3), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, fdimAD);
+    // x == y: value 0, derivatives 0 / 0 (strict > convention)
+    mathTest2_all(0.5, 0.5, std::fdim(0.5, 0.5), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, fdimAD);
+    mathTest_all(1.3, std::fdim(1.3, 0.5), 1.0, 0.0, fdimADScalar);
+    mathTest_all(0.3, std::fdim(0.3, 0.5), 0.0, 0.0, fdimADScalar);
+    mathTest_all(0.3, std::fdim(1.3, 0.3), -1.0, 0.0, fdimScalarAD);
+    mathTest_all(1.5, std::fdim(1.3, 1.5), 0.0, 0.0, fdimScalarAD);
+}
+
+LOCAL_TEST_FUNCTOR2(fdimExprExpr, xad::fdim(2.3 * x1, 2.3 * x2))
+LOCAL_TEST_FUNCTOR2(fdimADExpr, xad::fdim(x1, 2.3 * x2))
+LOCAL_TEST_FUNCTOR2(fdimExprAD, xad::fdim(2.3 * x1, x2))
+LOCAL_TEST_FUNCTOR1(fdimExprScalar, xad::fdim(2.3 * x, 0.5))
+LOCAL_TEST_FUNCTOR1(fdimScalarExpr, xad::fdim(1.3, 2.3 * x))
+TEST(ExpressionsMath, fdim_Expr)
+{
+    mathTest2_all(1.3, 0.5, std::fdim(2.3 * 1.3, 2.3 * 0.5), 2.3, -2.3, 0.0, 0.0, 0.0, 0.0,
+                  fdimExprExpr);
+    mathTest2_all(0.5, 1.3, std::fdim(2.3 * 0.5, 2.3 * 1.3), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  fdimExprExpr);
+    mathTest2_all(1.3, 0.5, std::fdim(1.3, 2.3 * 0.5), 1.0, -2.3, 0.0, 0.0, 0.0, 0.0, fdimADExpr);
+    mathTest2_all(1.3, 0.5, std::fdim(2.3 * 1.3, 0.5), 2.3, -1.0, 0.0, 0.0, 0.0, 0.0, fdimExprAD);
+    mathTest_all(1.3, std::fdim(2.3 * 1.3, 0.5), 2.3, 0.0, fdimExprScalar);
+    mathTest_all(0.3, std::fdim(1.3, 2.3 * 0.3), -2.3, 0.0, fdimScalarExpr);
 }
 
 LOCAL_TEST_FUNCTOR2(remainderAD, remainder(x1, x2))
