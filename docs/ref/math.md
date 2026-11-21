@@ -82,11 +82,13 @@ infinite precision and rounded only once to fit the result type.
 
 #### `rint`
 
-`#!c++ T rint(T x)` rounds to the nearest integer value in the current.
+`#!c++ T rint(T x)` rounds to the nearest integer value in the current
+rounding mode. Its derivative is 0.
 
 #### `nearbyint`
 
-`#!c++ T nearbyint(T x)` is like `#!c++ rint`, but never raises the inexact floating-point exception. 
+`#!c++ T nearbyint(T x)` is like `#!c++ rint`, but never raises the inexact
+floating-point exception. Its derivative is 0.
 
 #### `lround`
 
