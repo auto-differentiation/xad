@@ -310,6 +310,19 @@ struct remainder_op
         return Scalar(-detail::remainder_quotient(a, b, v));
     }
 };
+template <class Scalar>
+struct fdim_op
+{
+    XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const { return fdim(a, b); }
+    XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
+    {
+        return Scalar(a > b ? Scalar(1) : 0);
+    }
+    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
+    {
+        return Scalar(a > b ? Scalar(-1) : 0);
+    }
+};
 
 template <class Scalar>
 struct OperatorTraits<remainder_op<Scalar> >

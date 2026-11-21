@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sample `HestonCalibration`: calibrates the five Heston parameters to 35 call prices (5 maturities x 7 strikes) with Levenberg-Marquardt; the semi-analytic pricer (Lewis formula, "little Heston trap" characteristic function, Gauss-Legendre quadrature) runs on `std::complex<xad::AReal<double>>`, the residual Jacobian comes from adjoint mode and is checked against finite differences
 
+- `rint`, `nearbyint`, `lrint`, `llrint`, `logb`, `scalbln` and `fdim` for XAD types and expressions: `rint` and `nearbyint` round to the nearest integer in the current rounding mode, with zero first and second derivatives; `lrint` and `llrint` return plain `long` / `long long` without tape recording; `logb` extracts the floating-point exponent, with zero derivatives; `scalbln` multiplies by `FLT_RADIX` raised to a `long` exponent, with derivative `FLT_RADIX^exp` (keeping the exponent `long` avoids truncation on LP64 platforms); `fdim` computes the positive difference, with derivatives 1 and -1 on the `x > y` branch and 0 otherwise, including at `x == y`; tested in first and second order, forward and adjoint mode, including scalar-argument forms of `fdim` and `scalbln` and the `std::` compatibility interface
+
 ### Changed
 
 - Docs: reference pages updated for 2.2 (JIT compiler and backend members, tape checkpoints, version macros, max/min derivatives, build options for tape checks and ARM, headers, direct mode types)
