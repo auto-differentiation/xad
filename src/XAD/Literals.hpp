@@ -41,7 +41,9 @@
 
 #if (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L) || \
     (!defined(_MSVC_LANG) && __cplusplus >= 202002L)
+#if defined(__has_include) && __has_include(<format>)
 #include <format>
+#endif
 #endif
 
 namespace xad
@@ -1425,13 +1427,13 @@ namespace detail
 {
 
 template <class T>
-typename std::enable_if<std::is_arithmetic<T>::value, const T&>::type formatValue(const T& value)
+typename std::enable_if<!ExprTraits<T>::isExpr, const T&>::type formatValue(const T& value)
 {
     return value;
 }
 
 template <class T>
-typename std::enable_if<!std::is_arithmetic<T>::value,
+typename std::enable_if<ExprTraits<T>::isExpr,
                         const typename ExprTraits<T>::nested_type&>::type
 formatValue(const T& value)
 {

@@ -23,15 +23,23 @@
 ******************************************************************************/
 
 #include <XAD/XAD.hpp>
+#include <XAD/StdCompatibility.hpp>
 #include <gtest/gtest.h>
+#include <limits>
+
+#if (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L) || \
+    (!defined(_MSVC_LANG) && __cplusplus >= 202002L)
+#if defined(__has_include) && __has_include(<format>)
+#include <format>
+#endif
+#endif
 
 #if defined(__cpp_lib_format)
-#include <format>
-
 TEST(StdFormat, ARealMatchesDouble)
 {
     xad::AReal<double> value = 1.25;
 
+    EXPECT_EQ(std::format("{}", value), std::format("{}", 1.25));
     EXPECT_EQ(std::format("{:.4f}", value), std::format("{:.4f}", 1.25));
     EXPECT_EQ(std::format("{:e}", value), std::format("{:e}", 1.25));
     EXPECT_EQ(std::format("{:10.2f}", value), std::format("{:10.2f}", 1.25));
@@ -63,5 +71,44 @@ TEST(StdFormat, NestedFRealARealMatchesInnermostDouble)
     xad::FReal<xad::AReal<double>> value = 1.25;
 
     EXPECT_EQ(std::format("{:.4f}", value), std::format("{:.4f}", 1.25));
+}
+
+TEST(StdFormat, FloatUnderlyingScalar)
+{
+    xad::AReal<float> active = 1.25f;
+    xad::FReal<float> forward = 1.25f;
+
+    EXPECT_EQ(std::format("{}", active), std::format("{}", 1.25f));
+    EXPECT_EQ(std::format("{:.4f}", forward), std::format("{:.4f}", 1.25f));
+}
+
+TEST(StdFormat, SpecialFloatingPointValuesMatchScalars)
+{
+    const double positiveInfinity = std::numeric_limits<double>::infinity();
+    const double negativeInfinity = -std::numeric_limits<double>::infinity();
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+
+    xad::AReal<double> activePositiveInfinity = positiveInfinity;
+    xad::AReal<double> activeNegativeInfinity = negativeInfinity;
+    xad::AReal<double> activeNaN = nan;
+
+    EXPECT_EQ(std::format("{}", activePositiveInfinity),
+              std::format("{}", positiveInfinity));
+    EXPECT_EQ(std::format("{}", activeNegativeInfinity),
+              std::format("{}", negativeInfinity));
+    EXPECT_EQ(std::format("{}", activeNaN), std::format("{}", nan));
+}
+
+TEST(StdFormat, StdCompatibilityArithmeticTraitsDoNotInterfere)
+{
+    xad::AReal<double> active = 1.25;
+    xad::FReal<double> forward = 1.25;
+
+    static_assert(std::is_arithmetic<decltype(active)>::value,
+                  "StdCompatibility should make AReal arithmetic");
+    static_assert(std::is_arithmetic<decltype(forward)>::value,
+                  "StdCompatibility should make FReal arithmetic");
+    EXPECT_EQ(std::format("{}", active), std::format("{}", 1.25));
+    EXPECT_EQ(std::format("{}", forward), std::format("{}", 1.25));
 }
 #endif

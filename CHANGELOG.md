@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `std::format` support for `AReal` and `FReal`, including nested AD types and delegation to the formatter of the innermost scalar value
+- C++20 `std::format` support for `AReal` and `FReal`, including nested active real types, when provided by the standard library
 
 - Sample `ImpliedVolatility`: solves Black-Scholes for the implied volatility with Newton's method and computes its sensitivities to the option price, spot and rate via the implicit function theorem (one adjoint sweep at the converged root, without differentiating the solver), validated against closed-form values and finite differences of the full solve
 
