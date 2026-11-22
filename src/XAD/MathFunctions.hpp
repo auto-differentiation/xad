@@ -202,7 +202,8 @@ template <class T>
 XAD_INLINE T piOf()
 {
     typedef typename ExprTraits<T>::nested_type nested;
-    return T(nested(3.14159265358979323846264338327950288419716939937510));
+    // long double literal, so long double types don't get pi truncated to double
+    return T(nested(3.14159265358979323846264338327950288419716939937510L));
 }
 
 template <class T>
@@ -299,5 +300,13 @@ T trigamma(const T& x0)
 // digamma (psi) function, the logarithmic derivative of the gamma function
 XAD_INLINE double digamma(double x) { return detail::digamma(x); }
 XAD_INLINE float digamma(float x) { return static_cast<float>(detail::digamma(double(x))); }
+XAD_INLINE long double digamma(long double x) { return detail::digamma(x); }
+
+// integral arguments are computed as double, like the std math functions
+template <class I>
+XAD_INLINE typename std::enable_if<std::is_integral<I>::value, double>::type digamma(I x)
+{
+    return detail::digamma(static_cast<double>(x));
+}
 
 }  // namespace xad

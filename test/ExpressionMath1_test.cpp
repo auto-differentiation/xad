@@ -387,6 +387,120 @@ TEST(ExpressionsMath, digammaKnownValues)
     EXPECT_NEAR(-0.57721566490153287, xad::digamma(1.0f), 1e-6);
 }
 
+namespace
+{
+// value, first and second derivative of f at x0 with nested forward mode
+template <class T, class F>
+void gammaFwdFwd(F f, T x0, T& y, T& d1, T& d2)
+{
+    xad::FReal<xad::FReal<T> > x = x0;
+    derivative(value(x)) = T(1);
+    value(derivative(x)) = T(1);
+    xad::FReal<xad::FReal<T> > r = f(x);
+    y = value(value(r));
+    d1 = derivative(value(r));
+    d2 = derivative(derivative(r));
+}
+
+// first derivative of f at x0 in adjoint mode
+template <class F>
+double gammaAdj(F f, double x0)
+{
+    typedef xad::adj<double> mode;
+    mode::tape_type tape;
+    mode::active_type x = x0;
+    tape.registerInput(x);
+    tape.newRecording();
+    mode::active_type y = f(x);
+    tape.registerOutput(y);
+    derivative(y) = 1.0;
+    tape.computeAdjoints();
+    return derivative(x);
+}
+
+// EXPECT_NEAR converts to double, so compare long double values directly
+#define EXPECT_NEAR_LD(ref, act, tol) EXPECT_LE(std::abs((ref) - (act)), (tol)) << (act)
+
+struct digammaFn
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return xad::digamma(x);
+    }
+};
+
+struct lgammaFn
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return lgamma(x);
+    }
+};
+
+struct tgammaFn
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return tgamma(x);
+    }
+};
+
+struct gammaSumFn
+{
+    template <class T>
+    T operator()(const T& x) const
+    {
+        return tgamma(x) + lgamma(x);
+    }
+};
+}  // namespace
+
+TEST(ExpressionsMath, digammaOverloads)
+{
+    // integral arguments are computed as double
+    EXPECT_DOUBLE_EQ(xad::digamma(2.0), xad::digamma(2));
+    EXPECT_DOUBLE_EQ(xad::digamma(10.0), xad::digamma(10L));
+    EXPECT_TRUE(std::isnan(xad::digamma(-1)));
+
+    // pi is not truncated to double for long double
+    EXPECT_EQ(3.141592653589793238462643383279502884197L, xad::detail::piOf<long double>());
+    EXPECT_NEAR_LD(-2.07395279362870441754L, xad::digamma(-0.7L), 1e-15L);
+    EXPECT_NEAR_LD(14.2861808726383427104L, xad::detail::trigamma(-0.7L), 1e-14L);
+}
+
+TEST(ExpressionsMath, gammaLongDouble)
+{
+    // reference values from mpmath (40 digits) at 2.7
+    const long double tg = 1.54468584585059376496L, tg1 = 1.23077968335259725262L,
+                      tg2 = 1.67146668938329031272L;
+    const long double lg = 0.434820553655104531705L, lg1 = 0.796783168991141015503L,
+                      lg2 = 0.447212068918323641463L;
+    long double y, d1, d2;
+    gammaFwdFwd(tgammaFn(), 2.7L, y, d1, d2);
+    EXPECT_NEAR_LD(tg, y, 1e-15L);
+    EXPECT_NEAR_LD(tg1, d1, 1e-15L);
+    EXPECT_NEAR_LD(tg2, d2, 1e-15L);
+    gammaFwdFwd(lgammaFn(), 2.7L, y, d1, d2);
+    EXPECT_NEAR_LD(lg, y, 1e-15L);
+    EXPECT_NEAR_LD(lg1, d1, 1e-15L);
+    EXPECT_NEAR_LD(lg2, d2, 1e-15L);
+
+    xad::FReal<long double> x = 2.7L;
+    derivative(x) = 1.0L;
+    xad::FReal<long double> r = gammaSumFn()(x);
+    EXPECT_NEAR_LD(tg + lg, value(r), 1e-15L);
+    EXPECT_NEAR_LD(tg1 + lg1, derivative(r), 1e-15L);
+
+    // AReal<long double> uses the same derivatives; the library has no long double tape, so
+    // check them through the operators it instantiates
+    EXPECT_NEAR_LD(tg1, xad::tgamma_op<long double>().derivative(2.7L, tg), 1e-15L);
+    EXPECT_NEAR_LD(lg1, xad::lgamma_op<long double>().derivative(2.7L), 1e-15L);
+    EXPECT_NEAR_LD(lg2, xad::digamma_op<long double>().derivative(2.7L), 1e-15L);
+}
+
 TEST(ExpressionsMath, digammaPoles)
 {
     for (double x : {0.0, -1.0, -2.0, -1e10})
