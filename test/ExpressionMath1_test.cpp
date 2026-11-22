@@ -369,15 +369,19 @@ TEST(ExpressionsMath, digammaAD)
 TEST(ExpressionsMath, digammaKnownValues)
 {
     // reference values from mpmath (40 digits), rounded to double
-    const double x[] = {1.0, 0.5, 2.0, 10.5, 25.0, 1e6, 0.3, -0.7, -2.5, -100.25, 1e-8};
+    // -3 + 1e-7 and -1 - 1e-6 test the reflection close to the poles
+    const double x[] = {1.0,  0.5,  2.0,     10.5, 25.0,      1e6,      0.3,
+                        -0.7, -2.5, -100.25, 1e-8, -3 + 1e-7, -1 - 1e-6};
     const double psi[] = {-0.57721566490153287, -1.9635100260214235, 0.42278433509846713,
                           2.3030010342976865,   3.198742512851974,   13.815510057964191,
                           -3.5025242222001332,  -2.0739527936287043, 1.1031566406452431,
-                          7.7542389592086458,   -100000000.57721564};
+                          7.7542389592086458,   -100000000.57721564, -9999998.7602478197,
+                          1000000.4228639568};
     const double psi1[] = {1.6449340668482264,   4.934802200544679,    0.64493406684822641,
                            0.099916956059126733, 0.040810663257225578, 1.0000005000001667e-06,
                            12.24536454610773,    14.286180872638342,   9.5392466449891238,
-                           19.729283325349364,   10000000000000002.0};
+                           19.729283325349364,   10000000000000002.0,  100000000327318.78,
+                           1000000000167.1782};
     for (std::size_t i = 0; i < sizeof(x) / sizeof(x[0]); ++i)
     {
         EXPECT_NEAR(psi[i], xad::digamma(x[i]), 1e-14 * std::abs(psi[i])) << "digamma " << x[i];
@@ -457,6 +461,34 @@ struct gammaSumFn
     }
 };
 }  // namespace
+
+TEST(ExpressionsMath, digammaDerivativesNearPoles)
+{
+    // reference values from mpmath (40 digits): psi, psi1, psi2 and log|tgamma| at the double
+    // values of -3 + 1e-7 and -1 - 1e-6, where the reflection's cotangent term dominates
+    const double x[] = {-3 + 1e-7, -1 - 1e-6};
+    const double psi[] = {-9999998.7602478197, 1000000.4228639568};
+    const double psi1[] = {100000000327318.78, 1000000000167.1782};
+    const double psi2[] = {-2.0000000098194733e+21, 2.0000000004935998e+18};
+    const double lg[] = {14.326336308978625, 13.815510135263528};
+    for (std::size_t i = 0; i < 2; ++i)
+    {
+        double y, d1, d2;
+        gammaFwdFwd(digammaFn(), x[i], y, d1, d2);
+        EXPECT_NEAR(psi[i], y, 1e-14 * std::abs(psi[i])) << "digamma " << x[i];
+        EXPECT_NEAR(psi1[i], d1, 1e-14 * std::abs(psi1[i])) << "digamma d1 " << x[i];
+        EXPECT_NEAR(psi2[i], d2, 1e-14 * std::abs(psi2[i])) << "digamma d2 " << x[i];
+        EXPECT_NEAR(psi1[i], gammaAdj(digammaFn(), x[i]), 1e-14 * std::abs(psi1[i]))
+            << "digamma adj " << x[i];
+
+        gammaFwdFwd(lgammaFn(), x[i], y, d1, d2);
+        EXPECT_NEAR(lg[i], y, 1e-14 * std::abs(lg[i])) << "lgamma " << x[i];
+        EXPECT_NEAR(psi[i], d1, 1e-14 * std::abs(psi[i])) << "lgamma d1 " << x[i];
+        EXPECT_NEAR(psi1[i], d2, 1e-14 * std::abs(psi1[i])) << "lgamma d2 " << x[i];
+        EXPECT_NEAR(psi[i], gammaAdj(lgammaFn(), x[i]), 1e-14 * std::abs(psi[i]))
+            << "lgamma adj " << x[i];
+    }
+}
 
 TEST(ExpressionsMath, digammaNaNPropagatesToHigherOrders)
 {
