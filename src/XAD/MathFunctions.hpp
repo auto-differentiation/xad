@@ -226,12 +226,14 @@ T digamma(const T& x0)
     using std::tan;
     T x = x0;
     T result = T(0);
+    // NaN input and poles: multiply by NaN rather than returning a passive value, so on active
+    // types the derivative is NaN as well
     if (x != x)
-        return x;
+        return x * quietNaNOf<T>();
     if (x <= T(0))
     {
         if (x == floor(x))
-            return quietNaNOf<T>();
+            return x * quietNaNOf<T>();
         // x - round(x) is exact, so pi times it keeps its relative precision near the poles
         result = -piOf<T>() / tan(piOf<T>() * (x - round(x)));
         x = T(1) - x;
@@ -263,14 +265,15 @@ T trigamma(const T& x0)
     using std::round;
     using std::sin;
     T x = x0;
+    // as in digamma: multiply by NaN so that higher-order derivatives are NaN too
     if (x != x)
-        return x;
+        return x * quietNaNOf<T>();
     T result = T(0);
     T sign = T(1);
     if (x <= T(0))
     {
         if (x == floor(x))
-            return quietNaNOf<T>();
+            return x * quietNaNOf<T>();
         const T s = sin(piOf<T>() * (x - round(x)));
         result = piOf<T>() * piOf<T>() / (s * s);
         sign = T(-1);

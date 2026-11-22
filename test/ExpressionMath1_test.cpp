@@ -458,6 +458,25 @@ struct gammaSumFn
 };
 }  // namespace
 
+TEST(ExpressionsMath, digammaNaNPropagatesToHigherOrders)
+{
+    // at the poles and for NaN input the derivatives of nested active types are NaN, too
+    for (double x0 : {0.0, -1.0, -2.0, std::numeric_limits<double>::quiet_NaN()})
+    {
+        double y, d1, d2;
+        gammaFwdFwd(digammaFn(), x0, y, d1, d2);
+        EXPECT_TRUE(std::isnan(y)) << x0;
+        EXPECT_TRUE(std::isnan(d1)) << x0;
+        EXPECT_TRUE(std::isnan(d2)) << x0;
+
+        xad::FReal<double> x = x0;
+        derivative(x) = 1.0;
+        xad::FReal<double> t = xad::detail::trigamma(x);
+        EXPECT_TRUE(std::isnan(value(t))) << x0;
+        EXPECT_TRUE(std::isnan(derivative(t))) << x0;
+    }
+}
+
 TEST(ExpressionsMath, digammaOverloads)
 {
     // integral arguments are computed as double
