@@ -188,8 +188,8 @@ struct fabs_op : abs_op<Scalar>
 XAD_MAKE_UNARY_BINFUNCTOR(pow, b == T2() ? Scalar() : Scalar(b) * Scalar(pow(a, b - T2(1))),
                           detail::powExponentDerivative(Scalar(log(b)), v))
 XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), Scalar(-detail::remainder_quotient(Scalar(b), a, v)))
+XAD_MAKE_UNARY_BINFUNCTOR(fdim, !(a <= b) ? Scalar(1) : Scalar(), !(b <= a) ? Scalar(-1) : Scalar())
 // b * b in Scalar, as it may overflow in an integer T2
-XAD_MAKE_UNARY_BINFUNCTOR(fdim, a > b ? Scalar(1) : Scalar(), b > a ? Scalar(-1) : Scalar())
 XAD_MAKE_UNARY_BINFUNCTOR(atan2, detail::divBySumOfSquares(Scalar(b), a, Scalar(b)),
                           detail::divBySumOfSquares(Scalar(-Scalar(b)), a, Scalar(b)))
 XAD_MAKE_UNARY_BINFUNCTOR(nextafter, Scalar(1), Scalar(0))
@@ -206,23 +206,6 @@ struct ldexp_op
         return Scalar(ldexp(typename ExprTraits<Scalar>::nested_type(1), exp_));
     }
     int exp_;
-};
-
-template <class Scalar>
-struct scalbln_op
-{
-    XAD_INLINE explicit scalbln_op(long exp) : exp_(exp) {}
-    XAD_INLINE Scalar operator()(const Scalar& a) const
-    {
-        using std::scalbln;
-        return scalbln(a, exp_);
-    }
-    XAD_INLINE Scalar derivative(const Scalar&) const
-    {
-        using std::scalbln;
-        return Scalar(scalbln(typename ExprTraits<Scalar>::nested_type(1), exp_));
-    }
-    long exp_;
 };
 
 template <class Scalar>

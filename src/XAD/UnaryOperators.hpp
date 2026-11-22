@@ -141,25 +141,6 @@ ldexp(const AReal<Scalar, M>& x, int y)
                                                                   ldexp_op<Scalar>(y));
 }
 
-// scalbln
-template <class Scalar, class Expr, class DerivativeType>
-XAD_INLINE UnaryExpr<Scalar, scalbln_op<Scalar>, Expr, DerivativeType> scalbln(
-    const Expression<Scalar, Expr, DerivativeType>& x, long y)
-{
-    return UnaryExpr<Scalar, scalbln_op<Scalar>, Expr, DerivativeType>(x.derived(),
-                                                                       scalbln_op<Scalar>(y));
-}
-
-template <class Scalar, std::size_t M = 1>
-XAD_INLINE UnaryExpr<Scalar, scalbln_op<Scalar>, AReal<Scalar, M>,
-                     typename DerivativesTraits<Scalar, M>::type>
-scalbln(const AReal<Scalar, M>& x, long y)
-{
-    return UnaryExpr<Scalar, scalbln_op<Scalar>, AReal<Scalar, M>,
-                     typename DerivativesTraits<Scalar, M>::type>(AReal<Scalar, M>(x),
-                                                                  scalbln_op<Scalar>(y));
-}
-
 // frexp
 template <class Scalar, class Expr, class DerivativeType>
 XAD_INLINE UnaryExpr<Scalar, frexp_op<Scalar>, Expr, DerivativeType> frexp(
@@ -505,6 +486,20 @@ XAD_INLINE typename ExprTraits<Derived>::value_type scalbn(
     // ldexp, as the radix is 2; x * 2^exp would overflow or underflow on 2^exp alone
     using T = typename ExprTraits<Derived>::value_type;
     return T(ldexp(x.derived(), exp));
+}
+
+template <class Scalar, class Derived, class Deriv>
+XAD_INLINE typename ExprTraits<Derived>::value_type scalbln(
+    const Expression<Scalar, Derived, Deriv>& x, long exp)
+{
+    // ldexp, as the radix is 2; clamp the long exponent to int range: beyond a few
+    // thousand the result saturates to inf or 0, so clamping is exact
+    using T = typename ExprTraits<Derived>::value_type;
+    const int e =
+        exp > std::numeric_limits<int>::max()
+            ? std::numeric_limits<int>::max()
+            : (exp < std::numeric_limits<int>::min() ? std::numeric_limits<int>::min() : int(exp));
+    return T(ldexp(x.derived(), e));
 }
 
 // active sign source: BinaryOperators.hpp

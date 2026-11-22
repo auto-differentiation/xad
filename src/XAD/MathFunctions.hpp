@@ -139,7 +139,6 @@ using ::std::nextafter;
 using ::std::remainder;
 using ::std::rint;
 using ::std::round;
-using ::std::scalbln;
 using ::std::signbit;
 using ::std::trunc;
 

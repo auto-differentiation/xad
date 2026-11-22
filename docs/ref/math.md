@@ -58,6 +58,8 @@ and 0 otherwise.
 The derivatives are 1 with respect to `x` and -1 with respect to `y` on the
 `x > y` branch, and 0 otherwise, including at `x == y`
 (unlike `#!c++ max`/`#!c++ min`, ties are not split).
+With a NaN operand the result is NaN, and the branch derivatives (1, -1) apply
+so that NaN propagates into the adjoints, as with `#!c++ max`/`#!c++ fmod`.
 
 #### `floor`
 

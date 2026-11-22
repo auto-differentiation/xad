@@ -128,6 +128,20 @@ TEST(ExpressionsMath, scalblnLongAD)
                  scalblnLongAD);
 }
 
+LOCAL_TEST_FUNCTOR1(scalblnHugeExpAD, scalbln(x, static_cast<long>(-2147483649LL)))
+TEST(ExpressionsMath, scalblnHugeExpAD)
+{
+    // exponent beyond int range, only exercisable where long is wider than int (LP64):
+    // on LLP64 the cast wraps it back into int range and the guard skips. Underflow
+    // to 0 keeps every derivative check finite, while a truncating implementation
+    // would wrap the exponent and return inf instead
+    long hugeExp = static_cast<long>(-2147483649LL);
+    if (hugeExp < std::numeric_limits<int>::min())
+    {
+        mathTest_all(0.1, std::scalbln(0.1, hugeExp), 0.0, 0.0, scalblnHugeExpAD);
+    }
+}
+
 LOCAL_TEST_FUNCTOR2(maxADAD, max(x1, x2))
 LOCAL_TEST_FUNCTOR2(fmaxADAD, fmax(x1, x2))
 TEST(ExpressionsMath, maxADAD)
