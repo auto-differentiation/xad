@@ -482,7 +482,10 @@ TEST(ExpressionsMath, digammaDerivativesNearPoles)
             << "digamma adj " << x[i];
 
         gammaFwdFwd(lgammaFn(), x[i], y, d1, d2);
-        EXPECT_NEAR(lg[i], y, 1e-14 * std::abs(lg[i])) << "lgamma " << x[i];
+        // at -3 + 1e-7 the value is the platform's std::lgamma, which is less
+        // accurate near the poles on some libms (e.g. macOS)
+        EXPECT_NEAR(lg[i], y, (i == 0 ? 1e-9 : 1e-14) * std::abs(lg[i]))
+            << "lgamma " << x[i];
         EXPECT_NEAR(psi[i], d1, 1e-14 * std::abs(psi[i])) << "lgamma d1 " << x[i];
         EXPECT_NEAR(psi1[i], d2, 1e-14 * std::abs(psi1[i])) << "lgamma d2 " << x[i];
         EXPECT_NEAR(psi[i], gammaAdj(lgammaFn(), x[i]), 1e-14 * std::abs(psi[i]))
