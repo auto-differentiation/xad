@@ -285,11 +285,15 @@ the gamma function of `x`. Its derivative is `digamma(x)`.
 #### `digamma`
 
 `#!c++ T digamma(T x)` computes the digamma function, the derivative of `lgamma`,
-for positive and negative arguments, to about double precision. It returns NaN at
-the poles (zero and the negative integers). It is also defined for `double` and
-`float`, as the standard library has no digamma function, and its derivative
+for positive and negative arguments, to about double precision. Near the zeros of
+digamma (`x = 1.4616...`, `x = -0.5040...` and one between each pair of negative
+integers) this holds in absolute rather than relative terms, so the relative error
+grows there. It returns NaN at the poles (zero and the negative integers).
+It is also defined for `float`, `double`, `long double` and integral types (computed
+as `double`), as the standard library has no digamma function, and its derivative
 (the trigamma function) is computed in the same way, so second-order derivatives
-of `tgamma` and `lgamma` work too.
+of `tgamma` and `lgamma` work too. At the poles and for NaN input, the derivatives
+are NaN as well.
 
 ## Floating Point Classification
 
