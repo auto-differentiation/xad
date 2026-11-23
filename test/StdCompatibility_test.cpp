@@ -259,7 +259,9 @@ TYPED_TEST(StdCompatibilityTempl, Traits)
 {
     static_assert(std::is_floating_point<TypeParam>::value, "active real should be floating point");
     static_assert(std::is_arithmetic<TypeParam>::value, "active real should be arithmetic");
-    static_assert(!std::is_pod<TypeParam>::value, "active type is not POD");
+    static_assert(!(std::is_trivial<TypeParam>::value &&
+                    std::is_standard_layout<TypeParam>::value),
+                  "active type is not POD");
     static_assert(std::is_convertible<TypeParam, TypeParam>::value, "convertible to itself");
     static_assert(std::is_convertible<double, TypeParam>::value, "doubles are convertible");
     static_assert(std::is_convertible<int, TypeParam>::value, "integers are convertible");
@@ -293,7 +295,8 @@ TYPED_TEST(StdCompatibilityTempl, TraitsTemplateVars)
 {
     static_assert(std::is_floating_point_v<TypeParam>, "active real should be floating point");
     static_assert(std::is_arithmetic_v<TypeParam>, "active real should be arithmetic");
-    static_assert(!std::is_pod_v<TypeParam>, "active type is not POD");
+    static_assert(!(std::is_trivial_v<TypeParam> && std::is_standard_layout_v<TypeParam>),
+                  "active type is not POD");
     static_assert(std::is_convertible_v<TypeParam, TypeParam>, "convertible to itself");
     static_assert(std::is_convertible_v<double, TypeParam>, "doubles are convertible");
     static_assert(std::is_convertible_v<int, TypeParam>, "integers are convertible");

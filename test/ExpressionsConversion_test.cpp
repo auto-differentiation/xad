@@ -78,6 +78,9 @@ enum TestEnum
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wenum-float-conversion"
+#elif defined(__GNUC__) && __GNUC__ >= 13
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-enum-float-conversion"
 #endif
 
 TEST(Expressions, canImplicitlyConvertEnums)

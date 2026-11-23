@@ -324,6 +324,8 @@ template <class T, std::size_t N>
 struct is_signed<xad::FRealDirect<T, N>> : std::is_signed<T>
 {
 };
+#if (defined(_MSVC_LANG) && _MSVC_LANG < 202002L) || \
+    (!defined(_MSVC_LANG) && __cplusplus < 202002L)
 template <class T, std::size_t N>
 struct is_pod<xad::AReal<T, N>> : std::false_type
 {
@@ -332,6 +334,7 @@ template <class T, std::size_t N>
 struct is_pod<xad::FReal<T, N>> : std::false_type
 {
 };
+#endif
 template <class T, std::size_t N>
 struct is_fundamental<xad::AReal<T, N>> : std::false_type
 {
