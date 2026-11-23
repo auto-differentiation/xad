@@ -347,7 +347,10 @@ XAD_MAKE_UNARY_FUNC(fabs)
 XAD_MAKE_UNARY_FUNC(floor)
 XAD_MAKE_UNARY_FUNC(ceil)
 XAD_MAKE_UNARY_FUNC(trunc)
+XAD_MAKE_UNARY_FUNC(rint)
+XAD_MAKE_UNARY_FUNC(nearbyint)
 XAD_MAKE_UNARY_FUNC(round)
+XAD_MAKE_UNARY_FUNC(logb)
 XAD_MAKE_UNARY_FUNC(exp)
 XAD_MAKE_UNARY_FUNC(tanh)
 XAD_MAKE_UNARY_FUNC(sqrt)
@@ -372,11 +375,18 @@ XAD_MAKE_FPCLASSIFY_FUNC(__isfinite, )
 XAD_MAKE_FPCLASSIFY_FUNC_RET(int, fpclassify, using std::fpclassify)
 XAD_MAKE_FPCLASSIFY_FUNC_RET(long, lround, using std::lround)
 XAD_MAKE_FPCLASSIFY_FUNC_RET(long long, llround, using std::llround)
+XAD_MAKE_FPCLASSIFY_FUNC_RET(long, lrint, using std::lrint)
+XAD_MAKE_FPCLASSIFY_FUNC_RET(long long, llrint, using std::llrint)
 
 XAD_UNARY_BINSCAL1(remainder, scalar_remainder1_op)
 XAD_UNARY_BINSCAL2(remainder, scalar_remainder2_op)
 XAD_FREAL_BINSCAL1(remainder, scalar_remainder1_op)
 XAD_FREAL_BINSCAL2(remainder, scalar_remainder2_op)
+
+XAD_UNARY_BINSCAL1(fdim, scalar_fdim1_op)
+XAD_UNARY_BINSCAL2(fdim, scalar_fdim2_op)
+XAD_FREAL_BINSCAL1(fdim, scalar_fdim1_op)
+XAD_FREAL_BINSCAL2(fdim, scalar_fdim2_op)
 
 template <class Scalar, class Expr, class T2, class DerivativeType>
 XAD_INLINE typename std::enable_if<
@@ -481,6 +491,20 @@ XAD_INLINE typename ExprTraits<Derived>::value_type scalbn(
     return T(ldexp(x.derived(), exp));
 }
 
+template <class Scalar, class Derived, class Deriv>
+XAD_INLINE typename ExprTraits<Derived>::value_type scalbln(
+    const Expression<Scalar, Derived, Deriv>& x, long exp)
+{
+    // ldexp, as the radix is 2; clamp the long exponent to int range: beyond a few
+    // thousand the result saturates to inf or 0, so clamping is exact
+    using T = typename ExprTraits<Derived>::value_type;
+    const int e =
+        exp > std::numeric_limits<int>::max()
+            ? std::numeric_limits<int>::max()
+            : (exp < std::numeric_limits<int>::min() ? std::numeric_limits<int>::min() : int(exp));
+    return T(ldexp(x.derived(), e));
+}
+
 // active sign source: BinaryOperators.hpp
 XAD_UNARY_BINSCAL2(copysign, scalar_copysign2_op)
 XAD_FREAL_BINSCAL2(copysign, scalar_copysign2_op)
@@ -533,6 +557,11 @@ XAD_INLINE typename ExprTraits<Scalar>::nested_type copysign(float x,
     XAD_INLINE Direct<Scalar, N> scalbn(const Direct<Scalar, N>& x, int exp)                       \
     {                                                                                              \
         return {Base<Scalar, N>(scalbn(x.base(), exp))};                                           \
+    }                                                                                              \
+    template <class Scalar, std::size_t N>                                                         \
+    XAD_INLINE Direct<Scalar, N> scalbln(const Direct<Scalar, N>& x, long exp)                     \
+    {                                                                                              \
+        return {Base<Scalar, N>(scalbln(x.base(), exp))};                                          \
     }                                                                                              \
     template <class Scalar, std::size_t N>                                                         \
     XAD_INLINE int ilogb(const Direct<Scalar, N>& x)                                               \

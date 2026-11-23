@@ -321,6 +321,22 @@ struct OperatorTraits<remainder_op<Scalar> >
 };
 
 template <class Scalar>
+struct fdim_op
+{
+    XAD_INLINE Scalar operator()(const Scalar& a, const Scalar& b) const { return fdim(a, b); }
+    // derivatives are 0 at x == y: strict > convention, unlike the max/min tie split
+    // !(a <= b) also propagates NaN operands
+    XAD_INLINE Scalar derivative_a(const Scalar& a, const Scalar& b) const
+    {
+        return Scalar(!(a <= b) ? Scalar(1) : Scalar());
+    }
+    XAD_INLINE Scalar derivative_b(const Scalar& a, const Scalar& b) const
+    {
+        return Scalar(!(a <= b) ? Scalar(-1) : Scalar());
+    }
+};
+
+template <class Scalar>
 struct remquo_op : remainder_op<Scalar>
 {
     XAD_INLINE explicit remquo_op(int* quo) : quo_(quo) {}

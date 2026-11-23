@@ -59,6 +59,7 @@ using xad::exp;
 using xad::exp2;
 using xad::expm1;
 using xad::fabs;
+using xad::fdim;
 using xad::floor;
 using xad::fma;
 using xad::fmax;
@@ -74,20 +75,26 @@ using xad::isnan;
 using xad::isnormal;
 using xad::ldexp;
 using xad::lgamma;
+using xad::llrint;
 using xad::llround;
 using xad::log;
 using xad::log10;
 using xad::log1p;
 using xad::log2;
+using xad::logb;
+using xad::lrint;
 using xad::lround;
 using xad::max;
 using xad::min;
 using xad::modf;
+using xad::nearbyint;
 using xad::nextafter;
 using xad::pow;
 using xad::remainder;
 using xad::remquo;
+using xad::rint;
 using xad::round;
+using xad::scalbln;
 using xad::scalbn;
 using xad::signbit;
 using xad::sin;
@@ -319,6 +326,8 @@ template <class T, std::size_t N>
 struct is_signed<xad::FRealDirect<T, N>> : std::is_signed<T>
 {
 };
+#if (defined(_MSVC_LANG) && _MSVC_LANG < 202002L) || \
+    (!defined(_MSVC_LANG) && __cplusplus < 202002L)
 template <class T, std::size_t N>
 struct is_pod<xad::AReal<T, N>> : std::false_type
 {
@@ -327,6 +336,7 @@ template <class T, std::size_t N>
 struct is_pod<xad::FReal<T, N>> : std::false_type
 {
 };
+#endif
 template <class T, std::size_t N>
 struct is_fundamental<xad::AReal<T, N>> : std::false_type
 {

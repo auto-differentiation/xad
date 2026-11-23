@@ -90,9 +90,12 @@ XAD_MAKE_UNARY_FUNCTOR(abs, (a > Scalar()) - (a < Scalar()))
 XAD_MAKE_UNARY_FUNCTOR(floor, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(ceil, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(trunc, Scalar())
+XAD_MAKE_UNARY_FUNCTOR(rint, Scalar())
+XAD_MAKE_UNARY_FUNCTOR(nearbyint, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(round, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(lgamma, digamma(a))
 XAD_MAKE_UNARY_FUNCTOR(digamma, detail::trigamma(a))
+XAD_MAKE_UNARY_FUNCTOR(logb, Scalar())
 
 // expressed in terms of result
 #define XAD_MAKE_UNARY_FUNCTOR_RES(func, der)                                                      \
@@ -188,6 +191,7 @@ struct fabs_op : abs_op<Scalar>
 XAD_MAKE_UNARY_BINFUNCTOR(pow, b == T2() ? Scalar() : Scalar(b) * Scalar(pow(a, b - T2(1))),
                           detail::powExponentDerivative(Scalar(log(b)), v))
 XAD_MAKE_UNARY_BINFUNCTOR(fmod, Scalar(1), Scalar(-detail::remainder_quotient(Scalar(b), a, v)))
+XAD_MAKE_UNARY_BINFUNCTOR(fdim, !(a <= b) ? Scalar(1) : Scalar(), !(b <= a) ? Scalar(-1) : Scalar())
 // b * b in Scalar, as it may overflow in an integer T2
 XAD_MAKE_UNARY_BINFUNCTOR(atan2, detail::divBySumOfSquares(Scalar(b), a, Scalar(b)),
                           detail::divBySumOfSquares(Scalar(-Scalar(b)), a, Scalar(b)))
@@ -533,14 +537,8 @@ struct scalar_remquo2_op
 /*
  * TODO:
 
-scalbln
-rint
-lrint
-llrint
-nearbyint
 nan
 nexttoward
-fdim
 
 isgreater
 isgreaterequal
