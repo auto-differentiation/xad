@@ -354,6 +354,8 @@ XAD_COMPARE_OPERATOR(>)
 
 XAD_BINARY_OPERATOR(remainder, remainder_op)
 
+XAD_BINARY_OPERATOR(fdim, fdim_op)
+
 // manual remquo due to additional argument
 template <class Scalar, class Expr1, class Expr2, class DerivativeType>
 XAD_INLINE BinaryExpr<Scalar, remquo_op<Scalar>, Expr1, Expr2, DerivativeType> remquo(

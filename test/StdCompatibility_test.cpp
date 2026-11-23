@@ -49,13 +49,23 @@ TEST(StdCompatibility, canUseStdMath)
     EXPECT_THAT(std::ceil(x).getValue(), DoubleNear(std::ceil(xd), 1e-9));
     EXPECT_THAT(std::floor(x).getValue(), DoubleNear(std::floor(xd), 1e-9));
     EXPECT_THAT(std::trunc(x).getValue(), DoubleNear(std::trunc(xd), 1e-9));
+    EXPECT_THAT(std::rint(x).getValue(), DoubleNear(std::rint(xd), 1e-9));
+    EXPECT_THAT(std::nearbyint(x).getValue(), DoubleNear(std::nearbyint(xd), 1e-9));
     EXPECT_THAT(std::round(x).getValue(), DoubleNear(std::round(xd), 1e-9));
     EXPECT_THAT(std::lround(x), Eq(std::lround(xd)));
     EXPECT_THAT(std::lround(x * 2.1), Eq(std::lround(xd * 2.1)));
     EXPECT_THAT(std::lround(-x), Eq(std::lround(-xd)));
+    EXPECT_THAT(std::lrint(x), Eq(std::lrint(xd)));
+    EXPECT_THAT(std::lrint(x * 2.1), Eq(std::lrint(xd * 2.1)));
+    EXPECT_THAT(std::lrint(-x), Eq(std::lrint(-xd)));
+    EXPECT_THAT(std::llrint(x), Eq(std::llrint(xd)));
+    EXPECT_THAT(std::llrint(x * 2.1), Eq(std::llrint(xd * 2.1)));
+    EXPECT_THAT(std::llrint(-x), Eq(std::llrint(-xd)));
     EXPECT_THAT(std::remainder(x, x).getValue(), DoubleNear(std::remainder(xd, xd), 1e-9));
 
     EXPECT_THAT(std::fmod(x, x).getValue(), DoubleNear(std::fmod(xd, xd), 1e-9));
+    EXPECT_THAT(std::fdim(x, x2).getValue(), DoubleNear(std::fdim(xd, x2d), 1e-9));
+    EXPECT_THAT(std::fdim(x2, x).getValue(), DoubleNear(std::fdim(x2d, xd), 1e-9));
     EXPECT_THAT(std::remquo(x, x, &n).getValue(), DoubleNear(std::remquo(xd, xd, &n), 1e-9));
     EXPECT_THAT(std::nextafter(x, 2.0 * x).getValue(),
                 DoubleNear(std::nextafter(xd, 2.0 * xd), 1e-9));
@@ -88,6 +98,7 @@ TEST(StdCompatibility, canUseStdMath)
     EXPECT_THAT(std::erf(x).getValue(), DoubleNear(std::erf(xd), 1e-9));
     EXPECT_THAT(std::erfc(x).getValue(), DoubleNear(std::erfc(xd), 1e-9));
     EXPECT_THAT(std::scalbn(x, 2).getValue(), DoubleNear(std::scalbn(xd, 2), 1e-9));
+    EXPECT_THAT(std::scalbln(x, 2).getValue(), DoubleNear(std::scalbln(xd, 2), 1e-9));
 
     EXPECT_THAT(std::ldexp(x, 3).getValue(), DoubleNear(std::ldexp(xd, 3), 1e-9));
     int ex = 0, ex2 = 0;
@@ -105,6 +116,7 @@ TEST(StdCompatibility, canUseStdMath)
     EXPECT_THAT(std::signbit(x), Eq(std::signbit(xd)));
     EXPECT_THAT(std::fpclassify(x), Eq(std::fpclassify(xd)));
     EXPECT_THAT(std::ilogb(x), Eq(std::ilogb(xd)));
+    EXPECT_THAT(std::logb(x).getValue(), DoubleNear(std::logb(xd), 1e-9));
     EXPECT_THAT(std::copysign(x, -x), Eq(std::copysign(xd, -xd)));
     // complex
     EXPECT_THAT(std::real(x).getValue(), DoubleNear(std::real(xd), 1e-9));
@@ -418,6 +430,9 @@ XAD_STD_FUNCTOR(StdPow, std::pow(x, x) + std::pow(x, 2) + std::pow(x, 2.5) + std
                             std::pow(2, x));
 XAD_STD_FUNCTOR(StdErf, std::erf(x) + std::erfc(x));
 XAD_STD_FUNCTOR(StdScaling, std::scalbn(x, 2) + std::ldexp(x, 3));
+XAD_STD_FUNCTOR(StdLogb, std::logb(x));
+XAD_STD_FUNCTOR(StdScalbln, std::scalbln(x, 2));
+XAD_STD_FUNCTOR(StdFdim, std::fdim(x, 0.1) + std::fdim(0.1, x));
 XAD_STD_FUNCTOR(StdCopysign, std::copysign(x, -1.0) + std::copysign(x, T(-x)));
 
 struct StdFrexpModf
@@ -462,6 +477,9 @@ TYPED_TEST(StdCompatibilityMath, ValuesAndDerivatives)
     checkStdFunction<TypeParam>(StdPow(), 0.3, "pow");
     checkStdFunction<TypeParam>(StdErf(), 0.3, "erf");
     checkStdFunction<TypeParam>(StdScaling(), 0.3, "scalbn/ldexp");
+    checkStdFunction<TypeParam>(StdLogb(), 0.3, "logb");
+    checkStdFunction<TypeParam>(StdScalbln(), 0.3, "scalbln");
+    checkStdFunction<TypeParam>(StdFdim(), 0.3, "fdim");
     checkStdFunction<TypeParam>(StdCopysign(), 0.3, "copysign");
     checkStdFunction<TypeParam>(StdFrexpModf(), 0.3, "frexp/modf");
 }
@@ -491,6 +509,8 @@ TYPED_TEST(StdCompatibilityMath, ClassificationAndIntegerResults)
         {
             EXPECT_EQ(std::lround(x), std::lround(d)) << d;
             EXPECT_EQ(std::llround(x), std::llround(d)) << d;
+            EXPECT_EQ(std::lrint(x), std::lrint(d)) << d;
+            EXPECT_EQ(std::llrint(x), std::llrint(d)) << d;
             if (d != 0.0)
             {
                 EXPECT_EQ(std::ilogb(x), std::ilogb(d)) << d;

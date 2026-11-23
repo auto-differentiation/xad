@@ -236,26 +236,40 @@ TEST(ExpressionsMath, sabsExprExpr)
 LOCAL_TEST_FUNCTOR1(floorAD, floor(x))
 LOCAL_TEST_FUNCTOR1(ceilAD, ceil(x))
 LOCAL_TEST_FUNCTOR1(truncAD, trunc(x))
+LOCAL_TEST_FUNCTOR1(rintAD, rint(x))
+LOCAL_TEST_FUNCTOR1(nearbyintAD, nearbyint(x))
 LOCAL_TEST_FUNCTOR1(roundAD, round(x))
-TEST(ExpressionsMath, ceil_floor_trunc_round_AD)
+TEST(ExpressionsMath, ceil_floor_trunc_rint_nearbyint_round_AD)
 {
     using xad::round;
     using xad::trunc;
     mathTest_all(1.3, std::floor(1.3), 0.0, 0.0, floorAD);
     mathTest_all(1.3, std::ceil(1.3), 0.0, 0.0, ceilAD);
     mathTest_all(1.3, trunc(1.3), 0.0, 0.0, truncAD);
+    mathTest_all(1.3, std::rint(1.3), 0.0, 0.0, rintAD);
+    mathTest_all(1.3, std::nearbyint(1.3), 0.0, 0.0, nearbyintAD);
     mathTest_all(1.3, round(1.3), 0.0, 0.0, roundAD);
     mathTest_all(1.0, std::floor(1.0), 0.0, 0.0, floorAD);
     mathTest_all(1.0, std::ceil(1.0), 0.0, 0.0, ceilAD);
     mathTest_all(1.0, trunc(1.0), 0.0, 0.0, truncAD);
+    mathTest_all(1.0, std::rint(1.0), 0.0, 0.0, rintAD);
+    mathTest_all(1.0, std::nearbyint(1.0), 0.0, 0.0, nearbyintAD);
     mathTest_all(1.0, round(1.0), 0.0, 0.0, roundAD);
+    mathTest_all(-1.3, std::rint(-1.3), 0.0, 0.0, rintAD);
+    mathTest_all(-1.3, std::nearbyint(-1.3), 0.0, 0.0, nearbyintAD);
+    mathTest_all(2.5, std::rint(2.5), 0.0, 0.0, rintAD);
+    mathTest_all(2.5, std::nearbyint(2.5), 0.0, 0.0, nearbyintAD);
+    mathTest_all(3.5, std::rint(3.5), 0.0, 0.0, rintAD);
+    mathTest_all(3.5, std::nearbyint(3.5), 0.0, 0.0, nearbyintAD);
 }
 
 LOCAL_TEST_FUNCTOR1(floorExpr, floor(2.3 * x))
 LOCAL_TEST_FUNCTOR1(ceilExpr, ceil(2.3 * x))
 LOCAL_TEST_FUNCTOR1(truncExpr, trunc(2.3 * x))
+LOCAL_TEST_FUNCTOR1(rintExpr, rint(2.3 * x))
+LOCAL_TEST_FUNCTOR1(nearbyintExpr, nearbyint(2.3 * x))
 LOCAL_TEST_FUNCTOR1(roundExpr, round(2.3 * x))
-TEST(ExpressionsMath, ceil_floor_trunc_round_Expr)
+TEST(ExpressionsMath, ceil_floor_trunc_rint_nearbyint_round_Expr)
 {
     using xad::round;
     using xad::trunc;
@@ -263,7 +277,11 @@ TEST(ExpressionsMath, ceil_floor_trunc_round_Expr)
     mathTest_all(1.3, std::floor(2.3 * 1.3), 0.0, 0.0, floorExpr);
     mathTest_all(1.3, std::ceil(2.3 * 1.3), 0.0, 0.0, ceilExpr);
     mathTest_all(1.3, trunc(2.3 * 1.3), 0.0, 0.0, truncExpr);
+    mathTest_all(1.3, std::rint(2.3 * 1.3), 0.0, 0.0, rintExpr);
+    mathTest_all(1.3, std::nearbyint(2.3 * 1.3), 0.0, 0.0, nearbyintExpr);
     mathTest_all(1.3, round(2.3 * 1.3), 0.0, 0.0, roundExpr);
+    mathTest_all(-1.3, std::rint(2.3 * -1.3), 0.0, 0.0, rintExpr);
+    mathTest_all(-1.3, std::nearbyint(2.3 * -1.3), 0.0, 0.0, nearbyintExpr);
 }
 
 #ifndef __FAST_MATH__
@@ -335,6 +353,108 @@ TEST(ExpressionsMath, fmod_Expr)
     mathTest_all(1.3, std::fmod(2.3 * 1.3, 0.5), 2.3, 0.0, fmodExprScalar);
     mathTest_all(0.5, std::fmod(1.3, 2.3 * 0.5), -2.3 * std::trunc(1.3 / 0.5 / 2.3), 0.0,
                  fmodScalarExpr);
+}
+
+LOCAL_TEST_FUNCTOR2(fdimAD, xad::fdim(x1, x2))
+LOCAL_TEST_FUNCTOR1(fdimADScalar, xad::fdim(x, 0.5))
+LOCAL_TEST_FUNCTOR1(fdimScalarAD, xad::fdim(1.3, x))
+TEST(ExpressionsMath, fdim_AD)
+{
+    // x > y: value x - y, derivatives 1 / -1
+    mathTest2_all(1.3, 0.5, std::fdim(1.3, 0.5), 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, fdimAD);
+    // x < y: value 0, derivatives 0 / 0
+    mathTest2_all(0.5, 1.3, std::fdim(0.5, 1.3), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, fdimAD);
+    // x == y: value 0, derivatives 0 / 0 (strict > convention)
+    mathTest2_all(0.5, 0.5, std::fdim(0.5, 0.5), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, fdimAD);
+    mathTest_all(1.3, std::fdim(1.3, 0.5), 1.0, 0.0, fdimADScalar);
+    mathTest_all(0.3, std::fdim(0.3, 0.5), 0.0, 0.0, fdimADScalar);
+    mathTest_all(0.3, std::fdim(1.3, 0.3), -1.0, 0.0, fdimScalarAD);
+    mathTest_all(1.5, std::fdim(1.3, 1.5), 0.0, 0.0, fdimScalarAD);
+    // tie points for the scalar-mixed forms: a >= implementation would give 1 / -1 here
+    mathTest_all(0.5, std::fdim(0.5, 0.5), 0.0, 0.0, fdimADScalar);
+    mathTest_all(1.3, std::fdim(1.3, 1.3), 0.0, 0.0, fdimScalarAD);
+}
+
+LOCAL_TEST_FUNCTOR2(fdimExprExpr, xad::fdim(2.3 * x1, 2.3 * x2))
+LOCAL_TEST_FUNCTOR2(fdimADExpr, xad::fdim(x1, 2.3 * x2))
+LOCAL_TEST_FUNCTOR2(fdimExprAD, xad::fdim(2.3 * x1, x2))
+LOCAL_TEST_FUNCTOR1(fdimExprScalar, xad::fdim(2.3 * x, 0.5))
+LOCAL_TEST_FUNCTOR1(fdimScalarExpr, xad::fdim(1.3, 2.3 * x))
+LOCAL_TEST_FUNCTOR1(fdimExprScalarTie, xad::fdim(2.0 * x, 1.0))
+LOCAL_TEST_FUNCTOR1(fdimScalarExprTie, xad::fdim(1.0, 2.0 * x))
+TEST(ExpressionsMath, fdim_Expr)
+{
+    mathTest2_all(1.3, 0.5, std::fdim(2.3 * 1.3, 2.3 * 0.5), 2.3, -2.3, 0.0, 0.0, 0.0, 0.0,
+                  fdimExprExpr);
+    mathTest2_all(0.5, 1.3, std::fdim(2.3 * 0.5, 2.3 * 1.3), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  fdimExprExpr);
+    mathTest2_all(1.3, 0.5, std::fdim(1.3, 2.3 * 0.5), 1.0, -2.3, 0.0, 0.0, 0.0, 0.0, fdimADExpr);
+    mathTest2_all(1.3, 0.5, std::fdim(2.3 * 1.3, 0.5), 2.3, -1.0, 0.0, 0.0, 0.0, 0.0, fdimExprAD);
+    mathTest_all(1.3, std::fdim(2.3 * 1.3, 0.5), 2.3, 0.0, fdimExprScalar);
+    mathTest_all(0.3, std::fdim(1.3, 2.3 * 0.3), -2.3, 0.0, fdimScalarExpr);
+    // exact ties: 2.3 * 0.5 is an exact halving, so both operands compare equal
+    mathTest2_all(0.5, 0.5, std::fdim(2.3 * 0.5, 2.3 * 0.5), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  fdimExprExpr);
+    mathTest2_all(2.3 * 0.5, 0.5, std::fdim(2.3 * 0.5, 2.3 * 0.5), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  fdimADExpr);
+    mathTest2_all(0.5, 2.3 * 0.5, std::fdim(2.3 * 0.5, 2.3 * 0.5), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  fdimExprAD);
+    mathTest_all(0.5, std::fdim(1.0, 1.0), 0.0, 0.0, fdimExprScalarTie);
+    mathTest_all(0.5, std::fdim(1.0, 1.0), 0.0, 0.0, fdimScalarExprTie);
+}
+
+TEST(ExpressionsMath, fdim_NaN)
+{
+    // NaN operand: the result is NaN and the branch partials (1, -1) apply, so NaN
+    // reaches the adjoints instead of being cut off by a zero gradient. Values are
+    // checked with isnan as NaN != NaN; compareFinite is NaN-aware for derivatives.
+    const double qnan = std::numeric_limits<double>::quiet_NaN();
+    {
+        xad::Tape<double> tape;
+        xad::AD x1 = qnan, x2 = 0.5;
+        tape.registerInput(x1);
+        tape.registerInput(x2);
+        tape.newRecording();
+        xad::AD y = fdim(x1, x2);
+        tape.registerOutput(y);
+        xad::derivative(y) = 1.0;
+        tape.computeAdjoints();
+        EXPECT_TRUE(std::isnan(value(y)));
+        compareFinite(1.0, x1.getAdjoint(), "fdim(NaN, 0.5), dx1");
+        compareFinite(-1.0, x2.getAdjoint(), "fdim(NaN, 0.5), dx2");
+    }
+    {
+        xad::Tape<double> tape;
+        xad::AD x1 = 0.5, x2 = qnan;
+        tape.registerInput(x1);
+        tape.registerInput(x2);
+        tape.newRecording();
+        xad::AD y = fdim(x1, x2);
+        tape.registerOutput(y);
+        xad::derivative(y) = 1.0;
+        tape.computeAdjoints();
+        EXPECT_TRUE(std::isnan(value(y)));
+        compareFinite(1.0, x1.getAdjoint(), "fdim(0.5, NaN), dx1");
+        compareFinite(-1.0, x2.getAdjoint(), "fdim(0.5, NaN), dx2");
+    }
+    {
+        xad::FAD x1(qnan, 1.0), x2(0.5, 0.0);
+        xad::FAD y = fdim(x1, x2);
+        EXPECT_TRUE(std::isnan(value(y)));
+        compareFinite(1.0, y.getDerivative(), "fdim(NaN, 0.5) fwd, dy");
+    }
+    auto mixed1 = evalWithDerivative<xad::AD>(fdimADScalar, qnan);
+    EXPECT_TRUE(std::isnan(mixed1.first));
+    compareFinite(1.0, mixed1.second, "fdim(x, 0.5) at NaN, dx");
+    auto mixed2 = evalWithDerivative<xad::AD>(fdimScalarAD, qnan);
+    EXPECT_TRUE(std::isnan(mixed2.first));
+    compareFinite(-1.0, mixed2.second, "fdim(1.3, x) at NaN, dx");
+    auto expr1 = evalWithDerivative<xad::AD>(fdimExprScalar, qnan);
+    EXPECT_TRUE(std::isnan(expr1.first));
+    compareFinite(2.3, expr1.second, "fdim(2.3*x, 0.5) at NaN, dx");
+    auto expr2 = evalWithDerivative<xad::AD>(fdimScalarExpr, qnan);
+    EXPECT_TRUE(std::isnan(expr2.first));
+    compareFinite(-2.3, expr2.second, "fdim(1.3, 2.3*x) at NaN, dx");
 }
 
 LOCAL_TEST_FUNCTOR2(remainderAD, remainder(x1, x2))
