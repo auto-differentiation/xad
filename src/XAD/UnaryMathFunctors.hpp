@@ -532,7 +532,6 @@ struct scalar_remquo2_op
 
 /*
  * TODO:
-logb
 
 scalbln
 rint

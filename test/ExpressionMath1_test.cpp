@@ -423,7 +423,16 @@ double gammaAdj(F f, double x0)
 }
 
 // EXPECT_NEAR converts to double, so compare long double values directly
-#define EXPECT_NEAR_LD(ref, act, tol) EXPECT_LE(std::abs((ref) - (act)), (tol)) << (act)
+::testing::AssertionResult expectNearLd(long double ref, long double act, long double tol)
+{
+    const long double diff = std::abs(ref - act);
+    if (diff <= tol)
+    {
+        return ::testing::AssertionSuccess();
+    }
+    return ::testing::AssertionFailure()
+        << "difference " << diff << " exceeds " << tol << " (value " << act << ')';
+}
 
 struct digammaFn
 {
@@ -521,8 +530,8 @@ TEST(ExpressionsMath, digammaOverloads)
 
     // pi is not truncated to double for long double
     EXPECT_EQ(3.141592653589793238462643383279502884197L, xad::detail::piOf<long double>());
-    EXPECT_NEAR_LD(-2.07395279362870441754L, xad::digamma(-0.7L), 1e-15L);
-    EXPECT_NEAR_LD(14.2861808726383427104L, xad::detail::trigamma(-0.7L), 1e-14L);
+    EXPECT_TRUE(expectNearLd(-2.07395279362870441754L, xad::digamma(-0.7L), 1e-15L));
+    EXPECT_TRUE(expectNearLd(14.2861808726383427104L, xad::detail::trigamma(-0.7L), 1e-14L));
 }
 
 TEST(ExpressionsMath, gammaLongDouble)
@@ -534,25 +543,25 @@ TEST(ExpressionsMath, gammaLongDouble)
                       lg2 = 0.447212068918323641463L;
     long double y, d1, d2;
     gammaFwdFwd(tgammaFn(), 2.7L, y, d1, d2);
-    EXPECT_NEAR_LD(tg, y, 1e-15L);
-    EXPECT_NEAR_LD(tg1, d1, 1e-15L);
-    EXPECT_NEAR_LD(tg2, d2, 1e-15L);
+    EXPECT_TRUE(expectNearLd(tg, y, 1e-15L));
+    EXPECT_TRUE(expectNearLd(tg1, d1, 1e-15L));
+    EXPECT_TRUE(expectNearLd(tg2, d2, 1e-15L));
     gammaFwdFwd(lgammaFn(), 2.7L, y, d1, d2);
-    EXPECT_NEAR_LD(lg, y, 1e-15L);
-    EXPECT_NEAR_LD(lg1, d1, 1e-15L);
-    EXPECT_NEAR_LD(lg2, d2, 1e-15L);
+    EXPECT_TRUE(expectNearLd(lg, y, 1e-15L));
+    EXPECT_TRUE(expectNearLd(lg1, d1, 1e-15L));
+    EXPECT_TRUE(expectNearLd(lg2, d2, 1e-15L));
 
     xad::FReal<long double> x = 2.7L;
     derivative(x) = 1.0L;
     xad::FReal<long double> r = gammaSumFn()(x);
-    EXPECT_NEAR_LD(tg + lg, value(r), 1e-15L);
-    EXPECT_NEAR_LD(tg1 + lg1, derivative(r), 1e-15L);
+    EXPECT_TRUE(expectNearLd(tg + lg, value(r), 1e-15L));
+    EXPECT_TRUE(expectNearLd(tg1 + lg1, derivative(r), 1e-15L));
 
     // AReal<long double> uses the same derivatives; the library has no long double tape, so
     // check them through the operators it instantiates
-    EXPECT_NEAR_LD(tg1, xad::tgamma_op<long double>().derivative(2.7L, tg), 1e-15L);
-    EXPECT_NEAR_LD(lg1, xad::lgamma_op<long double>().derivative(2.7L), 1e-15L);
-    EXPECT_NEAR_LD(lg2, xad::digamma_op<long double>().derivative(2.7L), 1e-15L);
+    EXPECT_TRUE(expectNearLd(tg1, xad::tgamma_op<long double>().derivative(2.7L, tg), 1e-15L));
+    EXPECT_TRUE(expectNearLd(lg1, xad::lgamma_op<long double>().derivative(2.7L), 1e-15L));
+    EXPECT_TRUE(expectNearLd(lg2, xad::digamma_op<long double>().derivative(2.7L), 1e-15L));
 }
 
 TEST(ExpressionsMath, digammaPoles)
