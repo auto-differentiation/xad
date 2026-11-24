@@ -1,6 +1,6 @@
 /**
  *
- *   Abstract interface for JIT compilation backends.
+ *   Abstract interface for graph backends.
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -26,9 +26,9 @@
 
 #include <XAD/Config.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 
-#include <XAD/JITGraph.hpp>
+#include <XAD/Graph.hpp>
 #include <cstddef>
 #include <stdexcept>
 
@@ -36,10 +36,10 @@ namespace xad
 {
 
 /**
- * @brief Abstract interface for JIT compilation backends.
+ * @brief Abstract interface for graph backends.
  *
  * This interface allows plugging in different execution backends for the
- * JIT-compiled computation graphs. Backends can range from simple interpreters
+ * recorded computation graphs. Backends can range from simple interpreters
  * to native code generators or GPU executors.
  *
  * Some backends support evaluating multiple input sets in parallel (SIMD).
@@ -49,16 +49,16 @@ namespace xad
  * The template parameter Scalar specifies the floating-point type used for
  * inputs, outputs, and gradients (typically float or double).
  *
- * See JITGraphInterpreter for a reference implementation.
+ * See GraphInterpreter for a reference implementation.
  */
 template <class Scalar>
-class JITBackend
+class GraphBackend
 {
   public:
-    virtual ~JITBackend() = default;
+    virtual ~GraphBackend() = default;
 
     /// Compile the computation graph for execution.
-    virtual void compile(const JITGraph& graph) = 0;
+    virtual void compile(const Graph& graph) = 0;
 
     /// Reset/clear any compiled state.
     virtual void reset() = 0;
@@ -90,7 +90,7 @@ class JITBackend
         const std::size_t nSeeds = numOutputs() * vectorWidth();
         for (std::size_t i = 1; i < nSeeds; ++i)
             if (!(outputAdjoints[i] == outputAdjoints[0]))
-                throw std::runtime_error("JIT backend does not support different output adjoints");
+                throw std::runtime_error("graph backend does not support different output adjoints");
         forwardAndBackward(outputs, inputGradients);
         if (nSeeds > 0 && !(outputAdjoints[0] == Scalar(1)))
             for (std::size_t i = 0; i < numInputs() * vectorWidth(); ++i)
@@ -100,4 +100,4 @@ class JITBackend
 
 }  // namespace xad
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH

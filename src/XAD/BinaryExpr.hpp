@@ -27,8 +27,8 @@
 #include <XAD/Config.hpp>
 #include <XAD/BinaryDerivativeImpl.hpp>
 #include <XAD/Expression.hpp>
-#ifdef XAD_ENABLE_JIT
-#include <XAD/JITExprTraits.hpp>
+#ifdef XAD_ENABLE_GRAPH
+#include <XAD/GraphExprTraits.hpp>
 #endif
 #include <XAD/Macros.hpp>
 #include <XAD/Traits.hpp>
@@ -87,16 +87,16 @@ struct BinaryExpr
 
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord() || b_.shouldRecord(); }
 
-#ifdef XAD_ENABLE_JIT
-    bool shouldRecordJIT() const { return a_.shouldRecordJIT() || b_.shouldRecordJIT(); }
+#ifdef XAD_ENABLE_GRAPH
+    bool shouldRecordGraph() const { return a_.shouldRecordGraph() || b_.shouldRecordGraph(); }
 
-    uint32_t recordJIT(JITGraph& graph) const
+    uint32_t recordGraph(Graph& graph) const
     {
-        static_assert(static_cast<uint16_t>(JITOpCodeFor<Op>::value) != 0xFFFF,
-                      "JIT opcode mapping missing for binary operator");
-        uint32_t slotA = a_.recordJIT(graph);
-        uint32_t slotB = b_.recordJIT(graph);
-        return recordJITBinaryNode<Op>(graph, slotA, slotB);
+        static_assert(static_cast<uint16_t>(GraphOpCodeFor<Op>::value) != 0xFFFF,
+                      "graph opcode mapping missing for binary operator");
+        uint32_t slotA = a_.recordGraph(graph);
+        uint32_t slotB = b_.recordGraph(graph);
+        return recordGraphBinaryNode<Op>(graph, slotA, slotB);
     }
 #endif
 

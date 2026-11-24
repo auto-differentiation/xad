@@ -86,7 +86,5 @@
 // Use and free a variable's slot only on the tape it is registered on (default in Debug builds)
 #cmakedefine XAD_TAPE_CHECKS
 
-// Enable codegen (JIT compilation) support
-#cmakedefine XAD_ENABLE_CODEGEN
-// Internal: set when codegen is enabled
-#cmakedefine XAD_ENABLE_JIT
+// Graph recorder (xad::GraphRecorder) with its graph interpreter
+#cmakedefine XAD_ENABLE_GRAPH

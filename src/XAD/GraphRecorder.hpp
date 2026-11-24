@@ -1,6 +1,6 @@
 /**
  *
- *   JIT compiler: record expression graphs and execute them via a backend.
+ *   Graph recorder: record expression graphs and execute them via a backend.
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -26,12 +26,12 @@
 
 #include <XAD/Config.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 #include <XAD/Exceptions.hpp>
 #include <XAD/Export.hpp>
-#include <XAD/JITBackendInterface.hpp>
-#include <XAD/JITGraph.hpp>
-#include <XAD/JITGraphInterpreter.hpp>
+#include <XAD/GraphBackendInterface.hpp>
+#include <XAD/Graph.hpp>
+#include <XAD/GraphInterpreter.hpp>
 #include <XAD/Macros.hpp>
 #include <XAD/Tape.hpp>
 #include <XAD/Traits.hpp>
@@ -48,27 +48,27 @@ struct AReal;
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable : 4251)  // members of the exported JITCompiler need no dll interface
+#pragma warning(disable : 4251)  // members of the exported GraphRecorder need no dll interface
 #endif
 
 template <class Real, std::size_t N = 1>
-class JITCompiler
+class GraphRecorder
 {
   public:
-    static_assert(N == 1, "JITCompiler only supports scalar mode (N=1).");
+    static_assert(N == 1, "GraphRecorder only supports scalar mode (N=1).");
 
     typedef unsigned int size_type;
     typedef unsigned int slot_type;
     typedef slot_type position_type;
     typedef AReal<Real, N> active_type;
     typedef Real value_type;
-    typedef JITCompiler<Real, N> jit_type;
+    typedef GraphRecorder<Real, N> graph_recorder_type;
     typedef typename DerivativesTraits<Real, N>::type derivative_type;
     typedef Tape<Real, N> tape_type;
 
     // Default constructor - uses interpreter backend
-    explicit JITCompiler(bool activate = true)
-        : backend_(std::unique_ptr<JITGraphInterpreter<Real>>(new JITGraphInterpreter<Real>()))
+    explicit GraphRecorder(bool activate = true)
+        : backend_(std::unique_ptr<GraphInterpreter<Real>>(new GraphInterpreter<Real>()))
     {
         width_ = backend_->vectorWidth();
         if (activate)
@@ -76,7 +76,7 @@ class JITCompiler
     }
 
     // Constructor with custom backend
-    explicit JITCompiler(std::unique_ptr<JITBackend<Real>> backend, bool activate = true)
+    explicit GraphRecorder(std::unique_ptr<GraphBackend<Real>> backend, bool activate = true)
         : backend_(std::move(backend))
     {
         if (backend_)
@@ -85,15 +85,15 @@ class JITCompiler
             activateSuspendingTape();
     }
 
-    ~JITCompiler()
+    ~GraphRecorder()
     {
         deactivate();
         restoreTape();
     }
 
-    /// Set or replace the JIT backend.
+    /// Set or replace the graph backend.
     /// Resets any compiled state when the backend is changed.
-    void setBackend(std::unique_ptr<JITBackend<Real>> backend)
+    void setBackend(std::unique_ptr<GraphBackend<Real>> backend)
     {
         backend_ = std::move(backend);
         width_ = 1;
@@ -104,7 +104,7 @@ class JITCompiler
         }
     }
 
-    JITCompiler(JITCompiler&& other) noexcept
+    GraphRecorder(GraphRecorder&& other) noexcept
         : graph_(std::move(other.graph_)),
           backend_(std::move(other.backend_)),
           width_(other.width_),
@@ -115,13 +115,13 @@ class JITCompiler
         if (other.isActive())
         {
             other.deactivate();
-            // `setActive()` can throw if another JIT is active. Here we know `other` was active and we
+            // `setActive()` can throw if another graph recorder is active. Here we know `other` was active and we
             // just deactivated it, so we can safely update the active pointer without risking a throw.
             setActiveUnchecked(this);
         }
     }
 
-    JITCompiler& operator=(JITCompiler&& other) noexcept
+    GraphRecorder& operator=(GraphRecorder&& other) noexcept
     {
         if (this != &other)
         {
@@ -143,8 +143,8 @@ class JITCompiler
         return *this;
     }
 
-    JITCompiler(const JITCompiler&) = delete;
-    JITCompiler& operator=(const JITCompiler&) = delete;
+    GraphRecorder(const GraphRecorder&) = delete;
+    GraphRecorder& operator=(const GraphRecorder&) = delete;
 
     XAD_INLINE void activate() { setActive(this); }
 
@@ -158,24 +158,24 @@ class JITCompiler
 
 #ifdef XAD_SHARED_LIBS
     // out of line, see Tape
-    static JITCompiler* getActive();
-    static void setActive(JITCompiler* j);
+    static GraphRecorder* getActive();
+    static void setActive(GraphRecorder* j);
     static void deactivateAll();
 #else
-    XAD_INLINE static JITCompiler* getActive() { return active_jit_; }
+    XAD_INLINE static GraphRecorder* getActive() { return active_recorder_; }
 
-    XAD_INLINE static void setActive(JITCompiler* j)
+    XAD_INLINE static void setActive(GraphRecorder* j)
     {
-        if (active_jit_ != nullptr)
-            throw OutOfRange("JIT Compiler already active");
-        active_jit_ = j;
+        if (active_recorder_ != nullptr)
+            throw OutOfRange("GraphRecorder already active");
+        active_recorder_ = j;
     }
 
-    XAD_INLINE static void deactivateAll() { active_jit_ = nullptr; }
+    XAD_INLINE static void deactivateAll() { active_recorder_ = nullptr; }
 #endif
 
-    const JITGraph& getGraph() const { return graph_; }
-    JITGraph& getGraph() { return graph_; }
+    const Graph& getGraph() const { return graph_; }
+    Graph& getGraph() { return graph_; }
 
     // x is the variable registered for input node, not a copy sharing its node
     bool isRegisteredInput(const active_type& x, uint32_t node) const
@@ -194,14 +194,14 @@ class JITCompiler
             backend_->reset();
         // the inputs lead the new graph, so their slots move
         for (std::size_t i = 0; i < inputs_.size(); ++i)
-            inputs_[i]->slot_ = jitSlot(graph_.addInput());
+            inputs_[i]->slot_ = graphSlot(graph_.addInput());
     }
 
     XAD_INLINE void registerInput(active_type& inp)
     {
-        if (!inp.shouldRecordJIT())
+        if (!inp.shouldRecordGraph())
         {
-            inp.slot_ = jitSlot(graph_.addInput());
+            inp.slot_ = graphSlot(graph_.addInput());
             inputs_.push_back(&inp);
         }
     }
@@ -209,13 +209,13 @@ class JITCompiler
     XAD_INLINE void registerOutput(active_type& outp)
     {
         uint32_t node;
-        if (outp.shouldRecordJIT())
-            node = jitNode(outp.slot_);
+        if (outp.shouldRecordGraph())
+            node = graphNode(outp.slot_);
         else  // independent of the inputs: a constant, leaving a tape variable its slot
         {
             node = graph_.addConstant(outp.value());
             if (!outp.shouldRecord())
-                outp.slot_ = jitSlot(node);
+                outp.slot_ = graphSlot(node);
         }
         graph_.markOutput(node);
     }
@@ -249,7 +249,7 @@ class JITCompiler
 
     slot_type registerVariable() { return static_cast<slot_type>(graph_.nodeCount()); }
 
-    uint32_t recordNode(JITOpCode op, uint32_t a = 0, uint32_t b = 0, uint32_t c = 0)
+    uint32_t recordNode(GraphOpCode op, uint32_t a = 0, uint32_t b = 0, uint32_t c = 0)
     {
         return graph_.addNode(op, a, b, c);
     }
@@ -359,7 +359,7 @@ class JITCompiler
     // s: a variable's slot or a graph node
     derivative_type& derivative(slot_type s)
     {
-        uint32_t n = jitNode(s);
+        uint32_t n = graphNode(s);
         if (n >= derivatives_.size())
             derivatives_.resize(n + 1, derivative_type());
         return derivatives_[n];
@@ -367,7 +367,7 @@ class JITCompiler
 
     const derivative_type& derivative(slot_type s) const
     {
-        uint32_t n = jitNode(s);
+        uint32_t n = graphNode(s);
         if (n < derivatives_.size())
             return derivatives_[n];
         // Return reference to class member for out-of-range slots (thread-safe)
@@ -376,13 +376,13 @@ class JITCompiler
 
     derivative_type getDerivative(slot_type s) const
     {
-        uint32_t n = jitNode(s);
+        uint32_t n = graphNode(s);
         return (n < derivatives_.size()) ? derivatives_[n] : derivative_type();
     }
 
     void setDerivative(slot_type s, const derivative_type& d)
     {
-        uint32_t n = jitNode(s);
+        uint32_t n = graphNode(s);
         if (n >= derivatives_.size())
             derivatives_.resize(n + 1, derivative_type());
         derivatives_[n] = d;
@@ -406,8 +406,8 @@ class JITCompiler
     position_type getPosition() const { return static_cast<position_type>(graph_.nodeCount()); }
 
   private:
-    // JIT recording needs the tape off: this JIT reactivates it when it goes.
-    // The tape keeps &suspendedTape_ only while this JIT lives (the destructor clears it); GCC 12+ can't see that
+    // graph recording needs the tape off: this recorder reactivates it when it goes.
+    // The tape keeps &suspendedTape_ only while this recorder lives (the destructor clears it); GCC 12+ can't see that
 #if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 12
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdangling-pointer"
@@ -417,9 +417,9 @@ class JITCompiler
         setActive(this);
         if (tape_type* t = tape_type::getActive())
         {
-            if (t->jitSuspender_)  // deactivated by an earlier JIT and reactivated since
-                *t->jitSuspender_ = nullptr;
-            t->jitSuspender_ = &suspendedTape_;
+            if (t->graphSuspender_)  // deactivated by an earlier graph recorder and reactivated since
+                *t->graphSuspender_ = nullptr;
+            t->graphSuspender_ = &suspendedTape_;
             suspendedTape_ = t;
             t->deactivate();
         }
@@ -428,12 +428,12 @@ class JITCompiler
 #pragma GCC diagnostic pop
 #endif
 
-    void takeSuspendedTape(JITCompiler& other) noexcept
+    void takeSuspendedTape(GraphRecorder& other) noexcept
     {
         suspendedTape_ = other.suspendedTape_;
         other.suspendedTape_ = nullptr;
         if (suspendedTape_)
-            suspendedTape_->jitSuspender_ = &suspendedTape_;
+            suspendedTape_->graphSuspender_ = &suspendedTape_;
     }
 
     // unless the tape is gone (it clears suspendedTape_) or something else is active now
@@ -442,20 +442,20 @@ class JITCompiler
         tape_type* t = suspendedTape_;
         if (!t)
             return;
-        t->jitSuspender_ = nullptr;
+        t->graphSuspender_ = nullptr;
         suspendedTape_ = nullptr;
         if (getActive() == nullptr && tape_type::getActive() == nullptr)
             t->activate();
     }
 
 #ifdef XAD_SHARED_LIBS
-    static void setActiveUnchecked(JITCompiler* j);
+    static void setActiveUnchecked(GraphRecorder* j);
 #else
-    XAD_INLINE static void setActiveUnchecked(JITCompiler* j) { active_jit_ = j; }
-    static XAD_THREAD_LOCAL JITCompiler* active_jit_;
+    XAD_INLINE static void setActiveUnchecked(GraphRecorder* j) { active_recorder_ = j; }
+    static XAD_THREAD_LOCAL GraphRecorder* active_recorder_;
 #endif
-    JITGraph graph_;
-    std::unique_ptr<JITBackend<Real>> backend_;
+    Graph graph_;
+    std::unique_ptr<GraphBackend<Real>> backend_;
     std::size_t width_ = 1;  // backend's vectorWidth(), cached when the backend is attached
     std::vector<active_type*> inputs_;
     std::vector<derivative_type> derivatives_;
@@ -464,9 +464,9 @@ class JITCompiler
 };
 
 // Declare external explicit instantiations (mirrors Tape.hpp pattern).
-// Definitions are provided in JITCompilerTLS.cpp.
-extern template class XAD_TEMPLATE_API JITCompiler<float>;
-extern template class XAD_TEMPLATE_API JITCompiler<double>;
+// Definitions are provided in GraphRecorderTLS.cpp.
+extern template class XAD_TEMPLATE_API GraphRecorder<float>;
+extern template class XAD_TEMPLATE_API GraphRecorder<double>;
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -474,4 +474,4 @@ extern template class XAD_TEMPLATE_API JITCompiler<double>;
 
 }  // namespace xad
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH

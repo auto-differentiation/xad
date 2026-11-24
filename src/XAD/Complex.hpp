@@ -62,12 +62,12 @@ template <class T>
 struct complex_parts_plain<AReal<T, 1>, typename std::enable_if<float_or_double<T>::value>::type>
     : std::true_type
 {
-    // no tape or JIT records the parts
+    // no tape or graph recorder records the parts
     static XAD_FORCE_INLINE bool passive()
     {
         return AReal<T, 1>::tape_type::getActive() == nullptr
-#ifdef XAD_ENABLE_JIT
-               && AReal<T, 1>::jit_type::getActive() == nullptr
+#ifdef XAD_ENABLE_GRAPH
+               && AReal<T, 1>::graph_recorder_type::getActive() == nullptr
 #endif
             ;
     }

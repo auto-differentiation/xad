@@ -1,6 +1,6 @@
 ##############################################################################
 #
-#  JIT tutorial sample CMakefile
+#  Graph tutorial sample CMakefile
 #
 #  This file is part of XAD, a comprehensive C++ library for
 #  automatic differentiation.
@@ -22,10 +22,10 @@
 #
 ##############################################################################
 
-if (NOT XAD_ENABLE_JIT)
-    message(STATUS "Skipping jit_tutorial sample (XAD_ENABLE_JIT is OFF)")
+if (NOT XAD_ENABLE_GRAPH)
+    message(STATUS "Skipping graph_tutorial sample (XAD_ENABLE_GRAPH is OFF)")
 else()
-    xad_add_sample(jit_tutorial SOURCES main.cpp)
+    xad_add_sample(graph_tutorial SOURCES main.cpp)
 endif()
 
 

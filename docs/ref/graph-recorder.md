@@ -1,95 +1,95 @@
-# JITCompiler
+# GraphRecorder
 
 ## Overview
 
-`#!c++ template <class Real, std::size_t N = 1> class JITCompiler;`
+`#!c++ template <class Real, std::size_t N = 1> class GraphRecorder;`
 
 Only scalar mode is supported (`N == 1`); other values of `N` fail to compile.
 
-`JITCompiler` is a *tape-like* recorder/executor for JIT-enabled builds. It:
+`GraphRecorder` is a *tape-like* recorder/executor for graph-enabled builds. It:
 
-- records computations into a [`JITGraph`](jit-graph.md)
-- compiles the graph using a pluggable [`JITBackend`](jit-backend.md)
+- records computations into a [`Graph`](graph-class.md)
+- compiles the graph using a pluggable [`GraphBackend`](graph-backend.md)
 - provides forward execution and adjoint propagation
 
 !!! note "Compile-time feature flag"
 
-    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`,
-    which needs the separately licensed xad-codegen library.
+    This API is only available when XAD is compiled with `XAD_ENABLE_GRAPH=ON`
+    (see [Build Options](build-options.md#xad_enable_graph)).
 
 ## Typical usage
 
     using AD = xad::AReal<double, 1>;
 
-    xad::JITCompiler<double, 1> jit;
+    xad::GraphRecorder<double, 1> recorder;
 
     AD x = 2.0;
     AD y = 3.0;
 
-    jit.registerInput(x);
-    jit.registerInput(y);
+    recorder.registerInput(x);
+    recorder.registerInput(y);
 
-    jit.newRecording();
+    recorder.newRecording();
     AD z = x * y + x;
-    jit.registerOutput(z);
+    recorder.registerOutput(z);
 
-    jit.compile();
+    recorder.compile();
 
     double out = 0.0;
-    jit.forward(&out);              // out = 8
+    recorder.forward(&out);              // out = 8
 
-    jit.setDerivative(z.getSlot(), 1.0);
-    jit.computeAdjoints();
-    double dzdx = jit.getDerivative(x.getSlot());   // 4
+    recorder.setDerivative(z.getSlot(), 1.0);
+    recorder.computeAdjoints();
+    double dzdx = recorder.getDerivative(x.getSlot());   // 4
 
     x = 3.0;                        // run again with new input values
-    jit.clearDerivatives();
-    jit.forward(&out);              // out = 12
+    recorder.clearDerivatives();
+    recorder.forward(&out);              // out = 12
 
 ## Construct
 
-`#!c++ explicit JITCompiler(bool activate = true)` uses the [`JITGraphInterpreter`](jit-backend.md#jitgraphinterpreter) backend.
+`#!c++ explicit GraphRecorder(bool activate = true)` uses the [`GraphInterpreter`](graph-backend.md#graphinterpreter) backend.
 
-`#!c++ explicit JITCompiler(std::unique_ptr<JITBackend<Real>> backend, bool activate = true)` uses the given backend.
+`#!c++ explicit GraphRecorder(std::unique_ptr<GraphBackend<Real>> backend, bool activate = true)` uses the given backend.
 
-With `activate`, the new compiler becomes the active one for the thread.
-A tape that is active then is deactivated while the compiler records,
-and activated again when the compiler is destroyed (unless another tape or compiler is active by then).
-A `JITCompiler` can be moved, but not copied.
+With `activate`, the new recorder becomes the active one for the thread.
+A tape that is active then is deactivated while the recorder records,
+and activated again when the recorder is destroyed (unless another tape or recorder is active by then).
+A `GraphRecorder` can be moved, but not copied.
 
 ## Recording control (TLS)
 
-`JITCompiler` mirrors the tape pattern: a thread-local “active” compiler can be set, so that XAD expression construction/assignment can record into the active JIT compiler when no tape is active.
+`GraphRecorder` mirrors the tape pattern: a thread-local “active” recorder can be set, so that XAD expression construction/assignment can record into the active graph recorder when no tape is active.
 
 ### `isActive`
 
 `#!c++ bool isActive() const`
 
-Checks whether this instance is the active compiler for the current thread.
+Checks whether this instance is the active recorder for the current thread.
 
 ### `getActive`
 
-`#!c++ static JITCompiler* getActive()`
+`#!c++ static GraphRecorder* getActive()`
 
-Returns the active compiler for the current thread, or `#!c++ nullptr` if none is active.
+Returns the active recorder for the current thread, or `#!c++ nullptr` if none is active.
 
 ### `activate` / `deactivate` / `deactivateAll`
 
 `#!c++ void activate()`, `#!c++ void deactivate()`, `#!c++ static void deactivateAll()`
 
-Manage the thread-local active compiler pointer.
+Manage the thread-local active recorder pointer.
 
 ## Graph and backend
 
 ### `getGraph`
 
-`#!c++ JITGraph& getGraph()`
+`#!c++ Graph& getGraph()`
 
 Access the recorded graph (mainly for backends and debugging).
 
 ### `setBackend`
 
-`#!c++ void setBackend(std::unique_ptr<JITBackend<Real>> backend)`
+`#!c++ void setBackend(std::unique_ptr<GraphBackend<Real>> backend)`
 
 Replaces the execution backend (requires recompilation of the current graph).
 
@@ -162,7 +162,7 @@ For use with `forwardAndBackward`; `forward` and `computeAdjoints` overwrite the
 
 Runs the backend's forward and backward passes on the inputs set with `setInput`, with all output adjoints 1.
 `outputs` takes `numOutputs() * vectorWidth()` values and `inputGradients` `numInputs() * vectorWidth()` values.
-It does not change the derivatives stored in the compiler.
+It does not change the derivatives stored in the recorder.
 
 ## Derivatives
 

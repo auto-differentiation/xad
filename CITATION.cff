@@ -24,4 +24,4 @@ keywords:
   - adjoint
   - C++
   - Python
-abstract: "XAD computes exact derivatives of C++ and Python code in forward, adjoint and higher-order mode via operator overloading, with checkpointing, Eigen support and a JIT backend interface."
+abstract: "XAD computes exact derivatives of C++ and Python code in forward, adjoint and higher-order mode via operator overloading, with checkpointing, Eigen support and graph recording."

@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- *   Reference JITBackend implementation that interprets a JITGraph.
+ *   Reference GraphBackend implementation that interprets a Graph.
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -24,9 +24,9 @@
 
 #include <XAD/Config.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 
-#include <XAD/JITGraphInterpreter.hpp>
+#include <XAD/GraphInterpreter.hpp>
 #include <XAD/Macros.hpp>
 #include <XAD/MathFunctions.hpp>
 
@@ -44,9 +44,9 @@ namespace xad
 {
 
 template <class Scalar>
-struct JITGraphInterpreter<Scalar>::Impl
+struct GraphInterpreter<Scalar>::Impl
 {
-    const JITGraph* graph = nullptr;  // Stored from compile()
+    const Graph* graph = nullptr;  // Stored from compile()
     std::vector<Scalar> inputValues;  // Current input values (set via setInput)
     std::vector<Scalar> nodeValues;   // Forward pass intermediate values
     std::vector<Scalar> nodeAdjoints; // Backward pass adjoints
@@ -57,16 +57,16 @@ struct JITGraphInterpreter<Scalar>::Impl
 };
 
 template <class Scalar>
-JITGraphInterpreter<Scalar>::JITGraphInterpreter()
+GraphInterpreter<Scalar>::GraphInterpreter()
     : impl_(new Impl())
 {
 }
 
 template <class Scalar>
-JITGraphInterpreter<Scalar>::~JITGraphInterpreter() = default;
+GraphInterpreter<Scalar>::~GraphInterpreter() = default;
 
 template <class Scalar>
-void JITGraphInterpreter<Scalar>::compile(const JITGraph& graph)
+void GraphInterpreter<Scalar>::compile(const Graph& graph)
 {
     impl_->graph = &graph;
     impl_->numNodes = graph.nodeCount();
@@ -78,7 +78,7 @@ void JITGraphInterpreter<Scalar>::compile(const JITGraph& graph)
 }
 
 template <class Scalar>
-void JITGraphInterpreter<Scalar>::reset()
+void GraphInterpreter<Scalar>::reset()
 {
     impl_->graph = nullptr;
     impl_->inputValues.clear();
@@ -88,19 +88,19 @@ void JITGraphInterpreter<Scalar>::reset()
 }
 
 template <class Scalar>
-std::size_t JITGraphInterpreter<Scalar>::numInputs() const
+std::size_t GraphInterpreter<Scalar>::numInputs() const
 {
     return impl_->numInputs;
 }
 
 template <class Scalar>
-std::size_t JITGraphInterpreter<Scalar>::numOutputs() const
+std::size_t GraphInterpreter<Scalar>::numOutputs() const
 {
     return impl_->numOutputs;
 }
 
 template <class Scalar>
-void JITGraphInterpreter<Scalar>::setInput(std::size_t inputIndex, const Scalar* values)
+void GraphInterpreter<Scalar>::setInput(std::size_t inputIndex, const Scalar* values)
 {
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
@@ -111,12 +111,12 @@ void JITGraphInterpreter<Scalar>::setInput(std::size_t inputIndex, const Scalar*
 }
 
 template <class Scalar>
-void JITGraphInterpreter<Scalar>::forward(Scalar* outputs)
+void GraphInterpreter<Scalar>::forward(Scalar* outputs)
 {
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
 
-    const JITGraph& graph = *impl_->graph;
+    const Graph& graph = *impl_->graph;
 
     // Load input values into node values
     for (std::size_t i = 0; i < impl_->numInputs; ++i)
@@ -132,20 +132,20 @@ void JITGraphInterpreter<Scalar>::forward(Scalar* outputs)
 }
 
 template <class Scalar>
-void JITGraphInterpreter<Scalar>::forwardAndBackward(Scalar* outputs, Scalar* inputGradients)
+void GraphInterpreter<Scalar>::forwardAndBackward(Scalar* outputs, Scalar* inputGradients)
 {
     forwardAndBackwardSeeded(outputs, nullptr, inputGradients);
 }
 
 template <class Scalar>
-void JITGraphInterpreter<Scalar>::forwardAndBackwardSeeded(Scalar* outputs,
+void GraphInterpreter<Scalar>::forwardAndBackwardSeeded(Scalar* outputs,
                                                            const Scalar* outputAdjoints,
                                                            Scalar* inputGradients)
 {
     if (!impl_->graph)
         throw std::runtime_error("Backend not compiled");
 
-    const JITGraph& graph = *impl_->graph;
+    const Graph& graph = *impl_->graph;
 
     // Run forward pass
     forward(outputs);
@@ -165,18 +165,18 @@ void JITGraphInterpreter<Scalar>::forwardAndBackwardSeeded(Scalar* outputs,
 }
 
 template <class Scalar>
-Scalar JITGraphInterpreter<Scalar>::invSqrtPi()
+Scalar GraphInterpreter<Scalar>::invSqrtPi()
 {
     return Scalar(2) / std::sqrt(Scalar(M_PI));
 }
 
 template <class Scalar>
-void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
+void GraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
 {
-    const JITGraph& graph = *impl_->graph;
+    const Graph& graph = *impl_->graph;
     std::vector<Scalar>& nodeValues = impl_->nodeValues;
     const auto& node = graph.nodes[nodeId];
-    JITOpCode op = static_cast<JITOpCode>(node.op);
+    GraphOpCode op = static_cast<GraphOpCode>(node.op);
     uint32_t a = node.a;
     uint32_t b = node.b;
     double imm = node.imm;
@@ -188,8 +188,8 @@ void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
 
     switch (op)
     {
-        case JITOpCode::Input: return;
-        case JITOpCode::Constant:
+        case GraphOpCode::Input: return;
+        case GraphOpCode::Constant:
         {
             std::size_t idx = static_cast<std::size_t>(imm);
             if (idx >= graph.const_pool.size())
@@ -197,77 +197,81 @@ void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
             result = static_cast<Scalar>(graph.const_pool[idx]);
             break;
         }
-        case JITOpCode::Add: result = va + vb; break;
-        case JITOpCode::Sub: result = va - vb; break;
-        case JITOpCode::Mul: result = va * vb; break;
-        case JITOpCode::Div: result = va / vb; break;
-        case JITOpCode::Neg: result = -va; break;
-        case JITOpCode::Abs: result = std::abs(va); break;
-        case JITOpCode::Square: result = va * va; break;
-        case JITOpCode::Recip: result = Scalar(1) / va; break;
-        case JITOpCode::Sqrt: result = std::sqrt(va); break;
-        case JITOpCode::Exp: result = std::exp(va); break;
-        case JITOpCode::Log: result = std::log(va); break;
-        case JITOpCode::Sin: result = std::sin(va); break;
-        case JITOpCode::Cos: result = std::cos(va); break;
-        case JITOpCode::Tan: result = std::tan(va); break;
-        case JITOpCode::Asin: result = std::asin(va); break;
-        case JITOpCode::Acos: result = std::acos(va); break;
-        case JITOpCode::Atan: result = std::atan(va); break;
-        case JITOpCode::Sinh: result = std::sinh(va); break;
-        case JITOpCode::Cosh: result = std::cosh(va); break;
-        case JITOpCode::Tanh: result = std::tanh(va); break;
-        case JITOpCode::Pow: result = std::pow(va, vb); break;
-        case JITOpCode::Min: result = (std::min)(va, vb); break;
-        case JITOpCode::Max: result = (std::max)(va, vb); break;
-        case JITOpCode::Mod:
-        case JITOpCode::Fmod: result = std::fmod(va, vb); break;
-        case JITOpCode::Atan2: result = std::atan2(va, vb); break;
-        case JITOpCode::Floor: result = std::floor(va); break;
-        case JITOpCode::Ceil: result = std::ceil(va); break;
-        case JITOpCode::Cbrt: result = std::cbrt(va); break;
-        case JITOpCode::Erf: result = std::erf(va); break;
-        case JITOpCode::Erfc: result = std::erfc(va); break;
-        case JITOpCode::Expm1: result = std::expm1(va); break;
-        case JITOpCode::Log1p: result = std::log1p(va); break;
-        case JITOpCode::Log10: result = std::log10(va); break;
-        case JITOpCode::Log2: result = std::log2(va); break;
-        case JITOpCode::Asinh: result = std::asinh(va); break;
-        case JITOpCode::Acosh: result = std::acosh(va); break;
-        case JITOpCode::Atanh: result = std::atanh(va); break;
-        case JITOpCode::Exp2: result = std::exp2(va); break;
-        case JITOpCode::Trunc: result = std::trunc(va); break;
-        case JITOpCode::Round: result = std::round(va); break;
-        case JITOpCode::Tgamma: result = std::tgamma(va); break;
-        case JITOpCode::Lgamma: result = std::lgamma(va); break;
-        case JITOpCode::Digamma: result = xad::digamma(va); break;
-        case JITOpCode::Remainder: result = std::remainder(va, vb); break;
-        case JITOpCode::Remquo:
+        case GraphOpCode::Add: result = va + vb; break;
+        case GraphOpCode::Sub: result = va - vb; break;
+        case GraphOpCode::Mul: result = va * vb; break;
+        case GraphOpCode::Div: result = va / vb; break;
+        case GraphOpCode::Neg: result = -va; break;
+        case GraphOpCode::Abs: result = std::abs(va); break;
+        case GraphOpCode::Square: result = va * va; break;
+        case GraphOpCode::Recip: result = Scalar(1) / va; break;
+        case GraphOpCode::Sqrt: result = std::sqrt(va); break;
+        case GraphOpCode::Exp: result = std::exp(va); break;
+        case GraphOpCode::Log: result = std::log(va); break;
+        case GraphOpCode::Sin: result = std::sin(va); break;
+        case GraphOpCode::Cos: result = std::cos(va); break;
+        case GraphOpCode::Tan: result = std::tan(va); break;
+        case GraphOpCode::Asin: result = std::asin(va); break;
+        case GraphOpCode::Acos: result = std::acos(va); break;
+        case GraphOpCode::Atan: result = std::atan(va); break;
+        case GraphOpCode::Sinh: result = std::sinh(va); break;
+        case GraphOpCode::Cosh: result = std::cosh(va); break;
+        case GraphOpCode::Tanh: result = std::tanh(va); break;
+        case GraphOpCode::Pow: result = std::pow(va, vb); break;
+        case GraphOpCode::Min: result = (std::min)(va, vb); break;
+        case GraphOpCode::Max: result = (std::max)(va, vb); break;
+        case GraphOpCode::Mod:
+        case GraphOpCode::Fmod: result = std::fmod(va, vb); break;
+        case GraphOpCode::Atan2: result = std::atan2(va, vb); break;
+        case GraphOpCode::Fdim: result = std::fdim(va, vb); break;
+        case GraphOpCode::Floor: result = std::floor(va); break;
+        case GraphOpCode::Ceil: result = std::ceil(va); break;
+        case GraphOpCode::Cbrt: result = std::cbrt(va); break;
+        case GraphOpCode::Erf: result = std::erf(va); break;
+        case GraphOpCode::Erfc: result = std::erfc(va); break;
+        case GraphOpCode::Expm1: result = std::expm1(va); break;
+        case GraphOpCode::Log1p: result = std::log1p(va); break;
+        case GraphOpCode::Log10: result = std::log10(va); break;
+        case GraphOpCode::Log2: result = std::log2(va); break;
+        case GraphOpCode::Asinh: result = std::asinh(va); break;
+        case GraphOpCode::Acosh: result = std::acosh(va); break;
+        case GraphOpCode::Atanh: result = std::atanh(va); break;
+        case GraphOpCode::Exp2: result = std::exp2(va); break;
+        case GraphOpCode::Trunc: result = std::trunc(va); break;
+        case GraphOpCode::Round: result = std::round(va); break;
+        case GraphOpCode::Tgamma: result = std::tgamma(va); break;
+        case GraphOpCode::Lgamma: result = std::lgamma(va); break;
+        case GraphOpCode::Digamma: result = xad::digamma(va); break;
+        case GraphOpCode::Rint: result = std::rint(va); break;
+        case GraphOpCode::Nearbyint: result = std::nearbyint(va); break;
+        case GraphOpCode::Logb: result = std::logb(va); break;
+        case GraphOpCode::Remainder: result = std::remainder(va, vb); break;
+        case GraphOpCode::Remquo:
         {
             int quo;
             result = std::remquo(va, vb, &quo);
             // Store quotient in operand_c if needed
             break;
         }
-        case JITOpCode::Hypot: result = std::hypot(va, vb); break;
-        case JITOpCode::Nextafter: result = std::nextafter(va, vb); break;
-        case JITOpCode::Ldexp: result = std::ldexp(va, static_cast<int>(imm)); break;
-        case JITOpCode::Frexp:
+        case GraphOpCode::Hypot: result = std::hypot(va, vb); break;
+        case GraphOpCode::Nextafter: result = std::nextafter(va, vb); break;
+        case GraphOpCode::Ldexp: result = std::ldexp(va, static_cast<int>(imm)); break;
+        case GraphOpCode::Frexp:
         {
             int exp;
             result = std::frexp(va, &exp);
             // Store exponent somewhere if needed
             break;
         }
-        case JITOpCode::Modf:
+        case GraphOpCode::Modf:
         {
             Scalar intpart;
             result = std::modf(va, &intpart);
             // Store integer part somewhere if needed
             break;
         }
-        case JITOpCode::Copysign: result = std::copysign(va, vb); break;
-        case JITOpCode::SmoothAbs:
+        case GraphOpCode::Copysign: result = std::copysign(va, vb); break;
+        case GraphOpCode::SmoothAbs:
         {
             // Smooth abs: if |x| > c return |x|, else smooth function
             if (std::abs(va) > vb)
@@ -278,13 +282,13 @@ void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
                 result = va * va * (Scalar(2) / vb - va / (vb * vb));
             break;
         }
-        case JITOpCode::CmpLT: result = (va < vb) ? Scalar(1) : Scalar(0); break;
-        case JITOpCode::CmpLE: result = (va <= vb) ? Scalar(1) : Scalar(0); break;
-        case JITOpCode::CmpGT: result = (va > vb) ? Scalar(1) : Scalar(0); break;
-        case JITOpCode::CmpGE: result = (va >= vb) ? Scalar(1) : Scalar(0); break;
-        case JITOpCode::CmpEQ: result = (va == vb) ? Scalar(1) : Scalar(0); break;
-        case JITOpCode::CmpNE: result = (va != vb) ? Scalar(1) : Scalar(0); break;
-        case JITOpCode::If:
+        case GraphOpCode::CmpLT: result = (va < vb) ? Scalar(1) : Scalar(0); break;
+        case GraphOpCode::CmpLE: result = (va <= vb) ? Scalar(1) : Scalar(0); break;
+        case GraphOpCode::CmpGT: result = (va > vb) ? Scalar(1) : Scalar(0); break;
+        case GraphOpCode::CmpGE: result = (va >= vb) ? Scalar(1) : Scalar(0); break;
+        case GraphOpCode::CmpEQ: result = (va == vb) ? Scalar(1) : Scalar(0); break;
+        case GraphOpCode::CmpNE: result = (va != vb) ? Scalar(1) : Scalar(0); break;
+        case GraphOpCode::If:
         {
             const uint32_t c = node.c;
             const Scalar vc = (c < nodeValues.size()) ? nodeValues[c] : Scalar(0);
@@ -297,16 +301,16 @@ void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
 }
 
 template <class Scalar>
-void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
+void GraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
 {
-    const JITGraph& graph = *impl_->graph;
+    const Graph& graph = *impl_->graph;
     std::vector<Scalar>& nodeValues = impl_->nodeValues;
     std::vector<Scalar>& nodeAdjoints = impl_->nodeAdjoints;
     Scalar adj = nodeAdjoints[nodeId];
     if (adj == Scalar(0)) return;
 
     const auto& node = graph.nodes[nodeId];
-    JITOpCode op = static_cast<JITOpCode>(node.op);
+    GraphOpCode op = static_cast<GraphOpCode>(node.op);
     uint32_t a = node.a;
     uint32_t b = node.b;
 
@@ -316,175 +320,186 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
 
     switch (op)
     {
-        case JITOpCode::Input:
-        case JITOpCode::Constant:
+        case GraphOpCode::Input:
+        case GraphOpCode::Constant:
             break;
-        case JITOpCode::Add:
+        case GraphOpCode::Add:
             nodeAdjoints[a] += adj;
             nodeAdjoints[b] += adj;
             break;
-        case JITOpCode::Sub:
+        case GraphOpCode::Sub:
             nodeAdjoints[a] += adj;
             nodeAdjoints[b] -= adj;
             break;
-        case JITOpCode::Mul:
+        case GraphOpCode::Mul:
             nodeAdjoints[a] += adj * vb;
             nodeAdjoints[b] += adj * va;
             break;
-        case JITOpCode::Div:
+        case GraphOpCode::Div:
             nodeAdjoints[a] += adj / vb;
             nodeAdjoints[b] -= adj * va / (vb * vb);
             break;
-        case JITOpCode::Neg:
+        case GraphOpCode::Neg:
             nodeAdjoints[a] -= adj;
             break;
-        case JITOpCode::Abs:
+        case GraphOpCode::Abs:
             // Match XAD's derivative: (a > 0) - (a < 0), which is 0 at a=0
             nodeAdjoints[a] += adj * ((va > Scalar(0)) ? Scalar(1) : ((va < Scalar(0)) ? Scalar(-1) : Scalar(0)));
             break;
-        case JITOpCode::Square:
+        case GraphOpCode::Square:
             nodeAdjoints[a] += adj * Scalar(2) * va;
             break;
-        case JITOpCode::Recip:
+        case GraphOpCode::Recip:
             nodeAdjoints[a] -= adj / (va * va);
             break;
-        case JITOpCode::Sqrt:
+        case GraphOpCode::Sqrt:
             nodeAdjoints[a] += adj / (Scalar(2) * vResult);
             break;
-        case JITOpCode::Exp:
+        case GraphOpCode::Exp:
             nodeAdjoints[a] += adj * vResult;
             break;
-        case JITOpCode::Log:
+        case GraphOpCode::Log:
             nodeAdjoints[a] += adj / va;
             break;
-        case JITOpCode::Sin:
+        case GraphOpCode::Sin:
             nodeAdjoints[a] += adj * std::cos(va);
             break;
-        case JITOpCode::Cos:
+        case GraphOpCode::Cos:
             nodeAdjoints[a] -= adj * std::sin(va);
             break;
-        case JITOpCode::Tan:
+        case GraphOpCode::Tan:
         {
             Scalar cosv = std::cos(va);
             nodeAdjoints[a] += adj / (cosv * cosv);
         }
         break;
-        case JITOpCode::Asin:
+        case GraphOpCode::Asin:
             nodeAdjoints[a] += adj / std::sqrt(Scalar(1) - va * va);
             break;
-        case JITOpCode::Acos:
+        case GraphOpCode::Acos:
             nodeAdjoints[a] -= adj / std::sqrt(Scalar(1) - va * va);
             break;
-        case JITOpCode::Atan:
+        case GraphOpCode::Atan:
             nodeAdjoints[a] += adj / (Scalar(1) + va * va);
             break;
-        case JITOpCode::Sinh:
+        case GraphOpCode::Sinh:
             nodeAdjoints[a] += adj * std::cosh(va);
             break;
-        case JITOpCode::Cosh:
+        case GraphOpCode::Cosh:
             nodeAdjoints[a] += adj * std::sinh(va);
             break;
-        case JITOpCode::Tanh:
+        case GraphOpCode::Tanh:
         {
             Scalar t = std::tanh(va);
             nodeAdjoints[a] += adj * (Scalar(1) - t * t);
         }
         break;
-        case JITOpCode::Pow:
+        case GraphOpCode::Pow:
             if (vb != Scalar(0))  // x^0 is 1 everywhere, but 0 * 0^-1 is NaN
                 nodeAdjoints[a] += adj * vb * std::pow(va, vb - Scalar(1));
             if (va > Scalar(0))
                 nodeAdjoints[b] += adj * vResult * std::log(va);
             break;
-        case JITOpCode::Min:
-        case JITOpCode::Max:
+        case GraphOpCode::Min:
+        case GraphOpCode::Max:
             if (va == vb)
             {
                 nodeAdjoints[a] += adj * Scalar(0.5);
                 nodeAdjoints[b] += adj * Scalar(0.5);
             }
             else  // to the result: va unless vb is beyond it, also with a NaN operand
-                nodeAdjoints[(op == JITOpCode::Min ? vb < va : va < vb) ? b : a] += adj;
+                nodeAdjoints[(op == GraphOpCode::Min ? vb < va : va < vb) ? b : a] += adj;
             break;
-        case JITOpCode::Mod:
-        case JITOpCode::Fmod:
-        case JITOpCode::Remainder:
-        case JITOpCode::Remquo:
+        case GraphOpCode::Mod:
+        case GraphOpCode::Fmod:
+        case GraphOpCode::Remainder:
+        case GraphOpCode::Remquo:
             nodeAdjoints[a] += adj;
             nodeAdjoints[b] -= adj * detail::remainder_quotient(va, vb, vResult);
             break;
-        case JITOpCode::Atan2:
+        case GraphOpCode::Fdim:
+            // 0 at a tie; !(va <= vb) also takes a NaN operand, as the tape does
+            if (!(va <= vb))
+            {
+                nodeAdjoints[a] += adj;
+                nodeAdjoints[b] -= adj;
+            }
+            break;
+        case GraphOpCode::Atan2:
         {
             Scalar denom = va * va + vb * vb;
             nodeAdjoints[a] += adj * vb / denom;
             nodeAdjoints[b] -= adj * va / denom;
         }
         break;
-        case JITOpCode::Floor:
-        case JITOpCode::Ceil:
+        case GraphOpCode::Floor:
+        case GraphOpCode::Ceil:
             break;
-        case JITOpCode::Cbrt:
+        case GraphOpCode::Cbrt:
             nodeAdjoints[a] += adj / (Scalar(3) * vResult * vResult);
             break;
-        case JITOpCode::Erf:
+        case GraphOpCode::Erf:
             nodeAdjoints[a] += adj * invSqrtPi() * std::exp(-va * va);
             break;
-        case JITOpCode::Erfc:
+        case GraphOpCode::Erfc:
             nodeAdjoints[a] -= adj * invSqrtPi() * std::exp(-va * va);
             break;
-        case JITOpCode::Expm1:
+        case GraphOpCode::Expm1:
             nodeAdjoints[a] += adj * std::exp(va);
             break;
-        case JITOpCode::Log1p:
+        case GraphOpCode::Log1p:
             nodeAdjoints[a] += adj / (Scalar(1) + va);
             break;
-        case JITOpCode::Log10:
+        case GraphOpCode::Log10:
             nodeAdjoints[a] += adj / (va * std::log(Scalar(10)));
             break;
-        case JITOpCode::Log2:
+        case GraphOpCode::Log2:
             nodeAdjoints[a] += adj / (va * std::log(Scalar(2)));
             break;
-        case JITOpCode::Asinh:
+        case GraphOpCode::Asinh:
             nodeAdjoints[a] += adj / std::sqrt(va * va + Scalar(1));
             break;
-        case JITOpCode::Acosh:
+        case GraphOpCode::Acosh:
             nodeAdjoints[a] += adj / std::sqrt(va * va - Scalar(1));
             break;
-        case JITOpCode::Atanh:
+        case GraphOpCode::Atanh:
             nodeAdjoints[a] += adj / (Scalar(1) - va * va);
             break;
-        case JITOpCode::Exp2:
+        case GraphOpCode::Exp2:
             nodeAdjoints[a] += adj * std::log(Scalar(2)) * vResult;
             break;
-        case JITOpCode::Trunc:
-        case JITOpCode::Round:
+        case GraphOpCode::Trunc:
+        case GraphOpCode::Round:
+        case GraphOpCode::Rint:
+        case GraphOpCode::Nearbyint:
+        case GraphOpCode::Logb:
             // Zero derivative
             break;
-        case JITOpCode::Tgamma:
+        case GraphOpCode::Tgamma:
             nodeAdjoints[a] += adj * vResult * xad::digamma(va);
             break;
-        case JITOpCode::Lgamma:
+        case GraphOpCode::Lgamma:
             nodeAdjoints[a] += adj * xad::digamma(va);
             break;
-        case JITOpCode::Digamma:
+        case GraphOpCode::Digamma:
             nodeAdjoints[a] += adj * detail::trigamma(va);
             break;
-        case JITOpCode::Hypot:
+        case GraphOpCode::Hypot:
             nodeAdjoints[a] += adj * va / vResult;
             nodeAdjoints[b] += adj * vb / vResult;
             break;
-        case JITOpCode::Nextafter:
+        case GraphOpCode::Nextafter:
             nodeAdjoints[a] += adj;
             // Second operand has zero derivative
             break;
-        case JITOpCode::Ldexp:
+        case GraphOpCode::Ldexp:
         {
             double imm = node.imm;
             int exp = static_cast<int>(imm);
             nodeAdjoints[a] += adj * std::ldexp(Scalar(1), exp);
         }
         break;
-        case JITOpCode::Frexp:
+        case GraphOpCode::Frexp:
         {
             // Derivative is 2^-exp, but we need to recompute frexp
             int exp = 0;
@@ -492,15 +507,15 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
             nodeAdjoints[a] += adj * std::ldexp(Scalar(1), -exp);
         }
         break;
-        case JITOpCode::Modf:
+        case GraphOpCode::Modf:
             // Derivative of fractional part is 1
             nodeAdjoints[a] += adj;
             break;
-        case JITOpCode::Copysign:
+        case GraphOpCode::Copysign:
             // a or -a by sign bits; d/db = 0
             nodeAdjoints[a] += (std::signbit(va) == std::signbit(vb)) ? adj : -adj;
             break;
-        case JITOpCode::SmoothAbs:
+        case GraphOpCode::SmoothAbs:
         {
             Scalar dval;
             if (va > vb)
@@ -524,14 +539,14 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
             nodeAdjoints[b] += adj * dcval;
         }
         break;
-        case JITOpCode::CmpLT:
-        case JITOpCode::CmpLE:
-        case JITOpCode::CmpGT:
-        case JITOpCode::CmpGE:
-        case JITOpCode::CmpEQ:
-        case JITOpCode::CmpNE:
+        case GraphOpCode::CmpLT:
+        case GraphOpCode::CmpLE:
+        case GraphOpCode::CmpGT:
+        case GraphOpCode::CmpGE:
+        case GraphOpCode::CmpEQ:
+        case GraphOpCode::CmpNE:
             break;
-        case JITOpCode::If:
+        case GraphOpCode::If:
         {
             if (va != Scalar(0))
                 nodeAdjoints[b] += adj;
@@ -548,11 +563,11 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
 #ifdef _MSC_VER
 #pragma warning(disable : 4251 4275)
 #endif
-template class XAD_TEMPLATE_EXPORT JITGraphInterpreter<float>;
-template class XAD_TEMPLATE_EXPORT JITGraphInterpreter<double>;
+template class XAD_TEMPLATE_EXPORT GraphInterpreter<float>;
+template class XAD_TEMPLATE_EXPORT GraphInterpreter<double>;
 
 }  // namespace xad
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH
 
 

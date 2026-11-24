@@ -150,6 +150,15 @@ keep their slots. Needed when such a result is kept across resets, e.g. a path-w
 Monte Carlo result kept across paths. Also, [`newRecording`](tape.md#newrecording) reuses the
 previous recording's slots once none of its variables is alive. Recording is slightly slower.
 
+## Graph recording
+
+### `XAD_ENABLE_GRAPH`
+
+Builds and installs the graph recorder ([`GraphRecorder`](graph-recorder.md), [`ABool`](graph-abool.md)) with its
+reference backend, the graph interpreter. It changes how active variables use their slots (see [Graph recording](graph.md)),
+so XAD and all code using it must be built with the same setting.
+The native code generation backend xad-codegen, licensed separately, builds on an XAD configured with this option.
+
 ## Recommended Starting Sets
 
 For every workload, start from a `Release` build with `XAD_USE_STRONG_INLINE` and

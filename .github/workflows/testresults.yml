@@ -19,12 +19,35 @@ jobs:
       actions: read
 
     steps:
-      - name: Download Artifacts
+      - name: Download Test Results
+        id: download
+        # absent when the build jobs were skipped (docs-only pull requests)
+        continue-on-error: true
         uses: actions/download-artifact@v8
         with:
-          path: artifacts
+          name: Test Results ${{ github.event.workflow_run.run_attempt }}
+          path: artifacts/Test Results
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Event File
+        uses: actions/download-artifact@v8
+        with:
+          name: Event File
+          path: artifacts/Event File
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Test Results
+        if: steps.download.outcome == 'failure'
+        shell: bash
+        run: |
+          # pushes always build, so a missing artifact there is an error
+          if [ "${{ github.event.workflow_run.event }}" = push ]; then
+            echo "::error::No Test Results artifact for this push"
+            exit 1
+          fi
+          echo "::warning::No Test Results artifact (build jobs skipped or failed early)"
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2

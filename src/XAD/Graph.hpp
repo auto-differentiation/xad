@@ -1,6 +1,6 @@
 /**
  *
- *   JITGraph: a compact opcode graph representation for JIT backends.
+ *   Graph: a compact opcode graph representation for graph backends.
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -26,7 +26,7 @@
 
 #include <XAD/Config.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 
 #include <XAD/ChunkContainer.hpp>
 #include <XAD/Exceptions.hpp>
@@ -40,7 +40,7 @@
 namespace xad
 {
 
-enum class JITOpCode : uint16_t
+enum class GraphOpCode : uint16_t
 {
     Input = 0,
     Constant = 1,
@@ -103,24 +103,28 @@ enum class JITOpCode : uint16_t
     SmoothAbs = 58,
     Tgamma = 59,
     Lgamma = 60,
-    Digamma = 61
+    Digamma = 61,
+    Rint = 62,
+    Nearbyint = 63,
+    Logb = 64,
+    Fdim = 65
 };
 
-// AReal slots of graph nodes take the top quarter, below INVALID_SLOT, so tapes and JITs each
+// AReal slots of graph nodes take the top quarter, below INVALID_SLOT, so tapes and graph recorders each
 // take the other's variables as passive
-constexpr unsigned FIRST_JIT_SLOT = 0xC0000000u;
-constexpr unsigned jitSlot(uint32_t node) { return node | FIRST_JIT_SLOT; }
-constexpr uint32_t jitNode(unsigned slot) { return slot & ~FIRST_JIT_SLOT; }
-constexpr bool isJitSlot(unsigned slot) { return slot >= FIRST_JIT_SLOT && slot != ~0u; }
+constexpr unsigned FIRST_GRAPH_SLOT = 0xC0000000u;
+constexpr unsigned graphSlot(uint32_t node) { return node | FIRST_GRAPH_SLOT; }
+constexpr uint32_t graphNode(unsigned slot) { return slot & ~FIRST_GRAPH_SLOT; }
+constexpr bool isGraphSlot(unsigned slot) { return slot >= FIRST_GRAPH_SLOT && slot != ~0u; }
 // nodes, and nodeCount() as the next one, need distinct slots below INVALID_SLOT
-constexpr uint32_t MAX_JIT_NODES = jitNode(~0u) - 1;
+constexpr uint32_t MAX_GRAPH_NODES = graphNode(~0u) - 1;
 
-struct JITNodeFlags
+struct GraphNodeFlags
 {
     static constexpr uint8_t IsActive = 0x01;
 };
 
-struct JITNode
+struct GraphNode
 {
     uint16_t op = 0;
     uint32_t a = 0;
@@ -130,10 +134,14 @@ struct JITNode
     uint8_t flags = 0;
 };
 
-struct JITGraph
+// Backends that consume the graph rely on its format: the opcode values and operand roles, how nodes use
+// const_pool and imm, the node flags, and the order of input_ids and output_ids. A change to any of these
+// declares static constexpr unsigned formatVersion = <n+1> as a member of Graph (no declaration means format 1).
+// Appending new opcodes changes none of these and needs no new format: backends refuse opcodes they don't know.
+struct Graph
 {
     // 8 MiB chunks; the default 8M-node chunk commits 256 MiB per graph up front
-    ChunkContainer<JITNode, 1024U * 256U> nodes;
+    ChunkContainer<GraphNode, 1024U * 256U> nodes;
     std::vector<double> const_pool;
     std::vector<uint32_t> input_ids;
     std::vector<uint32_t> output_ids;
@@ -156,14 +164,14 @@ struct JITGraph
         nodes.reserve(n);
     }
 
-    uint32_t addNode(JITOpCode op, uint32_t a = 0, uint32_t b = 0,
+    uint32_t addNode(GraphOpCode op, uint32_t a = 0, uint32_t b = 0,
                      uint32_t c = 0, double imm = 0.0,
-                     uint8_t fl = JITNodeFlags::IsActive)
+                     uint8_t fl = GraphNodeFlags::IsActive)
     {
         uint32_t id = static_cast<uint32_t>(nodes.size());
-        if (XAD_VERY_UNLIKELY(id >= MAX_JIT_NODES))
+        if (XAD_VERY_UNLIKELY(id >= MAX_GRAPH_NODES))
             throwTooManyNodes();
-        JITNode n;
+        GraphNode n;
         n.op = static_cast<uint16_t>(op);
         n.a = a;
         n.b = b;
@@ -174,9 +182,9 @@ struct JITGraph
         return id;
     }
 
-    uint32_t addUnary(JITOpCode op, uint32_t operand) { return addNode(op, operand); }
-    uint32_t addBinary(JITOpCode op, uint32_t left, uint32_t right) { return addNode(op, left, right); }
-    uint32_t addTernary(JITOpCode op, uint32_t a, uint32_t b, uint32_t c) { return addNode(op, a, b, c); }
+    uint32_t addUnary(GraphOpCode op, uint32_t operand) { return addNode(op, operand); }
+    uint32_t addBinary(GraphOpCode op, uint32_t left, uint32_t right) { return addNode(op, left, right); }
+    uint32_t addTernary(GraphOpCode op, uint32_t a, uint32_t b, uint32_t c) { return addNode(op, a, b, c); }
 
     uint32_t addConstant(double value)
     {
@@ -192,21 +200,21 @@ struct JITGraph
         }
         else
             i = findOrAddIndexed(value);
-        return addNode(JITOpCode::Constant, 0, 0, 0, static_cast<double>(i));
+        return addNode(GraphOpCode::Constant, 0, 0, 0, static_cast<double>(i));
     }
 
     uint32_t addInput()
     {
-        uint32_t id = addNode(JITOpCode::Input);
+        uint32_t id = addNode(GraphOpCode::Input);
         input_ids.push_back(id);
         return id;
     }
 
     void markOutput(uint32_t nodeId) { output_ids.push_back(nodeId); }
 
-    JITOpCode getOpCode(uint32_t nodeId) const { return static_cast<JITOpCode>(nodes[nodeId].op); }
-    bool isInput(uint32_t nodeId) const { return getOpCode(nodeId) == JITOpCode::Input; }
-    bool isConstant(uint32_t nodeId) const { return getOpCode(nodeId) == JITOpCode::Constant; }
+    GraphOpCode getOpCode(uint32_t nodeId) const { return static_cast<GraphOpCode>(nodes[nodeId].op); }
+    bool isInput(uint32_t nodeId) const { return getOpCode(nodeId) == GraphOpCode::Input; }
+    bool isConstant(uint32_t nodeId) const { return getOpCode(nodeId) == GraphOpCode::Constant; }
 
     double getConstantValue(uint32_t nodeId) const
     {
@@ -217,7 +225,7 @@ struct JITGraph
     // out of line, so the check costs addNode only a compare
     [[noreturn]] static XAD_NEVER_INLINE void throwTooManyNodes()
     {
-        throw OutOfRange("too many JIT graph nodes");
+        throw OutOfRange("too many graph nodes");
     }
 
     static uint64_t bitsOf(double v)
@@ -256,4 +264,4 @@ struct JITGraph
 
 }  // namespace xad
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH

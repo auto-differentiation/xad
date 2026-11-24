@@ -57,9 +57,9 @@ template <class Scalar, std::size_t N>
 struct FRealDirect;
 template <class>
 class CheckpointCallback;
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 template <class, std::size_t>
-class JITCompiler;
+class GraphRecorder;
 #endif
 
 template <class Tape>
@@ -111,10 +111,10 @@ class Tape
     static constexpr slot_type INVALID_SLOT = slot_type(-1);
 #ifdef XAD_COPY_ELISION
     // An AReal sharing its slot with copies has this bit set in its slot (see AReal), so the tape
-    // has fewer than MAX_SLOTS slots: a marked slot is then neither INVALID_SLOT nor, with JIT,
-    // a JIT slot (from 0xC0000000). Registering more throws OutOfRange.
+    // has fewer than MAX_SLOTS slots: a marked slot is then neither INVALID_SLOT nor, with graph recording,
+    // a graph slot (from 0xC0000000). Registering more throws OutOfRange.
     static constexpr slot_type SHARED_SLOT_BIT = slot_type(1) << 31;
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
     static constexpr slot_type MAX_SLOTS = slot_type(1) << 30;
 #else
     static constexpr slot_type MAX_SLOTS = SHARED_SLOT_BIT - 1;
@@ -445,8 +445,8 @@ class Tape
     // whether v holds a slot of this tape below the counter
     XAD_INLINE bool isCounted(const active_type& v) const
     {
-#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
-        if (!v.isOn(this))  // another tape's or a JIT slot
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_GRAPH)
+        if (!v.isOn(this))  // another tape's or a graph slot
             return false;
 #endif
 #ifdef XAD_COPY_ELISION
@@ -464,8 +464,8 @@ class Tape
         // emits no code: keeps clang on arm64 from reusing the load below
         std::atomic_signal_fence(std::memory_order_seq_cst);
 #endif
-#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
-        if (!v.isOn(this))  // another tape's or a JIT slot
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_GRAPH)
+        if (!v.isOn(this))  // another tape's or a graph slot
             return false;
 #endif
 #ifdef XAD_COPY_ELISION
@@ -634,11 +634,11 @@ class Tape
     // throws OutOfRange for a slot counter past MAX_SLOTS, leaving it at last
     XAD_NEVER_INLINE void tooManySlots(slot_type last);
 #endif
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
     template <class, std::size_t>
-    friend class JITCompiler;
-    // the pointer of the JIT that deactivated this tape, to clear when the tape goes
-    Tape** jitSuspender_ = nullptr;
+    friend class GraphRecorder;
+    // the pointer of the graph recorder that deactivated this tape, to clear when the tape goes
+    Tape** graphSuspender_ = nullptr;
 #endif
 #ifdef XAD_TAPE_CHECKS
     // tells the variables of this tape from those of others, as a slot alone cannot

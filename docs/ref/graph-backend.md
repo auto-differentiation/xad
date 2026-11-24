@@ -1,31 +1,31 @@
-# JIT Backend Interface
+# Graph Backend Interface
 
 ## Overview
 
-JIT backends execute a recorded [`JITGraph`](jit-graph.md). XAD exposes:
+Graph backends execute a recorded [`Graph`](graph-class.md). XAD exposes:
 
-- `JITBackend<Scalar>`: abstract execution interface
-- `JITGraphInterpreter<Scalar>`: reference backend that interprets the graph
+- `GraphBackend<Scalar>`: abstract execution interface
+- `GraphInterpreter<Scalar>`: reference backend that interprets the graph
 
 !!! note "Compile-time feature flag"
 
-    This API is only available when XAD is compiled with `XAD_ENABLE_CODEGEN`,
-    which needs the separately licensed xad-codegen library.
+    This API is only available when XAD is compiled with `XAD_ENABLE_GRAPH=ON`
+    (see [Build Options](build-options.md#xad_enable_graph)).
 
-## `JITBackend`
+## `GraphBackend`
 
-`#!c++ template <class Scalar> class JITBackend`
+`#!c++ template <class Scalar> class GraphBackend`
 
-Abstract base class for JIT execution backends. The `Scalar` template parameter specifies the floating-point type used for computations and must match the type used by `JITCompiler<Real, N>`:
+Abstract base class for graph execution backends. The `Scalar` template parameter specifies the floating-point type used for computations and must match the type used by `GraphRecorder<Real, N>`:
 
-- `JITBackend<double>` for use with `JITCompiler<double, N>`
-- `JITBackend<float>` for use with `JITCompiler<float, N>`
+- `GraphBackend<double>` for use with `GraphRecorder<double, N>`
+- `GraphBackend<float>` for use with `GraphRecorder<float, N>`
 
 Most applications use `double` precision. The `float` option is available for performance-sensitive applications where single precision is sufficient.
 
 Backends are responsible for:
 
-- compiling a `JITGraph` into an executable form (optional)
+- compiling a `Graph` into an executable form (optional)
 - executing forward evaluation
 - optionally executing forward+backward to produce input adjoints
 
@@ -33,7 +33,7 @@ Backends are responsible for:
 
 #### `compile`
 
-`#!c++ virtual void compile(const JITGraph& graph) = 0;`
+`#!c++ virtual void compile(const Graph& graph) = 0;`
 
 Prepare the backend for executing the given graph.
 
@@ -73,11 +73,11 @@ Run forward and backward passes combined, with all output adjoints seeded to 1. 
 `#!c++ virtual void forwardAndBackwardSeeded(Scalar* outputs, const Scalar* outputAdjoints, Scalar* inputGradients);`
 
 As `forwardAndBackward`, but the backward pass starts from the given output adjoints
-(`numOutputs() * vectorWidth()` values). `JITCompiler::computeAdjoints` uses it.
+(`numOutputs() * vectorWidth()` values). `GraphRecorder::computeAdjoints` uses it.
 
 It is not pure virtual: the default implementation calls `forwardAndBackward` and scales the gradients,
 which works only when all output adjoints are equal; otherwise it throws `#!c++ std::runtime_error`.
-Backends that support different output adjoints override it, as `JITGraphInterpreter` does.
+Backends that support different output adjoints override it, as `GraphInterpreter` does.
 
 #### `reset`
 
@@ -85,9 +85,9 @@ Backends that support different output adjoints override it, as `JITGraphInterpr
 
 Reset any cached backend state.
 
-## `JITGraphInterpreter`
+## `GraphInterpreter`
 
-`#!c++ template <class Scalar> class JITGraphInterpreter : public JITBackend<Scalar>`
+`#!c++ template <class Scalar> class GraphInterpreter : public GraphBackend<Scalar>`
 
 Reference backend that interprets the graph directly, one evaluation at a time (`vectorWidth()` is 1). It is mainly intended as:
 
@@ -99,14 +99,14 @@ Reference backend that interprets the graph directly, one evaluation at a time (
 
 For double backend:
 
-    auto backend = std::make_unique<xad::JITGraphInterpreter<double>>();
-    xad::JITCompiler<double, 1> jit(std::move(backend));
+    auto backend = std::make_unique<xad::GraphInterpreter<double>>();
+    xad::GraphRecorder<double, 1> recorder(std::move(backend));
     // ... record graph ...
-    jit.compile();
+    recorder.compile();
 
 For float backend:
 
-    auto backend = std::make_unique<xad::JITGraphInterpreter<float>>();
-    xad::JITCompiler<float, 1> jit(std::move(backend));
+    auto backend = std::make_unique<xad::GraphInterpreter<float>>();
+    xad::GraphRecorder<float, 1> recorder(std::move(backend));
     // ... record graph ...
-    jit.compile();
+    recorder.compile();
