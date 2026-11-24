@@ -9,8 +9,11 @@
 Exact derivatives of your existing C++ code, in forward, adjoint and higher-order mode,
 with low runtime overhead and a small memory footprint. Python bindings: `pip install xad`.
 
-For Monte Carlo and other repetitive workloads, XAD also provides a JIT backend interface
-for record-once / replay-many execution.
+For Monte Carlo and other repetitive workloads, XAD also provides graph recording: record once into a graph,
+compile it for the built-in interpreter or a pluggable backend, and replay it many times.
+
+A commercial add-on, [xad-codegen](https://www.xcelerit.com/xad/licensing/), generates native code from recorded
+graphs for maximum throughput.
 
 [Documentation](https://www.xcelerit.com/xad/docs/) ·
 [Install](#install) ·
@@ -129,8 +132,8 @@ Measured by Xcelerit with GradBench's harness and tool images, 16 Nov 2026: [Gra
 - **Checkpointing Support**: Efficient tape memory management for large-scale applications.
 - **External Function Interface**: Seamlessly connect with external libraries.
 - **Eigen support**: Works with the popular linear algebra library [Eigen](https://gitlab.com/libeigen/eigen).
-- **JIT Backend Support** *(optional)*: Infrastructure for pluggable JIT backends, enabling record-once/replay-many
-  workflows. See [samples/jit_tutorial](samples/jit_tutorial).
+- **Graph Recording** *(optional)*: Record a computation once into a graph, compile it for the built-in
+  interpreter or a pluggable backend, and replay it many times. See [samples/graph_tutorial](samples/graph_tutorial).
 
 ## Ecosystem
 

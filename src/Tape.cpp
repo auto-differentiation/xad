@@ -121,13 +121,13 @@ Tape<T, N>::Tape(Tape&& o) noexcept
     rebindRangeIterators();
 #endif
     o.resetMovedFrom();
-#ifdef XAD_ENABLE_JIT
-    // the JIT that deactivated o reactivates this tape instead
-    if (o.jitSuspender_)
+#ifdef XAD_ENABLE_GRAPH
+    // the graph recorder that deactivated o reactivates this tape instead
+    if (o.graphSuspender_)
     {
-        jitSuspender_ = o.jitSuspender_;
-        o.jitSuspender_ = nullptr;
-        *jitSuspender_ = this;
+        graphSuspender_ = o.graphSuspender_;
+        o.graphSuspender_ = nullptr;
+        *graphSuspender_ = this;
     }
 #endif
     if (o.isActive())
@@ -175,14 +175,14 @@ Tape<T, N>& Tape<T, N>::operator=(Tape&& o) noexcept
     rebindRangeIterators();
 #endif
     o.resetMovedFrom();
-#ifdef XAD_ENABLE_JIT
-    if (o.jitSuspender_)
+#ifdef XAD_ENABLE_GRAPH
+    if (o.graphSuspender_)
     {
-        if (jitSuspender_)
-            *jitSuspender_ = nullptr;
-        jitSuspender_ = o.jitSuspender_;
-        o.jitSuspender_ = nullptr;
-        *jitSuspender_ = this;
+        if (graphSuspender_)
+            *graphSuspender_ = nullptr;
+        graphSuspender_ = o.graphSuspender_;
+        o.graphSuspender_ = nullptr;
+        *graphSuspender_ = this;
     }
 #endif
     if (o.isActive())
@@ -220,9 +220,9 @@ template <class T, std::size_t N>
 Tape<T, N>::~Tape()
 {
     deactivate();
-#ifdef XAD_ENABLE_JIT
-    if (jitSuspender_)
-        *jitSuspender_ = nullptr;
+#ifdef XAD_ENABLE_GRAPH
+    if (graphSuspender_)
+        *graphSuspender_ = nullptr;
 #endif
     clearCallbacks();
 }
@@ -943,10 +943,10 @@ void Tape<T, N>::computeAdjoints()
 template <class T, std::size_t N>
 void Tape<T, N>::computeAdjointsTo(position_type pos)
 {
-#ifdef XAD_ENABLE_JIT
-    // slots from FIRST_JIT_SLOT on are passive, so their dependencies were not recorded
-    if (currentRec_->maxSlot() > FIRST_JIT_SLOT)
-        throw OutOfRange("too many tape slots with JIT enabled");
+#ifdef XAD_ENABLE_GRAPH
+    // slots from FIRST_GRAPH_SLOT on are passive, so their dependencies were not recorded
+    if (currentRec_->maxSlot() > FIRST_GRAPH_SLOT)
+        throw OutOfRange("too many tape slots with graph recording enabled");
 #endif
     // variables recorded after the derivatives were sized have slots the sweep visits
     if (derivatives_.size() < currentRec_->maxSlot())

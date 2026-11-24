@@ -82,12 +82,15 @@ else()
 endif()
 option(XAD_TAPE_CHECKS "Variables use and free slots only on their own tape (slower, more memory)"
        ${xad_tape_checks_default})
-option(XAD_ENABLE_CODEGEN "Enable codegen (JIT compilation) support" OFF)
-
-# XAD_ENABLE_JIT is set when CODEGEN is on, for internal headers
-if(XAD_ENABLE_CODEGEN)
-    set(XAD_ENABLE_JIT ON CACHE BOOL "" FORCE)
-    message(STATUS "Codegen (JIT compilation) support enabled")
+# XAD_ENABLE_JIT was renamed; ON would silently lose graph recording, OFF (also cached by older XADs) loses nothing
+if(XAD_ENABLE_JIT)
+    message(FATAL_ERROR "XAD_ENABLE_JIT was renamed to XAD_ENABLE_GRAPH: configure with -DXAD_ENABLE_GRAPH=ON "
+                        "-UXAD_ENABLE_JIT")
+endif()
+unset(XAD_ENABLE_JIT CACHE)
+option(XAD_ENABLE_GRAPH "Build and install the graph recorder (xad::GraphRecorder) with its graph interpreter" OFF)
+if(XAD_ENABLE_GRAPH)
+    message(STATUS "Graph recorder enabled")
 endif()
 
 if(XAD_REDUCED_MEMORY)

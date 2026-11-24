@@ -29,13 +29,14 @@ There are three additional headers provided that can be included on demand:
 * `XAD/Jacobian.hpp` - Imports methods for computing the Jacobian matrix of a
   function with multiple inputs and multiple outputs into the `xad` namespace.
 
-## Optional JIT headers
+## Optional graph recording headers
 
-When XAD is compiled with `XAD_ENABLE_CODEGEN`, which needs the separately licensed xad-codegen library,
-additional JIT headers are available (`XAD/XAD.hpp` includes `XAD/JITCompiler.hpp` and `XAD/ABool.hpp`):
+When XAD is compiled with `XAD_ENABLE_GRAPH=ON`, additional graph recording headers are available (`XAD/XAD.hpp` includes `XAD/GraphRecorder.hpp` and `XAD/ABool.hpp`):
 
-* `XAD/JITCompiler.hpp` - JIT recorder/executor (see [JITCompiler](jit-compiler.md)).
-* `XAD/JITGraph.hpp` - Graph representation (see [JITGraph](jit-graph.md)).
-* `XAD/JITBackendInterface.hpp` - Backend interface (see [JIT Backend Interface](jit-backend.md)).
-* `XAD/JITGraphInterpreter.hpp` - Reference interpreter backend (see [JIT Backend Interface](jit-backend.md)).
-* `XAD/ABool.hpp` - Trackable boolean helper for comparisons/`If` (see [ABool (JIT)](jit-abool.md)).
+* `XAD/GraphRecorder.hpp` - Graph recorder/executor (see [GraphRecorder](graph-recorder.md)).
+* `XAD/Graph.hpp` - Graph representation (see [Graph](graph-class.md)).
+* `XAD/GraphBackendInterface.hpp` - Backend interface (see [Graph Backend Interface](graph-backend.md)).
+* `XAD/GraphInterpreter.hpp` - Reference interpreter backend (see [Graph Backend Interface](graph-backend.md)).
+* `XAD/ABool.hpp` - Trackable boolean helper for comparisons/`If` (see [ABool (graph recording)](graph-abool.md)).
+* `XAD/GraphExprTraits.hpp` - Helpers and traits for recording XAD expressions into a `Graph` (used by `GraphRecorder`).
+* `XAD/GraphOpCodeTraits.hpp` - Maps XAD's operators and math functions to `GraphOpCode`s (see [Graph](graph-class.md)).

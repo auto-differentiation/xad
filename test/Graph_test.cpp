@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-   Unit tests for JITGraph
+   Unit tests for Graph
 
    This file is part of XAD, a comprehensive C++ library for
    automatic differentiation.
@@ -28,26 +28,26 @@
 #include <memory>
 #include <utility>
 
-#ifdef XAD_ENABLE_JIT
-TEST(JITGraph, canAddNodesAndConstants)
+#ifdef XAD_ENABLE_GRAPH
+TEST(Graph, canAddNodesAndConstants)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     uint32_t c1 = graph.addConstant(3.14);
     uint32_t c2 = graph.addConstant(2.71);
-    uint32_t n1 = graph.addNode(xad::JITOpCode::Add, c1, c2);
+    uint32_t n1 = graph.addNode(xad::GraphOpCode::Add, c1, c2);
 
     EXPECT_EQ(3u, graph.nodeCount());
     EXPECT_DOUBLE_EQ(3.14, graph.getConstantValue(c1));
     EXPECT_DOUBLE_EQ(2.71, graph.getConstantValue(c2));
-    EXPECT_EQ(xad::JITOpCode::Add, graph.getOpCode(n1));
+    EXPECT_EQ(xad::GraphOpCode::Add, graph.getOpCode(n1));
 }
 
-TEST(JITGraph, canAddInputsAndMarkOutputs)
+TEST(Graph, canAddInputsAndMarkOutputs)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     uint32_t in1 = graph.addInput();
     uint32_t in2 = graph.addInput();
-    uint32_t out = graph.addNode(xad::JITOpCode::Mul, in1, in2);
+    uint32_t out = graph.addNode(xad::GraphOpCode::Mul, in1, in2);
 
     graph.markOutput(out);
 
@@ -56,12 +56,12 @@ TEST(JITGraph, canAddInputsAndMarkOutputs)
     EXPECT_EQ(out, graph.output_ids[0]);
 }
 
-TEST(JITGraph, clearWorks)
+TEST(Graph, clearWorks)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     graph.addConstant(1.0);
     graph.addInput();
-    graph.addNode(xad::JITOpCode::Add, 0, 1);
+    graph.addNode(xad::GraphOpCode::Add, 0, 1);
 
     EXPECT_GT(graph.nodeCount(), 0u);
 
@@ -72,56 +72,56 @@ TEST(JITGraph, clearWorks)
     EXPECT_EQ(0u, graph.output_ids.size());
 }
 
-TEST(JITGraph, empty)
+TEST(Graph, empty)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     EXPECT_TRUE(graph.empty());
 
     graph.addInput();
     EXPECT_FALSE(graph.empty());
 }
 
-TEST(JITGraph, reserve)
+TEST(Graph, reserve)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     graph.reserve(100);
     // Just verify it doesn't crash - capacity is implementation detail
     EXPECT_TRUE(graph.empty());
 }
 
-TEST(JITGraph, addUnary)
+TEST(Graph, addUnary)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     uint32_t inp = graph.addInput();
-    uint32_t neg = graph.addUnary(xad::JITOpCode::Neg, inp);
+    uint32_t neg = graph.addUnary(xad::GraphOpCode::Neg, inp);
 
-    EXPECT_EQ(xad::JITOpCode::Neg, graph.getOpCode(neg));
+    EXPECT_EQ(xad::GraphOpCode::Neg, graph.getOpCode(neg));
 }
 
-TEST(JITGraph, addBinary)
+TEST(Graph, addBinary)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     uint32_t a = graph.addInput();
     uint32_t b = graph.addInput();
-    uint32_t sum = graph.addBinary(xad::JITOpCode::Add, a, b);
+    uint32_t sum = graph.addBinary(xad::GraphOpCode::Add, a, b);
 
-    EXPECT_EQ(xad::JITOpCode::Add, graph.getOpCode(sum));
+    EXPECT_EQ(xad::GraphOpCode::Add, graph.getOpCode(sum));
 }
 
-TEST(JITGraph, addTernary)
+TEST(Graph, addTernary)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     uint32_t cond = graph.addInput();
     uint32_t t = graph.addInput();
     uint32_t f = graph.addInput();
-    uint32_t result = graph.addTernary(xad::JITOpCode::If, cond, t, f);
+    uint32_t result = graph.addTernary(xad::GraphOpCode::If, cond, t, f);
 
-    EXPECT_EQ(xad::JITOpCode::If, graph.getOpCode(result));
+    EXPECT_EQ(xad::GraphOpCode::If, graph.getOpCode(result));
 }
 
-TEST(JITGraph, isInput)
+TEST(Graph, isInput)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     uint32_t inp = graph.addInput();
     uint32_t c = graph.addConstant(1.0);
 
@@ -129,9 +129,9 @@ TEST(JITGraph, isInput)
     EXPECT_FALSE(graph.isInput(c));
 }
 
-TEST(JITGraph, isConstant)
+TEST(Graph, isConstant)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     uint32_t inp = graph.addInput();
     uint32_t c = graph.addConstant(1.0);
 
@@ -139,9 +139,9 @@ TEST(JITGraph, isConstant)
     EXPECT_TRUE(graph.isConstant(c));
 }
 
-TEST(JITGraph, constantPoolDeduplication)
+TEST(Graph, constantPoolDeduplication)
 {
-    xad::JITGraph graph;
+    xad::Graph graph;
     uint32_t c1 = graph.addConstant(3.14);
     uint32_t c2 = graph.addConstant(3.14);  // Same value - should reuse pool entry
 
@@ -160,4 +160,4 @@ TEST(JITGraph, constantPoolDeduplication)
 // OpCode tests for Square, Recip, SmoothAbs
 // =============================================================================
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH

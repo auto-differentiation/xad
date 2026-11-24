@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- *   Unit tests for JITExprTraits helpers
+ *   Unit tests for GraphExprTraits helpers
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -25,9 +25,9 @@
 #include <XAD/XAD.hpp>
 #include <gtest/gtest.h>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 
-TEST(JITExprTraits, getNestedDoubleValueRecursesThroughValue)
+TEST(GraphExprTraits, getNestedDoubleValueRecursesThroughValue)
 {
     // This exercises the template overload:
     //   getNestedDoubleValue(const T& x) { return getNestedDoubleValue(x.value()); }
@@ -35,6 +35,6 @@ TEST(JITExprTraits, getNestedDoubleValueRecursesThroughValue)
     EXPECT_DOUBLE_EQ(1.25, xad::getNestedDoubleValue(x));
 }
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH
 
 

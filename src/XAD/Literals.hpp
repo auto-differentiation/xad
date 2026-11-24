@@ -26,9 +26,9 @@
 
 #include <XAD/Config.hpp>
 #include <XAD/Expression.hpp>
-#ifdef XAD_ENABLE_JIT
-#include <XAD/JITCompiler.hpp>
-#include <XAD/JITExprTraits.hpp>
+#ifdef XAD_ENABLE_GRAPH
+#include <XAD/GraphRecorder.hpp>
+#include <XAD/GraphExprTraits.hpp>
 #endif
 #include <XAD/Macros.hpp>
 #include <XAD/Tape.hpp>
@@ -216,8 +216,8 @@ struct AReal
     typedef Scalar value_type;
     typedef typename ExprTraits<Scalar>::nested_type nested_type;
     typedef typename DerivativesTraits<Scalar, N>::type derivative_type;
-#ifdef XAD_ENABLE_JIT
-    typedef JITCompiler<nested_type, N> jit_type;
+#ifdef XAD_ENABLE_GRAPH
+    typedef GraphRecorder<nested_type, N> graph_recorder_type;
 #endif
 
     XAD_INLINE AReal(nested_type val = nested_type()) : base_type(val), slot_(INVALID_SLOT) {}
@@ -259,12 +259,12 @@ struct AReal
             }
 #endif
         }
-#ifdef XAD_ENABLE_JIT
-        else if (getActiveJit() != nullptr)
+#ifdef XAD_ENABLE_GRAPH
+        else if (getActiveGraphRecorder() != nullptr)
         {
-            if (o.shouldRecordJIT())
+            if (o.shouldRecordGraph())
             {
-                // Copy the slot directly - preserves JIT dependency chain
+                // Copy the slot directly - preserves graph dependency chain
                 slot_ = o.slot_;
             }
         }
@@ -310,7 +310,7 @@ struct AReal
         {
             if (XAD_LIKELY(ownsSlot(tape)))
                 tape->unregisterVariable(slot_);
-            else if (XAD_UNLIKELY(slot_ != INVALID_SLOT))  // shared, another tape's or JIT
+            else if (XAD_UNLIKELY(slot_ != INVALID_SLOT))  // shared, another tape's or a graph slot
                 releaseOther(tape);
         }
     }
@@ -348,9 +348,9 @@ struct AReal
 #else
             tape->pushLhs(slot_);
 #endif
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
         else
-            dropJitNode(std::integral_constant<bool, jit_supported>());
+            dropGraphNode(std::integral_constant<bool, graph_supported>());
 #endif
         return *this;
     }
@@ -373,17 +373,17 @@ struct AReal
     XAD_FORCE_INLINE AReal& assignExpression(const Expression<Scalar, Expr, derivative_type>& expr);
 
   public:
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
     using base_type::operator+=;
     using base_type::operator-=;
 
     XAD_INLINE AReal& operator+=(Scalar x)
     {
-        return addScalar(x, std::integral_constant<bool, jit_supported>());
+        return addScalar(x, std::integral_constant<bool, graph_supported>());
     }
     XAD_INLINE AReal& operator-=(Scalar x)
     {
-        return subScalar(x, std::integral_constant<bool, jit_supported>());
+        return subScalar(x, std::integral_constant<bool, graph_supported>());
     }
 #endif
 
@@ -391,103 +391,103 @@ struct AReal
     XAD_INLINE void setAdjoint(derivative_type a) { setDerivative(a); }
     XAD_INLINE derivative_type getAdjoint() const { return getDerivative(); }
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
   private:
-    // JIT is intentionally limited to scalar, first-order mode only:
+    // Graph recording is intentionally limited to scalar, first-order mode only:
     // - vector mode (N>1) is not supported
     // - higher-order AD (Scalar != nested_type) is not supported
     enum
     {
-        jit_supported = std::is_same<Scalar, nested_type>::value && (N == 1)
+        graph_supported = std::is_same<Scalar, nested_type>::value && (N == 1)
     };
 
-    static XAD_INLINE jit_type* getActiveJitImpl(std::true_type) { return jit_type::getActive(); }
-    static XAD_INLINE jit_type* getActiveJitImpl(std::false_type) { return nullptr; }
-    static XAD_INLINE jit_type* getActiveJit()
+    static XAD_INLINE graph_recorder_type* getActiveGraphRecorderImpl(std::true_type) { return graph_recorder_type::getActive(); }
+    static XAD_INLINE graph_recorder_type* getActiveGraphRecorderImpl(std::false_type) { return nullptr; }
+    static XAD_INLINE graph_recorder_type* getActiveGraphRecorder()
     {
-        return getActiveJitImpl(std::integral_constant<bool, jit_supported>());
+        return getActiveGraphRecorderImpl(std::integral_constant<bool, graph_supported>());
     }
 
     // Scalar shifts and assignments change the graph, but not on a registered input: forward()
     // reads its value, so they set the value to replay. A copy sharing the input's node is not
     // read by forward(), so they change its graph.
-    XAD_INLINE bool jitRecordsScalarOp() const
+    XAD_INLINE bool graphRecordsScalarOp() const
     {
-        jit_type* j = jit_type::getActive();
-        if (!j || !shouldRecordJIT() || tape_type::getActive())
+        graph_recorder_type* j = graph_recorder_type::getActive();
+        if (!j || !shouldRecordGraph() || tape_type::getActive())
             return false;
-        const JITGraph& g = j->getGraph();
-        const uint32_t node = jitNode(slot_);
+        const Graph& g = j->getGraph();
+        const uint32_t node = graphNode(slot_);
         return node >= g.nodeCount() || !g.isInput(node) || !j->isRegisteredInput(*this, node);
     }
 
-    // a shift needs no tape entry, but the JIT graph must record it
+    // a shift needs no tape entry, but the graph must record it
     XAD_INLINE AReal& addScalar(Scalar x, std::true_type)
     {
-        return jitRecordsScalarOp() ? (*this = *this + x) : base_type::operator+=(x);
+        return graphRecordsScalarOp() ? (*this = *this + x) : base_type::operator+=(x);
     }
     XAD_INLINE AReal& addScalar(Scalar x, std::false_type) { return base_type::operator+=(x); }
     XAD_INLINE AReal& subScalar(Scalar x, std::true_type)
     {
-        return jitRecordsScalarOp() ? (*this = *this - x) : base_type::operator-=(x);
+        return graphRecordsScalarOp() ? (*this = *this - x) : base_type::operator-=(x);
     }
     XAD_INLINE AReal& subScalar(Scalar x, std::false_type) { return base_type::operator-=(x); }
 
-    // a constant now, as in the JIT's copy assignment
-    XAD_INLINE void dropJitNode(std::true_type)
+    // a constant now, as in the graph recorder's copy assignment
+    XAD_INLINE void dropGraphNode(std::true_type)
     {
-        if (jitRecordsScalarOp())
+        if (graphRecordsScalarOp())
             slot_ = INVALID_SLOT;
     }
-    XAD_INLINE void dropJitNode(std::false_type) {}
+    XAD_INLINE void dropGraphNode(std::false_type) {}
 
-    // out of line: inlined into the force-inlined constructor, it slowed down JIT recording
+    // out of line: inlined into the force-inlined constructor, it slowed down graph recording
     template <class Expr>
-    XAD_NEVER_INLINE void tryRecordJitFromExprCtor(
+    XAD_NEVER_INLINE void tryRecordGraphFromExprCtor(
         const Expression<Scalar, Expr, derivative_type>& expr, std::true_type)
     {
-        if (auto* j = jit_type::getActive())
+        if (auto* j = graph_recorder_type::getActive())
         {
             const Expr& e = static_cast<const Expr&>(expr);
-            if (e.shouldRecordJIT())
-                slot_ = jitSlot(e.recordJIT(j->getGraph()));
+            if (e.shouldRecordGraph())
+                slot_ = graphSlot(e.recordGraph(j->getGraph()));
         }
     }
 
     template <class Expr>
-    XAD_INLINE void tryRecordJitFromExprCtor(const Expression<Scalar, Expr, derivative_type>&,
+    XAD_INLINE void tryRecordGraphFromExprCtor(const Expression<Scalar, Expr, derivative_type>&,
                                              std::false_type)
     {
     }
 
     template <class Expr>
-    XAD_INLINE void tryRecordJitFromExprAssign(const Expression<Scalar, Expr, derivative_type>& expr,
+    XAD_INLINE void tryRecordGraphFromExprAssign(const Expression<Scalar, Expr, derivative_type>& expr,
                                                std::true_type)
     {
-        if (auto* j = jit_type::getActive())
+        if (auto* j = graph_recorder_type::getActive())
         {
             const Expr& e = static_cast<const Expr&>(expr);
-            if (e.shouldRecordJIT() || this->shouldRecordJIT())
-                slot_ = jitSlot(e.recordJIT(j->getGraph()));
+            if (e.shouldRecordGraph() || this->shouldRecordGraph())
+                slot_ = graphSlot(e.recordGraph(j->getGraph()));
         }
     }
 
     template <class Expr>
-    XAD_INLINE void tryRecordJitFromExprAssign(const Expression<Scalar, Expr, derivative_type>&,
+    XAD_INLINE void tryRecordGraphFromExprAssign(const Expression<Scalar, Expr, derivative_type>&,
                                                std::false_type)
     {
     }
 
   private:
-    // Only enable the JIT derivative path when it is type-correct.
+    // Only enable the graph derivative path when it is type-correct.
     // For higher-order AD (Scalar != nested_type) we must not even instantiate code that
-    // would return JITCompiler<nested_type,N>::derivative_type as derivative_type.
-    XAD_INLINE const derivative_type* tryGetJitDerivativePtr(std::true_type) const
+    // would return GraphRecorder<nested_type,N>::derivative_type as derivative_type.
+    XAD_INLINE const derivative_type* tryGetGraphDerivativePtr(std::true_type) const
     {
-        auto j = getActiveJit();
+        auto j = getActiveGraphRecorder();
         if (!j)
             return nullptr;
-        if (!shouldRecordJIT())
+        if (!shouldRecordGraph())
         {
             static const derivative_type zero = derivative_type();
             return &zero;
@@ -495,14 +495,14 @@ struct AReal
         return &j->derivative(slot_);
     }
 
-    XAD_INLINE const derivative_type* tryGetJitDerivativePtr(std::false_type) const
+    XAD_INLINE const derivative_type* tryGetGraphDerivativePtr(std::false_type) const
     {
         return nullptr;
     }
 
-    XAD_INLINE derivative_type* tryGetJitDerivativePtr(std::true_type)
+    XAD_INLINE derivative_type* tryGetGraphDerivativePtr(std::true_type)
     {
-        auto j = getActiveJit();
+        auto j = getActiveGraphRecorder();
         if (!j)
             return nullptr;
         if (shouldRecord())
@@ -513,12 +513,12 @@ struct AReal
             return &ignored;
         }
         // a constant node: a slot no later node takes
-        if (!shouldRecordJIT())
-            slot_ = jitSlot(recordJIT(j->getGraph()));
+        if (!shouldRecordGraph())
+            slot_ = graphSlot(recordGraph(j->getGraph()));
         return &j->derivative(slot_);
     }
 
-    XAD_INLINE derivative_type* tryGetJitDerivativePtr(std::false_type)
+    XAD_INLINE derivative_type* tryGetGraphDerivativePtr(std::false_type)
     {
         return nullptr;
     }
@@ -572,9 +572,9 @@ struct AReal
         auto t = tape_type::getActive();
         if (!t)
         {
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
             if (const derivative_type* d =
-                    tryGetJitDerivativePtr(std::integral_constant<bool, jit_supported>()))
+                    tryGetGraphDerivativePtr(std::integral_constant<bool, graph_supported>()))
                 return *d;
 #endif
             throw NoTapeException();
@@ -597,9 +597,9 @@ struct AReal
         auto t = tape_type::getActive();
         if (!t)
         {
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
             if (derivative_type* d =
-                    tryGetJitDerivativePtr(std::integral_constant<bool, jit_supported>()))
+                    tryGetGraphDerivativePtr(std::integral_constant<bool, graph_supported>()))
                 return *d;
 #endif
             throw NoTapeException();
@@ -616,21 +616,21 @@ struct AReal
         return t->derivative(slot_);
 #endif
     }
-#ifdef XAD_ENABLE_JIT
-    // JIT variables are passive on tapes; the hint keeps GCC's code layout of an INVALID_SLOT check
-    XAD_INLINE bool shouldRecord() const { return XAD_LIKELY(slot_ < FIRST_JIT_SLOT); }
-    XAD_INLINE bool shouldRecordJIT() const { return isJitSlot(slot_); }
+#ifdef XAD_ENABLE_GRAPH
+    // graph variables are passive on tapes; the hint keeps GCC's code layout of an INVALID_SLOT check
+    XAD_INLINE bool shouldRecord() const { return XAD_LIKELY(slot_ < FIRST_GRAPH_SLOT); }
+    XAD_INLINE bool shouldRecordGraph() const { return isGraphSlot(slot_); }
 #else
     XAD_INLINE bool shouldRecord() const { return slot_ != INVALID_SLOT; }
 #endif
 
-#ifdef XAD_ENABLE_JIT
-    uint32_t recordJIT(JITGraph& graph) const
+#ifdef XAD_ENABLE_GRAPH
+    uint32_t recordGraph(Graph& graph) const
     {
-        if (shouldRecordJIT())
-            return jitNode(slot_);
+        if (shouldRecordGraph())
+            return graphNode(slot_);
         // Not registered - treat as constant (handles nested AD types)
-        return recordJITConstant(graph, getNestedDoubleValue(this->a_));
+        return recordGraphConstant(graph, getNestedDoubleValue(this->a_));
     }
 #endif
 
@@ -786,9 +786,9 @@ struct AReal
     // SHARED_BIT in slot_ marks a slot that copies may share; only marked variables read the
     // tape's share counts
     static constexpr slot_type SHARED_BIT = tape_type::SHARED_SLOT_BIT;
-#ifdef XAD_ENABLE_JIT
-    static_assert((SHARED_BIT | (tape_type::MAX_SLOTS - 1)) < FIRST_JIT_SLOT,
-                  "a marked tape slot is no JIT slot");
+#ifdef XAD_ENABLE_GRAPH
+    static_assert((SHARED_BIT | (tape_type::MAX_SLOTS - 1)) < FIRST_GRAPH_SLOT,
+                  "a marked tape slot is no graph slot");
 #endif
 
     // the tape's slot (slot_ is on a tape)
@@ -866,9 +866,9 @@ struct AReal
 
     template <class T, std::size_t d__cnt>
     friend class Tape;
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
     template <class T, std::size_t d__cnt>
-    friend class JITCompiler;
+    friend class GraphRecorder;
     template <class T, std::size_t d__cnt>
     friend class ABool;
 #endif
@@ -927,9 +927,9 @@ struct ADVar
 
     XAD_INLINE bool shouldRecord() const { return shouldRecord_; }
 
-#ifdef XAD_ENABLE_JIT
-    bool shouldRecordJIT() const { return ar_.shouldRecordJIT(); }
-    uint32_t recordJIT(JITGraph& graph) const { return ar_.recordJIT(graph); }
+#ifdef XAD_ENABLE_GRAPH
+    bool shouldRecordGraph() const { return ar_.shouldRecordGraph(); }
+    uint32_t recordGraph(Graph& graph) const { return ar_.recordGraph(graph); }
 #endif
 
   private:
@@ -992,13 +992,13 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::operator=(const AReal& o)
             recordCopy(s, o);
 #endif
     }
-#ifdef XAD_ENABLE_JIT
-    else if (getActiveJit() != nullptr)
+#ifdef XAD_ENABLE_GRAPH
+    else if (getActiveGraphRecorder() != nullptr)
     {
-        if (o.shouldRecordJIT() || this->shouldRecordJIT())
+        if (o.shouldRecordGraph() || this->shouldRecordGraph())
         {
-            // Copy the slot directly - preserves JIT dependency chain
-            slot_ = o.shouldRecordJIT() ? o.slot_ : INVALID_SLOT;
+            // Copy the slot directly - preserves graph dependency chain
+            slot_ = o.shouldRecordGraph() ? o.slot_ : INVALID_SLOT;
         }
     }
 #endif
@@ -1040,10 +1040,10 @@ XAD_FORCE_INLINE AReal<Scalar, M>::AReal(
 #endif
         }
     }
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
     else
     {
-        this->tryRecordJitFromExprCtor(expr, std::integral_constant<bool, jit_supported>());
+        this->tryRecordGraphFromExprCtor(expr, std::integral_constant<bool, graph_supported>());
     }
 #endif
 }
@@ -1061,9 +1061,9 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
 #ifdef XAD_OUTLINE_RECORDING
             DerivInfo<tape_type, ExprTraits<Expr>::numVariables> info;
             expr.derived().calc_derivatives(info, *s);
-#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_JIT)
+#if defined(XAD_TAPE_CHECKS) || defined(XAD_ENABLE_GRAPH)
             if (!isOn(s))
-                slot_ = INVALID_SLOT;  // a slot of another tape or a JIT slot: register on s
+                slot_ = INVALID_SLOT;  // a slot of another tape or a graph slot: register on s
 #endif
 #ifdef XAD_SKIP_ZERO_PARTIALS
             // all partials zero: a passive lhs stays passive, an active one gets an empty statement
@@ -1118,10 +1118,10 @@ XAD_FORCE_INLINE AReal<Scalar, M>& AReal<Scalar, M>::assignExpression(
 #endif
         }
     }
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
     else
     {
-        this->tryRecordJitFromExprAssign(expr, std::integral_constant<bool, jit_supported>());
+        this->tryRecordGraphFromExprAssign(expr, std::integral_constant<bool, graph_supported>());
     }
 #endif
     this->a_ = expr.getValue();

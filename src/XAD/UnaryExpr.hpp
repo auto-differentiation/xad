@@ -26,8 +26,8 @@
 
 #include <XAD/Config.hpp>
 #include <XAD/Expression.hpp>
-#ifdef XAD_ENABLE_JIT
-#include <XAD/JITExprTraits.hpp>
+#ifdef XAD_ENABLE_GRAPH
+#include <XAD/GraphExprTraits.hpp>
 #endif
 #include <XAD/Macros.hpp>
 #include <XAD/Traits.hpp>
@@ -126,51 +126,51 @@ struct UnaryExpr : Expression<Scalar, UnaryExpr<Scalar, Op, Expr, DerivativeType
   public:
     XAD_INLINE bool shouldRecord() const { return a_.shouldRecord(); }
 
-#ifdef XAD_ENABLE_JIT
-    bool shouldRecordJIT() const { return a_.shouldRecordJIT(); }
+#ifdef XAD_ENABLE_GRAPH
+    bool shouldRecordGraph() const { return a_.shouldRecordGraph(); }
 
-    uint32_t recordJIT(JITGraph& graph) const
+    uint32_t recordGraph(Graph& graph) const
     {
-        static_assert(static_cast<uint16_t>(JITOpCodeFor<Op>::value) != 0xFFFF,
-                      "JIT opcode mapping missing for unary operator");
+        static_assert(static_cast<uint16_t>(GraphOpCodeFor<Op>::value) != 0xFFFF,
+                      "graph opcode mapping missing for unary operator");
         // Check ldexp first, then scalar constant, then simple unary
-        return recordJITDispatch(graph);
+        return recordGraphDispatch(graph);
     }
 
   private:
     // Tag dispatch based on operation type
-    uint32_t recordJITDispatch(JITGraph& graph) const
+    uint32_t recordGraphDispatch(Graph& graph) const
     {
-        return recordJITImpl(graph,
+        return recordGraphImpl(graph,
             std::integral_constant<int,
                 IsLdexpOp<Op>::value ? 2 : (HasScalarConstant<Op>::value ? 1 : 0)>{});
     }
 
     // Simple unary operation (no scalar constant, not ldexp)
-    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 0>) const
+    uint32_t recordGraphImpl(Graph& graph, std::integral_constant<int, 0>) const
     {
-        uint32_t slotA = a_.recordJIT(graph);
-        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+        uint32_t slotA = a_.recordGraph(graph);
+        constexpr GraphOpCode opcode = GraphOpCodeFor<Op>::value;
         return graph.addNode(opcode, slotA);
     }
 
     // Scalar operation (has b_ member)
-    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 1>) const
+    uint32_t recordGraphImpl(Graph& graph, std::integral_constant<int, 1>) const
     {
-        uint32_t slotA = a_.recordJIT(graph);
-        uint32_t slotB = recordJITConstant(graph, getScalarConstant(op_));
+        uint32_t slotA = a_.recordGraph(graph);
+        uint32_t slotB = recordGraphConstant(graph, getScalarConstant(op_));
         // For scalar_sub1, scalar_div1, scalar_pow1: scalar is first operand
         if (IsScalarFirstOp<Op>::value)
-            return recordJITBinaryNode<Op>(graph, slotB, slotA);
+            return recordGraphBinaryNode<Op>(graph, slotB, slotA);
         else
-            return recordJITBinaryNode<Op>(graph, slotA, slotB);
+            return recordGraphBinaryNode<Op>(graph, slotA, slotB);
     }
 
     // ldexp operation (has exp_ member)
-    uint32_t recordJITImpl(JITGraph& graph, std::integral_constant<int, 2>) const
+    uint32_t recordGraphImpl(Graph& graph, std::integral_constant<int, 2>) const
     {
-        uint32_t slotA = a_.recordJIT(graph);
-        constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
+        uint32_t slotA = a_.recordGraph(graph);
+        constexpr GraphOpCode opcode = GraphOpCodeFor<Op>::value;
         double exp_val = getLdexpExponent(op_);
         return graph.addNode(opcode, slotA, 0, 0, exp_val);  // Store exponent in immediate
     }

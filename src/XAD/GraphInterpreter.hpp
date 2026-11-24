@@ -1,6 +1,6 @@
 /**
  *
- *   Reference JITBackend implementation that interprets a JITGraph.
+ *   Reference GraphBackend implementation that interprets a Graph.
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -27,10 +27,10 @@
 #include <XAD/Config.hpp>
 #include <XAD/Export.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 
-#include <XAD/JITBackendInterface.hpp>
-#include <XAD/JITGraph.hpp>
+#include <XAD/GraphBackendInterface.hpp>
+#include <XAD/Graph.hpp>
 #include <cstddef>
 #include <memory>
 
@@ -43,7 +43,7 @@ namespace xad
 #endif
 
 /**
- * @brief Reference JITBackend implementation that interprets a JITGraph.
+ * @brief Reference GraphBackend implementation that interprets a Graph.
  *
  * This is a simple interpreter-based backend that evaluates the computation
  * graph node by node. It serves as a reference implementation and fallback
@@ -53,13 +53,13 @@ namespace xad
  * computation (typically float or double).
  */
 template <class Scalar>
-class JITGraphInterpreter : public JITBackend<Scalar>
+class GraphInterpreter : public GraphBackend<Scalar>
 {
   public:
-    JITGraphInterpreter();
-    ~JITGraphInterpreter() override;
+    GraphInterpreter();
+    ~GraphInterpreter() override;
 
-    void compile(const JITGraph& graph) override;
+    void compile(const Graph& graph) override;
     void reset() override;
 
     std::size_t vectorWidth() const override { return 1; }
@@ -90,8 +90,8 @@ class JITGraphInterpreter : public JITBackend<Scalar>
 };
 
 // Declare external explicit instantiations
-extern template class XAD_TEMPLATE_API JITGraphInterpreter<float>;
-extern template class XAD_TEMPLATE_API JITGraphInterpreter<double>;
+extern template class XAD_TEMPLATE_API GraphInterpreter<float>;
+extern template class XAD_TEMPLATE_API GraphInterpreter<double>;
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -99,4 +99,4 @@ extern template class XAD_TEMPLATE_API JITGraphInterpreter<double>;
 
 }  // namespace xad
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH

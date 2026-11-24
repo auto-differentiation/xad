@@ -1,6 +1,6 @@
 /**
  *
- *   ABool: Trackable boolean for JIT-compiled conditional expressions.
+ *   ABool: Trackable boolean for conditional expressions in recorded graphs.
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -26,11 +26,11 @@
 
 #include <XAD/Config.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 
-#include <XAD/JITCompiler.hpp>
-#include <XAD/JITExprTraits.hpp>
-#include <XAD/JITGraph.hpp>
+#include <XAD/GraphRecorder.hpp>
+#include <XAD/GraphExprTraits.hpp>
+#include <XAD/Graph.hpp>
 #include <XAD/Literals.hpp>
 
 namespace xad
@@ -41,9 +41,9 @@ namespace xad
  *
  * Stores both:
  *   - passive_ : normal C++ boolean (used when not recording / for tape)
- *   - slot_    : JIT graph node ID for the comparison result (used during JIT)
+ *   - slot_    : graph node ID for the comparison result (used during graph recording)
  *
- * This enables JIT to record both branches of a conditional and select
+ * This lets the graph recorder record both branches of a conditional and select
  * at runtime, allowing graph reuse with different inputs that may take
  * different branches.
  */
@@ -51,16 +51,16 @@ template <class Scalar, std::size_t N = 1>
 class ABool
 {
   public:
-    using jit_type = JITCompiler<Scalar, N>;
+    using graph_recorder_type = GraphRecorder<Scalar, N>;
     using areal_type = AReal<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
+    using slot_type = typename graph_recorder_type::slot_type;
 
     static constexpr slot_type INVALID_SLOT = static_cast<slot_type>(-1);
 
     // Constructor: from plain bool (no graph tracking)
     explicit ABool(bool b = false) : passive_(b), slot_(INVALID_SLOT) {}
 
-    // Constructor: from JIT slot + passive value (graph tracking enabled)
+    // Constructor: from graph slot + passive value (graph tracking enabled)
     ABool(slot_type slot, bool passive) : passive_(passive), slot_(slot) {}
 
     // Accessors
@@ -73,26 +73,26 @@ class ABool
 
     // Core API: Conditional selection
     // Returns: trueVal if condition is true, falseVal otherwise.
-    // During JIT recording: creates OpCode::If node in the graph.
+    // During graph recording: creates OpCode::If node in the graph.
     // During tape recording: returns passive result (tape re-records anyway)
     areal_type If(const areal_type& trueVal, const areal_type& falseVal) const
     {
-        // Check if JIT is active and we have a valid condition slot
-        auto* jit = jit_type::getActive();
-        if (jit && hasSlot())
+        // Check if a graph recorder is active and we have a valid condition slot
+        auto* recorder = graph_recorder_type::getActive();
+        if (recorder && hasSlot())
         {
             // Get nodes for both branches, constants for those not recorded in the graph
-            uint32_t trueSlot = trueVal.recordJIT(jit->getGraph());
-            uint32_t falseSlot = falseVal.recordJIT(jit->getGraph());
+            uint32_t trueSlot = trueVal.recordGraph(recorder->getGraph());
+            uint32_t falseSlot = falseVal.recordGraph(recorder->getGraph());
 
             // Record the If node: If(condition, trueVal, falseVal)
-            uint32_t resultSlot = jit->recordNode(JITOpCode::If, slot_, trueSlot, falseSlot);
+            uint32_t resultSlot = recorder->recordNode(GraphOpCode::If, slot_, trueSlot, falseSlot);
 
-            // Create result with the passive value and set the JIT slot
+            // Create result with the passive value and set the graph slot
             return createWithSlot(passive_ ? value(trueVal) : value(falseVal), resultSlot);
         }
 
-        // Fallback: no JIT or no active condition - just return passive result
+        // Fallback: no graph recorder or no active condition - just return passive result
         return passive_ ? trueVal : falseVal;
     }
 
@@ -107,12 +107,12 @@ class ABool
     static areal_type createWithSlot(Scalar val, slot_type slot)
     {
         areal_type result(val);
-        result.slot_ = jitSlot(slot);
+        result.slot_ = graphSlot(slot);
         return result;
     }
 
     bool passive_;      // C++ truth value
-    slot_type slot_;    // JIT graph node ID for condition
+    slot_type slot_;    // graph node ID for condition
 };
 
 // ============================================================================
@@ -125,20 +125,20 @@ namespace detail
 // Helper: Create ABool from comparing two AReal values
 template <class Scalar, std::size_t N, class Compare>
 ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b,
-                               Compare cmp, JITOpCode opcode)
+                               Compare cmp, GraphOpCode opcode)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
+    using graph_recorder_type = GraphRecorder<Scalar, N>;
+    using slot_type = typename graph_recorder_type::slot_type;
 
     bool passive = cmp(value(a), value(b));
 
-    auto* jit = jit_type::getActive();
-    if (jit)
+    auto* recorder = graph_recorder_type::getActive();
+    if (recorder)
     {
-        uint32_t slotA = a.recordJIT(jit->getGraph());
-        uint32_t slotB = b.recordJIT(jit->getGraph());
+        uint32_t slotA = a.recordGraph(recorder->getGraph());
+        uint32_t slotB = b.recordGraph(recorder->getGraph());
 
-        slot_type cmpSlot = jit->recordNode(opcode, slotA, slotB);
+        slot_type cmpSlot = recorder->recordNode(opcode, slotA, slotB);
         return ABool<Scalar, N>(cmpSlot, passive);
     }
 
@@ -148,19 +148,19 @@ ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, const AReal<Scalar, N>&
 // Helper: Create ABool from comparing AReal with scalar
 template <class Scalar, std::size_t N, class Compare>
 ABool<Scalar, N> compareAReal(const AReal<Scalar, N>& a, Scalar b,
-                               Compare cmp, JITOpCode opcode)
+                               Compare cmp, GraphOpCode opcode)
 {
-    using jit_type = JITCompiler<Scalar, N>;
-    using slot_type = typename jit_type::slot_type;
+    using graph_recorder_type = GraphRecorder<Scalar, N>;
+    using slot_type = typename graph_recorder_type::slot_type;
 
     bool passive = cmp(value(a), b);
 
-    auto* jit = jit_type::getActive();
-    if (jit)
+    auto* recorder = graph_recorder_type::getActive();
+    if (recorder)
     {
-        uint32_t slotA = a.recordJIT(jit->getGraph());
-        uint32_t slotB = jit->recordConstant(getNestedDoubleValue(b));
-        slot_type cmpSlot = jit->recordNode(opcode, slotA, slotB);
+        uint32_t slotA = a.recordGraph(recorder->getGraph());
+        uint32_t slotB = recorder->recordConstant(getNestedDoubleValue(b));
+        slot_type cmpSlot = recorder->recordNode(opcode, slotA, slotB);
         return ABool<Scalar, N>(cmpSlot, passive);
     }
 
@@ -182,49 +182,49 @@ struct GreaterEqual { template<class T> bool operator()(T a, T b) const { return
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> less(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
 {
-    return detail::compareAReal(a, b, detail::LessThan{}, JITOpCode::CmpLT);
+    return detail::compareAReal(a, b, detail::LessThan{}, GraphOpCode::CmpLT);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> less(const AReal<Scalar, N>& a, Scalar b)
 {
-    return detail::compareAReal(a, b, detail::LessThan{}, JITOpCode::CmpLT);
+    return detail::compareAReal(a, b, detail::LessThan{}, GraphOpCode::CmpLT);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> greater(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
 {
-    return detail::compareAReal(a, b, detail::GreaterThan{}, JITOpCode::CmpGT);
+    return detail::compareAReal(a, b, detail::GreaterThan{}, GraphOpCode::CmpGT);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> greater(const AReal<Scalar, N>& a, Scalar b)
 {
-    return detail::compareAReal(a, b, detail::GreaterThan{}, JITOpCode::CmpGT);
+    return detail::compareAReal(a, b, detail::GreaterThan{}, GraphOpCode::CmpGT);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> lessEqual(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
 {
-    return detail::compareAReal(a, b, detail::LessEqual{}, JITOpCode::CmpLE);
+    return detail::compareAReal(a, b, detail::LessEqual{}, GraphOpCode::CmpLE);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> lessEqual(const AReal<Scalar, N>& a, Scalar b)
 {
-    return detail::compareAReal(a, b, detail::LessEqual{}, JITOpCode::CmpLE);
+    return detail::compareAReal(a, b, detail::LessEqual{}, GraphOpCode::CmpLE);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> greaterEqual(const AReal<Scalar, N>& a, const AReal<Scalar, N>& b)
 {
-    return detail::compareAReal(a, b, detail::GreaterEqual{}, JITOpCode::CmpGE);
+    return detail::compareAReal(a, b, detail::GreaterEqual{}, GraphOpCode::CmpGE);
 }
 
 template <class Scalar, std::size_t N>
 ABool<Scalar, N> greaterEqual(const AReal<Scalar, N>& a, Scalar b)
 {
-    return detail::compareAReal(a, b, detail::GreaterEqual{}, JITOpCode::CmpGE);
+    return detail::compareAReal(a, b, detail::GreaterEqual{}, GraphOpCode::CmpGE);
 }
 
 // Convenience typedef
@@ -232,4 +232,4 @@ using ADBool = ABool<double, 1>;
 
 }  // namespace xad
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH

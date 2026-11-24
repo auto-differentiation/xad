@@ -143,7 +143,6 @@ void printUsage(const char* progName)
     std::cout << "  --help, -h     Show this help message\n";
     std::cout << "  --quick        Run quick benchmark (fewer iterations, fewer path counts)\n";
     std::cout << "\nThis benchmark compares FD and XAD for LIBOR swaption pricing.\n";
-    std::cout << "Build: Baseline (no JIT)\n";
 }
 
 int main(int argc, char** argv)

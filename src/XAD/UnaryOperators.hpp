@@ -31,9 +31,9 @@
 #include <XAD/Macros.hpp>
 #include <XAD/UnaryOperatorMacros.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 #include <XAD/ABool.hpp>
-#include <XAD/JITCompiler.hpp>
+#include <XAD/GraphRecorder.hpp>
 #endif
 
 namespace xad

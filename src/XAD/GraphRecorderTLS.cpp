@@ -1,6 +1,6 @@
 /**
  *
- *   JIT compiler TLS storage (explicit instantiations).
+ *   Graph recorder TLS storage (explicit instantiations).
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -24,7 +24,7 @@
 
 #include <XAD/Config.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 
 // Mirror XAD's Tape TLS instantiation pattern (see src/Tape.cpp):
 // - provide TLS storage in exactly one translation unit
@@ -36,7 +36,7 @@
 #include <XAD/Tape.hpp>
 #include <XAD/UnaryOperators.hpp>
 
-#include <XAD/JITCompiler.hpp>
+#include <XAD/GraphRecorder.hpp>
 
 namespace xad
 {
@@ -44,49 +44,49 @@ namespace xad
 #ifdef XAD_SHARED_LIBS
 namespace
 {
-// not a static member of JITCompiler: thread-local data cannot be exported from a DLL
+// not a static member of GraphRecorder: thread-local data cannot be exported from a DLL
 template <class Real, std::size_t N>
-struct ActiveJIT
+struct ActiveGraphRecorder
 {
-    static XAD_THREAD_LOCAL JITCompiler<Real, N>* jit;
+    static XAD_THREAD_LOCAL GraphRecorder<Real, N>* recorder;
 };
 
 template <class Real, std::size_t N>
-XAD_THREAD_LOCAL JITCompiler<Real, N>* ActiveJIT<Real, N>::jit = nullptr;
+XAD_THREAD_LOCAL GraphRecorder<Real, N>* ActiveGraphRecorder<Real, N>::recorder = nullptr;
 }  // namespace
 
 template <class Real, std::size_t N>
-JITCompiler<Real, N>* JITCompiler<Real, N>::getActive()
+GraphRecorder<Real, N>* GraphRecorder<Real, N>::getActive()
 {
-    return ActiveJIT<Real, N>::jit;
+    return ActiveGraphRecorder<Real, N>::recorder;
 }
 
 template <class Real, std::size_t N>
-void JITCompiler<Real, N>::setActive(JITCompiler* j)
+void GraphRecorder<Real, N>::setActive(GraphRecorder* j)
 {
-    if (ActiveJIT<Real, N>::jit != nullptr)
-        throw OutOfRange("JIT Compiler already active");
-    ActiveJIT<Real, N>::jit = j;
+    if (ActiveGraphRecorder<Real, N>::recorder != nullptr)
+        throw OutOfRange("GraphRecorder already active");
+    ActiveGraphRecorder<Real, N>::recorder = j;
 }
 
 template <class Real, std::size_t N>
-void JITCompiler<Real, N>::setActiveUnchecked(JITCompiler* j)
+void GraphRecorder<Real, N>::setActiveUnchecked(GraphRecorder* j)
 {
-    ActiveJIT<Real, N>::jit = j;
+    ActiveGraphRecorder<Real, N>::recorder = j;
 }
 
 template <class Real, std::size_t N>
-void JITCompiler<Real, N>::deactivateAll()
+void GraphRecorder<Real, N>::deactivateAll()
 {
-    ActiveJIT<Real, N>::jit = nullptr;
+    ActiveGraphRecorder<Real, N>::recorder = nullptr;
 }
 #else
-// Define TLS storage for active_jit_ (mirrors Tape.cpp pattern).
+// Define TLS storage for active_recorder_ (mirrors Tape.cpp pattern).
 template <class Real, std::size_t N>
-XAD_THREAD_LOCAL JITCompiler<Real, N>* JITCompiler<Real, N>::active_jit_ = nullptr;
+XAD_THREAD_LOCAL GraphRecorder<Real, N>* GraphRecorder<Real, N>::active_recorder_ = nullptr;
 #endif
 
-// JIT is intentionally limited to scalar, first-order mode only:
+// Graph recording is intentionally limited to scalar, first-order mode only:
 // - no vector mode (N>1)
 // - no higher-order AD types
 //
@@ -94,11 +94,11 @@ XAD_THREAD_LOCAL JITCompiler<Real, N>* JITCompiler<Real, N>::active_jit_ = nullp
 #ifdef _MSC_VER
 #pragma warning(disable : 4251)
 #endif
-template class XAD_TEMPLATE_EXPORT JITCompiler<float>;
-template class XAD_TEMPLATE_EXPORT JITCompiler<double>;
+template class XAD_TEMPLATE_EXPORT GraphRecorder<float>;
+template class XAD_TEMPLATE_EXPORT GraphRecorder<double>;
 
 }  // namespace xad
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH
 
 

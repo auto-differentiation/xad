@@ -62,14 +62,14 @@ if (XAD_ENABLE_EIGEN_TESTS)
     list(APPEND testfiles Eigen_test.cpp)
 endif()
 
-if (XAD_ENABLE_CODEGEN)
+if (XAD_ENABLE_GRAPH)
     list(APPEND testfiles
-        JITCompiler_test.cpp
-        JITExprTraits_test.cpp
-        JITGraph_test.cpp
-        JITGraphInterpreter_test.cpp
-        JITABool_test.cpp
-        JITExpressionMath_test.cpp
+        GraphRecorder_test.cpp
+        GraphExprTraits_test.cpp
+        Graph_test.cpp
+        GraphInterpreter_test.cpp
+        GraphABool_test.cpp
+        GraphExpressionMath_test.cpp
     )
 endif()
 

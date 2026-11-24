@@ -57,7 +57,7 @@ jobs:
         config: [Release, Debug]
         standard: ["11", "17"]
         memory: ["default", "lowmem"]
-        jit: [OFF]
+        graph: [OFF]
         shared: ["OFF"]
         include:
           - config: Debug
@@ -85,7 +85,7 @@ jobs:
             config: Debug
             standard: "17"
             memory: default
-            jit: OFF
+            graph: OFF
             shared: "OFF"
             runner: windows-2025-vs2026
             cxx: cl
@@ -98,7 +98,7 @@ jobs:
             config: Release
             standard: "11"
             memory: default
-            jit: OFF
+            graph: OFF
             shared: "OFF"
             runner: windows-2025-vs2026
             cxx: cl
@@ -112,16 +112,16 @@ jobs:
             config: Release
             standard: "17"
             memory: default
-            jit: OFF
+            graph: OFF
             shared: "ON"
             cxx: cl
             cc: cl
             vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
             sccache: "true"
             cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
-          # JIT-enabled builds: Release, C++11, all compiler versions
+          # Graph-enabled builds: Release, C++11, all compiler versions
           # MSVC
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   toolset: "14.2"
           #   compiler: msvc
           #   config: Release
@@ -132,19 +132,20 @@ jobs:
           #   vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
           #   sccache: "true"
           #   cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
-          # - jit: ON  # codegen requires commercial license
-          #   toolset: "14.4"
-          #   compiler: msvc
-          #   config: Release
-          #   standard: "11"
-          #   memory: default
-          #   cxx: cl
-          #   cc: cl
-          #   vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
-          #   sccache: "true"
-          #   cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          - graph: ON
+            toolset: "14.4"
+            compiler: msvc
+            config: Release
+            standard: "11"
+            memory: default
+            shared: "OFF"
+            cxx: cl
+            cc: cl
+            vsvarsall: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat
+            sccache: "true"
+            cmake_extra: -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
           # Clang-cl
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   toolset: "14.4"
           #   compiler: clang
           #   config: Release
@@ -174,7 +175,7 @@ jobs:
         if: ${{ matrix.sccache == 'true' }}
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-${{ matrix.shared }}
+          key: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-graph${{ matrix.graph }}-${{ matrix.shared }}
           restore-keys: windows-${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}
           variant: sccache
           save: ${{ github.event_name != 'pull_request' }}
@@ -192,7 +193,7 @@ jobs:
              ${{ matrix.cmake_extra }} ^
              ${{ matrix.cmake_mem_flag }} ^
              -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
-             -DXAD_ENABLE_CODEGEN=${{ matrix.jit }} ^
+             -DXAD_ENABLE_GRAPH=${{ matrix.graph }} ^
              -DXAD_SHARED_LIBS=${{ matrix.shared }} ^
              -DXAD_ENABLE_EIGEN_TESTS=ON
       - name: build
@@ -211,7 +212,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }}-shared${{ matrix.shared }})
+          name: Test Results (windows ${{ matrix.compiler }}-${{ matrix.toolset }}-${{ matrix.config }}-${{ matrix.memory }}-${{ matrix.standard }}-graph${{ matrix.graph }}-shared${{ matrix.shared }})
           path: build/test_results.xml
       - name: install
         shell: cmd
@@ -246,7 +247,7 @@ jobs:
         reuse_slots: [OFF, ON]
         standard: [c++11, c++17]
         memory: ["default", "lowmem"]
-        jit: [OFF]
+        graph: [OFF]
         shared: ["OFF"]
         exclude:
           - config: Debug
@@ -283,7 +284,7 @@ jobs:
             reuse_slots: OFF
             standard: c++20
             memory: default
-            jit: OFF
+            graph: OFF
             shared: "OFF"
           # Coverage job: uses compiler key as unique differentiator
           # (not in base matrix, so creates a standalone job)
@@ -292,7 +293,7 @@ jobs:
             reuse_slots: OFF
             standard: c++11
             memory: default
-            jit: OFF
+            graph: OFF
             shared: "OFF"
             compiler: gcc-11-coverage
             coverage: true
@@ -304,58 +305,59 @@ jobs:
             reuse_slots: OFF
             standard: c++17
             memory: default
-            jit: OFF
+            graph: OFF
             shared: "ON"
-          # JIT-enabled builds (commented out - codegen requires commercial license)
+          # Graph-enabled builds: Release, C++11
           # All GCC versions
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   config: Release
           #   version: "7"
           #   reuse_slots: OFF
           #   standard: c++11
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   config: Release
           #   version: "8"
           #   reuse_slots: OFF
           #   standard: c++11
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   config: Release
           #   version: "9"
           #   reuse_slots: OFF
           #   standard: c++11
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   config: Release
           #   version: "10"
           #   reuse_slots: OFF
           #   standard: c++11
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   config: Release
           #   version: "11"
           #   reuse_slots: OFF
           #   standard: c++11
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   config: Release
           #   version: "12"
           #   reuse_slots: OFF
           #   standard: c++11
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   config: Release
           #   version: "13"
           #   reuse_slots: OFF
           #   standard: c++11
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
-          #   config: Release
-          #   version: "14"
-          #   reuse_slots: OFF
-          #   standard: c++11
-          #   memory: default
+          - graph: ON
+            config: Release
+            version: "14"
+            reuse_slots: OFF
+            standard: c++11
+            memory: default
+            shared: "OFF"
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/foonathan/gcc:${{ matrix.version }}
@@ -415,7 +417,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: linux-gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-${{ matrix.shared }}${{ matrix.coverage && '-coverage' || '' }}
+          key: linux-gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-graph${{ matrix.graph }}-${{ matrix.shared }}${{ matrix.coverage && '-coverage' || '' }}
           restore-keys: linux-gcc${{ matrix.version }}-${{ matrix.config }}
           save: ${{ github.event_name != 'pull_request' }}
       - name: configure
@@ -428,7 +430,7 @@ jobs:
             -DCMAKE_CXX_FLAGS="-std=${{ matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
-            -DXAD_ENABLE_CODEGEN=${{ matrix.jit }} \
+            -DXAD_ENABLE_GRAPH=${{ matrix.graph }} \
             -DXAD_SHARED_LIBS=${{ matrix.shared }} \
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_INSTALL_PREFIX=${{ env.GITHUB_WORKSPACE }}/install \
@@ -451,7 +453,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results (linux gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }}-shared${{ matrix.shared }})
+          name: Test Results (linux gcc${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-graph${{ matrix.graph }}-shared${{ matrix.shared }})
           path: ${{ env.GITHUB_WORKSPACE }}/build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
@@ -498,7 +500,7 @@ jobs:
         reuse_slots: [OFF, ON]
         standard: ["11", "17"]
         memory: ["default", "lowmem"]
-        jit: [OFF]
+        graph: [OFF]
         shared: ["OFF"]
         include:
           - version: "11"
@@ -531,59 +533,76 @@ jobs:
             reuse_slots: OFF
             standard: "17"
             memory: default
-            jit: OFF
+            graph: OFF
             shared: "ON"
             cxx: clang++
             cc: clang
-          # JIT-enabled builds: Release, C++11, all compiler versions
-          # - jit: ON  # codegen requires commercial license
+          # Graph-enabled builds: Release, C++11, all compiler versions
+          # - graph: ON
           #   version: "11"
           #   config: Release
           #   reuse_slots: OFF
           #   standard: "11"
+          #   cxx: clang++
+          #   cc: clang
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   version: "12"
           #   config: Release
           #   reuse_slots: OFF
           #   standard: "11"
+          #   cxx: clang++
+          #   cc: clang
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   version: "13"
           #   config: Release
           #   reuse_slots: OFF
           #   standard: "11"
+          #   cxx: clang++
+          #   cc: clang
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   version: "14"
           #   config: Release
           #   reuse_slots: OFF
           #   standard: "11"
+          #   cxx: clang++
+          #   cc: clang
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   version: "15"
           #   config: Release
           #   reuse_slots: OFF
           #   standard: "11"
+          #   cxx: clang++
+          #   cc: clang
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   version: "16"
           #   config: Release
           #   reuse_slots: OFF
           #   standard: "11"
+          #   cxx: clang++
+          #   cc: clang
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
+          # - graph: ON
           #   version: "17"
           #   config: Release
           #   reuse_slots: OFF
           #   standard: "11"
+          #   cxx: clang++
+          #   cc: clang
           #   memory: default
-          # - jit: ON  # codegen requires commercial license
-          #   version: "18"
-          #   config: Release
-          #   reuse_slots: OFF
-          #   standard: "11"
-          #   memory: default
+          - graph: ON
+            version: "18"
+            config: Release
+            reuse_slots: OFF
+            standard: "11"
+            cxx: clang++
+            cc: clang
+            memory: default
+            shared: "OFF"
         exclude:
           - config: Debug
             reuse_slots: ON
@@ -652,7 +671,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: linux-clang${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-${{ matrix.shared }}
+          key: linux-clang${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-graph${{ matrix.graph }}-${{ matrix.shared }}
           restore-keys: linux-clang${{ matrix.version }}-${{ matrix.config }}
           save: ${{ github.event_name != 'pull_request' }}
       - name: configure
@@ -666,7 +685,7 @@ jobs:
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
             -DCMAKE_CXX_STANDARD=${{ matrix.standard }} \
             -DXAD_TAPE_REUSE_SLOTS=${{ matrix.reuse_slots }} \
-            -DXAD_ENABLE_CODEGEN=${{ matrix.jit }} \
+            -DXAD_ENABLE_GRAPH=${{ matrix.graph }} \
             -DXAD_SHARED_LIBS=${{ matrix.shared }} \
             ${{ matrix.memory == 'lowmem' && ' -DXAD_REDUCED_MEMORY=ON' || '' }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
@@ -683,7 +702,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results (linux clang-${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-jit${{ matrix.jit }}-shared${{ matrix.shared }})
+          name: Test Results (linux clang-${{ matrix.version }}-${{ matrix.config }}-${{ matrix.reuse_slots }}-${{ matrix.memory }}-${{ matrix.standard }}-graph${{ matrix.graph }}-shared${{ matrix.shared }})
           path: build/test_results.xml
       - name: install
         run: |
@@ -713,7 +732,7 @@ jobs:
         os: [macos-15, macos-latest]
         standard: [c++11, c++17]
         memory: ["default", "lowmem"]
-        jit: [OFF]
+        graph: [OFF]
         shared: ["OFF"]
         include:
           - memory: lowmem
@@ -743,23 +762,24 @@ jobs:
             os: macos-latest
             standard: c++17
             memory: default
-            jit: OFF
+            graph: OFF
             shared: "ON"
             compiler: default
             coverage: false
-          # JIT-enabled builds: Release, C++11, all OS versions
-          # - jit: ON  # codegen requires commercial license
+          # Graph-enabled builds: Release, C++11, all OS versions
+          # - graph: ON
           #   config: Release
-          #   os: macos-14
+          #   os: macos-15
           #   standard: c++11
           #   memory: default
           #   coverage: false
-          # - jit: ON  # codegen requires commercial license
-          #   config: Release
-          #   os: macos-latest
-          #   standard: c++11
-          #   memory: default
-          #   coverage: false
+          - graph: ON
+            config: Release
+            os: macos-latest
+            standard: c++11
+            memory: default
+            shared: "OFF"
+            coverage: false
         exclude:
           - config: Release
             memory: lowmem
@@ -782,7 +802,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
         with:
-          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.standard }}-${{ matrix.memory }}-${{ matrix.shared }}
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.standard }}-${{ matrix.memory }}-graph${{ matrix.graph }}-${{ matrix.shared }}
           restore-keys: ${{ matrix.os }}-${{ matrix.config }}
           save: ${{ github.event_name != 'pull_request' }}
       - name: configure
@@ -795,7 +815,7 @@ jobs:
             -DCMAKE_CXX_FLAGS="-std=${{matrix.standard }} ${{ matrix.coverage_cxx_flags }}" \
             ${{ matrix.cmake_mem_flag }} \
             -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.coverage_ld_flags }}" \
-            -DXAD_ENABLE_CODEGEN=${{ matrix.jit }} \
+            -DXAD_ENABLE_GRAPH=${{ matrix.graph }} \
             -DXAD_SHARED_LIBS=${{ matrix.shared }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             -DXAD_ENABLE_EIGEN_TESTS=ON
@@ -817,7 +837,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }}-jit${{ matrix.jit }}-shared${{ matrix.shared }})
+          name: Test Results (macos ${{ matrix.config }}-${{ matrix.os }}-${{ matrix.standard }}-${{ matrix.memory }}-graph${{ matrix.graph }}-shared${{ matrix.shared }})
           path: build/test_results.xml
       - name: coverage tests
         if: ${{ matrix.coverage }}
@@ -887,6 +907,21 @@ jobs:
             fi
           done
           echo "::warning::Only $JOBS of $EXPECTED_JOBS coverage jobs found after retries"
+
+  merge_test_results:
+    # one artifact for the Test Results workflow, so it doesn't fetch one per job
+    name: Merge Test Results
+    needs: [ build_and_test_windows, build_and_test_gcc, build_and_test_clang, build_and_test_macos ]
+    if: ${{ !cancelled() && (contains(needs.*.result, 'success') || contains(needs.*.result, 'failure')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge
+        uses: actions/upload-artifact/merge@v7
+        with:
+          # per attempt, so a re-run of failed jobs gets its own merged set
+          name: Test Results ${{ github.run_attempt }}
+          pattern: "Test Results (*"
+          separate-directories: true
 
   event_file:
     name: Event File

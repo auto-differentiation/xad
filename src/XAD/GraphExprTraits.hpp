@@ -1,6 +1,6 @@
 /**
  *
- *   Helpers and traits for recording XAD expressions into a JITGraph.
+ *   Helpers and traits for recording XAD expressions into a Graph.
  *
  *   This file is part of XAD, a comprehensive C++ library for
  *   automatic differentiation.
@@ -26,10 +26,10 @@
 
 #include <XAD/Config.hpp>
 
-#ifdef XAD_ENABLE_JIT
+#ifdef XAD_ENABLE_GRAPH
 
-#include <XAD/JITGraph.hpp>
-#include <XAD/JITOpCodeTraits.hpp>
+#include <XAD/Graph.hpp>
+#include <XAD/GraphOpCodeTraits.hpp>
 #include <type_traits>
 
 namespace xad
@@ -103,6 +103,7 @@ template <class S, class T> struct IsScalarFirstOp<scalar_sub1_op<S, T>> : std::
 template <class S, class T> struct IsScalarFirstOp<scalar_div1_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_pow1_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_fmod1_op<S, T>> : std::true_type {};
+template <class S, class T> struct IsScalarFirstOp<scalar_fdim1_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_atan21_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_remainder1_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsScalarFirstOp<scalar_remquo1_op<S, T>> : std::true_type {};
@@ -113,7 +114,7 @@ template <class S, class T> struct IsScalarFirstOp<scalar_max1_op<S, T>> : std::
 template <class S, class T> struct IsScalarFirstOp<scalar_min1_op<S, T>> : std::true_type {};
 
 // Helper to record scalar value as constant
-inline uint32_t recordJITConstant(JITGraph& graph, double value)
+inline uint32_t recordGraphConstant(Graph& graph, double value)
 {
     // addConstant already creates the Constant node and returns its ID
     return graph.addConstant(value);
@@ -126,29 +127,29 @@ template <class S> struct IsFMinMaxOp<fmin_op<S>> : std::true_type {};
 template <class S, class T> struct IsFMinMaxOp<scalar_fmax_op<S, T>> : std::true_type {};
 template <class S, class T> struct IsFMinMaxOp<scalar_fmin_op<S, T>> : std::true_type {};
 
-inline uint32_t recordJITNaNIgnoring(JITGraph&, uint32_t, uint32_t, uint32_t node, std::false_type)
+inline uint32_t recordGraphNaNIgnoring(Graph&, uint32_t, uint32_t, uint32_t node, std::false_type)
 {
     return node;
 }
 
 // fmax / fmin as If(a is NaN, b, If(b is NaN, a, Max / Min(a, b)))
-inline uint32_t recordJITNaNIgnoring(JITGraph& graph, uint32_t a, uint32_t b, uint32_t node,
+inline uint32_t recordGraphNaNIgnoring(Graph& graph, uint32_t a, uint32_t b, uint32_t node,
                                      std::true_type)
 {
-    const uint32_t bIsNaN = graph.addNode(JITOpCode::CmpNE, b, b);
-    const uint32_t ifB = graph.addNode(JITOpCode::If, bIsNaN, a, node);
-    const uint32_t aIsNaN = graph.addNode(JITOpCode::CmpNE, a, a);
-    return graph.addNode(JITOpCode::If, aIsNaN, b, ifB);
+    const uint32_t bIsNaN = graph.addNode(GraphOpCode::CmpNE, b, b);
+    const uint32_t ifB = graph.addNode(GraphOpCode::If, bIsNaN, a, node);
+    const uint32_t aIsNaN = graph.addNode(GraphOpCode::CmpNE, a, a);
+    return graph.addNode(GraphOpCode::If, aIsNaN, b, ifB);
 }
 
 // the node for Op(a, b)
 template <class Op>
-inline uint32_t recordJITBinaryNode(JITGraph& graph, uint32_t a, uint32_t b)
+inline uint32_t recordGraphBinaryNode(Graph& graph, uint32_t a, uint32_t b)
 {
-    constexpr JITOpCode opcode = JITOpCodeFor<Op>::value;
-    return recordJITNaNIgnoring(graph, a, b, graph.addNode(opcode, a, b), IsFMinMaxOp<Op>());
+    constexpr GraphOpCode opcode = GraphOpCodeFor<Op>::value;
+    return recordGraphNaNIgnoring(graph, a, b, graph.addNode(opcode, a, b), IsFMinMaxOp<Op>());
 }
 
 }  // namespace xad
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH

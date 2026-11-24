@@ -28,8 +28,8 @@
 #include <memory>
 #include <utility>
 
-#ifdef XAD_ENABLE_JIT
-TEST(JITABool, defaultConstructor)
+#ifdef XAD_ENABLE_GRAPH
+TEST(GraphABool, defaultConstructor)
 {
     xad::ABool<double> ab;
     EXPECT_FALSE(ab.passive());
@@ -39,7 +39,7 @@ TEST(JITABool, defaultConstructor)
     EXPECT_EQ(invalid_slot, ab.slot());
 }
 
-TEST(JITABool, constructorFromBool)
+TEST(GraphABool, constructorFromBool)
 {
     xad::ABool<double> ab_true(true);
     xad::ABool<double> ab_false(false);
@@ -50,7 +50,7 @@ TEST(JITABool, constructorFromBool)
     EXPECT_FALSE(ab_false.hasSlot());
 }
 
-TEST(JITABool, constructorWithSlot)
+TEST(GraphABool, constructorWithSlot)
 {
     xad::ABool<double> ab(42, true);
 
@@ -59,7 +59,7 @@ TEST(JITABool, constructorWithSlot)
     EXPECT_EQ(42u, ab.slot());
 }
 
-TEST(JITABool, implicitBoolConversion)
+TEST(GraphABool, implicitBoolConversion)
 {
     xad::ABool<double> ab_true(true);
     xad::ABool<double> ab_false(false);
@@ -76,9 +76,9 @@ TEST(JITABool, implicitBoolConversion)
         EXPECT_TRUE(true);
 }
 
-TEST(JITABool, ifWithoutJIT)
+TEST(GraphABool, ifWithoutGraphRecording)
 {
-    // Without JIT active, If should use passive value
+    // Without an active graph recorder, If should use passive value
     using AD = xad::AReal<double, 1>;
     AD trueVal(10.0);
     AD falseVal(20.0);
@@ -93,7 +93,7 @@ TEST(JITABool, ifWithoutJIT)
     EXPECT_DOUBLE_EQ(20.0, xad::value(result_false));
 }
 
-TEST(JITABool, staticIfWithoutJIT)
+TEST(GraphABool, staticIfWithoutGraphRecording)
 {
     using AD = xad::AReal<double, 1>;
     AD trueVal(10.0);
@@ -109,165 +109,165 @@ TEST(JITABool, staticIfWithoutJIT)
     EXPECT_DOUBLE_EQ(20.0, xad::value(result_false));
 }
 
-TEST(JITABool, lessComparison)
+TEST(GraphABool, lessComparison)
 {
-    xad::JITCompiler<double> jit;
+    xad::GraphRecorder<double> recorder;
     using AD = xad::AReal<double, 1>;
 
     AD a = 2.0;
     AD b = 3.0;
-    jit.registerInput(a);
-    jit.registerInput(b);
+    recorder.registerInput(a);
+    recorder.registerInput(b);
 
     auto cond = xad::less(a, b);
     EXPECT_TRUE(cond.passive());  // 2 < 3 is true
-    EXPECT_TRUE(cond.hasSlot());  // JIT is active, so slot should be set
+    EXPECT_TRUE(cond.hasSlot());  // a graph recorder is active, so slot should be set
 }
 
-TEST(JITABool, lessComparisonWithScalar)
+TEST(GraphABool, lessComparisonWithScalar)
 {
-    xad::JITCompiler<double> jit;
+    xad::GraphRecorder<double> recorder;
     using AD = xad::AReal<double, 1>;
 
     AD a = 2.0;
-    jit.registerInput(a);
+    recorder.registerInput(a);
 
     auto cond = xad::less(a, 3.0);
     EXPECT_TRUE(cond.passive());  // 2 < 3 is true
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(JITABool, greaterComparison)
+TEST(GraphABool, greaterComparison)
 {
-    xad::JITCompiler<double> jit;
+    xad::GraphRecorder<double> recorder;
     using AD = xad::AReal<double, 1>;
 
     AD a = 5.0;
     AD b = 3.0;
-    jit.registerInput(a);
-    jit.registerInput(b);
+    recorder.registerInput(a);
+    recorder.registerInput(b);
 
     auto cond = xad::greater(a, b);
     EXPECT_TRUE(cond.passive());  // 5 > 3 is true
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(JITABool, lessEqualComparison)
+TEST(GraphABool, lessEqualComparison)
 {
-    xad::JITCompiler<double> jit;
+    xad::GraphRecorder<double> recorder;
     using AD = xad::AReal<double, 1>;
 
     AD a = 3.0;
     AD b = 3.0;
-    jit.registerInput(a);
-    jit.registerInput(b);
+    recorder.registerInput(a);
+    recorder.registerInput(b);
 
     auto cond = xad::lessEqual(a, b);
     EXPECT_TRUE(cond.passive());  // 3 <= 3 is true
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(JITABool, greaterEqualComparison)
+TEST(GraphABool, greaterEqualComparison)
 {
-    xad::JITCompiler<double> jit;
+    xad::GraphRecorder<double> recorder;
     using AD = xad::AReal<double, 1>;
 
     AD a = 5.0;
     AD b = 3.0;
-    jit.registerInput(a);
-    jit.registerInput(b);
+    recorder.registerInput(a);
+    recorder.registerInput(b);
 
     auto cond = xad::greaterEqual(a, b);
     EXPECT_TRUE(cond.passive());  // 5 >= 3 is true
     EXPECT_TRUE(cond.hasSlot());
 }
 
-TEST(JITABool, ifWithJITRecording)
+TEST(GraphABool, ifWithGraphRecording)
 {
-    xad::JITCompiler<double> jit;
+    xad::GraphRecorder<double> recorder;
     using AD = xad::AReal<double, 1>;
 
     AD x = 2.0;
-    jit.registerInput(x);
-    jit.newRecording();
+    recorder.registerInput(x);
+    recorder.newRecording();
 
     AD trueVal = x * 2.0;   // 4.0
     AD falseVal = x * 3.0;  // 6.0
 
     auto cond = xad::less(x, 5.0);  // true for x=2
     AD result = cond.If(trueVal, falseVal);
-    jit.registerOutput(result);
+    recorder.registerOutput(result);
 
-    jit.compile();
+    recorder.compile();
     double output;
-    jit.forward(&output);
+    recorder.forward(&output);
 
     EXPECT_DOUBLE_EQ(4.0, output);  // x < 5, so trueVal = 2*2 = 4
 }
 
-TEST(JITABool, ifDerivativeTrueBranch)
+TEST(GraphABool, ifDerivativeTrueBranch)
 {
-    xad::JITCompiler<double> jit;
+    xad::GraphRecorder<double> recorder;
     using AD = xad::AReal<double, 1>;
 
     AD x = 2.0;
-    jit.registerInput(x);
-    jit.newRecording();
+    recorder.registerInput(x);
+    recorder.newRecording();
 
     AD trueVal = x * x;     // x^2, derivative = 2x
     AD falseVal = x * 3.0;  // 3x, derivative = 3
 
     auto cond = xad::less(x, 5.0);  // true for x=2
     AD result = cond.If(trueVal, falseVal);
-    jit.registerOutput(result);
+    recorder.registerOutput(result);
 
-    jit.compile();
-    jit.setDerivative(result.getSlot(), 1.0);
-    jit.computeAdjoints();
+    recorder.compile();
+    recorder.setDerivative(result.getSlot(), 1.0);
+    recorder.computeAdjoints();
 
     // Since x=2 < 5, we take the true branch (x^2)
     // d(x^2)/dx = 2x = 4
-    EXPECT_NEAR(4.0, jit.getDerivative(x.getSlot()), 1e-10);
+    EXPECT_NEAR(4.0, recorder.getDerivative(x.getSlot()), 1e-10);
 }
 
-TEST(JITABool, ifDerivativeFalseBranch)
+TEST(GraphABool, ifDerivativeFalseBranch)
 {
-    xad::JITCompiler<double> jit;
+    xad::GraphRecorder<double> recorder;
     using AD = xad::AReal<double, 1>;
 
     AD x = 10.0;
-    jit.registerInput(x);
-    jit.newRecording();
+    recorder.registerInput(x);
+    recorder.newRecording();
 
     AD trueVal = x * x;     // x^2, derivative = 2x
     AD falseVal = x * 3.0;  // 3x, derivative = 3
 
     auto cond = xad::less(x, 5.0);  // false for x=10
     AD result = cond.If(trueVal, falseVal);
-    jit.registerOutput(result);
+    recorder.registerOutput(result);
 
-    jit.compile();
-    jit.setDerivative(result.getSlot(), 1.0);
-    jit.computeAdjoints();
+    recorder.compile();
+    recorder.setDerivative(result.getSlot(), 1.0);
+    recorder.computeAdjoints();
 
     // Since x=10 >= 5, we take the false branch (3x)
     // d(3x)/dx = 3
-    EXPECT_NEAR(3.0, jit.getDerivative(x.getSlot()), 1e-10);
+    EXPECT_NEAR(3.0, recorder.getDerivative(x.getSlot()), 1e-10);
 }
 
-TEST(JITABool, comparisonWithoutJIT)
+TEST(GraphABool, comparisonWithoutGraphRecording)
 {
-    // Test comparison functions when JIT is NOT active
+    // Test comparison functions when no graph recorder is active
     // Should return ABool with passive value but no slot
     using AD = xad::AReal<double, 1>;
 
     AD a(2.0);
     AD b(3.0);
 
-    // No JIT active - comparisons should work but not have slots
+    // No graph recorder active - comparisons should work but not have slots
     auto cond = xad::less(a, b);
     EXPECT_TRUE(cond.passive());  // 2 < 3 is true
-    EXPECT_FALSE(cond.hasSlot()); // No JIT, so no slot
+    EXPECT_FALSE(cond.hasSlot()); // No graph recorder, so no slot
 
     auto cond2 = xad::greater(a, 1.0);
     EXPECT_TRUE(cond2.passive());  // 2 > 1 is true
@@ -275,7 +275,7 @@ TEST(JITABool, comparisonWithoutJIT)
 }
 
 // =============================================================================
-// Additional JITCompiler tests
+// Additional GraphRecorder tests
 // =============================================================================
 
-#endif  // XAD_ENABLE_JIT
+#endif  // XAD_ENABLE_GRAPH
