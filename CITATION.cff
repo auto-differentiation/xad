@@ -8,8 +8,8 @@ authors:
 repository-code: "https://github.com/auto-differentiation/xad"
 url: "https://auto-differentiation.github.io"
 license: AGPL-3.0-or-later
-version: "2.2.0"
-date-released: "2026-11-11"
+version: "2.3.0"
+date-released: "2026-11-25"
 doi: "10.5281/zenodo.7965850"
 identifiers:
   - type: doi
