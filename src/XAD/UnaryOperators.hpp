@@ -358,6 +358,9 @@ XAD_MAKE_UNARY_FUNC(cbrt)
 XAD_MAKE_UNARY_FUNC(tan)
 XAD_MAKE_UNARY_FUNC(erf)
 XAD_MAKE_UNARY_FUNC(erfc)
+XAD_MAKE_UNARY_FUNC(tgamma)
+XAD_MAKE_UNARY_FUNC(lgamma)
+XAD_MAKE_UNARY_FUNC(digamma)
 
 // no special AD treatement here, but we need the overloads
 

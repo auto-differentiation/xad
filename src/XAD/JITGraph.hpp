@@ -100,7 +100,10 @@ enum class JITOpCode : uint16_t
     Frexp = 55,
     Modf = 56,
     Copysign = 57,
-    SmoothAbs = 58
+    SmoothAbs = 58,
+    Tgamma = 59,
+    Lgamma = 60,
+    Digamma = 61
 };
 
 // AReal slots of graph nodes take the top quarter, below INVALID_SLOT, so tapes and JITs each

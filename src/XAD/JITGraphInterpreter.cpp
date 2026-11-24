@@ -238,6 +238,9 @@ void JITGraphInterpreter<Scalar>::evaluateNode(uint32_t nodeId)
         case JITOpCode::Exp2: result = std::exp2(va); break;
         case JITOpCode::Trunc: result = std::trunc(va); break;
         case JITOpCode::Round: result = std::round(va); break;
+        case JITOpCode::Tgamma: result = std::tgamma(va); break;
+        case JITOpCode::Lgamma: result = std::lgamma(va); break;
+        case JITOpCode::Digamma: result = xad::digamma(va); break;
         case JITOpCode::Remainder: result = std::remainder(va, vb); break;
         case JITOpCode::Remquo:
         {
@@ -456,6 +459,15 @@ void JITGraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
         case JITOpCode::Trunc:
         case JITOpCode::Round:
             // Zero derivative
+            break;
+        case JITOpCode::Tgamma:
+            nodeAdjoints[a] += adj * vResult * xad::digamma(va);
+            break;
+        case JITOpCode::Lgamma:
+            nodeAdjoints[a] += adj * xad::digamma(va);
+            break;
+        case JITOpCode::Digamma:
+            nodeAdjoints[a] += adj * detail::trigamma(va);
             break;
         case JITOpCode::Hypot:
             nodeAdjoints[a] += adj * va / vResult;

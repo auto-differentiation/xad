@@ -74,6 +74,7 @@ using xad::isinf;
 using xad::isnan;
 using xad::isnormal;
 using xad::ldexp;
+using xad::lgamma;
 using xad::llrint;
 using xad::llround;
 using xad::log;
@@ -101,6 +102,7 @@ using xad::sinh;
 using xad::sqrt;
 using xad::tan;
 using xad::tanh;
+using xad::tgamma;
 using xad::trunc;
 
 #if defined(_MSC_VER) || (__clang_major__ > 16 && defined(_LIBCPP_VERSION))

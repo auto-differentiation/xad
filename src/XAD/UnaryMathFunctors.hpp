@@ -93,6 +93,8 @@ XAD_MAKE_UNARY_FUNCTOR(trunc, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(rint, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(nearbyint, Scalar())
 XAD_MAKE_UNARY_FUNCTOR(round, Scalar())
+XAD_MAKE_UNARY_FUNCTOR(lgamma, digamma(a))
+XAD_MAKE_UNARY_FUNCTOR(digamma, detail::trigamma(a))
 XAD_MAKE_UNARY_FUNCTOR(logb, Scalar())
 
 // expressed in terms of result
@@ -120,6 +122,7 @@ XAD_MAKE_UNARY_FUNCTOR_RES(exp, v)
 XAD_MAKE_UNARY_FUNCTOR_RES(tanh, Scalar(1) - v * v)
 XAD_MAKE_UNARY_FUNCTOR_RES(sqrt, Scalar(0.5) / v)
 XAD_MAKE_UNARY_FUNCTOR_RES(cbrt, Scalar(1) / Scalar(3) / (v * v))
+XAD_MAKE_UNARY_FUNCTOR_RES(tgamma, digamma(a) * v)
 
 // tangent
 
@@ -533,8 +536,6 @@ struct scalar_remquo2_op
 
 /*
  * TODO:
-tgamma
-lgamma
 
 nan
 nexttoward
