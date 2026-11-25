@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+
 ## [2.3.0] - 2026-11-25
 
 ### Added
@@ -380,6 +393,8 @@ This is a patch release to ensure compatibility with QuantLib 1.33.
 ## [1.0.0] - 2022-07-07
 
 Initial open-source release
+
+[unreleased]: https://github.com/auto-differentiation/xad/compare/v2.3.0...HEAD
 
 [2.3.0]: https://github.com/auto-differentiation/xad/compare/v2.2.0...v2.3.0
 
