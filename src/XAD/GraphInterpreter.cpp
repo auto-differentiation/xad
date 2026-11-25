@@ -397,8 +397,7 @@ void GraphInterpreter<Scalar>::propagateAdjoint(uint32_t nodeId)
         case GraphOpCode::Pow:
             if (vb != Scalar(0))  // x^0 is 1 everywhere, but 0 * 0^-1 is NaN
                 nodeAdjoints[a] += adj * vb * std::pow(va, vb - Scalar(1));
-            if (va > Scalar(0))
-                nodeAdjoints[b] += adj * vResult * std::log(va);
+            nodeAdjoints[b] += adj * detail::powExponentDerivative(std::log(va), vResult);
             break;
         case GraphOpCode::Min:
         case GraphOpCode::Max:
