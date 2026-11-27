@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sample `KalmanFilter`: maximum-likelihood estimation of an AR(1)-plus-noise state-space model with the Kalman filter in adjoint mode, handling missing observations by skipping the measurement update branch, validated against central finite differences and fitted with BFGS
+
 ### Changed
 
 ### Deprecated
